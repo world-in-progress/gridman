@@ -12,7 +12,7 @@ import {
   formatNumber
 } from './utils/coordinateUtils';
 import { validateLayerHierarchy, calculateSubdivideRules } from './utils/gridUtils';
-import { generateJSONData, downloadJSON } from './utils/jsonUtils';
+import { generateJSONData, downloadJSON, sendJSONToInit } from './utils/jsonUtils';
 
 // Import child components
 import DrawButton from './components/DrawButton';
@@ -177,7 +177,7 @@ export default function OperatePanel({ onDrawRectangle, rectangleCoordinates }: 
   }, [layers]);
 
   // Generate JSON data
-  const handleGenerateJSON = useCallback(() => {
+  const handleGenerateJSON = useCallback(async () => {
     // Check if there are layers
     if (layers.length === 0) {
       setError("Please add at least one layer");
@@ -204,9 +204,15 @@ export default function OperatePanel({ onDrawRectangle, rectangleCoordinates }: 
       convertedCoordinates
     );
     
-    // Download JSON file
     if (jsonData) {
+      // Download JSON file
       downloadJSON(jsonData);
+      
+      // Send JSON to init endpoint
+      const sent = await sendJSONToInit(jsonData);
+      if (!sent) {
+        setError("Failed to send JSON data to init endpoint");
+      }
     } else {
       setError("Unable to generate JSON data");
     }
