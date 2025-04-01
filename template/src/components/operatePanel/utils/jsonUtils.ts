@@ -16,11 +16,8 @@ export const generateJSONData = (
   const coords = targetEPSG !== '4326' && convertedCoordinates ? convertedCoordinates : rectangleCoordinates;
   if (!coords) return null;
   
-  // Find the adjusted bounds from first rule
-  let adjustedBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]];
-  if (sortedRules.length > 0 && sortedRules[0].adjustedBounds) {
-    adjustedBounds = sortedRules[0].adjustedBounds;
-  }
+  // Get bounds from coordinates
+  const adjustedBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]];
   
   // Build subdivide_rules array
   const subdivideRulesArray = [];
@@ -52,18 +49,9 @@ export const generateJSONData = (
     }
   }
   
-  // Build size object for each layer
-  const layerSizesObject: Record<string, [number, number]> = {};
-  const layerNames = ['first_size', 'second_size', 'third_size', 'fourth_size', 'fifth_size', 'sixth_size'];
-  
-  sortedLayers.forEach((layer, index) => {
-    if (index < layerNames.length) {
-      layerSizesObject[layerNames[index]] = [
-        parseInt(layer.width) || 0,
-        parseInt(layer.height) || 0
-      ];
-    }
-  });
+  // Only get the first layer size
+  const firstLayer = sortedLayers[0];
+  if (!firstLayer) return null;
   
   return {
     "epsg": targetEPSG === '4326' ? 4326 : parseInt(targetEPSG),
@@ -73,7 +61,10 @@ export const generateJSONData = (
       adjustedBounds[2],  // maxx (adjusted)
       adjustedBounds[3]   // maxy (adjusted)
     ],
-    ...layerSizesObject,
+    "first_size": [
+      parseInt(firstLayer.width) || 0,
+      parseInt(firstLayer.height) || 0
+    ],
     "subdivide_rules": subdivideRulesArray
   };
 };
