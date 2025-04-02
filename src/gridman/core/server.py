@@ -33,7 +33,7 @@ def start_server_subprocess():
     server_process = subprocess.Popen(
         [
             'python', settings.CRM_LAUNCHER_FILE,
-            '--debug', 'True',
+            '--temp', settings.GRID_TEMP,
             '--schema_path', settings.SCHEMA_FILE,
             '--tcp_address', settings.TCP_ADDRESS,
             '--grid_file_path', settings.GRID_FILE,
