@@ -73,9 +73,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
       const mapInstance = new NHMap({
         container: 'map-container',
         style:
-          viewMode == 'Dark'
-            ? 'mapbox://styles/ycsoku/cm3zhjxbs00pa01sd6hx7grtr'
-            : 'mapbox://styles/mapbox/light-v10',
+          viewMode === 'light'
+            ? 'mapbox://styles/mapbox/light-v10'
+            : 'mapbox://styles/mapbox/dark-v10',
         center: [initialLongitude, initialLatitude],
         zoom: initialZoom,
         maxZoom: maxZoom
@@ -102,7 +102,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
               'circle-radius': 5,
               'circle-color': '#fff',
               'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFFF00'
+              'circle-stroke-color': '#FFFFFF'
             }
           },
           {
@@ -114,7 +114,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
               'line-join': 'round'
             },
             'paint': {
-              'line-color': '#FFFF00',
+              'line-color': '#FFFFFF',
               'line-width': 3
             }
           },
@@ -125,7 +125,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
             'paint': {
               'fill-color': '#FFFF00',
               'fill-outline-color': '#FFFF00',
-              'fill-opacity': 0.7
+              'fill-opacity': 0.5
             }
           },
           {
@@ -148,7 +148,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
             'paint': {
               'fill-color': '#FFFF00',
               'fill-outline-color': '#FFFF00',
-              'fill-opacity': 1
+              'fill-opacity': 0.5
             }
           },
           {
@@ -216,8 +216,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
       initializeMap()
     } else {
       map.setStyle(
-        viewMode == 'Dark'
-          ? 'mapbox://styles/ycsoku/cm3zhjxbs00pa01sd6hx7grtr'
+        viewMode === 'Dark'
+          ? 'mapbox://styles/mapbox/dark-v10'
           : 'mapbox://styles/mapbox/light-v10'
       )
     }
