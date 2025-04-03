@@ -26,7 +26,7 @@ const SubdivideRules: React.FC<SubdivideRulesProps> = ({ subdivideRules, layers,
               <h4 className="text-sm font-medium mb-2">Layer {index + 1}</h4>
               <div className="space-y-1 text-xs">
                 <div>
-                  <span className="font-medium">Grid:</span> {rule.cols} × {rule.rows} tiles
+                  <span className="font-medium">Grid:</span> {rule.cols} × {rule.rows} 
                 </div>
                 {index === 0 ? (
                   <>
