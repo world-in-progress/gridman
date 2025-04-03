@@ -36,14 +36,14 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "c-two"
-version = "0.1.9"
+version = "0.1.10"
 description = "A python server to support IPC between CRM and Component processes."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "c_two-0.1.9-py3-none-any.whl", hash = "sha256:586e5717e25fda5ef8a882995bbd979a26d01fc5e6e56e23969539a28fd245ea"},
-    {file = "c_two-0.1.9.tar.gz", hash = "sha256:3ba4bb5a961f55aef3bd1bd716703f7a53a4296c56f901e93c7ca8144786a713"},
+    {file = "c_two-0.1.10-py3-none-any.whl", hash = "sha256:dc36963c8e0b06751ea89b715543ecf88f72855a06a514453e36fca006daa266"},
+    {file = "c_two-0.1.10.tar.gz", hash = "sha256:6c6dd93d6f823588de0b09a327cb4562ac40f6cf5c4769857cd0b76f0876a977"},
 ]
 
 [package.dependencies]
@@ -1136,4 +1136,4 @@ pyzmq = "*"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "3181cfafe1591aba5277dfcbab03630912ac216c0eb779af2dfb4762ffc51b9b"
+content-hash = "5d1b5501319fd6c2b46ae8efc072d82192f7bfcf636b5dc5d2661c06be747c57"
