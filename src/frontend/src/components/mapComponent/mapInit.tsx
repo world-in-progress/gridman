@@ -172,7 +172,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
       
       // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
-        console.log('Drawing completed:', e.features);
+        // console.log('Drawing completed:', e.features);
         
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
@@ -200,7 +200,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
 
       // Monitor mode changes
       mapInstance.on('draw.modechange', (e: any) => {
-        console.log('Drawing mode changed:', e.mode);
+        // console.log('Drawing mode changed:', e.mode);
         setIsDrawMode(e.mode === 'draw_rectangle');
       });
 

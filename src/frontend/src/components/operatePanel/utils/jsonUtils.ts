@@ -1,6 +1,7 @@
 import { LayerSize, SubdivideRule, RectangleCoordinates } from '../types/types';
+import WorkerPool from '../../../core/worker/workerPool';
+import Actor from '../../../core/message/actor';
 
-// Generate JSON data
 export const generateJSONData = (
   targetEPSG: string,
   layers: LayerSize[],
@@ -8,76 +9,70 @@ export const generateJSONData = (
   rectangleCoordinates: RectangleCoordinates | null,
   convertedCoordinates: RectangleCoordinates | null
 ) => {
-  // Sort layers and rules to maintain hierarchy
   const sortedLayers = [...layers].sort((a, b) => a.id - b.id);
   const sortedRules = [...subdivideRules].sort((a, b) => a.id - b.id);
 
-  // Use actual coordinates (original or converted)
-  const coords = targetEPSG !== '4326' && convertedCoordinates ? convertedCoordinates : rectangleCoordinates;
+  const coords =
+    targetEPSG !== '4326' && convertedCoordinates
+      ? convertedCoordinates
+      : rectangleCoordinates;
   if (!coords) return null;
-  
-  // Get bounds from coordinates
-  const adjustedBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]];
-  
-  // Build subdivide_rules array
+
+  const adjustedBounds = [
+    coords.southWest[0],
+    coords.southWest[1],
+    coords.northEast[0],
+    coords.northEast[1],
+  ];
+
   const subdivideRulesArray = [];
-  
-  // First rule is basic grid division
+
   const firstRule = sortedRules[0];
   if (firstRule && firstRule.cols > 0 && firstRule.rows > 0) {
-    subdivideRulesArray.push([
-      firstRule.cols,
-      firstRule.rows
-    ]);
-    
-    // Add ratio relationship between adjacent layers
+    subdivideRulesArray.push([firstRule.cols, firstRule.rows]);
+
     for (let i = 1; i < sortedLayers.length; i++) {
       if (i < sortedRules.length) {
         const rule = sortedRules[i];
         if (rule && rule.xRatio > 0 && rule.yRatio > 0) {
-          // Change ratio to 1x1 for last layer
           if (i === sortedLayers.length - 1) {
             subdivideRulesArray.push([1, 1]);
           } else {
             subdivideRulesArray.push([
               Math.round(rule.xRatio),
-              Math.round(rule.yRatio)
+              Math.round(rule.yRatio),
             ]);
           }
         }
       }
     }
   }
-  
-  // Only get the first layer size
+
   const firstLayer = sortedLayers[0];
   if (!firstLayer) return null;
-  
+
   return {
-    "epsg": targetEPSG === '4326' ? 4326 : parseInt(targetEPSG),
-    "bounds": [
-      adjustedBounds[0],  // minx (adjusted)
-      adjustedBounds[1],  // miny (adjusted)
-      adjustedBounds[2],  // maxx (adjusted)
-      adjustedBounds[3]   // maxy (adjusted)
+    epsg: targetEPSG === '4326' ? 4326 : parseInt(targetEPSG),
+    bounds: [
+      adjustedBounds[0], // minx (adjusted)
+      adjustedBounds[1], // miny (adjusted)
+      adjustedBounds[2], // maxx (adjusted)
+      adjustedBounds[3], // maxy (adjusted)
     ],
-    "first_size": [
+    first_size: [
       parseInt(firstLayer.width) || 0,
-      parseInt(firstLayer.height) || 0
+      parseInt(firstLayer.height) || 0,
     ],
-    "subdivide_rules": subdivideRulesArray
+    subdivide_rules: subdivideRulesArray,
   };
 };
 
-// Download JSON file
 export const downloadJSON = (jsonData: any) => {
   if (!jsonData) return false;
-  
-  // Create Blob with JSON data
-  const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+    type: 'application/json',
+  });
   const url = URL.createObjectURL(blob);
-  
-  // Create link and trigger download
   const a = document.createElement('a');
   a.href = url;
   a.download = 'schema.json';
@@ -85,29 +80,44 @@ export const downloadJSON = (jsonData: any) => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  
+
   return true;
 };
 
+if (!WorkerPool.workerCount) {
+  WorkerPool.workerCount = 4;
+  WorkerPool.extensions = [];
+}
+
 export const sendJSONToInit = async (jsonData: any) => {
   if (!jsonData) return false;
-  
-  try {
-    const response = await fetch('http://127.0.0.1/init', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(jsonData)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+
+  return new Promise((resolve) => {
+    const workerId = 'json-init-worker';
+    const workers = WorkerPool.instance.acquire(workerId);
+    if (workers.length === 0) {
+      console.error('No worker available');
+      resolve(false);
+      return;
     }
-    
-    return true;
-  } catch (error) {
-    console.error('Error sending JSON to init endpoint:', error);
-    return false;
-  }
-}; 
+
+    const worker = workers[0];
+    const actor = new Actor(worker, worker);
+
+    actor.send(
+      'initializeGrid',
+      jsonData,
+      (error?: Error | null, result?: any) => {
+        WorkerPool.instance.release(workerId);
+
+        if (error) {
+          console.error('Error sending JSON to init endpoint:', error);
+          resolve(false);
+        } else {
+          console.log('Received response from worker:', result);
+          resolve(result);
+        }
+      }
+    );
+  });
+};
