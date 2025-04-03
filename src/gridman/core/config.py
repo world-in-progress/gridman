@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Gridman"
     DEBUG: bool = True
     TCP_ADDRESS: str = "tcp://localhost:5555"
-    GRID_TEMP: str = 'False'
+    GRID_TEMP: str = 'True'
     GRID_FILE: str = "resource/grid/grids.arrow"
     SCHEMA_FILE: str = "resource/grid/schema.json"
     CRM_LAUNCHER_FILE: str = "scripts/grid_crm_launcher.py"

@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.ipc as ipc
 import c_two as cc
-from .icrm import ICRM, GridAttribute
+from icrms.igrid import IGrid, GridSchema, GridAttribute
 
 # Const ##############################
 _GRID_DEFINITION = 'grid_definition'
@@ -35,7 +35,7 @@ GRID_SCHEMA: pa.Schema = pa.schema([
     (ATTR_ELEVATION, pa.float64())
 ])
 
-class CRM(ICRM):
+class Grid(IGrid):
     """ 
     CRM
     =
@@ -196,6 +196,20 @@ class CRM(ICRM):
         except Exception as e:
             print(f'Failed to save grid data: {str(e)}')
             return False
+    
+    @cc.transfer(output_name='GridSchema')
+    def get_schema(self) -> GridSchema:
+        """Method to get grid schema
+
+        Returns:
+            GridSchema: grid schema
+        """
+        return GridSchema(
+            epsg=self.epsg,
+            bounds=self.bounds,
+            first_size=self.first_size,
+            subdivide_rules=self.subdivide_rules
+        )
             
     def _get_local_ids(self, level: int, global_ids: np.ndarray) -> np.ndarray:
         """Method to calculate local_ids for provided grids having same level
@@ -458,9 +472,6 @@ class CRM(ICRM):
         Args:
             levels (list[int]): levels of grids to delete
             global_ids (list[int]): global_ids of grids to delete
-
-        Returns:
-            bool: whether the deletion was successful
         """
         idx_keys = list(zip(levels, global_ids))
         idx = pd.MultiIndex.from_tuples(idx_keys, names=[ATTR_LEVEL, ATTR_GLOBAL_ID])

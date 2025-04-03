@@ -1,6 +1,21 @@
 import c_two as cc
 import pyarrow as pa
 
+class GridSchema:
+    """
+    Grid Schema
+    ---
+    - epsg (int): the EPSG code of the grid
+    - bounds (list[float]): the bounds of the grid in the format [min_x, min_y, max_x, max_y]
+    - first_size (float): the size of the first grid (unit: m)
+    - subdivide_rules (list[tuple[int, int]]): the subdivision rules of the grid in the format [(sub_width, sub_height)]
+    """
+    def __init__(self, epsg: int, bounds: list[float], first_size: float, subdivide_rules: list[tuple[int, int]]):
+        self.epsg: int = epsg
+        self.bounds: list[float] = bounds
+        self.first_size: float = first_size
+        self.subdivide_rules: list[tuple[int, int]] = subdivide_rules
+
 class GridAttribute:
     """
     Attributes of Grid
@@ -30,7 +45,7 @@ class GridAttribute:
         self.max_x: float = max_x
         self.max_y: float = max_y
 
-class ICRM:
+class IGrid:
     """
     ICRM
     =
@@ -38,6 +53,10 @@ class ICRM:
     """
     
     direction: str # At component side, direction is '->'; at crm side, direction is '<-'
+    
+    @cc.transfer(output_name='GridSchema')
+    def get_schema(self) -> GridSchema:
+        return
 
     @cc.transfer(input_name='GridInfos', output_name='GridKeys')
     def get_parent_keys(self, levels: list[int], global_ids: list[int]) -> list[str | None]:
@@ -56,6 +75,34 @@ class ICRM:
         return
     
 # Define transfer methods ##################################################
+
+# GridSchema
+def serialize_grid_schema(schema: GridSchema) -> bytes:
+    schema = pa.schema([
+        pa.field('epsg', pa.int32()),
+        pa.field('bounds', pa.list_(pa.float64())),
+        pa.field('first_size', pa.float64()),
+        pa.field('subdivide_rules', pa.list_(pa.list_(pa.int32())))
+    ])
+    
+    data = {
+        'epsg': schema.epsg,
+        'bounds': schema.bounds,
+        'first_size': schema.first_size,
+        'subdivide_rules': schema.subdivide_rules
+    }
+    
+    table = pa.Table.from_pylist([data], schema=schema)
+    return cc.message.serialize_from_table(table)
+
+def deserialize_grid_schema(arrow_bytes: bytes) -> GridSchema:
+    row = cc.message.deserialize_to_rows(arrow_bytes)[0]
+    return GridSchema(
+        epsg=row['epsg'],
+        bounds=row['bounds'],
+        first_size=row['first_size'],
+        subdivide_rules=row['subdivide_rules']
+    )
 
 # GridInfo
 def serialize_grid_info(level: int, global_id: int) -> bytes:
@@ -192,6 +239,7 @@ def deserialize_grid_keys(arrow_bytes: bytes) -> list[str]:
 
 # Register transfer methods ##################################################
 
+cc.message.register_wrapper('GridSchema', serialize_grid_schema, deserialize_grid_schema)
 cc.message.register_wrapper('GridInfo', serialize_grid_info, deserialize_grid_info)
 cc.message.register_wrapper('PeerGridInfos', serialize_peer_grid_infos, deserialize_peer_grid_infos)
 cc.message.register_wrapper('GridAttributes', serialize_grid_attributes, deserialize_grid_attributes)
