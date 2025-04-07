@@ -5,6 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import { RectangleCoordinates } from '../operatePanel/operatePanel'
+import GridLayer from './layers/GridLayer'
+import NHLayerGroup from './NHLayerGroup'
 
 // Import rectangle drawing mode
 // @ts-ignore
@@ -80,6 +82,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
         zoom: initialZoom,
         maxZoom: maxZoom
       })
+
+      // 将地图实例存储为全局可访问的变量
+      window.mapInstance = mapInstance;
 
       // Initialize drawing tool
       const drawInstance = new MapboxDraw({
@@ -172,8 +177,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
       
       // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
-        // console.log('Drawing completed:', e.features);
-        
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
           setIsDrawMode(false);
@@ -247,6 +250,44 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
     }
   };
 
+  // 添加创建网格的函数
+  const createGridFromRectangle = (mapInstance: NHMap, coords: RectangleCoordinates) => {
+    // 从矩形坐标创建边界条件
+    const boundaryCondition = [
+      coords.southWest[0],  // xMin
+      coords.southWest[1],  // yMin
+      coords.northEast[0],  // xMax
+      coords.northEast[1]   // yMax
+    ];
+    
+    // 默认的第一层大小和分割规则 (可以根据需要调整)
+    const firstLevelSize: [number, number] = [100, 100]; // 默认大小，单位为米
+    const subdivideRules: [number, number][] = [[2, 2]]; // 默认规则：每个网格分为2x2
+    
+    // 创建网格图层
+    const gridLayer = new GridLayer(
+      mapInstance,
+      'EPSG:4326', // 默认使用WGS84坐标系
+      firstLevelSize,
+      subdivideRules,
+      boundaryCondition as [number, number, number, number],
+      { maxGridNum: 4096 } // 可选配置
+    );
+    
+    // 创建图层组并添加网格图层
+    const layerGroup = new NHLayerGroup();
+    layerGroup.addLayer(gridLayer);
+    
+    // 添加图层组到地图
+    const layerGroupId = 'grid-layer-group';
+    if (mapInstance.getLayer(layerGroupId)) {
+      mapInstance.removeLayer(layerGroupId);
+    }
+    
+    layerGroup.id = layerGroupId;
+    mapInstance.addLayer(layerGroup);
+  };
+
   React.useImperativeHandle(
     ref,
     () => ({
@@ -254,7 +295,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
     })
   );
 
-  return <div id="map-container" className="w-full h-full" />
+  return <div id="map-container" className="w-full h-full">
+    <div id="control-panel-container" className="absolute top-4 left-4 z-10"></div>
+  </div>
 }
 
 export default React.forwardRef(MapInit)

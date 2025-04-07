@@ -29,6 +29,17 @@ import EPSGInput from './components/EPSGInput';
 import GridLevel from './components/GridLevel';
 import SubdivideRules from './components/SubdivideRules';
 import GenerateJSONButton from './components/GenerateJSONButton';
+import DrawGridButton from './components/DrawGridButton';
+import GridLayer from '../mapComponent/layers/GridLayer';
+import NHLayerGroup from '../mapComponent/NHLayerGroup';
+import { Map } from 'mapbox-gl';
+
+// 为window对象添加mapInstance属性
+declare global {
+  interface Window {
+    mapInstance?: Map;
+  }
+}
 
 export type { RectangleCoordinates } from './types/types';
 
@@ -287,12 +298,111 @@ export default function OperatePanel({
         console.error('Error in handleGenerateJSON:', error);
         setGeneralError(`Error: ${error instanceof Error ? error.message : String(error)}`);
       }
+
+      const map = window.mapInstance;
+      if (map) {
+        const gridConfig = {
+          epsg: jsonData.epsg,
+          boundaryCondition: jsonData.bounds as [number, number, number, number],
+          firstLevelSize: jsonData.first_size as [number, number],
+          subdivideRules: jsonData.subdivide_rules as [number, number][]
+        };
+        
+        createGridLayer(map, gridConfig);
+      }
     } else {
       setGeneralError('Unable to generate JSON data');
     }
   }, [
-    layers,
     targetEPSG,
+    layers,
+    subdivideRules,
+    rectangleCoordinates,
+    convertedCoordinates,
+  ]);
+
+  const createGridLayer = (map: Map, config: {
+    epsg: number | string,
+    boundaryCondition: [number, number, number, number],
+    firstLevelSize: [number, number],
+    subdivideRules: [number, number][]
+  }) => {
+    const layerGroupId = 'grid-layer-group';
+    
+    try {
+      // 尝试获取并移除已存在的图层
+      if (map.getLayer(layerGroupId)) {
+        map.removeLayer(layerGroupId);
+      }
+      
+      // 如果图层的源也存在，尝试移除
+      if (map.getSource(layerGroupId)) {
+        map.removeSource(layerGroupId);
+      }
+    } catch (error) {
+      console.log('Layer or source does not exist yet, creating new one');
+    }
+    
+    const gridLayer = new GridLayer(
+      map,
+      `EPSG:${config.epsg}`,
+      config.firstLevelSize,
+      config.subdivideRules,
+      config.boundaryCondition,
+      { maxGridNum: 4096 }
+    );
+    
+    const layerGroup = new NHLayerGroup();
+    layerGroup.id = layerGroupId;
+    layerGroup.addLayer(gridLayer);
+    map.addLayer(layerGroup);
+  };
+
+  const handleDrawGrid = useCallback(() => {
+    if (layers.length === 0) {
+      setGeneralError('请添加至少一个网格层级');
+      return;
+    }
+
+    const sortedLayers = [...layers].sort((a, b) => a.id - b.id);
+    const firstLayer = sortedLayers[0];
+    const firstLayerWidth = parseInt(firstLayer.width) || 0;
+    const firstLayerHeight = parseInt(firstLayer.height) || 0;
+
+    if (firstLayerWidth === 0 || firstLayerHeight === 0) {
+      setGeneralError('第一层的宽度和高度必须大于0');
+      return;
+    }
+
+    const jsonData = generateJSONData(
+      targetEPSG,
+      layers,
+      subdivideRules,
+      rectangleCoordinates || null,
+      convertedCoordinates
+    );
+
+    if (jsonData) {
+      const map = window.mapInstance;
+      if (map) {
+        const gridConfig = {
+          epsg: jsonData.epsg,
+          boundaryCondition: jsonData.bounds as [number, number, number, number],
+          firstLevelSize: jsonData.first_size as [number, number],
+          subdivideRules: jsonData.subdivide_rules as [number, number][]
+        };
+        
+        createGridLayer(map, gridConfig);
+        setGeneralError(null);
+      } else {
+        setGeneralError('无法获取地图实例');
+      }
+    } else {
+      setGeneralError('无法生成网格数据');
+    }
+  }, [
+    targetEPSG,
+    layers,
     subdivideRules,
     rectangleCoordinates,
     convertedCoordinates,
@@ -380,6 +490,11 @@ export default function OperatePanel({
         {/* Generate JSON button */}
         {rectangleCoordinates && (
           <GenerateJSONButton onClick={handleGenerateJSON} />
+        )}
+
+        {/* Draw Grid button */}
+        {rectangleCoordinates && layers.length > 0 && (
+          <DrawGridButton onClick={handleDrawGrid} />
         )}
       </div>
     </div>
