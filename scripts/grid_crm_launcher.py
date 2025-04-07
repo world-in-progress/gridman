@@ -6,7 +6,7 @@ import c_two as cc
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from crms.grid import CRM
+from crms.grid import Grid
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="CRM Launcher")
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     grid_file_path = None if temp else args.grid_file_path
     
     # Init CRM
-    crm = CRM(epsg, bounds, first_size, subdivide_rules, grid_file_path)
+    crm = Grid(epsg, bounds, first_size, subdivide_rules, grid_file_path)
 
     if sys.platform == 'win32':
         try:
