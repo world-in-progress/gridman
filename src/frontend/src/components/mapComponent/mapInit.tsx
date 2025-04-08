@@ -74,16 +74,13 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
     const initializeMap = () => {
       const mapInstance = new NHMap({
         container: 'map-container',
-        style:
-          viewMode === 'light'
-            ? 'mapbox://styles/mapbox/light-v10'
-            : 'mapbox://styles/mapbox/dark-v10',
+        style: 'mapbox://styles/mapbox/navigation-night-v1',
         center: [initialLongitude, initialLatitude],
         zoom: initialZoom,
         maxZoom: maxZoom
       })
 
-      // 将地图实例存储为全局可访问的变量
+      // Store map instance as a globally accessible variable
       window.mapInstance = mapInstance;
 
       // Initialize drawing tool
@@ -153,7 +150,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
             'paint': {
               'fill-color': '#FFFF00',
               'fill-outline-color': '#FFFF00',
-              'fill-opacity': 0.5
+              'fill-opacity': 0.1
             }
           },
           {
@@ -217,14 +214,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
 
     if (!map) {
       initializeMap()
-    } else {
-      map.setStyle(
-        viewMode === 'Dark'
-          ? 'mapbox://styles/mapbox/dark-v10'
-          : 'mapbox://styles/mapbox/light-v10'
-      )
-    }
-  }, [viewMode, onRectangleDrawn])
+    } 
+  }, [viewMode])
 
   // Method to start drawing rectangle
   const startDrawRectangle = () => {
@@ -250,9 +241,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
     }
   };
 
-  // 添加创建网格的函数
+  // Add function to create grid from rectangle
   const createGridFromRectangle = (mapInstance: NHMap, coords: RectangleCoordinates) => {
-    // 从矩形坐标创建边界条件
+    // Create boundary condition from rectangle coordinates
     const boundaryCondition = [
       coords.southWest[0],  // xMin
       coords.southWest[1],  // yMin
@@ -260,25 +251,25 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = ({
       coords.northEast[1]   // yMax
     ];
     
-    // 默认的第一层大小和分割规则 (可以根据需要调整)
-    const firstLevelSize: [number, number] = [100, 100]; // 默认大小，单位为米
-    const subdivideRules: [number, number][] = [[2, 2]]; // 默认规则：每个网格分为2x2
+    // Default first level size and subdivision rules (can be adjusted as needed)
+    const firstLevelSize: [number, number] = [100, 100]; // Default size in meters
+    const subdivideRules: [number, number][] = [[2, 2]]; // Default rule: each grid divided into 2x2
     
-    // 创建网格图层
+    // Create grid layer
     const gridLayer = new GridLayer(
       mapInstance,
-      'EPSG:4326', // 默认使用WGS84坐标系
+      'EPSG:4326', // Default use WGS84 coordinate system
       firstLevelSize,
       subdivideRules,
       boundaryCondition as [number, number, number, number],
-      { maxGridNum: 4096 } // 可选配置
+      { maxGridNum: 4096 } // Optional configuration
     );
     
-    // 创建图层组并添加网格图层
+    // Create layer group and add grid layer
     const layerGroup = new NHLayerGroup();
     layerGroup.addLayer(gridLayer);
     
-    // 添加图层组到地图
+    // Add layer group to map
     const layerGroupId = 'grid-layer-group';
     if (mapInstance.getLayer(layerGroupId)) {
       mapInstance.removeLayer(layerGroupId);

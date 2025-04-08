@@ -349,9 +349,9 @@ div#clear {
 /* loading */
 #loading-container {
     position: absolute;
-    top: 20px;
+    top: 10%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, 0);
     width: 100px;
     height: 100px;
     background-color: rgba(196, 196, 196, 0.402);
@@ -359,6 +359,7 @@ div#clear {
     backdrop-filter: blur(5px);
     border-radius: 10px;
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    z-index: 1000;
 }
 
 .loading-text {
@@ -417,4 +418,20 @@ div#clear {
         height: 20px;
         box-shadow: 0 -20px #000;
     }
+}
+
+/* Mapbox GL Draw 控制按钮定位 */
+/* .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+    position: relative;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+} */
+
+/* 调整Mapbox控制按钮容器位置 */
+.mapboxgl-ctrl-top-right {
+    position: absolute;
+    left: 10px !important;
+    top: 94vh !important;
+    right: auto !important;
 }

@@ -34,7 +34,7 @@ import GridLayer from '../mapComponent/layers/GridLayer';
 import NHLayerGroup from '../mapComponent/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 
-// 为window对象添加mapInstance属性
+// Add mapInstance property to window object
 declare global {
   interface Window {
     mapInstance?: Map;
@@ -330,12 +330,9 @@ export default function OperatePanel({
     const layerGroupId = 'grid-layer-group';
     
     try {
-      // 尝试获取并移除已存在的图层
       if (map.getLayer(layerGroupId)) {
         map.removeLayer(layerGroupId);
       }
-      
-      // 如果图层的源也存在，尝试移除
       if (map.getSource(layerGroupId)) {
         map.removeSource(layerGroupId);
       }
@@ -360,7 +357,7 @@ export default function OperatePanel({
 
   const handleDrawGrid = useCallback(() => {
     if (layers.length === 0) {
-      setGeneralError('请添加至少一个网格层级');
+      setGeneralError('Please add at least one grid level');
       return;
     }
 
@@ -370,7 +367,7 @@ export default function OperatePanel({
     const firstLayerHeight = parseInt(firstLayer.height) || 0;
 
     if (firstLayerWidth === 0 || firstLayerHeight === 0) {
-      setGeneralError('第一层的宽度和高度必须大于0');
+      setGeneralError('The width and height of the first layer must be greater than 0');
       return;
     }
 
@@ -395,10 +392,10 @@ export default function OperatePanel({
         createGridLayer(map, gridConfig);
         setGeneralError(null);
       } else {
-        setGeneralError('无法获取地图实例');
+        setGeneralError('Unable to get map instance');
       }
     } else {
-      setGeneralError('无法生成网格数据');
+      setGeneralError('Unable to generate grid data');
     }
   }, [
     targetEPSG,

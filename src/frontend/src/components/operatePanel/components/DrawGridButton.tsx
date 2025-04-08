@@ -10,7 +10,7 @@ const DrawGridButton: React.FC<DrawGridButtonProps> = ({ onClick }) => {
       className="mt-2 w-full py-2 px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors cursor-pointer"
       onClick={onClick}
     >
-      绘制网格
+      Draw Grid
     </button>
   );
 };
