@@ -64,7 +64,7 @@ export function serialize(input: unknown, transferables?: Set<Transferable>): Se
 
         if (!klass.serialize) {
             for (const key in input) {
-                if (!input.hasOwnProperty(key)) continue
+                if (!Object.prototype.hasOwnProperty.call(input, key)) continue
                 if (registry[name].omit.indexOf(key) >= 0) continue
                 const property = (input as any)[key]
                 properties[key] = serialize(property, transferables)

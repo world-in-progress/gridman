@@ -7,7 +7,7 @@ class ThrottledInvoker {
     constructor(callback: Function) {
 
         this._callback = callback
-        if (typeof MessageChannel !== undefined) {
+        if (typeof MessageChannel !== 'undefined') {
             this._channel = new MessageChannel()
             this._channel.port2.onmessage = () => this._process()
         }

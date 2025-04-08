@@ -115,7 +115,7 @@ export function createDbManager() {
                     case 'D':
                         store.delete(action.data!.id)
                         break
-                    case 'R':
+                    case 'R': {
                         const request = store.get(action.data!.id)
                         request.onsuccess = (event) => {
                             results[index] = (event.target as IDBRequest).result
@@ -124,6 +124,7 @@ export function createDbManager() {
                             results[index] = null
                         }
                         break
+                    }
                 }
             } catch (error) {
                 console.error(`Action failed: ${action.type}`, error)
@@ -155,11 +156,7 @@ export function createDbManager() {
     return async (dbName: string, actions: DbAction[]): Promise<any[]> => {
 
         if (!db) {
-            try {
-                db = await openDB(dbName)
-            } catch (error) {
-                throw error
-            }
+            db = await openDB(dbName)
         }
 
         return handleActions(actions)
