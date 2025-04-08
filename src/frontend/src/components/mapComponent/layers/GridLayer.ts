@@ -4,7 +4,7 @@ import { mat4 } from 'gl-matrix'
 import { GUI, GUIController } from 'dat.gui'
 import { Map, MapMouseEvent } from 'mapbox-gl'
 
-import '../../../editor-style.css'
+import '../../editor-style.css'
 import gll from '../utils/GlLib'
 import NHLayerGroup from '../NHLayerGroup'
 import FileDownloader from '../utils/DownloadHelper'
@@ -302,7 +302,7 @@ export default class GridLayer implements NHCustomLayerInterface {
         // [0] Box Picking Canvas
         let canvas2d = document.querySelector('#canvas2d') as HTMLCanvasElement
         if (!canvas2d) {
-            // 如果找不到canvas2d元素，则创建一个
+            // If canvas2d element not found, create one
             canvas2d = document.createElement('canvas')
             canvas2d.id = 'canvas2d'
             canvas2d.style.position = 'absolute'
@@ -317,12 +317,12 @@ export default class GridLayer implements NHCustomLayerInterface {
         canvas2d.height = rect.height
         this._ctx = canvas2d.getContext('2d')
 
-        // [1] Create Control Pannel Dom
+        // [1] Create Control Panel Dom
         const pannel = document.createElement('div')
         pannel.id = 'pannel'
         pannel.classList.add('pannel')
         pannel.innerHTML = `
-            <div class="pannel-title f-center f3">Control-Pannel</div>
+            <div class="pannel-title f-center f3">Control-Panel</div>
             <div class="pannel-content">
               <div class="tool-container f-row">
                 <div class="tool-title f-center f2">Tool</div>
