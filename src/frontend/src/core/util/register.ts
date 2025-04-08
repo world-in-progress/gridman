@@ -16,7 +16,7 @@ export type RegisterOptions<T> = {
 
 const registry: Registry = {}
 
-export function register<T extends any>(klass: Class<T>, name: string, options: RegisterOptions<T> = {}) {
+export function register<T>(klass: Class<T>, name: string, options: RegisterOptions<T> = {}) {
     if (registry[name]) return
 
     Object.defineProperty(klass, '_classRegistryKey', {
