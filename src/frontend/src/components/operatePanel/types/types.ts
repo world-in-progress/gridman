@@ -75,3 +75,7 @@ export interface SubdivideRulesProps {
 export interface GenerateJSONButtonProps {
   onClick: () => void;
 }
+
+export interface DrawGridButtonProps {
+  onClick: () => void;
+}

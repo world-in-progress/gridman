@@ -33,20 +33,18 @@ import DrawGridButton from './components/DrawGridButton';
 import GridLayer from '../mapComponent/layers/GridLayer';
 import NHLayerGroup from '../mapComponent/NHLayerGroup';
 import { Map } from 'mapbox-gl';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
 
 // Add mapInstance property to window object
 declare global {
   interface Window {
     mapInstance?: Map;
+    mapboxDrawInstance?: MapboxDraw;
   }
 }
 
 export type { RectangleCoordinates } from './types/types';
 
-/**
- * Operation Panel Component
- * Integrates all child components, provides rectangle drawing, coordinate conversion, layer settings and JSON generation functions
- */
 export default function OperatePanel({
   onDrawRectangle,
   rectangleCoordinates,
@@ -286,28 +284,34 @@ export default function OperatePanel({
       try {
         const response = await sendJSONToInit(jsonData);
         console.log('Response from sendJSONToInit:', response);
-        
+
         if (!response) {
           setGeneralError('Failed to send JSON data to init endpoint');
         } else {
-          // 处理成功响应
           setGeneralError(null);
           console.log('Successfully initialized grid with response:', response);
         }
       } catch (error) {
         console.error('Error in handleGenerateJSON:', error);
-        setGeneralError(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        setGeneralError(
+          `Error: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
 
       const map = window.mapInstance;
       if (map) {
         const gridConfig = {
           epsg: jsonData.epsg,
-          boundaryCondition: jsonData.bounds as [number, number, number, number],
+          boundaryCondition: jsonData.bounds as [
+            number,
+            number,
+            number,
+            number
+          ],
           firstLevelSize: jsonData.first_size as [number, number],
-          subdivideRules: jsonData.subdivide_rules as [number, number][]
+          subdivideRules: jsonData.subdivide_rules as [number, number][],
         };
-        
+
         createGridLayer(map, gridConfig);
       }
     } else {
@@ -321,14 +325,17 @@ export default function OperatePanel({
     convertedCoordinates,
   ]);
 
-  const createGridLayer = (map: Map, config: {
-    epsg: number | string,
-    boundaryCondition: [number, number, number, number],
-    firstLevelSize: [number, number],
-    subdivideRules: [number, number][]
-  }) => {
+  const createGridLayer = (
+    map: Map,
+    config: {
+      epsg: number | string;
+      boundaryCondition: [number, number, number, number];
+      firstLevelSize: [number, number];
+      subdivideRules: [number, number][];
+    }
+  ) => {
     const layerGroupId = 'grid-layer-group';
-    
+
     try {
       if (map.getLayer(layerGroupId)) {
         map.removeLayer(layerGroupId);
@@ -339,16 +346,16 @@ export default function OperatePanel({
     } catch (error) {
       console.log('Layer or source does not exist yet, creating new one');
     }
-    
+
     const gridLayer = new GridLayer(
       map,
       `EPSG:${config.epsg}`,
       config.firstLevelSize,
       config.subdivideRules,
       config.boundaryCondition,
-      { maxGridNum: 4096 }
+      { maxGridNum: 4096 * 4096 }
     );
-    
+
     const layerGroup = new NHLayerGroup();
     layerGroup.id = layerGroupId;
     layerGroup.addLayer(gridLayer);
@@ -367,7 +374,9 @@ export default function OperatePanel({
     const firstLayerHeight = parseInt(firstLayer.height) || 0;
 
     if (firstLayerWidth === 0 || firstLayerHeight === 0) {
-      setGeneralError('The width and height of the first layer must be greater than 0');
+      setGeneralError(
+        'The width and height of the first layer must be greater than 0'
+      );
       return;
     }
 
@@ -384,13 +393,31 @@ export default function OperatePanel({
       if (map) {
         const gridConfig = {
           epsg: jsonData.epsg,
-          boundaryCondition: jsonData.bounds as [number, number, number, number],
+          boundaryCondition: jsonData.bounds as [
+            number,
+            number,
+            number,
+            number
+          ],
           firstLevelSize: jsonData.first_size as [number, number],
-          subdivideRules: jsonData.subdivide_rules as [number, number][]
+          subdivideRules: jsonData.subdivide_rules as [number, number][],
         };
-        
+
         createGridLayer(map, gridConfig);
         setGeneralError(null);
+
+        // Remove the drawn rectangle
+        try {
+          if (window.mapboxDrawInstance) {
+            console.log('MapboxDraw instance found, deleting rectangle...');
+            window.mapboxDrawInstance.deleteAll();
+            console.log('Rectangle display is off');
+          } else {
+            console.log('No MapboxDraw instance found on window');
+          }
+        } catch (error) {
+          console.log('Failed to remove rectangle:', error);
+        }
       } else {
         setGeneralError('Unable to get map instance');
       }
