@@ -25,8 +25,8 @@ const DrawButton: React.FC<DrawButtonProps> = ({ isDrawing, rectangleCoordinates
           <p>Drawing method:</p>
           <ol className="list-decimal pl-5 mt-1 space-y-1">
             <li>Click on the map to set starting point</li>
-            <li>Drag to desired location</li>
-            <li>Release mouse button to complete drawing</li>
+            <li>Move the mouse to desired location</li>
+            <li>Click again to complete drawing</li>
           </ol>
         </div>
       )}

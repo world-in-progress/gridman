@@ -219,15 +219,15 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 div#brush {
-    background-image: url("/icon/tool_brush.png");
+    background-image: url("../icon/tool_brush.png");
 }
 
 div#box {
-    background-image: url("/icon/tool_box.png");
+    background-image: url("../icon/tool_box.png");
 }
 
 div#clear {
-    background-image: url("/icon/tool_clear.png");
+    background-image: url("../icon/tool_clear.png");
 }
 
 .editor-container {

@@ -1830,6 +1830,8 @@ function isMacOS(): boolean {
 // ADDON
 function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
 
+    console.log(canvas)
+
     const rect = canvas.getBoundingClientRect()
     const _pickingBox = [
         startEvent.point.x - rect.left,

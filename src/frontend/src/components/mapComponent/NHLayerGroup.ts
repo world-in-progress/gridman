@@ -37,6 +37,7 @@ export default class NHLayerGroup implements CustomLayerInterface {
     ///////////////////////////////////////////////////////////
     /** To initialize gl resources and register event listeners.*/
     onAdd(map: Map, gl: WebGL2RenderingContext) {
+        console.log('hahahah')
 
         this.gl = gl
         this.map = map
