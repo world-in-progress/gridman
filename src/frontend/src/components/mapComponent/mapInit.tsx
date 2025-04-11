@@ -97,6 +97,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         center: [initialLongitude, initialLatitude],
         zoom: initialZoom,
         maxZoom: maxZoom,
+        attributionControl: false
       });
 
       // Store map instance as a globally accessible variable
@@ -105,9 +106,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       // Initialize drawing tool
       const drawInstance = new MapboxDraw({
         displayControlsDefault: false,
-        controls: {
-          trash: true,
-        },
+
         modes: {
           ...MapboxDraw.modes,
           draw_rectangle: DrawRectangle,
@@ -213,10 +212,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
       // Save to global variable
       window.mapboxDrawInstance = drawInstance;
-      console.log(
-        'MapboxDraw instance saved to window:',
-        !!window.mapboxDrawInstance
-      );
 
       // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
@@ -287,56 +282,16 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     }
   };
 
-  // Add function to create grid from rectangle
-  // const createGridFromRectangle = (
-  //   mapInstance: NHMap,
-  //   coords: RectangleCoordinates
-  // ) => {
-  //   // Create boundary condition from rectangle coordinates
-  //   const boundaryCondition = [
-  //     coords.southWest[0], // xMin
-  //     coords.southWest[1], // yMin
-  //     coords.northEast[0], // xMax
-  //     coords.northEast[1], // yMax
-  //   ];
-
-  //   // Default first level size and subdivision rules (can be adjusted as needed)
-  //   const firstLevelSize: [number, number] = [64, 64]; // Default size in meters
-  //   const subdivideRules: [number, number][] = [[2, 2]]; // Default rule: each grid divided into 2x2
-
-  //   // Create grid layer
-  //   const gridLayer = new GridLayer(
-  //     mapInstance,
-  //     'EPSG:4326', // Default use WGS84 coordinate system
-  //     firstLevelSize,
-  //     subdivideRules,
-  //     boundaryCondition as [number, number, number, number],
-  //     { maxGridNum: 4096 * 4096 }
-  //   );
-  //   console.log(gridLayer);
-  //   // Create layer group and add grid layer
-  //   const layerGroup = new NHLayerGroup();
-  //   layerGroup.addLayer(gridLayer);
-
-  //   // Add layer group to map
-  //   const layerGroupId = 'grid-layer-group';
-  //   if (mapInstance.getLayer(layerGroupId)) {
-  //     mapInstance.removeLayer(layerGroupId);
-  //   }
-
-  //   layerGroup.id = layerGroupId;
-  //   mapInstance.addLayer(layerGroup);
-  // };
-
   React.useImperativeHandle(ref, () => ({
     startDrawRectangle,
   }));
 
   return (
-    <div id="map-container" className="w-full h-full">
+    <div className="relative w-full h-full">
+      <div id="map-container" className="w-full h-full"></div>
       <div
         id="control-panel-container"
-        className="absolute top-4 left-4 z-10"
+        className="absolute top-4 left-4 z-10 flex flex-row items-start"
       ></div>
     </div>
   );

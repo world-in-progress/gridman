@@ -1,8 +1,8 @@
 /* Attribute */
 div.property-editor {
-    left: 20px;
-    top: 220px;
     position: absolute;
+    left: 25px;
+    top: 220px;
     width: 150px;
     height: 150px;
     background-color: transparent;
@@ -350,7 +350,7 @@ div#clear {
 #loading-container {
     position: absolute;
     top: 10%;
-    left: 50%;
+    left: 60%;
     transform: translate(-50%, 0);
     width: 100px;
     height: 100px;

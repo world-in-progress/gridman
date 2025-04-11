@@ -1,11 +1,14 @@
 import json
+import c_two as cc
 from pathlib import Path
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import APIRouter, HTTPException, Depends, status, Request
 from ...schemas.grid import GridSchema, BaseResponse
 from ...core.server import start_server_subprocess, get_server_status
 from ...core.config import settings
+from ...compos import grid_comp
 
 TEMPLATES_DIR = settings.TEMPLATES_DIR
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -76,3 +79,22 @@ def initialize_grid(data: GridSchema):
             success=False,
             message="Failed to start grid server"
         )
+
+class ActivateGridResponse(BaseModel):
+    """Standard response schema for grid operations"""
+    success: bool
+    message: str
+    json: dict
+
+@router.get('/activate-grid-info', response_model=ActivateGridResponse)
+def activate_grid_info():
+    with cc.compo.runtime.connect_crm(settings.TCP_ADDRESS):
+        levels, global_ids = grid_comp.get_active_grid_render_infos()
+        return ActivateGridResponse(
+            success=True,
+            message='Grid information retrieved successfully',
+            json={
+                'levels': levels,
+                'global_ids': global_ids
+            }
+        )       
