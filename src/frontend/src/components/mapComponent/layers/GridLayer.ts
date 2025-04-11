@@ -1204,10 +1204,11 @@ export default class GridLayer implements NHCustomLayerInterface {
     }
 
     private _calcPickingMatrix(e: MapMouseEvent) {
-
         const canvas = this._gl.canvas as HTMLCanvasElement
-        const offsetX = e.originalEvent.clientX
-        const offsetY = e.originalEvent.clientY
+        const rect = canvas.getBoundingClientRect()
+        
+        const offsetX = e.originalEvent.clientX - rect.left
+        const offsetY = e.originalEvent.clientY - rect.top
 
         const computedStyle = window.getComputedStyle(canvas)
         const canvasWidth = +computedStyle.width.split('px')[0]
@@ -1493,7 +1494,14 @@ export default class GridLayer implements NHCustomLayerInterface {
         attrSetter.id = 'attrSetter'
         attrSetter.classList.add("property-editor")
         attrSetter.innerHTML = html
-        document.body.appendChild(attrSetter)
+        
+        // Add attrSetter to control-panel-container
+        const controlPanelContainer = document.querySelector('#control-panel-container')
+        if (controlPanelContainer) {
+            controlPanelContainer.appendChild(attrSetter)
+        } else {
+            document.body.appendChild(attrSetter)
+        }
 
         //////// Set Handler
         const edgeDom = this.edgeDom = document.querySelector('#edges') as HTMLDivElement
@@ -1829,18 +1837,14 @@ function isMacOS(): boolean {
 
 // ADDON
 function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
-
-    console.log(canvas)
-
     const rect = canvas.getBoundingClientRect()
     const _pickingBox = [
-        startEvent.point.x - rect.left,
-        startEvent.point.y - rect.top,
-        endEvent.point.x - rect.left,
-        endEvent.point.y - rect.top
+        startEvent.originalEvent.clientX - rect.left,
+        startEvent.originalEvent.clientY - rect.top,
+        endEvent.originalEvent.clientX - rect.left,
+        endEvent.originalEvent.clientY - rect.top
     ]
     return _pickingBox as [number, number, number, number]
-
 }
 
 function clear(ctx: CanvasRenderingContext2D) {
