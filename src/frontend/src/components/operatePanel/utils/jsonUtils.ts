@@ -30,18 +30,22 @@ export const generateJSONData = (
   const firstRule = sortedRules[0];
   if (firstRule && firstRule.cols > 0 && firstRule.rows > 0) {
     subdivideRulesArray.push([firstRule.cols, firstRule.rows]);
-
-    for (let i = 1; i < sortedLayers.length; i++) {
-      if (i < sortedRules.length) {
-        const rule = sortedRules[i];
-        if (rule && rule.xRatio > 0 && rule.yRatio > 0) {
-          if (i === sortedLayers.length - 1) {
-            subdivideRulesArray.push([1, 1]);
-          } else {
-            subdivideRulesArray.push([
-              Math.round(rule.xRatio),
-              Math.round(rule.yRatio),
-            ]);
+    
+    if (sortedLayers.length === 1) {
+      subdivideRulesArray.push([1, 1]);
+    } else {
+      for (let i = 1; i < sortedLayers.length; i++) {
+        if (i < sortedRules.length) {
+          const rule = sortedRules[i];
+          if (rule && rule.xRatio > 0 && rule.yRatio > 0) {
+            if (i === sortedLayers.length - 1) {
+              subdivideRulesArray.push([1, 1]);
+            } else {
+              subdivideRulesArray.push([
+                Math.round(rule.xRatio),
+                Math.round(rule.yRatio),
+              ]);
+            }
           }
         }
       }

@@ -420,18 +420,19 @@ div#clear {
     }
 }
 
-/* Mapbox GL Draw 控制按钮定位 */
-/* .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
-    position: relative;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
-} */
-
 /* 调整Mapbox控制按钮容器位置 */
 .mapboxgl-ctrl-top-right {
     position: absolute;
     left: 10px !important;
     top: 94vh !important;
     right: auto !important;
+}
+
+/* dat.GUI样式自定义 */
+.dg.ac {
+    position: fixed !important;
+    top: 80px !important;
+    right: 20px !important;
+    left: auto !important;
+    z-index: 1000 !important;
 }

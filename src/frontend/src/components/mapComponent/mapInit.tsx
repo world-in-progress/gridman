@@ -253,7 +253,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       <div id="map-container" className="w-full h-full"></div>
       <div
         id="control-panel-container"
-        className="absolute top-4 left-4 z-10 flex flex-row items-start"
+        className="absolute top-10 left-4 z-10 flex flex-row items-start"
       ></div>
     </div>
   );
