@@ -8,11 +8,11 @@ const GridLevel: React.FC<GridLevelProps> = ({
   onAddLayer,
   onUpdateWidth,
   onUpdateHeight,
-  onRemoveLayer
+  onRemoveLayer,
 }) => {
   // Sort layers by id
   const sortedLayers = [...layers].sort((a, b) => a.id - b.id);
-  
+
   return (
     <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
       <div className="flex justify-between items-center mb-2">
@@ -24,7 +24,7 @@ const GridLevel: React.FC<GridLevelProps> = ({
           <span className="text-lg">+</span> Add Grid Level
         </button>
       </div>
-      
+
       {sortedLayers.length > 0 ? (
         <div className="space-y-3">
           {sortedLayers.map((layer, index) => (
@@ -44,14 +44,23 @@ const GridLevel: React.FC<GridLevelProps> = ({
           No layers added yet. Click the button above to add a layer.
         </div>
       )}
-      
+
       {sortedLayers.length > 0 && (
         <div className="mt-2 p-2 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200">
           <p>Grid levels should follow these rules:</p>
           <ul className="list-disc pl-4 mt-1">
-            <li>Each level should have smaller cell dimensions than the previous level</li>
-            <li>Previous level's width/height must be a multiple of the current level's width/height</li>
-            <li>First level defines the base grid cell size, and higher levels define increasingly finer grids</li>
+            <li>
+              Each level should have smaller cell dimensions than the previous
+              level
+            </li>
+            <li>
+              Previous level's width/height must be a multiple of the current
+              level's width/height
+            </li>
+            <li>
+              First level defines the base grid cell size, and higher levels
+              define increasingly finer grids
+            </li>
           </ul>
         </div>
       )}
@@ -59,4 +68,4 @@ const GridLevel: React.FC<GridLevelProps> = ({
   );
 };
 
-export default GridLevel; 
+export default GridLevel;

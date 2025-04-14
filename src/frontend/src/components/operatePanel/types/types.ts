@@ -24,8 +24,9 @@ export interface SubdivideRule {
 }
 
 export interface OperatePanelProps {
-  onDrawRectangle?: () => void;
+  onDrawRectangle?: (isCurrentlyDrawing: boolean) => void;
   rectangleCoordinates?: RectangleCoordinates | null;
+  isDrawing?: boolean;
 }
 
 export interface DrawButtonProps {

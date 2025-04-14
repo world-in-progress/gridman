@@ -5,8 +5,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { RectangleCoordinates } from '../operatePanel/operatePanel';
-import GridLayer from './layers/GridLayer';
-import NHLayerGroup from './NHLayerGroup';
 
 // Import rectangle drawing mode
 // @ts-ignore
@@ -29,7 +27,7 @@ interface MapInitProps {
 }
 
 interface MapInitHandle {
-  startDrawRectangle: () => void;
+  startDrawRectangle: (cancel?: boolean) => void;
 }
 
 const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
@@ -97,7 +95,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         center: [initialLongitude, initialLatitude],
         zoom: initialZoom,
         maxZoom: maxZoom,
-        attributionControl: false
+        attributionControl: false,
       });
 
       // Store map instance as a globally accessible variable
@@ -123,23 +121,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
               'circle-color': '#fff',
               'circle-stroke-width': 2,
               'circle-stroke-color': '#FFFFFF',
-            },
-          },
-          {
-            id: 'gl-draw-line',
-            type: 'line',
-            filter: [
-              'all',
-              ['==', '$type', 'LineString'],
-              ['!=', 'mode', 'static'],
-            ],
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round',
-            },
-            paint: {
-              'line-color': '#FFFFFF',
-              'line-width': 3,
             },
           },
           {
@@ -185,24 +166,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
               'fill-color': '#FFFF00',
               'fill-outline-color': '#FFFF00',
               'fill-opacity': 0.1,
-            },
-          },
-          {
-            id: 'gl-draw-polygon-stroke-static',
-            type: 'line',
-            filter: [
-              'all',
-              ['==', '$type', 'Polygon'],
-              ['==', 'mode', 'static'],
-            ],
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round',
-            },
-            paint: {
-              'line-color': '#FFFF00',
-              'line-dasharray': [2, 2],
-              'line-width': 2,
             },
           },
         ],
@@ -259,7 +222,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
   });
 
   // Method to start drawing rectangle
-  const startDrawRectangle = () => {
+  const startDrawRectangle = (cancel?: boolean) => {
     if (!draw) return;
 
     if (hasDrawnRectangle) {
@@ -273,12 +236,11 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       }
     }
 
-    // Switch to rectangle drawing mode
-    if (!isDrawMode) {
-      draw.changeMode('draw_rectangle');
-    } else {
-      // If already in drawing mode, cancel drawing
+    if (cancel === true || isDrawMode) {
       draw.changeMode('simple_select');
+      setIsDrawMode(false);
+    } else {
+      draw.changeMode('draw_rectangle');
     }
   };
 
