@@ -48,8 +48,8 @@ export type { RectangleCoordinates } from './types/types';
 export default function OperatePanel({
   onDrawRectangle,
   rectangleCoordinates,
+  isDrawing = false,
 }: OperatePanelProps) {
-  const [isDrawing, setIsDrawing] = useState(false);
   const [targetEPSG, setTargetEPSG] = useState('4326');
   const [convertedCoordinates, setConvertedCoordinates] =
     useState<RectangleCoordinates | null>(null);
@@ -65,9 +65,8 @@ export default function OperatePanel({
   const [layerErrors, setLayerErrors] = useState<{ [key: number]: string }>({});
 
   const handleDrawRectangle = useCallback(() => {
-    setIsDrawing(!isDrawing);
     if (onDrawRectangle) {
-      onDrawRectangle();
+      onDrawRectangle(isDrawing);
     }
   }, [isDrawing, onDrawRectangle]);
 
@@ -297,23 +296,6 @@ export default function OperatePanel({
           `Error: ${error instanceof Error ? error.message : String(error)}`
         );
       }
-
-      const map = window.mapInstance;
-      if (map) {
-        const gridConfig = {
-          epsg: jsonData.epsg,
-          boundaryCondition: jsonData.bounds as [
-            number,
-            number,
-            number,
-            number
-          ],
-          firstLevelSize: jsonData.first_size as [number, number],
-          subdivideRules: jsonData.subdivide_rules as [number, number][],
-        };
-
-        createGridLayer(map, gridConfig);
-      }
     } else {
       setGeneralError('Unable to generate JSON data');
     }
@@ -449,6 +431,7 @@ export default function OperatePanel({
         {rectangleCoordinates && (
           <CoordinateBox
             title="Rectangle Coordinates (EPSG:4326)"
+            // drawRectangle={true}
             coordinates={rectangleCoordinates}
             formatCoordinate={formatCoordinate}
           />
@@ -466,7 +449,7 @@ export default function OperatePanel({
         )}
 
         {/* Converted rectangle coordinate box */}
-        {convertedCoordinates && targetEPSG !== '4326' && (
+        {convertedCoordinates && targetEPSG !== '4326' && rectangleCoordinates && (
           <CoordinateBox
             title={`Converted Coordinates (EPSG:${targetEPSG})`}
             coordinates={convertedCoordinates}
@@ -475,7 +458,7 @@ export default function OperatePanel({
         )}
 
         {/* Expanded rectangle WGS84 coordinate box */}
-        {expandedCoordinates && targetEPSG !== '4326' && (
+        {expandedCoordinates && targetEPSG !== '4326' && rectangleCoordinates && (
           <CoordinateBox
             title="Expanded Coordinates (EPSG:4326)"
             coordinates={expandedCoordinates}
@@ -484,7 +467,7 @@ export default function OperatePanel({
         )}
 
         {/* Grid level section */}
-        {rectangleCoordinates && (
+        {rectangleCoordinates && convertedCoordinates && (
           <GridLevel
             layers={layers}
             layerErrors={layerErrors}

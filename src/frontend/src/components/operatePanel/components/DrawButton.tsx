@@ -1,25 +1,30 @@
 import React from 'react';
 import { DrawButtonProps } from '../types/types';
 
-const DrawButton: React.FC<DrawButtonProps> = ({ isDrawing, rectangleCoordinates, onClick }) => {
+const DrawButton: React.FC<DrawButtonProps> = ({
+  isDrawing,
+  rectangleCoordinates,
+  onClick,
+}) => {
   return (
     <>
       <button
         className={`w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer ${
-          isDrawing 
-            ? 'bg-blue-600 text-white' 
-            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+          isDrawing
+            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+            : rectangleCoordinates
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-green-500 text-white hover:bg-green-600'
         }`}
         onClick={onClick}
       >
-        {isDrawing 
-          ? 'Click to cancel drawing' 
-          : rectangleCoordinates 
-            ? 'Delete rectangle and redraw' 
-            : 'Click to draw rectangle'
-        }
+        {isDrawing
+          ? 'Click to cancel rectangle drawing'
+          : rectangleCoordinates
+          ? 'Delete rectangle and redraw'
+          : 'Click to draw rectangle'}
       </button>
-      
+
       {isDrawing && (
         <div className="mt-2 p-3 bg-yellow-50 rounded-md border border-yellow-200 text-sm text-yellow-800">
           <p>Drawing method:</p>
@@ -34,4 +39,4 @@ const DrawButton: React.FC<DrawButtonProps> = ({ isDrawing, rectangleCoordinates
   );
 };
 
-export default DrawButton; 
+export default DrawButton;

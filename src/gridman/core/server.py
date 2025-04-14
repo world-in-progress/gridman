@@ -32,7 +32,7 @@ def start_server_subprocess():
     
     server_process = subprocess.Popen(
         [
-            'python', settings.CRM_LAUNCHER_FILE,
+            sys.executable, settings.CRM_LAUNCHER_FILE,
             '--temp', settings.GRID_TEMP,
             '--schema_path', settings.SCHEMA_FILE,
             '--tcp_address', settings.TCP_ADDRESS,

@@ -84,7 +84,7 @@ class ActivateGridResponse(BaseModel):
     """Standard response schema for grid operations"""
     success: bool
     message: str
-    json: dict
+    infos: dict
 
 @router.get('/activate-grid-info', response_model=ActivateGridResponse)
 def activate_grid_info():
@@ -93,7 +93,7 @@ def activate_grid_info():
         return ActivateGridResponse(
             success=True,
             message='Grid information retrieved successfully',
-            json={
+            infos={
                 'levels': levels,
                 'global_ids': global_ids
             }
