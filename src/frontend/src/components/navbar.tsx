@@ -15,25 +15,44 @@ import {
 import beststar from '../assets/beststar.jpg';
 import opengms from '../assets/opengms.png';
 import gridman from '../assets/gridman.png';
+import { useContext } from 'react';
+import { SidebarContext, LanguageContext } from '../App';
 
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
+  onNavItemClick?: (item: string) => void;
 }
 
-export function Navbar({ children, className, ...props }: NavbarProps) {
-  const [language, setLanguage] = React.useState<'zh' | 'en'>('en');
+export function Navbar({ children, className, onNavItemClick, ...props }: NavbarProps) {
+  // 使用全局语言上下文
+  const { language, setLanguage } = useContext(LanguageContext);
+  // 获取当前激活的侧边栏类型
+  const { activeSidebar } = useContext(SidebarContext);
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'));
+    setLanguage(language === 'zh' ? 'en' : 'zh');
   };
 
   const navItems = [
     { href: '/', labelZh: '首页', labelEn: 'Home' },
-    { href: '/schemas', labelZh: '模式', labelEn: 'Schemas' },
-    { href: '/new', labelZh: '新建', labelEn: 'New' },
+    { href: '/schemas', labelZh: '模板', labelEn: 'Schema', type: 'schema' },
+    { href: '/new', labelZh: '新建', labelEn: 'New', type: 'operate' },
     { href: '/help', labelZh: '帮助', labelEn: 'Help' },
     { href: '/about', labelZh: '关于', labelEn: 'About' },
   ];
+
+  const handleNavItemClick = (e: React.MouseEvent<HTMLAnchorElement>, item: string) => {
+    if (onNavItemClick) {
+      e.preventDefault();
+      onNavItemClick(item);
+    }
+  };
+
+  // 判断导航项是否处于激活状态
+  const isActive = (type?: string) => {
+    if (!type) return false;
+    return type === activeSidebar;
+  };
 
   return (
     <nav
@@ -61,7 +80,11 @@ export function Navbar({ children, className, ...props }: NavbarProps) {
           <a
             key={index}
             href={item.href}
-            className="text-gray-300 hover:text-white transition-colors text-2xl font-bold"
+            className={cn(
+              "transition-colors text-3xl font-bold",
+              isActive(item.type) ? "text-[#71F6FF]" : "text-gray-300 hover:text-white"
+            )}
+            onClick={(e) => handleNavItemClick(e, language === 'zh' ? item.labelZh : item.labelEn)}
           >
             {language === 'zh' ? item.labelZh : item.labelEn}
           </a>

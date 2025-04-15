@@ -1,17 +1,24 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { DrawGridButtonProps } from '../types/types';
+import { LanguageContext } from '../../../App';
 
 const DrawGridButton: React.FC<DrawGridButtonProps> = ({ onClick }) => {
-  const handleClick = () => {
-    onClick();
-  };
+  const { language } = useContext(LanguageContext);
 
+  // 按钮文字翻译
+  const translations = {
+    button: {
+      en: 'Draw Grid',
+      zh: '绘制网格'
+    }
+  };
+  
   return (
     <button
       className="mt-2 w-full py-2 px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-      onClick={handleClick}
+      onClick={onClick}
     >
-      Draw Grid
+      {language === 'zh' ? translations.button.zh : translations.button.en}
     </button>
   );
 };

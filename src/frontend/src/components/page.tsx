@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
-import { AppSidebar } from '@/components/app-sidebar';
-import { AppSidebarDemo } from './sideBar/sideBarDemo';
+import { useRef, useState, useContext } from 'react';
+import { OperateSideBar } from './operatePanel/operateSideBar';
 import {
   SidebarInset,
   SidebarProvider,
@@ -10,6 +9,11 @@ import MapInit from './mapComponent/mapInit';
 import OperatePanel, {
   RectangleCoordinates,
 } from './operatePanel/operatePanel';
+import SchemaPanel from './schemaPanel/schemaPanel';
+import { SidebarContext } from '../App';
+
+// 侧边栏类型枚举
+export type SidebarType = 'operate' | 'schema' | null;
 
 export default function Page() {
   const mapRef = useRef<{ startDrawRectangle: (cancel?: boolean) => void }>(
@@ -18,6 +22,9 @@ export default function Page() {
   const [rectangleCoordinates, setRectangleCoordinates] =
     useState<RectangleCoordinates | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  
+  // 使用上下文中的侧边栏状态
+  const { activeSidebar } = useContext(SidebarContext);
 
   const handleDrawRectangle = (currentlyDrawing: boolean) => {
     if (mapRef.current) {
@@ -33,13 +40,17 @@ export default function Page() {
 
   return (
     <SidebarProvider className="h-full max-h-full">
-      <AppSidebarDemo 
-        className="max-h-full"
-        onDrawRectangle={handleDrawRectangle}
-        rectangleCoordinates={rectangleCoordinates}
-        isDrawing={isDrawing}
-      />
-
+      {activeSidebar === 'operate' && (
+        <OperateSideBar 
+          className="max-h-full"
+          onDrawRectangle={handleDrawRectangle}
+          rectangleCoordinates={rectangleCoordinates}
+          isDrawing={isDrawing}
+        />
+      )}
+      {activeSidebar === 'schema' && (
+        <SchemaPanel />
+      )}
       <SidebarInset className="max-h-full relative">
         <div className="absolute top-2 left-2 z-10">
           <SidebarTrigger />

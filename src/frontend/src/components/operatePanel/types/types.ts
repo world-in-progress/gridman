@@ -65,12 +65,14 @@ export interface GridLevelItemProps {
   onUpdateWidth: (id: number, width: string) => void;
   onUpdateHeight: (id: number, height: string) => void;
   onRemoveLayer: (id: number) => void;
+  language?: 'zh' | 'en';
 }
 
 export interface SubdivideRulesProps {
   subdivideRules: SubdivideRule[];
   layers: LayerSize[];
   formatNumber: (num: number) => string;
+  language?: 'zh' | 'en';
 }
 
 export interface GenerateJSONButtonProps {

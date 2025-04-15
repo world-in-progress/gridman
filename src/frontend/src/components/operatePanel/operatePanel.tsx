@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import {
   OperatePanelProps,
   RectangleCoordinates,
@@ -34,6 +34,7 @@ import GridLayer from '../mapComponent/layers/GridLayer';
 import NHLayerGroup from '../mapComponent/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
+import { LanguageContext } from '../../App';
 
 // Add mapInstance property to window object
 declare global {
@@ -50,6 +51,7 @@ export default function OperatePanel({
   rectangleCoordinates,
   isDrawing = false,
 }: OperatePanelProps) {
+  const { language } = useContext(LanguageContext);
   const [targetEPSG, setTargetEPSG] = useState('4326');
   const [convertedCoordinates, setConvertedCoordinates] =
     useState<RectangleCoordinates | null>(null);
@@ -63,6 +65,92 @@ export default function OperatePanel({
   const [nextLayerId, setNextLayerId] = useState(1);
   const [subdivideRules, setSubdivideRules] = useState<SubdivideRule[]>([]);
   const [layerErrors, setLayerErrors] = useState<{ [key: number]: string }>({});
+
+  // 翻译对象
+  const translations = {
+    pageTitle: {
+      en: 'Grid Operation Panel',
+      zh: '网格操作面板'
+    },
+    drawButton: {
+      start: {
+        en: 'Draw Rectangle',
+        zh: '绘制矩形'
+      },
+      cancel: {
+        en: 'Cancel Drawing',
+        zh: '取消绘制'
+      }
+    },
+    coordinates: {
+      wgs84: {
+        en: 'Rectangle Coordinates (EPSG:4326)',
+        zh: '矩形坐标 (EPSG:4326)'
+      },
+      converted: {
+        en: `Converted Coordinates (EPSG:${targetEPSG})`,
+        zh: `转换后的坐标 (EPSG:${targetEPSG})`
+      },
+      expanded: {
+        en: 'Expanded Coordinates (EPSG:4326)',
+        zh: '扩展后的坐标 (EPSG:4326)'
+      }
+    },
+    epsg: {
+      error: {
+        notFound: {
+          en: `Cannot find definition for EPSG:${targetEPSG}, please ensure the EPSG code is correct`,
+          zh: `找不到EPSG:${targetEPSG}的定义，请确保EPSG代码正确`
+        }
+      }
+    },
+    gridLevel: {
+      addLevel: {
+        en: 'Add Level',
+        zh: '添加层级'
+      }
+    },
+    error: {
+      addLayer: {
+        en: 'Please add at least one layer',
+        zh: '请至少添加一个层级'
+      },
+      firstLayer: {
+        en: 'The width and height of the first layer must be greater than 0',
+        zh: '第一层的宽度和高度必须大于0'
+      },
+      jsonData: {
+        en: 'Unable to generate JSON data',
+        zh: '无法生成JSON数据'
+      },
+      sendJson: {
+        en: 'Failed to send JSON data to init endpoint',
+        zh: '无法将JSON数据发送到初始化端点'
+      },
+      mapInstance: {
+        en: 'Unable to get map instance',
+        zh: '无法获取地图实例'
+      },
+      gridData: {
+        en: 'Unable to generate grid data',
+        zh: '无法生成网格数据'
+      },
+      gridLevel: {
+        en: 'Please add at least one grid level',
+        zh: '请至少添加一个网格层级'
+      }
+    },
+    buttons: {
+      generateJson: {
+        en: 'Generate JSON',
+        zh: '生成JSON'
+      },
+      drawGrid: {
+        en: 'Draw Grid',
+        zh: '绘制网格'
+      }
+    }
+  };
 
   const handleDrawRectangle = useCallback(() => {
     if (onDrawRectangle) {
@@ -92,7 +180,9 @@ export default function OperatePanel({
 
       if (!def && targetEPSG !== '4326') {
         setEpsgError(
-          `Cannot find definition for EPSG:${targetEPSG}, please ensure the EPSG code is correct`
+          language === 'zh' 
+            ? translations.epsg.error.notFound.zh 
+            : translations.epsg.error.notFound.en
         );
         setConvertedCoordinates(null);
         return;
@@ -201,12 +291,12 @@ export default function OperatePanel({
       setConvertedCoordinates(null);
       setExpandedCoordinates(null);
     }
-  }, [rectangleCoordinates, targetEPSG, isConverting]);
+  }, [rectangleCoordinates, targetEPSG, isConverting, language]);
 
   useEffect(() => {
-    const newErrors = validateLayerHierarchy(layers);
+    const newErrors = validateLayerHierarchy(layers, language);
     setLayerErrors(newErrors);
-  }, [layers]);
+  }, [layers, language]);
 
   useEffect(() => {
     if (!convertedCoordinates && !rectangleCoordinates) return;
@@ -253,7 +343,11 @@ export default function OperatePanel({
 
   const handleGenerateJSON = useCallback(async () => {
     if (layers.length === 0) {
-      setGeneralError('Please add at least one layer');
+      setGeneralError(
+        language === 'zh' 
+          ? translations.error.addLayer.zh 
+          : translations.error.addLayer.en
+      );
       return;
     }
 
@@ -264,7 +358,9 @@ export default function OperatePanel({
 
     if (firstLayerWidth === 0 || firstLayerHeight === 0) {
       setGeneralError(
-        'The width and height of the first layer must be greater than 0'
+        language === 'zh' 
+          ? translations.error.firstLayer.zh 
+          : translations.error.firstLayer.en
       );
       return;
     }
@@ -285,7 +381,11 @@ export default function OperatePanel({
         console.log('Response from sendJSONToInit:', response);
 
         if (!response) {
-          setGeneralError('Failed to send JSON data to init endpoint');
+          setGeneralError(
+            language === 'zh' 
+              ? translations.error.sendJson.zh 
+              : translations.error.sendJson.en
+          );
         } else {
           setGeneralError(null);
           console.log('Successfully initialized grid with response:', response);
@@ -297,7 +397,11 @@ export default function OperatePanel({
         );
       }
     } else {
-      setGeneralError('Unable to generate JSON data');
+      setGeneralError(
+        language === 'zh' 
+          ? translations.error.jsonData.zh 
+          : translations.error.jsonData.en
+      );
     }
   }, [
     targetEPSG,
@@ -305,6 +409,7 @@ export default function OperatePanel({
     subdivideRules,
     rectangleCoordinates,
     convertedCoordinates,
+    language
   ]);
 
   const createGridLayer = (
@@ -346,7 +451,11 @@ export default function OperatePanel({
 
   const handleDrawGrid = useCallback(() => {
     if (layers.length === 0) {
-      setGeneralError('Please add at least one grid level');
+      setGeneralError(
+        language === 'zh' 
+          ? translations.error.gridLevel.zh 
+          : translations.error.gridLevel.en
+      );
       return;
     }
 
@@ -357,7 +466,9 @@ export default function OperatePanel({
 
     if (firstLayerWidth === 0 || firstLayerHeight === 0) {
       setGeneralError(
-        'The width and height of the first layer must be greater than 0'
+        language === 'zh' 
+          ? translations.error.firstLayer.zh 
+          : translations.error.firstLayer.en
       );
       return;
     }
@@ -401,10 +512,18 @@ export default function OperatePanel({
           console.log('Failed to remove rectangle:', error);
         }
       } else {
-        setGeneralError('Unable to get map instance');
+        setGeneralError(
+          language === 'zh' 
+            ? translations.error.mapInstance.zh 
+            : translations.error.mapInstance.en
+        );
       }
     } else {
-      setGeneralError('Unable to generate grid data');
+      setGeneralError(
+        language === 'zh' 
+          ? translations.error.gridData.zh 
+          : translations.error.gridData.en
+      );
     }
   }, [
     targetEPSG,
@@ -412,14 +531,15 @@ export default function OperatePanel({
     subdivideRules,
     rectangleCoordinates,
     convertedCoordinates,
+    language
   ]);
 
   return (
     <div className="h-full w-full bg-gray-100 p-4 overflow-y-auto">
       <h1 className="text-4xl font-semibold mb-4 text-center">
-        Grid Operation Panel
+        {language === 'zh' ? translations.pageTitle.zh : translations.pageTitle.en}
       </h1>
-      <div className="space-y-4">
+      <div className="space-y-1">
         {/* Draw button */}
         <DrawButton
           isDrawing={isDrawing}
@@ -430,8 +550,7 @@ export default function OperatePanel({
         {/* Rectangle WGS84 coordinate box */}
         {rectangleCoordinates && (
           <CoordinateBox
-            title="Rectangle Coordinates (EPSG:4326)"
-            // drawRectangle={true}
+            title={language === 'zh' ? translations.coordinates.wgs84.zh : translations.coordinates.wgs84.en}
             coordinates={rectangleCoordinates}
             formatCoordinate={formatCoordinate}
           />
@@ -451,7 +570,7 @@ export default function OperatePanel({
         {/* Converted rectangle coordinate box */}
         {convertedCoordinates && targetEPSG !== '4326' && rectangleCoordinates && (
           <CoordinateBox
-            title={`Converted Coordinates (EPSG:${targetEPSG})`}
+            title={language === 'zh' ? translations.coordinates.converted.zh : translations.coordinates.converted.en}
             coordinates={convertedCoordinates}
             formatCoordinate={formatCoordinate}
           />
@@ -460,7 +579,7 @@ export default function OperatePanel({
         {/* Expanded rectangle WGS84 coordinate box */}
         {expandedCoordinates && targetEPSG !== '4326' && rectangleCoordinates && (
           <CoordinateBox
-            title="Expanded Coordinates (EPSG:4326)"
+            title={language === 'zh' ? translations.coordinates.expanded.zh : translations.coordinates.expanded.en}
             coordinates={expandedCoordinates}
             formatCoordinate={formatCoordinate}
           />
@@ -484,6 +603,7 @@ export default function OperatePanel({
             subdivideRules={subdivideRules}
             layers={layers}
             formatNumber={formatNumber}
+            language={language}
           />
         )}
 
