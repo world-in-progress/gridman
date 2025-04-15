@@ -1,7 +1,35 @@
 import { LayerSize, SubdivideRule, RectangleCoordinates } from '../types/types';
 
+// 错误信息的中英文翻译
+const errorTranslations = {
+  widthSmaller: {
+    en: (prevWidth: number) => `Width must be smaller than previous level's width (${prevWidth})`,
+    zh: (prevWidth: number) => `宽度必须小于前一层级的宽度 (${prevWidth})`
+  },
+  widthMultiple: {
+    en: (prevWidth: number, currentWidth: number) => 
+      `Previous level's width (${prevWidth}) must be a multiple of current width (${currentWidth})`,
+    zh: (prevWidth: number, currentWidth: number) => 
+      `前一层级的宽度 (${prevWidth}) 必须是当前宽度 (${currentWidth}) 的倍数`
+  },
+  heightSmaller: {
+    en: (prevHeight: number) => `Height must be smaller than previous level's height (${prevHeight})`,
+    zh: (prevHeight: number) => `高度必须小于前一层级的高度 (${prevHeight})`
+  },
+  heightMultiple: {
+    en: (prevHeight: number, currentHeight: number) => 
+      `Previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`,
+    zh: (prevHeight: number, currentHeight: number) => 
+      `前一层级的高度 (${prevHeight}) 必须是当前高度 (${currentHeight}) 的倍数`
+  },
+  and: {
+    en: ` and `,
+    zh: ` 且 `
+  }
+};
+
 // Validate grid level size relationships
-export const validateLayerHierarchy = (layers: LayerSize[]) => {
+export const validateLayerHierarchy = (layers: LayerSize[], language: 'en' | 'zh' = 'en') => {
   if (layers.length <= 1) {
     return {};
   }
@@ -27,22 +55,40 @@ export const validateLayerHierarchy = (layers: LayerSize[]) => {
     
     // Check if current layer's dimensions are smaller than previous layer
     if (currentWidth >= prevWidth) {
-      errors[currentLayer.id] = `Width must be smaller than previous level's width (${prevWidth})`;
+      errors[currentLayer.id] = language === 'zh' 
+        ? errorTranslations.widthSmaller.zh(prevWidth) 
+        : errorTranslations.widthSmaller.en(prevWidth);
     } else if (prevWidth % currentWidth !== 0) {
-      errors[currentLayer.id] = `Previous level's width (${prevWidth}) must be a multiple of current width (${currentWidth})`;
+      errors[currentLayer.id] = language === 'zh'
+        ? errorTranslations.widthMultiple.zh(prevWidth, currentWidth)
+        : errorTranslations.widthMultiple.en(prevWidth, currentWidth);
     }
     
     if (currentHeight >= prevHeight) {
       if (errors[currentLayer.id]) {
-        errors[currentLayer.id] += ` and height must be smaller than previous level's height (${prevHeight})`;
+        errors[currentLayer.id] += language === 'zh' 
+          ? errorTranslations.and.zh 
+          : errorTranslations.and.en;
+        errors[currentLayer.id] += language === 'zh'
+          ? errorTranslations.heightSmaller.zh(prevHeight)
+          : errorTranslations.heightSmaller.en(prevHeight);
       } else {
-        errors[currentLayer.id] = `Height must be smaller than previous level's height (${prevHeight})`;
+        errors[currentLayer.id] = language === 'zh' 
+          ? errorTranslations.heightSmaller.zh(prevHeight)
+          : errorTranslations.heightSmaller.en(prevHeight);
       }
     } else if (prevHeight % currentHeight !== 0) {
       if (errors[currentLayer.id]) {
-        errors[currentLayer.id] += ` and previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`;
+        errors[currentLayer.id] += language === 'zh' 
+          ? errorTranslations.and.zh 
+          : errorTranslations.and.en;
+        errors[currentLayer.id] += language === 'zh'
+          ? errorTranslations.heightMultiple.zh(prevHeight, currentHeight)
+          : errorTranslations.heightMultiple.en(prevHeight, currentHeight);
       } else {
-        errors[currentLayer.id] = `Previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`;
+        errors[currentLayer.id] = language === 'zh'
+          ? errorTranslations.heightMultiple.zh(prevHeight, currentHeight)
+          : errorTranslations.heightMultiple.en(prevHeight, currentHeight);
       }
     }
   }

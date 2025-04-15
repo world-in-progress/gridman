@@ -1,8 +1,8 @@
 /* Attribute */
 div.property-editor {
     position: absolute;
-    left: 25px;
-    top: 220px;
+    left: 27px;
+    top: 225px;
     width: 150px;
     height: 150px;
     background-color: transparent;
@@ -432,7 +432,7 @@ div#clear {
 .dg.ac {
     position: fixed !important;
     top: 80px !important;
-    right: 20px !important;
+    right: 150px !important;
     left: auto !important;
     z-index: 1000 !important;
 }

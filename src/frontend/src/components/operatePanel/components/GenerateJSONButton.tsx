@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { GenerateJSONButtonProps } from '../types/types';
+import { LanguageContext } from '../../../App';
 
 const GenerateJSONButton: React.FC<GenerateJSONButtonProps> = ({ onClick }) => {
+  const { language } = useContext(LanguageContext);
+
+  // 按钮文字翻译
+  const translations = {
+    button: {
+      en: 'Generate JSON',
+      zh: '生成JSON'
+    }
+  };
+
   return (
     <button
-      className="mt-4 w-full py-2 px-4 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors cursor-pointer"
+      className="mt-2 w-full py-2 px-4 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors cursor-pointer"
       onClick={onClick}
     >
-      Generate JSON
+      {language === 'zh' ? translations.button.zh : translations.button.en}
     </button>
   );
 };
