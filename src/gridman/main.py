@@ -1,16 +1,18 @@
 from pathlib import Path
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
 from .core.config import settings
-from .core.server import start_server_subprocess, shutdown_server_subprocess, init_working_directory
 from .api.router import api_router
+from .schemas.base import BaseResponse
+from .core.server import get_server_status
+from .core.server import shutdown_server_subprocess, init_working_directory
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_working_directory()
-    start_server_subprocess()
     yield
     shutdown_server_subprocess()
 
@@ -46,7 +48,7 @@ def create_app() -> FastAPI:
                     )
                 except Exception as e:
                     print(f'Skipping {mount_point} due to error: {e}')
-    
+
     # Add API routers
     app.include_router(api_router)
     
@@ -57,6 +59,17 @@ def create_app() -> FastAPI:
     return app
 
 app = create_app()
+
+# Add API routers
+@app.get('/status', response_model=BaseResponse)
+def get_status():
+    """Check the status of the grid server"""
+    status = get_server_status()
+    return BaseResponse(
+        success=True,
+        message=f'Server is {status}',
+        data={'status': status}
+    )
 
 if __name__ == "__main__":
     import uvicorn

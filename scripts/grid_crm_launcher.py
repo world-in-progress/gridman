@@ -1,41 +1,69 @@
+import math
 import json
 import argparse
 import c_two as cc
+from pathlib import Path
 
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from crms.grid import Grid
 
+if sys.platform == 'win32':
+    try:
+        from ctypes import windll
+        kernel32 = windll.kernel32
+        kernel32.SetConsoleCtrlHandler(None, False)
+    except:
+        pass
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="CRM Launcher")
-    parser.add_argument('--temp', type=str, default=False, help="Use temporary memory for grid")
-    parser.add_argument('--schema_path', type=str, required=True, help="Path to the schema file")
-    parser.add_argument('--tcp_address', type=str, required=True, help="TCP address for the server")
-    parser.add_argument('--grid_file_path', type=str, required=True, help="Path to the grid file")
+    parser = argparse.ArgumentParser(description='CRM Launcher')
+    parser.add_argument('--temp', type=str, default='False', help='Use temporary memory for grid')
+    parser.add_argument('--meta_path', type=str, required=True,  help='Path to the project meta info file')
+    parser.add_argument('--schema_path', type=str, required=True, help='Path to the schema file')
+    parser.add_argument('--tcp_address', type=str, required=True, help='TCP address for the server')
+    parser.add_argument('--project_path', type=str, required=True, help='Path to the project directory')
     args = parser.parse_args()
 
-    # Grid parameters
+    # Get info from schema file
     schema = json.load(open(args.schema_path, 'r'))
-    epsg = schema['epsg']
-    first_size = schema['first_size']
-    bounds = schema['bounds']
-    subdivide_rules = schema['subdivide_rules']
-    ipc_address = 'ipc:///tmp/zmq_test'
+    epsg: int = schema['epsg']
+    grid_info: list[list[float]] = schema['grid_info']
+    first_size: list[float] = grid_info[0]
+    
+    # Get info from project meta file
+    meta_path = Path(args.project_path, args.meta_path)
+    meta = json.load(open(meta_path, 'r'))
+    bounds: list[float] = meta['bounds']
+    
+    # Calculate subdivide rules
+    subdivide_rules: list[list[int]] = [
+        [
+            int(math.ceil((bounds[2] - bounds[0]) / first_size[0])),
+            int(math.ceil((bounds[3] - bounds[1]) / first_size[1])),
+        ]
+    ]
+    for i in range(len(grid_info) - 1):
+        level_a = grid_info[i]
+        level_b = grid_info[i + 1]
+        subdivide_rules.append(
+            [
+                int(level_a[0] / level_b[0]),
+                int(level_a[1] / level_b[1]),
+            ]
+        )
+    subdivide_rules.append([1, 1])
+    
+    # Set crm server address
+    ipc_address = 'ipc:///tmp/grid' # default address based on IPC, only can be used in Linux / MacOS
     tcp_address = args.tcp_address
-    temp = args.temp == 'True'
-    grid_file_path = None if temp else args.grid_file_path
     
     # Init CRM
-    crm = Grid(epsg, bounds, first_size, subdivide_rules, grid_file_path)
-
-    # if sys.platform == 'win32':
-    #     try:
-    #         from ctypes import windll
-    #         kernel32 = windll.kernel32
-    #         kernel32.SetConsoleCtrlHandler(None, False)
-    #     except:
-    #         pass
+    crm = Grid(
+        epsg, bounds, first_size, subdivide_rules, 
+        str(Path(args.project_path, 'grids.arrow'))
+    )
     
     # Run CRM server
     server = cc.message.Server(tcp_address, crm)
