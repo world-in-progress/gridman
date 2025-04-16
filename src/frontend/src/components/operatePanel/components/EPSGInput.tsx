@@ -30,7 +30,7 @@ const EPSGInput: React.FC<EPSGInputProps> = ({
   return (
     <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
       <div className="flex flex-col">
-        <label htmlFor="target-epsg" className="block font-semibold text-sm mb-2">
+        <label htmlFor="target-epsg" className="block font-semibold text-lg mb-2">
           {language === 'zh' ? translations.label.zh : translations.label.en}
         </label>
         <div className="flex gap-2">
