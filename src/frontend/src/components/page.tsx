@@ -67,7 +67,6 @@ export default function Page() {
     <SidebarProvider className="h-full max-h-full">
       {activeSidebar === 'operate' && (
         <OperateSideBar
-        <OperateSideBar
           className="max-h-full"
           onDrawRectangle={handleDrawRectangle}
           rectangleCoordinates={rectangleCoordinates}
@@ -81,60 +80,6 @@ export default function Page() {
         />
       }
       <SidebarInset className="max-h-full relative">
-        <header className="flex h-16 shrink-0 items-center  border-b px-4">
-          <SidebarTrigger className="-ml-1 mr-2" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex items-center gap-2 ml-2">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink>Schema</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Project</BreadcrumbPage>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Topology</BreadcrumbPage>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Attribute</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="fixed top-21 right-10 z-50">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer">
-                  <AvatarImage src={beststar} />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  {language === 'zh' ? '我的账户' : 'My Account'}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  {language === 'zh' ? '个人资料' : 'Profile'}
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  {language === 'zh' ? '设置' : 'Settings'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  {language === 'zh' ? '登录' : 'Login'}
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  {language === 'zh' ? '注册' : 'Register'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
         <header className="flex h-16 shrink-0 items-center  border-b px-4">
           <SidebarTrigger className="-ml-1 mr-2" />
           <Separator orientation="vertical" className="mr-2 h-4" />

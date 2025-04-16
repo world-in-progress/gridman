@@ -8,18 +8,9 @@ import {
   CircleHelp,
   UsersRound,
 } from 'lucide-react';
-import {
-  Search,
-  Home,
-  Clipboard,
-  FilePlus2,
-  CircleHelp,
-  UsersRound,
-} from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import opengms from '../assets/opengms.png';
-import grid from '../assets/grid.png';
 import grid from '../assets/grid.png';
 import { useContext } from 'react';
 import { SidebarContext, LanguageContext } from '../App';
@@ -29,12 +20,6 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   onNavItemClick?: (item: string) => void;
 }
 
-export function Navbar({
-  children,
-  className,
-  onNavItemClick,
-  ...props
-}: NavbarProps) {
 export function Navbar({
   children,
   className,
@@ -54,17 +39,8 @@ export function Navbar({
     { href: '/new', labelZh: '新建', labelEn: 'New', type: 'operate', icon: FilePlus2 },
     { href: '/help', labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
     { href: '/about', labelZh: '关于', labelEn: 'About', icon: UsersRound },
-    { href: '/', labelZh: '首页', labelEn: 'Home', icon: Home },
-    { href: '/schemas', labelZh: '模板', labelEn: 'Schema', type: 'schema', icon: Clipboard },
-    { href: '/new', labelZh: '新建', labelEn: 'New', type: 'operate', icon: FilePlus2 },
-    { href: '/help', labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
-    { href: '/about', labelZh: '关于', labelEn: 'About', icon: UsersRound },
   ];
 
-  const handleNavItemClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    item: string
-  ) => {
   const handleNavItemClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     item: string
@@ -84,14 +60,10 @@ export function Navbar({
     <nav
       className={cn(
         'flex items-center justify-between p-4 border-b-2 bg-black text-white h-20 z-50 relative',
-        'flex items-center justify-between p-4 border-b-2 bg-black text-white h-20 z-50 relative',
         className
       )}
       {...props}
     >
-      <div className="flex items-center justify-center gap-4 w-1/5">
-        <div className="flex items-center">
-          <img src={grid} className="h-12 w-12 mr-4" alt="Gridman" />
       <div className="flex items-center justify-center gap-4 w-1/5">
         <div className="flex items-center">
           <img src={grid} className="h-12 w-12 mr-4" alt="Gridman" />
@@ -111,12 +83,6 @@ export function Navbar({
                 ? 'text-[#71F6FF]'
                 : 'text-gray-300 hover:text-white'
             )}
-            onClick={(e) =>
-              handleNavItemClick(
-                e,
-                language === 'zh' ? item.labelZh : item.labelEn
-              )
-            }
             onClick={(e) =>
               handleNavItemClick(
                 e,
@@ -148,10 +114,6 @@ export function Navbar({
             htmlFor="language-switch"
             className="text-md font-bold text-gray-300"
           >
-          <Label
-            htmlFor="language-switch"
-            className="text-md font-bold text-gray-300"
-          >
             EN
           </Label>
           <Switch
@@ -160,11 +122,6 @@ export function Navbar({
             onCheckedChange={() => toggleLanguage()}
             className="bg-gray-700 data-[state=checked]:bg-blue-500"
           />
-          <Label
-            htmlFor="language-switch"
-            className="text-md font-bold text-gray-300"
-          >
-            中文
           <Label
             htmlFor="language-switch"
             className="text-md font-bold text-gray-300"
