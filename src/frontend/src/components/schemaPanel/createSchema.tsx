@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Blocks, FlaskConical, Minus, Plus } from 'lucide-react';
+import { Blocks, Minus, Plus } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/collapsible';
 import {
   Sidebar,
-  SidebarHeader,
   SidebarContent,
   SidebarGroup,
   SidebarMenu,
@@ -18,8 +17,6 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { SearchForm } from '../ui/search-form';
-import { SubNavPanel } from './subNavPanel';
 
 interface MenuItem {
   title: string;
@@ -34,38 +31,37 @@ interface NavItem {
   items?: MenuItem[];
 }
 
-const data = {
+const data: { navMain: NavItem[] } = {
   navMain: [
     {
-      title: "Test Schema",
-      url: "#",
+      title: 'Schema',
+      url: '#',
+      icon: Blocks,
       items: [
         {
-          title: "Show Details",
-          url: "#",
+          title: 'Installation',
+          url: '#',
+          isActive: true,
         },
         {
-          title: "Create From",
-          url: "#",
-        },
-        {
-          title: "Create Project",
-          url: "#",
+          title: 'Project Structure',
+          url: '#',
         },
       ],
     },
   ],
-}
+};
 
-export default function SchemaPanel({
+export default function CreateSchema({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
       <SidebarContent>
-        <h1 className="text-4xl font-semibold p-3 text-center">Schema List</h1>
-        <SearchForm className="flex flex-col gap-2" />
-        {/* <SidebarGroup>
+        <h1 className="text-4xl font-semibold p-4 mt-2 mb-2 text-center">
+          Create New Schema
+        </h1>
+        <SidebarGroup>
           <SidebarMenu>
             {data.navMain.map((item: NavItem, index) => (
               <Collapsible
@@ -102,14 +98,7 @@ export default function SchemaPanel({
               </Collapsible>
             ))}
           </SidebarMenu>
-        </SidebarGroup> */}
-        <SubNavPanel items={data.navMain} />
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-          <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 py-2 flex items-center gap-2 shadow-lg">
-            <span>Create New Schema</span>
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
