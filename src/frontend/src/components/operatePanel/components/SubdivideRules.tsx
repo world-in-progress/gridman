@@ -80,7 +80,7 @@ const SubdivideRules: React.FC<SubdivideRulesProps> = ({
 
   return (
     <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
-      <h3 className="font-semibold text-sm mb-2">{language === 'zh' ? translations.title.zh : translations.title.en}</h3>
+      <h3 className="font-semibold text-lg mb-2">{language === 'zh' ? translations.title.zh : translations.title.en}</h3>
       <div className="space-y-3">
         {sortedRules.length > 0 && isFirstLayerValid ? (
           sortedRules.map((rule, index) => {
