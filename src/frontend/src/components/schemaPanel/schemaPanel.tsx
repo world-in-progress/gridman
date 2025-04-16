@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './subNavPanel';
-
 interface MenuItem {
   title: string;
   url: string;
