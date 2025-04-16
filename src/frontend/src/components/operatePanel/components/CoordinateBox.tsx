@@ -26,7 +26,7 @@ const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, forma
   
   return (
     <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
-      <h3 className="font-semibold text-sm mb-2">{title}</h3>
+      <h3 className="font-semibold text-lg mb-2">{title}</h3>
       <div className="grid grid-cols-3 gap-1 text-xs">
         {/* 左上角 */}
         <div className="relative h-12 flex items-center justify-center">

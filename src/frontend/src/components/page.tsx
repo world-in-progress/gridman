@@ -10,6 +10,7 @@ import OperatePanel, {
   RectangleCoordinates,
 } from './operatePanel/operatePanel';
 import SchemaPanel from './schemaPanel/schemaPanel';
+import CreateSchema from './schemaPanel/createSchema';
 import { SidebarContext, LanguageContext } from '../App';
 import {
   Breadcrumb,
@@ -31,20 +32,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import beststar from '../assets/beststar.jpg';
 
-// 侧边栏类型枚举
 export type SidebarType = 'operate' | 'schema' | null;
 
 export default function Page() {
-  const mapRef = useRef<{ startDrawRectangle: (cancel?: boolean) => void }>(
+  const mapRef = useRef<{ startDrawRectangle: (cancel?: boolean) => void; startPointSelection: (cancel?: boolean) => void }>(
     null
   );
   const [rectangleCoordinates, setRectangleCoordinates] =
     useState<RectangleCoordinates | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showCreateSchema, setShowCreateSchema] = useState(true);
 
-  // 使用上下文中的侧边栏状态
   const { activeSidebar } = useContext(SidebarContext);
-  // 使用全局语言上下文
   const { language } = useContext(LanguageContext);
 
   const handleDrawRectangle = (currentlyDrawing: boolean) => {
@@ -59,6 +58,11 @@ export default function Page() {
     setIsDrawing(false);
   };
 
+  // 处理点选位置坐标
+  const handlePointSelected = (coordinates: [number, number]) => {
+    console.log('Point selected:', coordinates);
+  };
+
   return (
     <SidebarProvider className="h-full max-h-full">
       {activeSidebar === 'operate' && (
@@ -69,7 +73,12 @@ export default function Page() {
           isDrawing={isDrawing}
         />
       )}
-      {activeSidebar === 'schema' && <SchemaPanel />}
+      {activeSidebar === 'schema' && !showCreateSchema && <SchemaPanel onCreateNew={() => setShowCreateSchema(true)} />}
+      {activeSidebar === 'schema' && showCreateSchema && 
+        <CreateSchema 
+          onBack={() => setShowCreateSchema(false)} 
+        />
+      }
       <SidebarInset className="max-h-full relative">
         <header className="flex h-16 shrink-0 items-center  border-b px-4">
           <SidebarTrigger className="-ml-1 mr-2" />
@@ -126,7 +135,11 @@ export default function Page() {
           </div>
         </header>
         <div className="h-screen w-screen">
-          <MapInit ref={mapRef} onRectangleDrawn={handleRectangleDrawn} />
+          <MapInit 
+            ref={mapRef} 
+            onRectangleDrawn={handleRectangleDrawn} 
+            onPointSelected={handlePointSelected}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>
