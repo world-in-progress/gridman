@@ -60,7 +60,6 @@ export function Navbar({
     <nav
       className={cn(
         'flex items-center justify-between p-4 border-b-2 bg-black text-white h-20 z-50 relative',
-        'flex items-center justify-between p-4 border-b-2 bg-black text-white h-20 z-50 relative',
         className
       )}
       {...props}
@@ -73,13 +72,13 @@ export function Navbar({
           </a>
         </div>
       </div>
-      <div className="flex items-center gap-10 mx-6 flex-grow ml-1">
+      <div className="flex items-center gap-10 mx-6 flex-grow -ml-1">
         {navItems.map((item, index) => (
           <a
             key={index}
             href={item.href}
             className={cn(
-              'transition-colors text-2xl  flex items-center gap-2',
+              'transition-colors text-3xl font-bold flex items-center gap-2',
               isActive(item.type)
                 ? 'text-[#71F6FF]'
                 : 'text-gray-300 hover:text-white'
@@ -92,7 +91,7 @@ export function Navbar({
             }
           >
             {React.createElement(item.icon, { 
-              className: 'w-8 h-8',
+              className: 'w-10 h-10',
               strokeWidth: 2
             })}
             {language === 'zh' ? item.labelZh : item.labelEn}
@@ -137,7 +136,7 @@ export function Navbar({
           target="_blank"
           rel="noopener noreferrer"
         >
-          <img src={opengms} className="h-auto max-w-48" alt="OpenGMS" />
+          <img src={opengms} className="h-15 w-48" alt="OpenGMS" />
         </a>
       </div>
     </nav>

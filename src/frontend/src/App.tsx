@@ -1,6 +1,7 @@
 import './App.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Page, { SidebarType } from './components/page'
+// import Page from './components/sideBar/page'
 import { Navbar } from './components/navbar';
 import { useState, createContext } from 'react';
 
