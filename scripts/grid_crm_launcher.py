@@ -29,13 +29,13 @@ if __name__ == '__main__':
     # Init CRM
     crm = Grid(epsg, bounds, first_size, subdivide_rules, grid_file_path)
 
-    if sys.platform == 'win32':
-        try:
-            from ctypes import windll
-            kernel32 = windll.kernel32
-            kernel32.SetConsoleCtrlHandler(None, False)
-        except:
-            pass
+    # if sys.platform == 'win32':
+    #     try:
+    #         from ctypes import windll
+    #         kernel32 = windll.kernel32
+    #         kernel32.SetConsoleCtrlHandler(None, False)
+    #     except:
+    #         pass
     
     # Run CRM server
     server = cc.message.Server(tcp_address, crm)
