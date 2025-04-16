@@ -8,6 +8,7 @@ import {
 import {
   Sidebar,
   SidebarHeader,
+  SidebarHeader,
   SidebarContent,
   SidebarGroup,
   SidebarMenu,
@@ -18,6 +19,8 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { SearchForm } from '../ui/search-form';
+import { SubNavPanel } from './subNavPanel';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './subNavPanel';
 
@@ -35,20 +38,30 @@ interface NavItem {
 }
 
 const data = {
+const data = {
   navMain: [
     {
+      title: "Test Schema",
+      url: "#",
       title: "Test Schema",
       url: "#",
       items: [
         {
           title: "Show Details",
           url: "#",
+          title: "Show Details",
+          url: "#",
         },
+        {
+          title: "Create From",
+          url: "#",
         {
           title: "Create From",
           url: "#",
         },
         {
+          title: "Create Project",
+          url: "#",
           title: "Create Project",
           url: "#",
         },
