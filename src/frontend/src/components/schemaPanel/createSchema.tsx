@@ -15,8 +15,6 @@ import { LanguageContext } from '../../App';
 import mapboxgl from 'mapbox-gl';
 import GridLevel from '../operatePanel/components/GridLevel';
 import proj4 from 'proj4';
-import Actor from '../../core/message/actor';
-import { Callback } from '../../core/types';
 
 declare global {
   interface Window {
@@ -189,154 +187,10 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
 
     setFormErrors(errors);
 
-    // 获取转换后的坐标
-    if (!convertedCoord) {
-      setGeneralError(
-        language === 'zh'
-          ? '无法获取转换后的坐标'
-          : 'Unable to get converted coordinates'
-      );
-      return;
-    }
+    console.log({ name, epsg, lon, lat, gridLayers });
 
-    // 组织数据成需要的格式
-    const schemaData = {
-      name: name,
-      epsg: parseInt(epsg),
-      base_point: [
-        parseFloat(convertedCoord.x),
-        parseFloat(convertedCoord.y)
-      ],
-      grid_info: gridLayers.map(layer => [
-        parseInt(layer.width),
-        parseInt(layer.height)
-      ])
-    };
-
-    console.log('提交数据:', schemaData);
-
-    // 将JSON数据下载为本地文件
-    const downloadJsonFile = (data: any, filename: string) => {
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      
-      // 清理
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    };
-
-    // 先下载JSON文件
-    downloadJsonFile(schemaData, `${name}.json`);
-
-    // 使用worker调用createSchema函数
-    setGeneralError(
-      language === 'zh'
-        ? '正在提交数据...'
-        : 'Submitting data...'
-    );
-
-    try {
-      // 创建Worker
-      const worker = new Worker(new URL('../../core/worker/base.worker.ts', import.meta.url), { type: 'module' });
-      
-      // 创建Actor用于和Worker通信
-      const actor = new Actor(worker, {});
-      
-      // 发送任务到Worker
-      actor.send('createSchema', schemaData, ((error, result) => {
-        if (error) {
-          console.error('Worker错误:', error);
-          setGeneralError(
-            language === 'zh'
-              ? `提交失败: ${error.message}`
-              : `Submission failed: ${error.message}`
-          );
-          
-          // 即使出错，也清理地图标记
-          clearMapMarkers();
-
-          if (isSelectingPoint && window.mapInstance) {
-            if (window.mapInstance.getCanvas()) {
-              window.mapInstance.getCanvas().style.cursor = '';
-            }
-            setIsSelectingPoint(false);
-          }
-          
-          // 即使出错，延迟后也返回上一页
-          setTimeout(() => {
-            if (onBack) {
-              onBack();
-            }
-          }, 3000);
-        } else {
-          console.log('提交成功:', result);
-          setGeneralError(
-            language === 'zh'
-              ? '提交成功!'
-              : 'Submission successful!'
-          );
-          
-          // 成功后清理地图标记
-          clearMapMarkers();
-
-          if (isSelectingPoint && window.mapInstance) {
-            if (window.mapInstance.getCanvas()) {
-              window.mapInstance.getCanvas().style.cursor = '';
-            }
-            setIsSelectingPoint(false);
-          }
-          
-          // 成功后重定向到第一页（确保显示新创建的模板）
-          window.location.hash = '#/schemas?page=1';
-          
-          // 成功后延迟返回，这将触发页面重新渲染，地图也会刷新
-          setTimeout(() => {
-            if (onBack) {
-              onBack();
-            }
-          }, 1000);
-        }
-        
-        // 任务完成后终止worker
-        setTimeout(() => {
-          actor.remove();
-          worker.terminate();
-        }, 100);
-      }) as Callback<any>);
-    } catch (error) {
-      console.error('创建Worker出错:', error);
-      setGeneralError(
-        language === 'zh'
-          ? `创建Worker出错: ${error instanceof Error ? error.message : String(error)}`
-          : `Error creating worker: ${error instanceof Error ? error.message : String(error)}`
-      );
-      
-      // 即使出错，也清理地图标记
-      clearMapMarkers();
-
-      if (isSelectingPoint && window.mapInstance) {
-        if (window.mapInstance.getCanvas()) {
-          window.mapInstance.getCanvas().style.cursor = '';
-        }
-        setIsSelectingPoint(false);
-      }
-      
-      // 即使出错，也重定向到第一页并返回上一页
-      window.location.hash = '#/schemas?page=1';
-      setTimeout(() => {
-        if (onBack) {
-          onBack();
-        }
-      }, 3000);
+    if (onBack) {
+      onBack();
     }
   };
 
