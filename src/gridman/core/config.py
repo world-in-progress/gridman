@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     APP_NAME: str = 'Gridman'
     DEBUG: bool = True
     TCP_ADDRESS: str = 'tcp://localhost:5555'
-    GRID_TEMP: str = 'True'
-    GRID_FILE: str = 'resource/grid/grids.arrow'
+    GRID_TEMP: str = 'False'
+    GRID_FILE_NAME: str = 'grids.arrow'
     SCHEMA_FILE: str = 'resource/grid/schema.json'
     SCHEMA_DIR: str = 'resource/grid/schemas/'
     PROJECT_DIR: str = 'resource/grid/projects/'

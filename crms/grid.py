@@ -39,7 +39,7 @@ class Grid(IGrid):
     The Grid Resource.  
     Grid is a 2D grid system that can be subdivided into smaller grids by pre-declared subdivide rules.  
     """
-    def __init__(self, epsg: int, bounds: list, first_size: list[float], subdivide_rules: list[list[int]], grid_file_path: str = None):
+    def __init__(self, epsg: int, bounds: list, first_size: list[float], subdivide_rules: list[list[int]], grid_file_path: str = ''):
         """Method to initialize Grid
 
         Args:
@@ -49,12 +49,11 @@ class Grid(IGrid):
             subdivide_rules (list[list[int]]): list of subdivision rules per level
             grid_file_path (str, optional): path to .arrow file containing grid data. If provided, grid data will be loaded from this file
         """
-        self.direction = '<-'
         self.epsg: int = epsg
         self.bounds: list = bounds
         self.first_size: list[float] = first_size
         self.subdivide_rules: list[list[int]] = subdivide_rules
-        self.grid_file_path = grid_file_path
+        self.grid_file_path = grid_file_path if grid_file_path != '' else None
         
         # Initialize grid DataFrame
         self.grids = pd.DataFrame(columns=[
