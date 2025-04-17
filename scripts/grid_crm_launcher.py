@@ -1,11 +1,12 @@
+import os
+import sys
 import math
 import json
 import argparse
 import c_two as cc
 from pathlib import Path
 
-import os
-import sys
+# Import Grid (CRM)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from crms.grid import Grid
 
@@ -18,7 +19,7 @@ if sys.platform == 'win32':
         pass
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='CRM Launcher')
+    parser = argparse.ArgumentParser(description='Grid Launcher')
     parser.add_argument('--temp', type=str, default='False', help='Use temporary memory for grid')
     parser.add_argument('--meta_path', type=str, required=True,  help='Path to the project meta info file')
     parser.add_argument('--schema_path', type=str, required=True, help='Path to the schema file')

@@ -6,6 +6,8 @@ from ..core.config import settings
 class ProjectMeta(BaseModel):
     """Information about the project"""
     name: str
+    starred: bool # whether the project is starred
+    description: str # description of the project
     schema_name: str # name of grid schema the project is based on
     bounds: tuple[float, float, float, float] # [min_lon, min_lat, max_lon, max_lat] 
     
@@ -52,3 +54,22 @@ class ResponseWithProjectMetas(BaseModel):
         if not all(isinstance(info, ProjectMeta) for info in v):
             raise ValueError('project_metas must be a list of ProjectMeta instances')
         return v
+
+class ProjectStatus(BaseModel):
+    """Status of the project"""
+    status: str # 'ACTIVATED', 'DEACTIVATED'
+    is_ready: bool # True if the project is ready to be used
+
+    @field_validator('status')
+    def validate_status(cls, v):
+        if v not in ['ACTIVATED', 'DEACTIVATED']:
+            raise ValueError('status must be either "ACTIVATED" or "DEACTIVATED"')
+        return v
+    
+    @staticmethod
+    def activated_status():
+        return 'ACTIVATED'
+    
+    @staticmethod
+    def deactivated_status():
+        return 'DEACTIVATED'

@@ -13,8 +13,14 @@ router = APIRouter(prefix='/schemas', tags=['schemas'])
 @router.get('/', response_model=ResponseWithGridSchemas)
 def get_schemas(startIndex: int = 0, endIndex: int = None):
     """
-    Get grid schemas within the specified range (startIndex inclusive, endIndex exclusive)
-    If endIndex is not provided, returns all schemas starting from startIndex
+    Description
+    --
+    Get grid schemas within the specified range (startIndex inclusive, endIndex exclusive).  
+    If endIndex is not provided, returns all schemas starting from startIndex.  
+    
+    Order
+    --
+    The order of schemas is based on the starred status and then alphabetically by name.
     """
     try:
         schema_files = list(Path(settings.SCHEMA_DIR).glob('*.json'))
@@ -31,7 +37,9 @@ def get_schemas(startIndex: int = 0, endIndex: int = None):
             with open(file, 'r') as f:
                 data = json.load(f)
                 schemas.append(GridSchema(**data))
-                
+        
+        # Sort schemas: first by starred (True first), then alphabetically by name within each group
+        schemas.sort(key=lambda schema: (not schema.starred, schema.name.lower()))
         return ResponseWithGridSchemas(
             grid_schemas=schemas
         )
@@ -40,7 +48,11 @@ def get_schemas(startIndex: int = 0, endIndex: int = None):
 
 @router.get('/num', response_model=NumberResponse)
 def get_schema_num():
-    """Get the number of grid schemas"""
+    """
+    Description
+    --
+    Get the number of grid schemas.
+    """
     
     schema_files = list(Path(settings.SCHEMA_DIR).glob('*.json'))
     num = len(schema_files)
