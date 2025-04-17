@@ -13,7 +13,7 @@ const GridLevel: React.FC<GridLevelProps> = ({
 }) => {
   const { language } = useContext(LanguageContext);
   
-  // 翻译对象
+
   const translations = {
     title: {
       en: 'Grid Level',

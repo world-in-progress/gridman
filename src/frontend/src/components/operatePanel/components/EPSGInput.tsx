@@ -11,7 +11,7 @@ const EPSGInput: React.FC<EPSGInputProps> = ({
 }) => {
   const { language } = useContext(LanguageContext);
 
-  // 翻译对象
+
   const translations = {
     label: {
       en: 'Target EPSG',
