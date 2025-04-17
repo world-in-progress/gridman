@@ -7,7 +7,7 @@ const SubdivideRules: React.FC<SubdivideRulesProps> = ({
   formatNumber,
   language = 'en'
 }) => {
-  // 翻译对象
+
   const translations = {
     title: {
       en: 'Subdivide Rules',
