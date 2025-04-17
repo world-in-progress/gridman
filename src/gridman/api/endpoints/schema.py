@@ -12,7 +12,11 @@ router = APIRouter(prefix='/schema', tags=['schema'])
 
 @router.get('/{name}', response_model=ResponseWithGridSchema)
 def get_schema(name: str):
-    """Get a grid schema by name"""
+    """
+    Description
+    --
+    Get a grid schema by name.
+    """
     
     # Check if the schema file exists
     grid_schema_path = Path(settings.SCHEMA_DIR, f'{name}.json')
@@ -34,7 +38,11 @@ def get_schema(name: str):
 
 @router.post('/', response_model=BaseResponse)
 def register_schema(data: GridSchema):
-    """Register a grid schema"""
+    """
+    Description
+    --
+    Register a grid schema.
+    """
     
     # Find if grid schema is existed
     grid_schema_path = Path(settings.SCHEMA_DIR, f'{data.name}.json')
@@ -58,9 +66,38 @@ def register_schema(data: GridSchema):
         message='Grid schema registered successfully'
     )
 
+@router.put('/{name}', response_model=BaseResponse)
+def update_schema(name: str, data: GridSchema):
+    """
+    Description
+    --
+    Update a grid schema by name.
+    """
+    
+    # Check if the schema file exists
+    grid_schema_path = Path(settings.SCHEMA_DIR, f'{name}.json')
+    if not grid_schema_path.exists():
+        raise HTTPException(status_code=404, detail='Schema not found')
+    
+    # Write the updated schema to the file
+    try:
+        with open(grid_schema_path, 'w') as f:
+            f.write(data.model_dump_json(indent=4))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to update schema: {str(e)}')
+    
+    return BaseResponse(
+        success=True,
+        message='Grid schema updated successfully'
+    )
+
 @router.delete('/{name}', response_model=BaseResponse)
 def delete_schema(name: str):
-    """Delete a grid schema by name"""
+    """
+    Description
+    --
+    Delete a grid schema by name.
+    """
     
     # Check if the schema file exists
     grid_schema_path = Path(settings.SCHEMA_DIR, f'{name}.json')

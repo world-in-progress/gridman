@@ -5,6 +5,8 @@ class GridSchema(BaseModel):
     """Schema for grid init configuration"""
     name: str # name of the grid schema
     epsg: int # EPSG code for the grid
+    starred: bool # whether the grid schema is starred
+    description: str # description of the grid schema
     base_point: tuple[float, float] # [lon, lat], base point of the grid
     grid_info: list[tuple[float, float]] # [(width_in_meter, height_in_meter), ...], grid size in each level
 

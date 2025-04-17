@@ -6,8 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .api.router import api_router
-from .schemas.base import BaseResponse
-from .core.server import get_server_status
 from .core.server import shutdown_server_subprocess, init_working_directory
 
 @asynccontextmanager
@@ -51,25 +49,21 @@ def create_app() -> FastAPI:
 
     # Add API routers
     app.include_router(api_router)
-    
-    @app.get("/", tags=["status"])
-    def read_root():
-        return {"message": f"Welcome to the {settings.APP_NAME}"}
         
     return app
 
 app = create_app()
 
-# Add API routers
-@app.get('/status', response_model=BaseResponse)
-def get_status():
-    """Check the status of the grid server"""
-    status = get_server_status()
-    return BaseResponse(
-        success=True,
-        message=f'Server is {status}',
-        data={'status': status}
-    )
+# Add Default API routers
+# @app.get('/status', response_model=BaseResponse)
+# def get_status():
+#     """Check the status of the grid server"""
+#     status = get_server_status()
+#     return BaseResponse(
+#         success=True,
+#         message=f'Server is {status}',
+#         data={'status': status}
+#     )
 
 if __name__ == "__main__":
     import uvicorn

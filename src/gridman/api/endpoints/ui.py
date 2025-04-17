@@ -13,8 +13,13 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 router = APIRouter(prefix='/ui', tags=['ui'])
 
 @router.get('/', response_class=HTMLResponse)
-def grid_visualization(request: Request):
-    """Grid visualization web interface"""
+def gridman_ui(request: Request):
+    """
+    Description
+    --
+    Web interface of GridMan.  
+    It provides a user-friendly way to interact with the GridMan server.
+    """
     
     status = get_server_status()
     grid_data = None
