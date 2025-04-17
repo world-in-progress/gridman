@@ -10,7 +10,7 @@ const GridLevelItem: React.FC<GridLevelItemProps> = ({
   onRemoveLayer,
   language = 'en'
 }) => {
-  // 翻译对象
+
   const translations = {
     level: {
       en: 'Level',

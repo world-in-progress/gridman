@@ -41,7 +41,7 @@ export default function Page() {
   const [rectangleCoordinates, setRectangleCoordinates] =
     useState<RectangleCoordinates | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [showCreateSchema, setShowCreateSchema] = useState(true);
+  const [showCreateSchema, setShowCreateSchema] = useState(false);
 
   const { activeSidebar } = useContext(SidebarContext);
   const { language } = useContext(LanguageContext);

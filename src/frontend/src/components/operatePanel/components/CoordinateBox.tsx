@@ -16,7 +16,7 @@ const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, forma
   
   const formatSingleValue = (value: number): string => value.toFixed(6);
   
-  // 翻译对象
+
   const translations = {
     center: {
       en: 'Center',
