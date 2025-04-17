@@ -41,6 +41,7 @@ export default function Page() {
   const [rectangleCoordinates, setRectangleCoordinates] =
     useState<RectangleCoordinates | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showCreateSchema, setShowCreateSchema] = useState(false);
 
   // 使用上下文中的侧边栏状态
   const { activeSidebar } = useContext(SidebarContext);
