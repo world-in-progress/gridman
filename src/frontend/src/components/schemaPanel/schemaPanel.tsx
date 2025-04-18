@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../App';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
-import { SubNavPanel } from './subNavPanel';
+import { SubNavPanel } from './components/subNavPanel';
 
 interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
   onCreateNew?: () => void;
@@ -17,9 +17,9 @@ export default function SchemaPanel({
   const { language } = useContext(LanguageContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 6;
+  const itemsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  
+
   useEffect(() => {
     const getPageFromURL = () => {
       const hash = window.location.hash;
@@ -30,15 +30,15 @@ export default function SchemaPanel({
           return page;
         }
       }
-      return 1; 
+      return 1;
     };
-    
+
     setCurrentPage(getPageFromURL());
-    
+
     const handleHashChange = () => {
       setCurrentPage(getPageFromURL());
     };
-    
+
     window.addEventListener('hashchange', handleHashChange);
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
@@ -49,11 +49,20 @@ export default function SchemaPanel({
     setTotalItems(total);
   };
 
+  const handleFirstPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(1);
+      window.location.hash = window.location.hash.includes('?')
+        ? window.location.hash.replace(/page=\d+/, `page=1`)
+        : `${window.location.hash.split('?')[0]}?page=1`;
+    }
+  };
+
   const handlePrevPage = () => {
     if (currentPage > 1) {
       const newPage = currentPage - 1;
       setCurrentPage(newPage);
-      window.location.hash = window.location.hash.includes('?') 
+      window.location.hash = window.location.hash.includes('?')
         ? window.location.hash.replace(/page=\d+/, `page=${newPage}`)
         : `${window.location.hash.split('?')[0]}?page=${newPage}`;
     }
@@ -63,9 +72,28 @@ export default function SchemaPanel({
     if (currentPage < totalPages) {
       const newPage = currentPage + 1;
       setCurrentPage(newPage);
-      window.location.hash = window.location.hash.includes('?') 
+      window.location.hash = window.location.hash.includes('?')
         ? window.location.hash.replace(/page=\d+/, `page=${newPage}`)
         : `${window.location.hash.split('?')[0]}?page=${newPage}`;
+    }
+  };
+
+  const handleLastPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(totalPages);
+      window.location.hash = window.location.hash.includes('?')
+        ? window.location.hash.replace(/page=\d+/, `page=${totalPages}`)
+        : `${window.location.hash.split('?')[0]}?page=${totalPages}`;
+    }
+  };
+
+  // 处理导航到指定页面的请求
+  const handleNavigateToPage = (page: number) => {
+    if (page > 0 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page);
+      window.location.hash = window.location.hash.includes('?')
+        ? window.location.hash.replace(/page=\d+/, `page=${page}`)
+        : `${window.location.hash.split('?')[0]}?page=${page}`;
     }
   };
 
@@ -86,17 +114,31 @@ export default function SchemaPanel({
             <Plus className="h-4 w-4" />
           </button>
         </div>
-        <SearchForm className="flex flex-col gap-2" />
+        <SearchForm className="flex flex-col gap-2 mb-2" />
         <SubNavPanel
           currentPage={currentPage}
           onTotalItemsChange={handleTotalItemsChange}
           itemsPerPage={itemsPerPage}
+          onNavigateToPage={handleNavigateToPage}
         />
 
         {/* 分页控制 */}
         <div className="mx-3 -mt-4">
           {(totalPages > 1 || totalItems > itemsPerPage) && (
             <div className="flex justify-center items-center mt-2 mb-2 mx-auto px-4 py-2 bg-background/90 backdrop-blur-sm rounded-full shadow-md border border-gray-200 w-fit">
+              <button
+                onClick={handleFirstPage}
+                disabled={currentPage === 1}
+                className={`p-1.5 rounded-full ${
+                  currentPage === 1
+                    ? 'text-gray-400'
+                    : 'text-primary hover:bg-primary/10'
+                }`}
+                title={language === 'zh' ? '首页' : 'First Page'}
+                aria-label={language === 'zh' ? '首页' : 'First Page'}
+              >
+                <ChevronsLeft size={18} />
+              </button>
               <button
                 onClick={handlePrevPage}
                 disabled={currentPage === 1}
@@ -131,6 +173,19 @@ export default function SchemaPanel({
                 aria-label={language === 'zh' ? '下一页' : 'Next Page'}
               >
                 <ChevronRight size={18} />
+              </button>
+              <button
+                onClick={handleLastPage}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`p-1.5 rounded-full ${
+                  currentPage === totalPages || totalPages === 0
+                    ? 'text-gray-400'
+                    : 'text-primary hover:bg-primary/10'
+                }`}
+                title={language === 'zh' ? '尾页' : 'Last Page'}
+                aria-label={language === 'zh' ? '尾页' : 'Last Page'}
+              >
+                <ChevronsRight size={18} />
               </button>
             </div>
           )}

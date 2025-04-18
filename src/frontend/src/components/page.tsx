@@ -60,7 +60,6 @@ export default function Page() {
     setIsDrawing(false);
   };
 
-  // 处理点选位置坐标
   const handlePointSelected = (coordinates: [number, number]) => {
     console.log('Point selected:', coordinates);
   };
