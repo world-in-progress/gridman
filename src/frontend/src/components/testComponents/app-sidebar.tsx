@@ -166,7 +166,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SubNavPanel items={data.navMain} />
+        <SubNavPanel items={data.navMain} currentPage={0} itemsPerPage={0} onTotalItemsChange={function (total: number): void {
+                  throw new Error("Function not implemented.")
+              } } />
       </SidebarContent>
       <SidebarFooter>
         <div className="p-1">
