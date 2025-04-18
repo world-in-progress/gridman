@@ -13,7 +13,7 @@ const GridLevel: React.FC<GridLevelProps> = ({
 }) => {
   const { language } = useContext(LanguageContext);
   
-  // 翻译对象
+
   const translations = {
     title: {
       en: 'Grid Level',
@@ -51,8 +51,9 @@ const GridLevel: React.FC<GridLevelProps> = ({
   return (
     <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="font-semibold text-sm">{language === 'zh' ? translations.title.zh : translations.title.en}</h3>
+        <h3 className="text-lg font-semibold">{language === 'zh' ? translations.title.zh : translations.title.en}</h3>
         <button
+          type="button"
           className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm cursor-pointer"
           onClick={onAddLayer}
         >

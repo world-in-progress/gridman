@@ -419,20 +419,10 @@ div#clear {
         box-shadow: 0 -20px #000;
     }
 }
-
-/* 调整Mapbox控制按钮容器位置 */
-.mapboxgl-ctrl-top-right {
-    position: absolute;
-    left: 10px !important;
-    top: 94vh !important;
-    right: auto !important;
-}
-
 /* dat.GUI样式自定义 */
 .dg.ac {
     position: fixed !important;
-    top: 80px !important;
-    right: 150px !important;
-    left: auto !important;
-    z-index: 1000 !important;
+    top: 144px !important;
+    right: -15px !important;
+    z-index: 1 !important;
 }

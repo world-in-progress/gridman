@@ -24,10 +24,12 @@ interface MapInitProps {
   initialZoom?: number;
   maxZoom?: number;
   onRectangleDrawn?: (coordinates: RectangleCoordinates) => void;
+  onPointSelected?: (coordinates: [number, number]) => void;
 }
 
 interface MapInitHandle {
   startDrawRectangle: (cancel?: boolean) => void;
+  startPointSelection: (cancel?: boolean) => void;
 }
 
 const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
@@ -37,16 +39,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     initialZoom = 11,
     maxZoom = 22,
     onRectangleDrawn,
+    onPointSelected,
   },
   ref
 ) => {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [draw, setDraw] = useState<MapboxDraw | null>(null);
   const [isDrawMode, setIsDrawMode] = useState(false);
+  const [isPointSelectionMode, setIsPointSelectionMode] = useState(false);
   const [hasDrawnRectangle, setHasDrawnRectangle] = useState(false);
   const [currentRectangleId, setCurrentRectangleId] = useState<string | null>(
     null
   );
+  const [currentMarker, setCurrentMarker] = useState<mapboxgl.Marker | null>(null);
 
   // Calculate the four corners and center point of the rectangle (EPSG:4326)
   const calculateRectangleCoordinates = (
@@ -82,6 +87,38 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       northWest,
       center,
     };
+  };
+
+  // Handle click for point selection
+  const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
+    if (!isPointSelectionMode || !map) return;
+    
+    // Remove any existing marker
+    if (currentMarker) {
+      currentMarker.remove();
+    }
+    
+    // Create a new marker at the clicked location
+    const marker = new mapboxgl.Marker({
+      color: "#FFFF00",
+    })
+      .setLngLat(e.lngLat)
+      .addTo(map);
+    
+    setCurrentMarker(marker);
+    
+    // Return coordinates to parent component
+    if (onPointSelected) {
+      onPointSelected([e.lngLat.lng, e.lngLat.lat]);
+    }
+    
+    // Exit point selection mode
+    setIsPointSelectionMode(false);
+    
+    // Make cursor pointer normal again
+    if (map.getCanvas()) {
+      map.getCanvas().style.cursor = '';
+    }
   };
 
   useEffect(() => {
@@ -176,6 +213,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       // Save to global variable
       window.mapboxDrawInstance = drawInstance;
 
+      // Add click event listener for point selection
+      mapInstance.on('click', handleMapClick);
+
       // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
         if (e.features && e.features.length > 0) {
@@ -223,7 +263,15 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
   // Method to start drawing rectangle
   const startDrawRectangle = (cancel?: boolean) => {
-    if (!draw) return;
+    if (!draw || !map) return;
+
+    // Exit point selection mode if active
+    if (isPointSelectionMode) {
+      setIsPointSelectionMode(false);
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = '';
+      }
+    }
 
     if (hasDrawnRectangle) {
       // If a rectangle already exists, delete it first
@@ -244,8 +292,32 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     }
   };
 
+  // Method to start point selection
+  const startPointSelection = (cancel?: boolean) => {
+    if (!map) return;
+    
+    // Exit drawing mode if active
+    if (isDrawMode && draw) {
+      draw.changeMode('simple_select');
+      setIsDrawMode(false);
+    }
+    
+    if (cancel === true || isPointSelectionMode) {
+      setIsPointSelectionMode(false);
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = '';
+      }
+    } else {
+      setIsPointSelectionMode(true);
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = 'crosshair';
+      }
+    }
+  };
+
   React.useImperativeHandle(ref, () => ({
     startDrawRectangle,
+    startPointSelection
   }));
 
   return (
@@ -253,7 +325,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       <div id="map-container" className="w-full h-full"></div>
       <div
         id="control-panel-container"
-        className="absolute top-0 left-11 z-10 flex flex-row items-start"
+        className="absolute top-0 left-0 z-10 flex flex-row items-start"
       ></div>
     </div>
   );

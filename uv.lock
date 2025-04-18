@@ -120,9 +120,9 @@ wheels = [
 
 [[package]]
 name = "gdal"
-version = "3.10.3"
+version = "3.10.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/06/f9/a9a9496c8dc558c4c16a0c53283501fe3098b26536d5f475d378c8ed3437/gdal-3.10.3.tar.gz", hash = "sha256:b5550650daeeae8e41091581d9aea7d75a9f15b0ebbeb8c96e37458fa02264cd", size = 838170 }
+sdist = { url = "https://files.pythonhosted.org/packages/30/db/6417c83f6e9c4169ebe57cd26e02ad01d1e0dafb9476736481f536c10517/gdal-3.10.2.tar.gz", hash = "sha256:c0cffa8ce9f9c0fa287fcc20b8271c519ca054958420e5880be8bedb432753f4", size = 838054 }
 
 [[package]]
 name = "gridman"
@@ -149,7 +149,7 @@ dev = [
 requires-dist = [
     { name = "c-two", specifier = ">=0.1.14" },
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "gdal", specifier = ">=3.10.2" },
+    { name = "gdal", specifier = "==3.10.2" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "numpy", specifier = ">=2.2.4" },
     { name = "pandas", specifier = ">=2.2.3" },
