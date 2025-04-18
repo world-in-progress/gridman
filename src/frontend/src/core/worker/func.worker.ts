@@ -200,3 +200,109 @@ export async function fetchSchemas(
     callback(error instanceof Error ? error : new Error(String(error)), false);
   }
 }
+
+export async function updateSchemaStarred(
+  this: WorkerSelf,
+  params: { name: string; starred: boolean },
+  callback: Callback<any>
+) {
+  if (!params || !params.name) {
+    callback(new Error('Invalid schema name'), false);
+    return;
+  }
+
+  try {
+    const { name, starred } = params;
+
+    const getResponse = await fetch(`http://localhost:8000/schema/${name}`);
+
+    if (!getResponse.ok) {
+      throw new Error(
+        `Failed to get schema! Status code: ${getResponse.status}`
+      );
+    }
+
+    const responseData = await getResponse.json();
+
+    let schemaData;
+    if (responseData.grid_schema) {
+      schemaData = { ...responseData.grid_schema };
+    } else {
+      schemaData = { ...responseData };
+    }
+
+    schemaData.starred = starred;
+
+    const putResponse = await fetch(`http://localhost:8000/schema/${name}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(schemaData),
+    });
+
+    if (!putResponse.ok) {
+      throw new Error(
+        `Failed to update starred status! Status code: ${putResponse.status}`
+      );
+    }
+
+    const updatedData = await putResponse.json();
+    callback(null, updatedData);
+  } catch (error) {
+    callback(error instanceof Error ? error : new Error(String(error)), false);
+  }
+}
+
+export async function updateSchemaDescription(
+  this: WorkerSelf,
+  params: { name: string; description: string },
+  callback: Callback<any>
+) {
+  if (!params || !params.name) {
+    callback(new Error('无效的模板名称'), false);
+    return;
+  }
+
+  try {
+    const { name, description } = params;
+
+    const getResponse = await fetch(`http://localhost:8000/schema/${name}`);
+
+    if (!getResponse.ok) {
+      throw new Error(
+        `获取模板失败! 状态码: ${getResponse.status}`
+      );
+    }
+
+    const responseData = await getResponse.json();
+
+    let schemaData;
+    if (responseData.grid_schema) {
+      schemaData = { ...responseData.grid_schema };
+    } else {
+      schemaData = { ...responseData };
+    }
+
+    schemaData.description = description;
+
+    const putResponse = await fetch(`http://localhost:8000/schema/${name}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(schemaData),
+    });
+
+    if (!putResponse.ok) {
+      throw new Error(
+        `更新描述失败! 状态码: ${putResponse.status}`
+      );
+    }
+
+    const updatedData = await putResponse.json();
+    callback(null, updatedData);
+  } catch (error) {
+    callback(error instanceof Error ? error : new Error(String(error)), false);
+  }
+}
