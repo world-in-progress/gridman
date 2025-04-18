@@ -10,14 +10,6 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from crms.grid import Grid
 
-if sys.platform == 'win32':
-    try:
-        from ctypes import windll
-        kernel32 = windll.kernel32
-        kernel32.SetConsoleCtrlHandler(None, False)
-    except:
-        pass
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Grid Launcher')
     parser.add_argument('--temp', type=str, default='False', help='Use temporary memory for grid')
@@ -26,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--tcp_address', type=str, required=True, help='TCP address for the server')
     parser.add_argument('--project_path', type=str, required=True, help='Path to the project directory')
     args = parser.parse_args()
-
+    
     # Get info from schema file
     schema = json.load(open(args.schema_path, 'r'))
     epsg: int = schema['epsg']
@@ -68,4 +60,6 @@ if __name__ == '__main__':
     
     # Run CRM server
     server = cc.message.Server(tcp_address, crm)
-    server.run()
+    server.start()
+    print('CRM server started at', tcp_address)
+    server.wait_for_termination()

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from ...core.config import settings
 from ...schemas.base import BaseResponse
+from ...schemas.project import ProjectMeta
 from ...schemas.schema import GridSchema, ResponseWithGridSchema
 
 # APIs for single grid schema ##################################################
@@ -103,6 +104,23 @@ def delete_schema(name: str):
     grid_schema_path = Path(settings.SCHEMA_DIR, f'{name}.json')
     if not grid_schema_path.exists():
         raise HTTPException(status_code=404, detail='Schema not found')
+    
+    # Check if no project depends on this schema
+    dependency_found = False
+    project_dirs = list(Path(settings.PROJECT_DIR).glob('*'))
+    for project_dir in project_dirs:
+        meta_file_path = Path(project_dir, 'meta.json')
+        if not meta_file_path.exists():
+            continue
+        
+        with open(meta_file_path, 'r') as f:
+            data = json.load(f)
+            meta = ProjectMeta(**data)
+            if meta.schema_name == name:
+                dependency_found = True
+                break
+    if dependency_found:
+        raise HTTPException(status_code=400, detail='Schema is still in use by at least one project')
     
     # Delete the schema file
     try:
