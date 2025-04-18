@@ -10,6 +10,8 @@ def get_active_grid_render_infos(crm: IGrid) -> bytes:
     # Get active grid information
     schema = crm.get_schema()
     levels, global_ids = crm.get_active_grid_infos()
+    return levels, global_ids
+
     levels_arr = np.asarray(levels, dtype=np.int8)
     global_ids_arr = np.asarray(global_ids, dtype=np.int32)
     

@@ -27,7 +27,7 @@ wheels = [
 
 [[package]]
 name = "c-two"
-version = "0.1.14"
+version = "0.1.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
@@ -36,9 +36,9 @@ dependencies = [
     { name = "pyarrow" },
     { name = "zmq" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b6/74/a19ab2439afbc60fd3a25740be4c5a4888b04fca91de41c0adc573eeffed/c_two-0.1.14.tar.gz", hash = "sha256:23a14adcc744757c1dcfc5473ef6e17c565674e76bb17f19ef20d85e328b67e4", size = 11238 }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/75/8acf98c2b834c83f7493996a67bf6cd6ab3076297d6999c9a64d9db2216e/c_two-0.1.16.tar.gz", hash = "sha256:74aa1781b760016defcf66948bc31cf1e9ec58faf86a01748044ba3d3f429398", size = 11745 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/01/7df4ec4d8f0a836bbddd56b5f26b7bfa08e58c0f84d9fdbb641472e4e4b4/c_two-0.1.14-py3-none-any.whl", hash = "sha256:62eb807b0105e6fafd2843966a9d5f04609b12d998d23fe8b8d558dc0e932fd7", size = 13870 },
+    { url = "https://files.pythonhosted.org/packages/48/cd/f82bcb2ca364719ecd8bae7bf285fb653f96cec44314091cf830ecc48e2f/c_two-0.1.16-py3-none-any.whl", hash = "sha256:7890fa52364cc33ce5a87e02e2c09aad2a078f3f69758daf926c2f8a7ba4d310", size = 14377 },
 ]
 
 [[package]]
@@ -147,7 +147,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "c-two", specifier = ">=0.1.14" },
+    { name = "c-two", specifier = ">=0.1.16" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "gdal", specifier = ">=3.10.2" },
     { name = "jinja2", specifier = ">=3.1.6" },

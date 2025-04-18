@@ -54,17 +54,6 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
-# Add Default API routers
-# @app.get('/status', response_model=BaseResponse)
-# def get_status():
-#     """Check the status of the grid server"""
-#     status = get_server_status()
-#     return BaseResponse(
-#         success=True,
-#         message=f'Server is {status}',
-#         data={'status': status}
-#     )
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
