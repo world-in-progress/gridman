@@ -23,11 +23,13 @@ export const LanguageContext = createContext<{
 
 function App() {
 
-  const [activeSidebar, setActiveSidebar] = useState<SidebarType>('operate');//暂设默认显示方便调整
+  const [activeSidebar, setActiveSidebar] = useState<SidebarType>('operate'); // Default to 'operate' for development
   const [language, setLanguage] = useState<'zh' | 'en'>('en');
 
-  const handleNavClick = (item: string) => {
-    if (item === 'Schema' || item === '模板') {
+  const handleNavClick = (item: string, type?: string) => {
+    if (type === 'schema' || type === 'operate') {
+      setActiveSidebar(type);
+    } else if (item === 'Schema' || item === '模板') {
       setActiveSidebar('schema');
     } else if (item === 'New' || item === '新建') {
       setActiveSidebar('operate');

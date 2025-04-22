@@ -4,8 +4,6 @@ import { LanguageContext } from '../../../App';
 
 const GenerateJSONButton: React.FC<GenerateJSONButtonProps> = ({ onClick }) => {
   const { language } = useContext(LanguageContext);
-
-  // 按钮文字翻译
   const translations = {
     button: {
       en: 'Generate JSON',

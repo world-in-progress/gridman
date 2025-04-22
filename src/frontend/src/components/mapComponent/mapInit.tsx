@@ -209,12 +209,12 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       });
 
       mapInstance.addControl(drawInstance);
-
       // Save to global variable
       window.mapboxDrawInstance = drawInstance;
 
       // Add click event listener for point selection
       mapInstance.on('click', handleMapClick);
+      
 
       // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
@@ -236,7 +236,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         console.log('Deleting shape');
         setHasDrawnRectangle(false);
         setCurrentRectangleId(null);
-
         if (onRectangleDrawn) {
           onRectangleDrawn(null as any);
         }
@@ -244,7 +243,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
       // Monitor mode changes
       mapInstance.on('draw.modechange', (e: any) => {
-        // console.log('Drawing mode changed:', e.mode);
         setIsDrawMode(e.mode === 'draw_rectangle');
       });
 

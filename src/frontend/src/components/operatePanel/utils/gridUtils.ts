@@ -1,6 +1,6 @@
 import { LayerSize, SubdivideRule, RectangleCoordinates } from '../types/types';
 
-// 错误信息的中英文翻译
+
 const errorTranslations = {
   widthSmaller: {
     en: (prevWidth: number) => `Width must be smaller than previous level's width (${prevWidth})`,

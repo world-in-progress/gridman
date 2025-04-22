@@ -118,7 +118,6 @@ export const sendJSONToInit = async (jsonData: any) => {
           console.error('Error sending JSON to init endpoint:', error);
           resolve(false);
         } else {
-          console.log('Received response from worker:', result);
           resolve(result);
         }
       }

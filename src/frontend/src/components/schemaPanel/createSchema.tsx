@@ -11,17 +11,26 @@ import { Button } from '@/components/ui/button';
 import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../App';
 import GridLevel from '../operatePanel/components/GridLevel';
-import { 
-  SchemaNameCard, 
-  SchemaDescriptionCard, 
-  SchemaEpsgCard, 
-  SchemaCoordinateCard, 
+import {
+  SchemaNameCard,
+  SchemaDescriptionCard,
+  SchemaEpsgCard,
+  SchemaCoordinateCard,
   SchemaConvertedCoordCard,
-  SchemaErrorMessage
+  SchemaErrorMessage,
 } from './components/SchemaFormComponents';
-import { convertCoordinate, clearMapMarkers, enableMapPointSelection } from './utils/SchemaCoordinateService';
-import { GridLayer, validateGridLayers, validateSchemaForm, createSchemaData } from './utils/SchemaFormValidation';
-import { downloadSchemaAsJson, submitSchemaData } from './utils/SchemaSubmissionService';
+import {
+  convertCoordinate,
+  clearMapMarkers,
+  enableMapPointSelection,
+} from './utils/SchemaCoordinateService';
+import {
+  GridLayer,
+  validateGridLayers,
+  validateSchemaForm,
+  createSchemaData,
+} from './utils/SchemaFormValidation';
+import { SchemaService } from './utils/SchemaService';
 
 interface CreateSchemaProps extends React.ComponentProps<typeof Sidebar> {
   onBack?: () => void;
@@ -29,8 +38,6 @@ interface CreateSchemaProps extends React.ComponentProps<typeof Sidebar> {
 
 export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
   const { language } = useContext(LanguageContext);
-
-  // 状态管理
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [lon, setLon] = useState('');
@@ -56,7 +63,12 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
     epsg: false,
   });
 
-  // 当经纬度或EPSG改变时，计算转换后的坐标
+  const [schemaService] = useState(() => new SchemaService(language));
+
+  useEffect(() => {
+    schemaService.setLanguage(language);
+  }, [language, schemaService]);
+
   useEffect(() => {
     if (lon && lat && epsg) {
       const result = convertCoordinate(lon, lat, '4326', epsg);
@@ -66,12 +78,9 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
     }
   }, [lon, lat, epsg]);
 
-  // 处理表单提交
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setGeneralError(null);
 
-    // 验证表单
     const validation = validateSchemaForm(
       { name, epsg, lon, lat, gridLayers, convertedCoord },
       language
@@ -83,7 +92,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
       return;
     }
 
-    // 创建Schema数据
     const schemaData = createSchemaData(
       name,
       description,
@@ -101,39 +109,32 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
       return;
     }
 
-    // 下载JSON文件
-    downloadSchemaAsJson(schemaData, `${name}.json`);
-
-    // 提交数据
     setGeneralError(
       language === 'zh' ? '正在提交数据...' : 'Submitting data...'
     );
 
-    submitSchemaData(
+    schemaService.submitSchemaData(
       schemaData,
-      language,
-      // 成功回调
       () => {
+        setGeneralError(
+          language === 'zh' ? '创建成功！' : 'Created successfully!'
+        );
         setTimeout(() => {
           if (onBack) {
             onBack();
           }
         }, 1000);
       },
-      // 错误回调
       (error) => {
         setGeneralError(error);
-        setTimeout(() => {
-          if (onBack) {
-            onBack();
-          }
-        }, 3000);
       },
-      isSelectingPoint
+      isSelectingPoint,
+      () => {
+        setIsSelectingPoint(false);
+      }
     );
   };
 
-  // 处理返回按钮
   const handleBack = () => {
     clearMapMarkers();
 
@@ -149,7 +150,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
     }
   };
 
-  // 处理绘制按钮
   const handleDraw = () => {
     if (isSelectingPoint && window.mapInstance) {
       if (window.mapInstance.getCanvas()) {
@@ -171,44 +171,57 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
     }
   };
 
-  // 网格层级相关操作
   const handleAddLayer = () => {
-    const nextId =
-      gridLayers.length > 0
-        ? Math.max(...gridLayers.map((layer) => layer.id)) + 1
-        : 0;
-
-    setGridLayers([...gridLayers, { id: nextId, width: '', height: '' }]);
+    setGridLayers(prevLayers => {
+      const nextId =
+        prevLayers.length > 0
+          ? Math.max(...prevLayers.map((layer) => layer.id)) + 1
+          : 0;
+      
+      const updatedLayers = [...prevLayers, { id: nextId, width: '', height: '' }];
+      
+      const { errors } = validateGridLayers(updatedLayers, language);
+      setLayerErrors(errors);
+      
+      return updatedLayers;
+    });
   };
 
   const handleUpdateWidth = (id: number, width: string) => {
-    setGridLayers(
-      gridLayers.map((layer) => (layer.id === id ? { ...layer, width } : layer))
-    );
-    validateAndUpdateLayerErrors();
+    setGridLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => 
+        layer.id === id ? { ...layer, width } : layer
+      );
+      
+      const { errors } = validateGridLayers(updatedLayers, language);
+      setLayerErrors(errors);
+      
+      return updatedLayers;
+    });
   };
 
   const handleUpdateHeight = (id: number, height: string) => {
-    setGridLayers(
-      gridLayers.map((layer) =>
+    setGridLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => 
         layer.id === id ? { ...layer, height } : layer
-      )
-    );
-    validateAndUpdateLayerErrors();
+      );
+      
+      const { errors } = validateGridLayers(updatedLayers, language);
+      setLayerErrors(errors);
+      
+      return updatedLayers;
+    });
   };
 
   const handleRemoveLayer = (id: number) => {
-    setGridLayers(gridLayers.filter((layer) => layer.id !== id));
-
-    // 移除相关错误
-    const newErrors = { ...layerErrors };
-    delete newErrors[id];
-    setLayerErrors(newErrors);
-  };
-
-  const validateAndUpdateLayerErrors = () => {
-    const { errors } = validateGridLayers(gridLayers, language);
-    setLayerErrors(errors);
+    setGridLayers(prevLayers => {
+      const filteredLayers = prevLayers.filter(layer => layer.id !== id);
+      
+      const { errors } = validateGridLayers(filteredLayers, language);
+      setLayerErrors(errors);
+      
+      return filteredLayers;
+    });
   };
 
   return (

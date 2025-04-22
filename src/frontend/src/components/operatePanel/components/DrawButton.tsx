@@ -8,8 +8,6 @@ const DrawButton: React.FC<DrawButtonProps> = ({
   onClick,
 }) => {
   const { language } = useContext(LanguageContext);
-
-  // 按钮文字翻译
   const translations = {
     drawing: {
       en: 'Click to cancel rectangle drawing',
@@ -46,7 +44,7 @@ const DrawButton: React.FC<DrawButtonProps> = ({
   return (
     <>
       <button
-        className={`w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer ${
+        className={`w-full py-2 px-4 mt-4 rounded-md font-medium transition-colors cursor-pointer ${
           isDrawing
             ? 'bg-yellow-500 text-white hover:bg-yellow-600'
             : rectangleCoordinates
