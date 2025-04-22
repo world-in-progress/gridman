@@ -71,16 +71,6 @@ export default function OperatePanel({
       en: 'Grid Operation Panel',
       zh: '网格操作面板',
     },
-    drawButton: {
-      start: {
-        en: 'Draw Rectangle',
-        zh: '绘制矩形',
-      },
-      cancel: {
-        en: 'Cancel Drawing',
-        zh: '取消绘制',
-      },
-    },
     coordinates: {
       wgs84: {
         en: 'Rectangle Coordinates (EPSG:4326)',
@@ -137,16 +127,6 @@ export default function OperatePanel({
       gridLevel: {
         en: 'Please add at least one grid level',
         zh: '请至少添加一个网格层级',
-      },
-    },
-    buttons: {
-      generateJson: {
-        en: 'Generate JSON',
-        zh: '生成JSON',
-      },
-      drawGrid: {
-        en: 'Draw Grid',
-        zh: '绘制网格',
       },
     },
   };
@@ -377,7 +357,6 @@ export default function OperatePanel({
 
       try {
         const response = await sendJSONToInit(jsonData);
-        console.log('Response from sendJSONToInit:', response);
 
         if (!response) {
           setGeneralError(
@@ -387,7 +366,6 @@ export default function OperatePanel({
           );
         } else {
           setGeneralError(null);
-          console.log('Successfully initialized grid with response:', response);
         }
       } catch (error) {
         console.error('Error in handleGenerateJSON:', error);
@@ -429,9 +407,7 @@ export default function OperatePanel({
       if (map.getSource(layerGroupId)) {
         map.removeSource(layerGroupId);
       }
-    } catch (error) {
-      console.log('Layer or source does not exist yet, creating new one');
-    }
+    } catch (error) {}
 
     const gridLayer = new GridLayer(
       map,
@@ -500,11 +476,7 @@ export default function OperatePanel({
 
         try {
           if (window.mapboxDrawInstance) {
-            console.log('MapboxDraw instance found, deleting rectangle...');
             window.mapboxDrawInstance.deleteAll();
-            console.log('Rectangle display is off');
-          } else {
-            console.log('No MapboxDraw instance found on window');
           }
         } catch (error) {
           console.log('Failed to remove rectangle:', error);

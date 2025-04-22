@@ -4,14 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { GridLayer, FormErrors } from '../utils/SchemaFormValidation';
-
-interface SchemaNameCardProps {
-  name: string;
-  language: string;
-  hasError: boolean;
-  onChange: (value: string) => void;
-}
+import {
+  SchemaNameCardProps,
+  SchemaDescriptionCardProps,
+  SchemaEpsgCardProps,
+  SchemaCoordinateCardProps,
+  SchemaConvertedCoordCardProps,
+  SchemaErrorMessageProps
+} from '../types/types';
 
 export const SchemaNameCard: React.FC<SchemaNameCardProps> = ({
   name,
@@ -41,13 +41,6 @@ export const SchemaNameCard: React.FC<SchemaNameCardProps> = ({
   );
 };
 
-interface SchemaDescriptionCardProps {
-  description: string;
-  language: string;
-  hasError: boolean;
-  onChange: (value: string) => void;
-}
-
 export const SchemaDescriptionCard: React.FC<SchemaDescriptionCardProps> = ({
   description,
   language,
@@ -57,7 +50,7 @@ export const SchemaDescriptionCard: React.FC<SchemaDescriptionCardProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 mt-4">
       <h2 className="text-lg font-semibold mb-2">
-        {language === 'zh' ? '模板描述' : 'Schema Description'}
+        {language === 'zh' ? '模板描述(选填)' : 'Schema Description (Optional)'}
       </h2>
       <div className="space-y-2">
         <Textarea
@@ -75,13 +68,6 @@ export const SchemaDescriptionCard: React.FC<SchemaDescriptionCardProps> = ({
     </div>
   );
 };
-
-interface SchemaEpsgCardProps {
-  epsg: string;
-  language: string;
-  hasError: boolean;
-  onChange: (value: string) => void;
-}
 
 export const SchemaEpsgCard: React.FC<SchemaEpsgCardProps> = ({
   epsg,
@@ -112,17 +98,6 @@ export const SchemaEpsgCard: React.FC<SchemaEpsgCardProps> = ({
     </div>
   );
 };
-
-interface SchemaCoordinateCardProps {
-  lon: string;
-  lat: string;
-  language: string;
-  hasError: boolean;
-  isSelectingPoint: boolean;
-  onLonChange: (value: string) => void;
-  onLatChange: (value: string) => void;
-  onDrawClick: () => void;
-}
 
 export const SchemaCoordinateCard: React.FC<SchemaCoordinateCardProps> = ({
   lon,
@@ -211,12 +186,6 @@ export const SchemaCoordinateCard: React.FC<SchemaCoordinateCardProps> = ({
   );
 };
 
-interface SchemaConvertedCoordCardProps {
-  convertedCoord: { x: string; y: string } | null;
-  epsg: string;
-  language: string;
-}
-
 export const SchemaConvertedCoordCard: React.FC<SchemaConvertedCoordCardProps> = ({
   convertedCoord,
   epsg,
@@ -251,15 +220,25 @@ export const SchemaConvertedCoordCard: React.FC<SchemaConvertedCoordCardProps> =
   );
 };
 
-interface SchemaErrorMessageProps {
-  message: string | null;
-}
-
 export const SchemaErrorMessage: React.FC<SchemaErrorMessageProps> = ({ message }) => {
   if (!message) return null;
   
+  let bgColor = 'bg-red-50';
+  let textColor = 'text-red-700';
+  let borderColor = 'border-red-200';
+  
+  if (message.includes('正在提交数据') || message.includes('Submitting data')) {
+    bgColor = 'bg-orange-50';
+    textColor = 'text-orange-700';
+    borderColor = 'border-orange-200';
+  } else if (message.includes('创建成功') || message.includes('Created successfully')) {
+    bgColor = 'bg-green-50';
+    textColor = 'text-green-700';
+    borderColor = 'border-green-200';
+  }
+  
   return (
-    <div className="mt-2 p-2 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+    <div className={`mt-2 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}>
       {message}
     </div>
   );

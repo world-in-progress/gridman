@@ -1,22 +1,26 @@
 import * as React from 'react';
-import { Plus } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Plus,
+} from 'lucide-react';
 import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../App';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
-import { SubNavPanel } from './components/subNavPanel';
-import { Pagination } from './components/Pagination';
+import { SubNavPanel } from './components/SubNavPanel';
+import { Pagination } from '../schemaPanel/components/Pagination';
 
-interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
+interface ProjectPanelProps extends React.ComponentProps<typeof Sidebar> {
   onCreateNew?: () => void;
-  onCreateProject?: (schemaName: string, epsg: string) => void;
 }
 
-export default function SchemaPanel({
+export default function ProjectPanel({
   onCreateNew,
-  onCreateProject,
   ...props
-}: SchemaPanelProps) {
+}: ProjectPanelProps) {
   const { language } = useContext(LanguageContext);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -72,30 +76,18 @@ export default function SchemaPanel({
     <Sidebar {...props}>
       <SidebarContent>
         <h1 className="text-4xl font-semibold p-3 text-center">
-          {language === 'zh' ? '模板列表' : 'Schema List'}
+          {language === 'zh' ? '项目列表' : 'Project List'}
         </h1>
-        <div className="left-0 right-0 mb-2 flex justify-center">
-          <button
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 py-2 flex items-center gap-2 shadow-lg cursor-pointer"
-            onClick={onCreateNew}
-          >
-            <span>
-              {language === 'zh' ? '创建新模板' : 'Create New Schema'}
-            </span>
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
         <SearchForm 
           className="flex flex-col gap-2 mb-2"
           onSearch={handleSearch}
-          placeholder={language === 'zh' ? '搜索模板...' : 'Search schemas...'}
+          placeholder={language === 'zh' ? '搜索项目...' : 'Search projects...'}
         />
         <SubNavPanel
           currentPage={currentPage}
           onTotalItemsChange={handleTotalItemsChange}
           itemsPerPage={itemsPerPage}
           onNavigateToPage={handleNavigateToPage}
-          onCreateProject={onCreateProject}
           searchQuery={searchQuery}
         />
 

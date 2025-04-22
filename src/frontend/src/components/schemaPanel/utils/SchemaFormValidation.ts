@@ -19,9 +19,6 @@ export interface ValidationResult {
   generalError: string | null;
 }
 
-/**
- * 验证网格层级数据
- */
 export const validateGridLayers = (
   gridLayers: GridLayer[],
   language: string
@@ -29,56 +26,117 @@ export const validateGridLayers = (
   const errors: Record<number, string> = {};
   let isValid = true;
 
-  gridLayers.forEach((layer, index) => {
-    // 检查宽高是否有值
-    if (!layer.width.trim() || !layer.height.trim()) {
-      errors[layer.id] =
-        language === 'zh'
-          ? '宽度和高度不能为空'
-          : 'Width and height cannot be empty';
+  // 错误提示文本库
+  const errorText = {
+    empty: {
+      zh: '宽度和高度不能为空',
+      en: 'Width and height cannot be empty'
+    },
+    notPositive: {
+      zh: '宽度和高度必须是大于0的数字',
+      en: 'Width and height must be positive numbers'
+    },
+    notSmaller: {
+      zh: (prevWidth: number, prevHeight: number) => 
+        `单元格尺寸应小于前一层级 (${prevWidth}×${prevHeight})`,
+      en: (prevWidth: number, prevHeight: number) => 
+        `Cell dimensions should be smaller than previous level (${prevWidth}×${prevHeight})`
+    },
+    notMultiple: {
+      zh: (prevWidth: number, currentWidth: number, prevHeight: number, currentHeight: number) => 
+        `前一层级的尺寸 (${prevWidth}×${prevHeight}) 必须是当前层级 (${currentWidth}×${currentHeight}) 的倍数`,
+      en: (prevWidth: number, currentWidth: number, prevHeight: number, currentHeight: number) => 
+        `Previous level's dimensions (${prevWidth}×${prevHeight}) must be multiples of current level (${currentWidth}×${currentHeight})`
+    },
+    widthNotSmaller: {
+      zh: (prevWidth: number) => `宽度必须小于前一层级 (${prevWidth})`,
+      en: (prevWidth: number) => `Width must be smaller than previous level (${prevWidth})`
+    },
+    widthNotMultiple: {
+      zh: (prevWidth: number, currentWidth: number) => 
+        `前一层级的宽度 (${prevWidth}) 必须是当前层级宽度 (${currentWidth}) 的倍数`,
+      en: (prevWidth: number, currentWidth: number) => 
+        `Previous level's width (${prevWidth}) must be a multiple of current width (${currentWidth})`
+    },
+    heightNotSmaller: {
+      zh: (prevHeight: number) => `高度必须小于前一层级 (${prevHeight})`,
+      en: (prevHeight: number) => `Height must be smaller than previous level (${prevHeight})`
+    },
+    heightNotMultiple: {
+      zh: (prevHeight: number, currentHeight: number) => 
+        `前一层级的高度 (${prevHeight}) 必须是当前层级高度 (${currentHeight}) 的倍数`,
+      en: (prevHeight: number, currentHeight: number) => 
+        `Previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`
+    },
+    and: {
+      zh: ` 且 `,
+      en: ` and `
+    }
+  };
+
+  const lang = language === 'zh' ? 'zh' : 'en';
+
+  // 按ID排序以保持层级关系
+  const sortedLayers = [...gridLayers].sort((a, b) => a.id - b.id);
+
+  sortedLayers.forEach((layer, index) => {
+    // 对输入进行转换和验证
+    const width = String(layer.width).trim();
+    const height = String(layer.height).trim();
+    
+    // 清除旧的错误信息
+    delete errors[layer.id];
+    
+    // 检查空值
+    if (width === '' || height === '') {
+      errors[layer.id] = errorText.empty[lang];
+      isValid = false;
+      return;
+    } 
+    
+    // 尝试转换为数字
+    const currentWidth = Number(width);
+    const currentHeight = Number(height);
+    
+    // 检查是否为有效的正数
+    if (isNaN(currentWidth) || isNaN(currentHeight) || currentWidth <= 0 || currentHeight <= 0) {
+      errors[layer.id] = errorText.notPositive[lang];
       isValid = false;
       return;
     }
-
-    const currentWidth = parseInt(layer.width);
-    const currentHeight = parseInt(layer.height);
-
-    // 检查宽高是否为有效数字
-    if (
-      isNaN(currentWidth) ||
-      isNaN(currentHeight) ||
-      currentWidth <= 0 ||
-      currentHeight <= 0
-    ) {
-      errors[layer.id] =
-        language === 'zh'
-          ? '宽度和高度必须是大于0的数字'
-          : 'Width and height must be positive numbers';
-      isValid = false;
-      return;
-    }
-
+    
+    // 检查后续层级的关系
     if (index > 0) {
-      const prevLayer = gridLayers[index - 1];
-      const prevWidth = parseInt(prevLayer.width);
-      const prevHeight = parseInt(prevLayer.height);
-
-      if (currentWidth >= prevWidth || currentHeight >= prevHeight) {
-        errors[layer.id] =
-          language === 'zh'
-            ? '单元格尺寸应小于前一层级'
-            : 'Cell dimensions should be smaller than previous level';
+      const prevLayer = sortedLayers[index - 1];
+      const prevWidth = Number(String(prevLayer.width).trim());
+      const prevHeight = Number(String(prevLayer.height).trim());
+      
+      // 宽度验证
+      let hasWidthError = false;
+      if (currentWidth >= prevWidth) {
+        errors[layer.id] = errorText.widthNotSmaller[lang](prevWidth);
+        hasWidthError = true;
+        isValid = false;
+      } else if (prevWidth % currentWidth !== 0) {
+        errors[layer.id] = errorText.widthNotMultiple[lang](prevWidth, currentWidth);
+        hasWidthError = true;
         isValid = false;
       }
-
-      if (
-        prevWidth % currentWidth !== 0 ||
-        prevHeight % currentHeight !== 0
-      ) {
-        errors[layer.id] =
-          language === 'zh'
-            ? '前一层级的宽度/高度必须是当前层级的倍数'
-            : "Previous level's dimensions must be multiples of current level's";
+      
+      // 高度验证
+      if (currentHeight >= prevHeight) {
+        if (hasWidthError) {
+          errors[layer.id] += errorText.and[lang] + errorText.heightNotSmaller[lang](prevHeight);
+        } else {
+          errors[layer.id] = errorText.heightNotSmaller[lang](prevHeight);
+        }
+        isValid = false;
+      } else if (prevHeight % currentHeight !== 0) {
+        if (hasWidthError) {
+          errors[layer.id] += errorText.and[lang] + errorText.heightNotMultiple[lang](prevHeight, currentHeight);
+        } else {
+          errors[layer.id] = errorText.heightNotMultiple[lang](prevHeight, currentHeight);
+        }
         isValid = false;
       }
     }
@@ -87,9 +145,6 @@ export const validateGridLayers = (
   return { errors, isValid };
 };
 
-/**
- * 验证整个表单
- */
 export const validateSchemaForm = (
   data: {
     name: string;
@@ -110,14 +165,14 @@ export const validateSchemaForm = (
 
   let generalError: string | null = null;
 
-  // 验证名称
+
   if (!data.name.trim()) {
     generalError = language === 'zh' ? '请输入模板名称' : 'Please enter schema name';
     errors.name = true;
     return { isValid: false, errors, generalError };
   }
 
-  // 验证EPSG码
+
   if (!data.epsg.trim() || isNaN(Number(data.epsg))) {
     generalError = language === 'zh'
       ? '请输入有效的EPSG代码'
@@ -126,14 +181,13 @@ export const validateSchemaForm = (
     return { isValid: false, errors, generalError };
   }
 
-  // 验证坐标
+
   if (!data.lon.trim() || !data.lat.trim()) {
     generalError = language === 'zh' ? '请输入经纬度坐标' : 'Please enter coordinates';
     errors.coordinates = true;
     return { isValid: false, errors, generalError };
   }
 
-  // 验证网格层级
   if (data.gridLayers.length === 0) {
     generalError = language === 'zh'
       ? '请至少添加一级网格'
@@ -141,14 +195,14 @@ export const validateSchemaForm = (
     return { isValid: false, errors, generalError };
   }
 
-  // 验证每个网格层级的宽高
+
   for (let i = 0; i < data.gridLayers.length; i++) {
     const layer = data.gridLayers[i];
     if (
-      !layer.width.trim() ||
-      !layer.height.trim() ||
-      isNaN(parseInt(layer.width)) ||
-      isNaN(parseInt(layer.height))
+      !layer.width.toString().trim() ||
+      !layer.height.toString().trim() ||
+      isNaN(parseInt(layer.width.toString())) ||
+      isNaN(parseInt(layer.height.toString()))
     ) {
       generalError = language === 'zh'
         ? `请为第${i + 1}级网格填写有效的宽度和高度`
@@ -157,7 +211,7 @@ export const validateSchemaForm = (
     }
   }
 
-  // 验证网格层级的关系
+
   const { errors: layerErrors, isValid: gridValid } = validateGridLayers(data.gridLayers, language);
   if (!gridValid) {
     generalError = language === 'zh'
@@ -166,7 +220,6 @@ export const validateSchemaForm = (
     return { isValid: false, errors, generalError };
   }
 
-  // 验证坐标转换
   if (!data.convertedCoord) {
     generalError = language === 'zh'
       ? '无法获取转换后的坐标'
@@ -177,9 +230,7 @@ export const validateSchemaForm = (
   return { isValid: true, errors, generalError: null };
 };
 
-/**
- * 创建Schema数据对象
- */
+
 export const createSchemaData = (
   name: string,
   description: string,
@@ -196,8 +247,8 @@ export const createSchemaData = (
     epsg: parseInt(epsg),
     base_point: [parseFloat(convertedCoord.x), parseFloat(convertedCoord.y)],
     grid_info: gridLayers.map((layer) => [
-      parseInt(layer.width),
-      parseInt(layer.height),
+      parseInt(layer.width.toString()),
+      parseInt(layer.height.toString()),
     ]),
   };
 }; 

@@ -4,8 +4,6 @@ import { LanguageContext } from '../../../App';
 
 const DrawGridButton: React.FC<DrawGridButtonProps> = ({ onClick }) => {
   const { language } = useContext(LanguageContext);
-
-  // 按钮文字翻译
   const translations = {
     button: {
       en: 'Draw Grid',

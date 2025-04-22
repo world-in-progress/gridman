@@ -17,7 +17,7 @@ import { SidebarContext, LanguageContext } from '../App';
 
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
-  onNavItemClick?: (item: string) => void;
+  onNavItemClick?: (item: string, type?: string) => void;
 }
 
 export function Navbar({
@@ -27,7 +27,7 @@ export function Navbar({
   ...props
 }: NavbarProps) {
   const { language, setLanguage } = useContext(LanguageContext);
-  const { activeSidebar } = useContext(SidebarContext);
+  const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
 
   const toggleLanguage = () => {
     setLanguage(language === 'zh' ? 'en' : 'zh');
@@ -35,19 +35,32 @@ export function Navbar({
 
   const navItems = [
     { href: '/', labelZh: '首页', labelEn: 'Home', icon: Home },
-    { href: '/schemas', labelZh: '模板', labelEn: 'Schema', type: 'schema', icon: Clipboard },
-    { href: '/new', labelZh: '新建', labelEn: 'New', type: 'operate', icon: FilePlus2 },
+    {
+      href: '/schemas',
+      labelZh: '模板',
+      labelEn: 'Schema',
+      type: 'schema',
+      icon: Clipboard,
+    },
+    {
+      href: '/new',
+      labelZh: '新建',
+      labelEn: 'New',
+      type: 'operate',
+      icon: FilePlus2,
+    },
     { href: '/help', labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
     { href: '/about', labelZh: '关于', labelEn: 'About', icon: UsersRound },
   ];
 
   const handleNavItemClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    item: string
+    item: string,
+    type?: string
   ) => {
     if (onNavItemClick) {
       e.preventDefault();
-      onNavItemClick(item);
+      onNavItemClick(item, type);
     }
   };
 
@@ -72,72 +85,77 @@ export function Navbar({
           </a>
         </div>
       </div>
-      <div className="flex items-center gap-10 mx-6 flex-grow ml-1">
-        {navItems.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            className={cn(
-              'transition-colors text-2xl  flex items-center gap-2',
-              isActive(item.type)
-                ? 'text-[#71F6FF]'
-                : 'text-gray-300 hover:text-white'
-            )}
-            onClick={(e) =>
-              handleNavItemClick(
-                e,
-                language === 'zh' ? item.labelZh : item.labelEn
-              )
-            }
-          >
-            {React.createElement(item.icon, { 
-              className: 'w-8 h-8',
-              strokeWidth: 2
-            })}
-            {language === 'zh' ? item.labelZh : item.labelEn}
-          </a>
-        ))}
-      </div>
-      <div className="relative w-64 mx-4 mr-20">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={language === 'zh' ? '搜索...' : 'Search...'}
-            className="w-full rounded-md border border-gray-700 bg-gray-800 px-10 py-2 text-sm text-white placeholder:text-gray-400"
-          />
+      <div className="flex items-center justify-between w-4/5">
+        <div className="flex items-center gap-10">
+          {navItems.map((item, index) => (
+            <a
+              key={index}
+              href={item.href}
+              className={cn(
+                'transition-colors text-2xl flex items-center gap-2',
+                isActive(item.type)
+                  ? 'text-[#71F6FF]'
+                  : 'text-gray-300 hover:text-white'
+              )}
+              onClick={(e) =>
+                handleNavItemClick(
+                  e,
+                  language === 'zh' ? item.labelZh : item.labelEn,
+                  item.type
+                )
+              }
+            >
+              {React.createElement(item.icon, {
+                className: 'w-8 h-8',
+                strokeWidth: 2,
+              })}
+              {language === 'zh' ? item.labelZh : item.labelEn}
+            </a>
+          ))}
         </div>
-      </div>
-      <div className="flex items-center mr-20 ">
-        <div className="flex items-center space-x-2">
-          <Label
-            htmlFor="language-switch"
-            className="text-md font-bold text-gray-300"
-          >
-            EN
-          </Label>
-          <Switch
-            id="language-switch"
-            checked={language === 'zh'}
-            onCheckedChange={() => toggleLanguage()}
-            className="bg-gray-700 data-[state=checked]:bg-blue-500"
-          />
-          <Label
-            htmlFor="language-switch"
-            className="text-md font-bold text-gray-300"
-          >
-            中文
-          </Label>
+        <div className="flex items-center gap-6">
+          <div className="relative mr-4 ml-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={language === 'zh' ? '搜索...' : 'Search...'}
+                className="w-full rounded-md border border-gray-700 bg-gray-800 px-10 py-2 text-sm text-white placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+          <div className="flex items-center mr-4">
+            <div className="flex items-center space-x-2">
+              <Label
+                htmlFor="language-switch"
+                className="text-md font-bold text-gray-300"
+              >
+                EN
+              </Label>
+              <Switch
+                id="language-switch"
+                checked={language === 'zh'}
+                onCheckedChange={() => toggleLanguage()}
+                className="bg-gray-700 data-[state=checked]:bg-blue-500"
+              />
+              <Label
+                htmlFor="language-switch"
+                className="text-md font-bold text-gray-300"
+              >
+                中文
+              </Label>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <a
+              href="http://geomodeling.njnu.edu.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img src={opengms} className="h-auto max-w-48" alt="OpenGMS" />
+            </a>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2 ml-2 mr-5">
-        <a
-          href="http://geomodeling.njnu.edu.cn/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src={opengms} className="h-auto max-w-48" alt="OpenGMS" />
-        </a>
       </div>
     </nav>
   );

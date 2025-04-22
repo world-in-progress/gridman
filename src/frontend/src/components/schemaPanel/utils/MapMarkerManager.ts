@@ -4,23 +4,38 @@ import { convertToWGS84 } from './utils';
 
 export class MapMarkerManager {
   private markers: mapboxgl.Marker[] = [];
+  private markerMap: Map<string, mapboxgl.Marker> = new Map();
   private language: string;
   private onHighlightSchema: (schemaName: string) => void;
-  private onNavigateToSchemaPage: (schemaName: string) => void;
+  private activePopup: mapboxgl.Marker | null = null;
 
   constructor(
-    language: string, 
-    onHighlightSchema: (schemaName: string) => void,
-    onNavigateToSchemaPage: (schemaName: string) => void
+    language: string,
+    onHighlightSchema: (schemaName: string) => void
   ) {
     this.language = language;
     this.onHighlightSchema = onHighlightSchema;
-    this.onNavigateToSchemaPage = onNavigateToSchemaPage;
   }
 
   public clearAllMarkers(): void {
     this.markers.forEach((marker) => marker.remove());
     this.markers = [];
+    this.markerMap.clear();
+    this.activePopup = null;
+  }
+
+  private closeActivePopup(): void {
+    try {
+      if (this.activePopup) {
+        const popup = this.activePopup.getPopup();
+        if (popup && popup.isOpen && popup.isOpen()) {
+          this.activePopup.togglePopup();
+        }
+      }
+    } catch (e) {
+      console.error('Error closing popup:', e);
+    }
+    this.activePopup = null;
   }
 
   public showAllSchemasOnMap(schemas: Schema[]): void {
@@ -61,7 +76,9 @@ export class MapMarkerManager {
               
               <div style="font-size: 12px; margin-bottom: 4px;">
                 <strong>${
-                  this.language === 'zh' ? '转换后基准点' : 'Transformed Base Point'
+                  this.language === 'zh'
+                    ? '转换后基准点'
+                    : 'Transformed Base Point'
                 }:</strong> [${schema.base_point[0].toFixed(
             2
           )}, ${schema.base_point[1].toFixed(2)}]
@@ -92,7 +109,7 @@ export class MapMarkerManager {
 
           popup.on('open', () => {
             this.onHighlightSchema(schema.name);
-            
+
             setTimeout(() => {
               const closeButtons = document.getElementsByClassName(
                 'mapboxgl-popup-close-button'
@@ -111,30 +128,35 @@ export class MapMarkerManager {
           });
 
           const marker = new mapboxgl.Marker({
-            color: schema.starred ? '#f59e0b' : '#00FF00', // 标星的marker使用黄色
+            color: schema.starred ? '#f59e0b' : '#00FF00',
           })
             .setLngLat(coordinates)
             .setPopup(popup)
             .addTo(window.mapInstance as mapboxgl.Map);
-
-          // 添加点击事件，当marker被点击时高亮对应的schema卡片
           const markerElement = marker.getElement();
           markerElement.addEventListener('click', () => {
+            this.closeActivePopup();
+            this.activePopup = marker;
+
             this.onHighlightSchema(schema.name);
-            
-            // 确保schema在当前页面可见
-            this.onNavigateToSchemaPage(schema.name);
-            
-            // 如果对应的卡片不在视图中，可以添加滚动到视图的逻辑
             setTimeout(() => {
-              const schemaCard = document.getElementById(`schema-card-${schema.name.replace(/\s+/g, '-')}`);
+              const schemaCard = document.getElementById(
+                `schema-card-${schema.name.replace(/\s+/g, '-')}`
+              );
               if (schemaCard) {
-                schemaCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                schemaCard.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'nearest',
+                });
               }
             }, 100);
           });
 
           newMarkers.push(marker);
+
+          if (schema.name) {
+            this.markerMap.set(schema.name, marker);
+          }
         }
       }
     });
@@ -143,67 +165,60 @@ export class MapMarkerManager {
   }
 
   public flyToSchema(schema: Schema): void {
-    if (!window.mapInstance || !schema.base_point || !schema.epsg) return;
+    if (!window.mapInstance || !schema.base_point || !schema.epsg) {
+      return;
+    }
 
     this.onHighlightSchema(schema.name);
-    
-    // 确保schema在当前页面可见
-    this.onNavigateToSchemaPage(schema.name);
 
     const coordinates = convertToWGS84(schema.base_point, schema.epsg);
 
-    if (coordinates[0] === 0 && coordinates[1] === 0) return;
+    if (coordinates[0] === 0 && coordinates[1] === 0) {
+      return;
+    }
 
-    const existingMarkerIndex = this.markers.findIndex((marker) => {
-      const lngLat = marker.getLngLat();
-      return (
-        Math.abs(lngLat.lng - coordinates[0]) < 0.000001 &&
-        Math.abs(lngLat.lat - coordinates[1]) < 0.000001
-      );
-    });
+    const marker = this.markerMap.get(schema.name);
 
-    if (existingMarkerIndex !== -1) {
+    if (marker) {
+      this.closeActivePopup();
+
       window.mapInstance.flyTo({
-        center: coordinates,
+        center: marker.getLngLat(),
         zoom: 16,
         essential: true,
         duration: 1000,
       });
 
       setTimeout(() => {
-        const marker = this.markers[existingMarkerIndex];
+        this.activePopup = marker;
         marker.togglePopup();
-      }, 1300);
+      }, 1200);
     } else {
       setTimeout(() => {
-        // 获取所有schema并显示在地图上
-        const allSchemas = [schema]; // 最少展示当前schema
+        const allSchemas = [schema];
         this.showAllSchemasOnMap(allSchemas);
 
-        setTimeout(() => {
-          const newMarkerIndex = this.markers.findIndex((marker) => {
-            const lngLat = marker.getLngLat();
-            return (
-              Math.abs(lngLat.lng - coordinates[0]) < 0.000001 &&
-              Math.abs(lngLat.lat - coordinates[1]) < 0.000001
-            );
-          });
+        const newMarker = this.markerMap.get(schema.name);
 
-          if (newMarkerIndex !== -1) {
-            this.markers[newMarkerIndex].togglePopup();
-          }
-        }, 100);
+        if (newMarker) {
+          this.closeActivePopup();
+
+          this.activePopup = newMarker;
+          newMarker.togglePopup();
+        }
       }, 1100);
     }
   }
 
-  // 更新语言
   public setLanguage(language: string): void {
     this.language = language;
   }
 
-  // 获取标记
   public getMarkers(): mapboxgl.Marker[] {
     return this.markers;
   }
-} 
+
+  public getMarkerByName(name: string): mapboxgl.Marker | undefined {
+    return this.markerMap.get(name);
+  }
+}

@@ -2,9 +2,6 @@ import proj4 from 'proj4';
 import mapboxgl from 'mapbox-gl';
 import { epsgDefinitions } from '../../operatePanel/utils/coordinateUtils';
 
-/**
- * 将经纬度坐标从一个坐标系转换到另一个坐标系
- */
 export const convertCoordinate = (
   lon: string,
   lat: string,
@@ -37,9 +34,6 @@ export const convertCoordinate = (
   }
 };
 
-/**
- * 清除地图上的所有标记
- */
 export const clearMapMarkers = (): void => {
   const markers = document.getElementsByClassName('mapboxgl-marker');
   if (markers.length > 0) {
@@ -49,9 +43,6 @@ export const clearMapMarkers = (): void => {
   }
 };
 
-/**
- * 启用地图点击选点模式
- */
 export const enableMapPointSelection = (
   mapInstance: mapboxgl.Map | undefined,
   callback: (lng: number, lat: number) => void
@@ -82,7 +73,6 @@ export const enableMapPointSelection = (
 
   mapInstance.once('click', handleMapClick);
 
-  // 返回一个清理函数
   return () => {
     mapInstance.off('click', handleMapClick);
     if (mapInstance.getCanvas()) {

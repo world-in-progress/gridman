@@ -1,7 +1,7 @@
 import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
 import { Schema } from '../types/types';
 
-// 坐标转换功能
+// Coordinate conversion functionality
 export const convertToWGS84 = (
   coordinates: number[],
   fromEpsg: number
@@ -22,7 +22,7 @@ export const convertToWGS84 = (
   }
 };
 
-// 查找Schema在哪一页
+// Find which page the schema is on
 export const findSchemaPage = (
   schemaName: string, 
   allSchemasList: Schema[],
@@ -30,17 +30,17 @@ export const findSchemaPage = (
 ): number => {
   if (!allSchemasList || allSchemasList.length === 0) return 1;
   
-  // 排序后的schema列表（先标星的在前面）
+  // Sorted schema list (starred items first)
   const sortedSchemas = [...allSchemasList].sort((a, b) => {
     if (a.starred && !b.starred) return -1;
     if (!a.starred && b.starred) return 1;
     return 0;
   });
   
-  // 找到schema的索引
+  // Find schema index
   const index = sortedSchemas.findIndex(schema => schema.name === schemaName);
   if (index === -1) return 1;
   
-  // 计算页码
+  // Calculate page number
   return Math.floor(index / itemsPerPage) + 1;
 }; 
