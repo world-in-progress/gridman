@@ -1,0 +1,14 @@
+{
+    "servers": {
+        "grid": {
+            "type": "stdio",
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/scripts/grid_mcp_server.py"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/.venv/lib/python3.12/site-packages"
+            }
+        }
+    }
+}

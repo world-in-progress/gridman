@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     PROJECT_DIR: str = 'resource/grid/projects/'
     CRM_LAUNCHER_FILE: str = 'scripts/grid_crm_launcher.py'
     TEMPLATES_DIR: str = str(ROOT_DIR / 'templates/')
+    MCP_SERVER_SCRIPT_PATH: str = str(ROOT_DIR / 'scripts/grid_mcp_server.py')
 
     # CORS
     CORS_ORIGINS: list[str] = ['*']
