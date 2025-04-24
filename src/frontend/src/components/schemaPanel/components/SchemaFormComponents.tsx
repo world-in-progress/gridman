@@ -10,7 +10,7 @@ import {
   SchemaEpsgCardProps,
   SchemaCoordinateCardProps,
   SchemaConvertedCoordCardProps,
-  SchemaErrorMessageProps
+  SchemaErrorMessageProps,
 } from '../types/types';
 
 export const SchemaNameCard: React.FC<SchemaNameCardProps> = ({
@@ -186,18 +186,16 @@ export const SchemaCoordinateCard: React.FC<SchemaCoordinateCardProps> = ({
   );
 };
 
-export const SchemaConvertedCoordCard: React.FC<SchemaConvertedCoordCardProps> = ({
-  convertedCoord,
-  epsg,
-  language,
-}) => {
+export const SchemaConvertedCoordCard: React.FC<
+  SchemaConvertedCoordCardProps
+> = ({ convertedCoord, epsg, language }) => {
   if (!convertedCoord || !epsg) return null;
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 mt-4">
       <h2 className="text-lg font-semibold mb-2">
-        {language === 'zh' ? '转换后坐标' : 'Converted Coordinate'}{' '}
-        (EPSG:{epsg})
+        {language === 'zh' ? '转换后坐标' : 'Converted Coordinate'} (EPSG:{epsg}
+        )
       </h2>
       <div className="flex-1 flex flex-col justify-between">
         {/* X坐标显示 */}
@@ -220,26 +218,33 @@ export const SchemaConvertedCoordCard: React.FC<SchemaConvertedCoordCardProps> =
   );
 };
 
-export const SchemaErrorMessage: React.FC<SchemaErrorMessageProps> = ({ message }) => {
+export const SchemaErrorMessage: React.FC<SchemaErrorMessageProps> = ({
+  message,
+}) => {
   if (!message) return null;
-  
+
   let bgColor = 'bg-red-50';
   let textColor = 'text-red-700';
   let borderColor = 'border-red-200';
-  
+
   if (message.includes('正在提交数据') || message.includes('Submitting data')) {
     bgColor = 'bg-orange-50';
     textColor = 'text-orange-700';
     borderColor = 'border-orange-200';
-  } else if (message.includes('创建成功') || message.includes('Created successfully')) {
+  } else if (
+    message.includes('创建成功') ||
+    message.includes('Created successfully')
+  ) {
     bgColor = 'bg-green-50';
     textColor = 'text-green-700';
     borderColor = 'border-green-200';
   }
-  
+
   return (
-    <div className={`mt-2 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}>
+    <div
+      className={`mt-2 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
+    >
       {message}
     </div>
   );
-}; 
+};

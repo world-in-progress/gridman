@@ -1,23 +1,5 @@
 import { Schema } from '../types/types';
-
-export interface GridLayer {
-  id: number;
-  width: string;
-  height: string;
-}
-
-export interface FormErrors {
-  name: boolean;
-  description: boolean;
-  coordinates: boolean;
-  epsg: boolean;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: FormErrors;
-  generalError: string | null;
-}
+import { GridLayer, ValidationResult } from '../types/types';
 
 export const validateGridLayers = (
   gridLayers: GridLayer[],
@@ -26,7 +8,6 @@ export const validateGridLayers = (
   const errors: Record<number, string> = {};
   let isValid = true;
 
-  // 错误提示文本库
   const errorText = {
     empty: {
       zh: '宽度和高度不能为空',
@@ -76,42 +57,34 @@ export const validateGridLayers = (
 
   const lang = language === 'zh' ? 'zh' : 'en';
 
-  // 按ID排序以保持层级关系
   const sortedLayers = [...gridLayers].sort((a, b) => a.id - b.id);
 
   sortedLayers.forEach((layer, index) => {
-    // 对输入进行转换和验证
     const width = String(layer.width).trim();
     const height = String(layer.height).trim();
     
-    // 清除旧的错误信息
     delete errors[layer.id];
     
-    // 检查空值
     if (width === '' || height === '') {
       errors[layer.id] = errorText.empty[lang];
       isValid = false;
       return;
     } 
     
-    // 尝试转换为数字
     const currentWidth = Number(width);
     const currentHeight = Number(height);
     
-    // 检查是否为有效的正数
     if (isNaN(currentWidth) || isNaN(currentHeight) || currentWidth <= 0 || currentHeight <= 0) {
       errors[layer.id] = errorText.notPositive[lang];
       isValid = false;
       return;
     }
     
-    // 检查后续层级的关系
     if (index > 0) {
       const prevLayer = sortedLayers[index - 1];
       const prevWidth = Number(String(prevLayer.width).trim());
       const prevHeight = Number(String(prevLayer.height).trim());
       
-      // 宽度验证
       let hasWidthError = false;
       if (currentWidth >= prevWidth) {
         errors[layer.id] = errorText.widthNotSmaller[lang](prevWidth);
@@ -123,7 +96,6 @@ export const validateGridLayers = (
         isValid = false;
       }
       
-      // 高度验证
       if (currentHeight >= prevHeight) {
         if (hasWidthError) {
           errors[layer.id] += errorText.and[lang] + errorText.heightNotSmaller[lang](prevHeight);

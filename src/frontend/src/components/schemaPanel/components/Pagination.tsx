@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 import { useContext } from 'react';
 import { LanguageContext } from '../../../App';
 import { PaginationProps } from '../types/types';
@@ -51,12 +56,8 @@ export const Pagination: React.FC<PaginationProps> = ({
         </button>
         <span className="mx-3 text-sm font-medium">
           {language === 'zh'
-            ? `第 ${currentPage}/${
-                totalPages || 1
-              } 页 (共${totalItems}项)`
-            : `Page ${currentPage} of ${
-                totalPages || 1
-              } (${totalItems} items)`}
+            ? `第 ${currentPage}/${totalPages || 1} 页 (共${totalItems}项)`
+            : `Page ${currentPage} of ${totalPages || 1} (${totalItems} items)`}
         </span>
         <button
           onClick={onNextPage}
@@ -87,4 +88,4 @@ export const Pagination: React.FC<PaginationProps> = ({
       </div>
     </div>
   );
-}; 
+};
