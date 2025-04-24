@@ -10,5 +10,6 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP('Grid Agent Tools', instructions=cc.mcp.CC_INSTRUCTION)
 cc.mcp.register_mcp_tools_from_compo_module(mcp, compo)
 
+
 if __name__ == '__main__':
     mcp.run()
