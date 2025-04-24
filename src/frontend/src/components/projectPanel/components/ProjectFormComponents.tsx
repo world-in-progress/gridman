@@ -78,6 +78,7 @@ interface ProjectSchemaNameCardProps {
   language: string;
   hasError: boolean;
   onChange: (value: string) => void;
+  readOnly?: boolean;
 }
 
 export const ProjectSchemaNameCard: React.FC<ProjectSchemaNameCardProps> = ({
@@ -85,6 +86,7 @@ export const ProjectSchemaNameCard: React.FC<ProjectSchemaNameCardProps> = ({
   language,
   hasError,
   onChange,
+  readOnly = false,
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mt-4 border border-gray-200 dark:border-gray-700">
@@ -101,7 +103,8 @@ export const ProjectSchemaNameCard: React.FC<ProjectSchemaNameCardProps> = ({
           }
           className={`w-full ${
             hasError ? 'border-red-500 focus:ring-red-500' : ''
-          }`}
+          } ${readOnly ? 'bg-gray-100' : ''}`}
+          readOnly={readOnly}
         />
       </div>
     </div>

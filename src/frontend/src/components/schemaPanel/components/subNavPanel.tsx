@@ -18,8 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 Object.keys(epsgDefinitions).forEach((epsg) => {
   proj4.defs(`EPSG:${epsg}`, epsgDefinitions[epsg]);
@@ -288,18 +288,20 @@ export function SubNavPanel({
           return filtered;
         });
 
-        setSchemas((prev) => prev.filter((s) => s.name !== schemaToDelete.name));
-        
+        setSchemas((prev) =>
+          prev.filter((s) => s.name !== schemaToDelete.name)
+        );
+
         fetchSchemasCallback(currentPage);
-        
+
         toast.success(
           language === 'zh' ? '模板删除成功' : 'Schema deleted successfully',
           {
             style: {
               background: '#ecfdf5',
               color: '#047857',
-              border: '1px solid #a7f3d0'
-            }
+              border: '1px solid #a7f3d0',
+            },
           }
         );
       } else if (result && result.detail) {
@@ -307,49 +309,47 @@ export function SubNavPanel({
           style: {
             background: '#fef2f2',
             color: '#b91c1c',
-            border: '1px solid #fecaca'
-          }
+            border: '1px solid #fecaca',
+          },
         });
       } else {
         toast.error(
-          language === 'zh'
-            ? '模板删除失败'
-            : 'Failed to delete schema',
+          language === 'zh' ? '模板删除失败' : 'Failed to delete schema',
           {
             style: {
               background: '#fef2f2',
               color: '#b91c1c',
-              border: '1px solid #fecaca'
-            }
+              border: '1px solid #fecaca',
+            },
           }
         );
       }
     } catch (err) {
       setDeleteDialogOpen(false);
       setSchemaToDelete(null);
-      
+
       console.error('删除模板出错:', err);
-      
-      let errorMessage = language === 'zh'
-        ? '模板删除失败'
-        : 'Failed to delete schema';
-        
+
+      let errorMessage =
+        language === 'zh' ? '模板删除失败' : 'Failed to delete schema';
+
       if (err instanceof Error && err.message) {
         if (err.message.includes('still in use')) {
-          errorMessage = language === 'zh'
-            ? '模板正在被至少一个项目使用'
-            : 'Schema is still in use by at least one project';
+          errorMessage =
+            language === 'zh'
+              ? '模板正在被至少一个项目使用'
+              : 'Schema is still in use by at least one project';
         } else {
           errorMessage = err.message;
         }
       }
-      
+
       toast.error(errorMessage, {
         style: {
           background: '#fef2f2',
           color: '#b91c1c',
-          border: '1px solid #fecaca'
-        }
+          border: '1px solid #fecaca',
+        },
       });
     }
   };
@@ -390,7 +390,13 @@ export function SubNavPanel({
 
               setError(null);
 
-              onCreateProject(schemaInfo.name, schemaInfo.epsg.toString());
+              onCreateProject(
+                schemaInfo.name, 
+                schemaInfo.epsg.toString(),
+                schemaInfo.grid_info && schemaInfo.grid_info.length > 0 
+                  ? JSON.stringify(schemaInfo.grid_info[0])
+                  : "1"
+              );
             } catch (err) {
               console.error('[SubNavPanel] 获取模板详情失败:', err);
               setError(
@@ -399,7 +405,11 @@ export function SubNavPanel({
                   : 'Failed to get schema details, continuing with current info'
               );
 
-              onCreateProject(schema.name, schema.epsg.toString());
+              onCreateProject(
+                schema.name, 
+                schema.epsg.toString(),
+                "1"
+              );
 
               setTimeout(() => {
                 setError(null);
@@ -450,16 +460,16 @@ export function SubNavPanel({
 
   return (
     <div className="px-3">
-      <Toaster 
+      <Toaster
         position="bottom-right"
         richColors
         closeButton
         style={{
           bottom: '5rem',
-          right: '1.5rem'
+          right: '1.5rem',
         }}
       />
-      
+
       {items.map((item) => (
         <div key={item.title}>
           <SchemaCard
@@ -478,7 +488,8 @@ export function SubNavPanel({
             onStarToggle={toggleStar}
             onMenuOpenChange={(open) => {
               if (open) {
-                setOpenMenuId(item.title);2
+                setOpenMenuId(item.title);
+                2;
               } else {
                 setOpenMenuId(null);
               }
@@ -506,10 +517,7 @@ export function SubNavPanel({
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog 
-        open={deleteDialogOpen} 
-        onOpenChange={setDeleteDialogOpen}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>

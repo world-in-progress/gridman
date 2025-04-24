@@ -6,7 +6,7 @@ import {
   FileType2,
   SquarePen,
   MapPin,
-  LayoutPanelTop
+  LayoutPanelTop,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -14,7 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AnimatedCard, CardBackground, Blob } from '../../schemaPanel/components/styledComponents';
+import {
+  AnimatedCard,
+  CardBackground,
+  Blob,
+} from '../../schemaPanel/components/styledComponents';
 import { ProjectCardProps, Project } from '../../schemaPanel/types/types';
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -51,18 +55,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const handleUpdateDescription = async () => {
     if (!textareaRef.current) return;
-    
+
     const newDescription = textareaRef.current.value;
-    
+
     try {
       if (onSaveDescription) {
         const updatedProject = {
           ...project,
-          description: newDescription
+          description: newDescription,
         };
         await onSaveDescription(title, updatedProject);
       }
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update project description:', error);
@@ -73,26 +77,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     setIsEditing(false);
   };
 
-  const formatBounds = (bounds: number[]) => {
-    if (!bounds || bounds.length !== 4) return '-';
-    
-    const [minX, minY, maxX, maxY] = bounds.map(val => val.toFixed(6));
-    
-    return language === 'zh' 
-      ? `X: ${minX}~${maxX}, Y: ${minY}~${maxY}`
-      : `X: ${minX}~${maxX}, Y: ${minY}~${maxY}`;
-  };
-
   const BoundsVisualization = ({ bounds }: { bounds: number[] }) => {
     if (!bounds || bounds.length !== 4) return null;
-    
+
     const [minX, minY, maxX, maxY] = bounds;
-    
+
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
-    
+
     const formatCoord = (value: number): string => value.toFixed(4);
-    
+
     return (
       <div className="mt-2 mb-2 mx-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
         <div className="grid grid-cols-3 gap-1 text-xs">
@@ -100,49 +94,67 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           <div className="relative h-8 flex items-center justify-center">
             <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t border-l border-gray-400 dark:border-gray-500 rounded-tl"></div>
           </div>
-          
+
           {/* 上方 - 显示maxY */}
           <div className="text-center">
-            <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">N</span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">{formatCoord(maxY)}</div>
+            <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">
+              N
+            </span>
+            <div className="text-[10px] text-gray-700 dark:text-gray-300">
+              {formatCoord(maxY)}
+            </div>
           </div>
-          
+
           {/* 右上角 */}
           <div className="relative h-8 flex items-center justify-center">
             <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t border-r border-gray-400 dark:border-gray-500 rounded-tr"></div>
           </div>
-          
+
           {/* 左侧 - 显示minX */}
           <div className="text-center">
-            <span className="font-bold text-green-600 dark:text-green-400 text-sm">W</span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">{formatCoord(minX)}</div>
+            <span className="font-bold text-green-600 dark:text-green-400 text-sm">
+              W
+            </span>
+            <div className="text-[10px] text-gray-700 dark:text-gray-300">
+              {formatCoord(minX)}
+            </div>
           </div>
-          
+
           {/* 中心 */}
           <div className="text-center">
-            <span className="font-bold text-xs">{language === 'zh' ? '中心' : 'Center'}</span>
+            <span className="font-bold text-xs">
+              {language === 'zh' ? '中心' : 'Center'}
+            </span>
             <div className="text-[9px] text-gray-700 dark:text-gray-300">
               [{formatCoord(centerX)}, {formatCoord(centerY)}]
             </div>
           </div>
-          
+
           {/* 右侧 - 显示maxX */}
           <div className="text-center">
-            <span className="font-bold text-red-600 dark:text-red-400 text-sm">E</span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">{formatCoord(maxX)}</div>
+            <span className="font-bold text-red-600 dark:text-red-400 text-sm">
+              E
+            </span>
+            <div className="text-[10px] text-gray-700 dark:text-gray-300">
+              {formatCoord(maxX)}
+            </div>
           </div>
-          
+
           {/* 左下角 */}
           <div className="relative h-8 flex items-center justify-center">
             <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b border-l border-gray-400 dark:border-gray-500 rounded-bl"></div>
           </div>
-          
+
           {/* 下方 - 显示minY */}
           <div className="text-center">
-            <span className="font-bold text-purple-600 dark:text-purple-400 text-sm">S</span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">{formatCoord(minY)}</div>
+            <span className="font-bold text-purple-600 dark:text-purple-400 text-sm">
+              S
+            </span>
+            <div className="text-[10px] text-gray-700 dark:text-gray-300">
+              {formatCoord(minY)}
+            </div>
           </div>
-          
+
           {/* 右下角 */}
           <div className="relative h-8 flex items-center justify-center">
             <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b border-r border-gray-400 dark:border-gray-500 rounded-br"></div>
@@ -198,7 +210,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               {menuItems.map((subItem) => (
                 <DropdownMenuItem key={subItem.title} asChild>
                   <a
-                    href={subItem.url}
                     className="cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -221,7 +232,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         <div className="flex items-center text-gray-600 dark:text-gray-300">
           <LayoutPanelTop className="h-4 w-4 mr-2" />
           <span>
-            {language === 'zh' ? '模板名称' : 'Schema Name'}: {project.schema_name}
+            {language === 'zh' ? '模板名称' : 'Schema Name'}:{' '}
+            {project.schema_name}
           </span>
         </div>
 
@@ -233,7 +245,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               {language === 'zh' ? '项目边界：' : 'Project Bounds:'}
             </span>
           </div>
-          
+
           {project.bounds && project.bounds.length === 4 ? (
             <BoundsVisualization bounds={project.bounds} />
           ) : (
@@ -278,22 +290,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             <div className="relative">
               <textarea
                 ref={textareaRef}
-                id="project-description"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md min-h-[80px] pr-[140px]"
+                id="schema-description"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md min-h-[80px]"
                 aria-label={
-                  language === 'zh' ? '项目描述' : 'Project description'
+                  language === 'zh' ? '模板描述' : 'Schema description'
                 }
                 placeholder={
                   language === 'zh'
-                    ? '输入项目描述'
-                    : 'Enter project description'
+                    ? '输入模板描述'
+                    : 'Enter schema description'
                 }
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                defaultValue={(descriptionText && descriptionText[title]) || project.description || ''}
+                defaultValue={
+                  (descriptionText && descriptionText[title]) ||
+                  project?.description ||
+                  ''
+                }
               />
-              <div className="absolute bottom-2 right-2 flex space-x-2">
+              <div className="absolute bottom-3 right-5 flex space-x-2">
                 <button
                   className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                   onClick={(e) => {

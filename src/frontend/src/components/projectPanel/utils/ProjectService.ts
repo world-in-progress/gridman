@@ -26,8 +26,9 @@ export class ProjectService {
             if (err) {
               reject(err);
             } else {
-              const projectMetas = result && result.project_metas ? result.project_metas : [];
-              
+              const projectMetas =
+                result && result.project_metas ? result.project_metas : [];
+
               const sortedProjects = [...projectMetas].sort((a, b) => {
                 if (a.starred && !b.starred) return -1;
                 if (!a.starred && b.starred) return 1;
@@ -50,7 +51,10 @@ export class ProjectService {
     });
   }
 
-  public async fetchProjects(page: number, itemsPerPage: number): Promise<{
+  public async fetchProjects(
+    page: number,
+    itemsPerPage: number
+  ): Promise<{
     projects: Project[];
     totalCount: number;
   }> {
@@ -61,47 +65,51 @@ export class ProjectService {
       try {
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        
+
         worker = new Worker(
           new URL('../../../core/worker/base.worker.ts', import.meta.url),
           { type: 'module' }
         );
         actor = new Actor(worker, {});
 
-        actor.send(
-          'fetchProjects',
-          { startIndex, endIndex },
-          (err, result) => {
-            if (err) {
-              reject(new Error(
-                this.language === 'zh' ? '获取项目列表失败' : 'Failed to fetch projects'
-              ));
-            } else {
-              const projects = result.project_metas || [];
-              const totalCount = result.total_count || projects.length;
+        actor.send('fetchProjects', { startIndex, endIndex }, (err, result) => {
+          if (err) {
+            reject(
+              new Error(
+                this.language === 'zh'
+                  ? '获取项目列表失败'
+                  : 'Failed to fetch projects'
+              )
+            );
+          } else {
+            const projects = result.project_metas || [];
+            const totalCount = result.total_count || projects.length;
 
-              const sortedProjects = [...projects].sort((a, b) => {
-                if (a.starred && !b.starred) return -1;
-                if (!a.starred && b.starred) return 1;
-                return 0;
-              });
+            const sortedProjects = [...projects].sort((a, b) => {
+              if (a.starred && !b.starred) return -1;
+              if (!a.starred && b.starred) return 1;
+              return 0;
+            });
 
-              resolve({
-                projects: sortedProjects,
-                totalCount
-              });
-            }
-
-            setTimeout(() => {
-              if (actor) actor.remove();
-              if (worker) worker.terminate();
-            }, 100);
+            resolve({
+              projects: sortedProjects,
+              totalCount,
+            });
           }
-        );
+
+          setTimeout(() => {
+            if (actor) actor.remove();
+            if (worker) worker.terminate();
+          }, 100);
+        });
       } catch (err) {
-        reject(new Error(
-          this.language === 'zh' ? '获取项目列表失败' : 'Failed to fetch projects'
-        ));
+        reject(
+          new Error(
+            this.language === 'zh'
+              ? '获取项目列表失败'
+              : 'Failed to fetch projects'
+          )
+        );
       }
     });
   }
@@ -118,34 +126,32 @@ export class ProjectService {
         );
         actor = new Actor(worker, {});
 
-        actor.send(
-          'getProjectByName',
-          { name: projectName },
-          (err, result) => {
-            if (err) {
-              reject(err);
-            } else {
-              let project = result;
-              if (result && typeof result === 'object') {
-                project = result.project_meta || result;
-              }
-              resolve(project as Project);
+        actor.send('getProjectByName', { name: projectName }, (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            let project = result;
+            if (result && typeof result === 'object') {
+              project = result.project_meta || result;
             }
-
-            setTimeout(() => {
-              if (actor) actor.remove();
-              if (worker) worker.terminate();
-            }, 100);
+            resolve(project as Project);
           }
-        );
+
+          setTimeout(() => {
+            if (actor) actor.remove();
+            if (worker) worker.terminate();
+          }, 100);
+        });
       } catch (err) {
         reject(err);
       }
     });
   }
 
-
-  public async updateProjectStarred(projectName: string, starred: boolean): Promise<Project> {
+  public async updateProjectStarred(
+    projectName: string,
+    starred: boolean
+  ): Promise<Project> {
     return new Promise((resolve, reject) => {
       let worker: Worker | null = null;
       let actor: Actor | null = null;
@@ -162,9 +168,13 @@ export class ProjectService {
           { name: projectName, starred },
           (err, result) => {
             if (err) {
-              reject(new Error(
-                this.language === 'zh' ? '更新项目星标状态失败' : 'Failed to update project star status'
-              ));
+              reject(
+                new Error(
+                  this.language === 'zh'
+                    ? '更新项目星标状态失败'
+                    : 'Failed to update project star status'
+                )
+              );
             } else {
               let projectData = result;
               if (result && typeof result === 'object') {
@@ -180,14 +190,21 @@ export class ProjectService {
           }
         );
       } catch (err) {
-        reject(new Error(
-          this.language === 'zh' ? '更新项目星标状态失败' : 'Failed to update project star status'
-        ));
+        reject(
+          new Error(
+            this.language === 'zh'
+              ? '更新项目星标状态失败'
+              : 'Failed to update project star status'
+          )
+        );
       }
     });
   }
 
-  public async updateProjectDescription(projectName: string, description: string): Promise<Project> {
+  public async updateProjectDescription(
+    projectName: string,
+    description: string
+  ): Promise<Project> {
     return new Promise((resolve, reject) => {
       let worker: Worker | null = null;
       let actor: Actor | null = null;
@@ -204,9 +221,13 @@ export class ProjectService {
           { name: projectName, description },
           (err, result) => {
             if (err) {
-              reject(new Error(
-                this.language === 'zh' ? '更新项目描述失败' : 'Failed to update project description'
-              ));
+              reject(
+                new Error(
+                  this.language === 'zh'
+                    ? '更新项目描述失败'
+                    : 'Failed to update project description'
+                )
+              );
             } else {
               let projectData = result;
               if (result && typeof result === 'object') {
@@ -222,9 +243,13 @@ export class ProjectService {
           }
         );
       } catch (err) {
-        reject(new Error(
-          this.language === 'zh' ? '更新项目描述失败' : 'Failed to update project description'
-        ));
+        reject(
+          new Error(
+            this.language === 'zh'
+              ? '更新项目描述失败'
+              : 'Failed to update project description'
+          )
+        );
       }
     });
   }
@@ -247,28 +272,30 @@ export class ProjectService {
         );
         actor = new Actor(worker, {});
 
-        actor.send(
-          'createProject',
-          projectData,
-          (err, result) => {
-            if (err) {
-              reject(new Error(
-                this.language === 'zh' ? `创建项目失败: ${err.message}` : `Failed to create project: ${err.message}`
-              ));
-            } else {
-              resolve(result);
-            }
-
-            setTimeout(() => {
-              if (actor) actor.remove();
-              if (worker) worker.terminate();
-            }, 100);
+        actor.send('createProject', projectData, (err, result) => {
+          if (err) {
+            reject(
+              new Error(
+                this.language === 'zh'
+                  ? `创建项目失败: ${err.message}`
+                  : `Failed to create project: ${err.message}`
+              )
+            );
+          } else {
+            resolve(result);
           }
-        );
+
+          setTimeout(() => {
+            if (actor) actor.remove();
+            if (worker) worker.terminate();
+          }, 100);
+        });
       } catch (err) {
-        reject(new Error(
-          this.language === 'zh' ? '创建项目失败' : 'Failed to create project'
-        ));
+        reject(
+          new Error(
+            this.language === 'zh' ? '创建项目失败' : 'Failed to create project'
+          )
+        );
       }
     });
   }
@@ -276,4 +303,4 @@ export class ProjectService {
   public setLanguage(language: string): void {
     this.language = language;
   }
-} 
+}

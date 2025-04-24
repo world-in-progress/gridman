@@ -6,9 +6,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import MapInit from './mapComponent/mapInit';
-import OperatePanel, {
-  RectangleCoordinates,
-} from './operatePanel/operatePanel';
+import { RectangleCoordinates } from './operatePanel/operatePanel';
 import SchemaPanel from './schemaPanel/schemaPanel';
 import CreateSchema from './schemaPanel/createSchema';
 import ProjectPanel from './projectPanel/projectPanel';
@@ -19,7 +17,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
@@ -35,23 +32,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import beststar from '../assets/beststar.jpg';
+import { SchemaService } from './schemaPanel/utils/SchemaService';
+import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
+import { Schema } from './schemaPanel/types/types';
 
 export type SidebarType = 'operate' | 'schema' | 'project' | null;
-export type BreadcrumbType = 'schema' | 'project' | 'topology' | 'attribute' | null;
+export type BreadcrumbType =
+  | 'schema'
+  | 'project'
+  | 'topology'
+  | 'attribute'
+  | null;
 
 export default function Page() {
-  const mapRef = useRef<{ startDrawRectangle: (cancel?: boolean) => void; startPointSelection: (cancel?: boolean) => void }>(
-    null
-  );
+  const mapRef = useRef<{
+    startDrawRectangle: (cancel?: boolean) => void;
+    startPointSelection: (cancel?: boolean) => void;
+  }>(null);
   const [rectangleCoordinates, setRectangleCoordinates] =
     useState<RectangleCoordinates | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showCreateSchema, setShowCreateSchema] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
-  const [activeBreadcrumb, setActiveBreadcrumb] = useState<BreadcrumbType>(null);
-  const [activePanel, setActivePanel] = useState<'schema' | 'project' | null>(null);
-  const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
-  const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState<string | undefined>(undefined);
+  const [activeBreadcrumb, setActiveBreadcrumb] =
+    useState<BreadcrumbType>(null);
+  const [activePanel, setActivePanel] = useState<'schema' | 'project' | null>(
+    null
+  );
+  const [selectedSchemaName, setSelectedSchemaName] = useState<
+    string | undefined
+  >(undefined);
+  const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState<
+    string | undefined
+  >(undefined);
+  const [selectedSchemaLevel, setSelectedSchemaLevel] = useState<
+    string | undefined
+  >(undefined);
 
   const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
   const { language } = useContext(LanguageContext);
@@ -96,31 +112,48 @@ export default function Page() {
     }
   };
 
-  const handleCreateProjectFromSchema = useCallback((schemaName: string, epsg: string) => {
-    setSelectedSchemaName(schemaName);
-    setSelectedSchemaEpsg(epsg);
-    setActivePanel('project');
-    setShowCreateProject(true);
-    setActiveBreadcrumb('project');
-  }, []);
+  const handleCreateProjectFromSchema = useCallback(
+    (schemaName: string, epsg: string, level: string) => {
+      setSelectedSchemaName(schemaName);
+      setSelectedSchemaEpsg(epsg);
+      setSelectedSchemaLevel(level);
+      setActivePanel('project');
+      setShowCreateProject(true);
+      setActiveBreadcrumb('project');
+      const schemaService = new SchemaService(language);
+      schemaService
+        .getSchemaByName(schemaName)
+        .then((schema: Schema) => {
+          if (schema) {
+            const markerManager = new MapMarkerManager(language, () => {});
+            markerManager.clearAllMarkers();
+            markerManager.showAllSchemasOnMap([schema]);
+          }
+        })
+        .catch((error: Error) => {
+          console.error('Failed to fetch schema for marker display:', error);
+        });
+    },
+    [language]
+  );
 
   const breadcrumbText = {
     schema: {
       zh: '模板',
-      en: 'Schema'
+      en: 'Schema',
     },
     project: {
       zh: '项目',
-      en: 'Project'
+      en: 'Project',
     },
     topology: {
       zh: '拓扑',
-      en: 'Topology'
+      en: 'Topology',
     },
     attribute: {
       zh: '属性',
-      en: 'Attribute'
-    }
+      en: 'Attribute',
+    },
   };
 
   const renderActivePanel = () => {
@@ -134,38 +167,43 @@ export default function Page() {
         />
       );
     }
-    
+
     if (activeSidebar === 'schema') {
       if (activePanel === 'schema') {
         if (showCreateSchema) {
           return <CreateSchema onBack={() => setShowCreateSchema(false)} />;
         }
-        return <SchemaPanel 
-          onCreateNew={() => setShowCreateSchema(true)}
-          onCreateProject={handleCreateProjectFromSchema}
-        />;
+        return (
+          <SchemaPanel
+            onCreateNew={() => setShowCreateSchema(true)}
+            onCreateProject={handleCreateProjectFromSchema}
+          />
+        );
       } else if (activePanel === 'project') {
         if (showCreateProject) {
           return (
-            <CreateProject 
-              onBack={() => setShowCreateProject(false)} 
+            <CreateProject
+              onBack={() => setShowCreateProject(false)}
               onDrawRectangle={handleDrawRectangle}
               rectangleCoordinates={rectangleCoordinates}
               isDrawing={isDrawing}
               initialSchemaName={selectedSchemaName}
               initialEpsg={selectedSchemaEpsg}
+              initialSchemaLevel={selectedSchemaLevel}
             />
           );
         }
-        return <ProjectPanel/>;
+        return <ProjectPanel />;
       }
-      
-      return <SchemaPanel 
-        onCreateNew={() => setShowCreateSchema(true)}
-        onCreateProject={handleCreateProjectFromSchema}
-      />;
+
+      return (
+        <SchemaPanel
+          onCreateNew={() => setShowCreateSchema(true)}
+          onCreateProject={handleCreateProjectFromSchema}
+        />
+      );
     }
-    
+
     return null;
   };
 
@@ -180,8 +218,12 @@ export default function Page() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink 
-                    className={activeBreadcrumb === 'schema' ? 'text-[#71F6FF] font-bold' : ''} 
+                  <BreadcrumbLink
+                    className={
+                      activeBreadcrumb === 'schema'
+                        ? 'text-[#71F6FF] font-bold'
+                        : ''
+                    }
                     onClick={() => handleBreadcrumbClick('schema')}
                   >
                     {breadcrumbText.schema[language]}
@@ -189,8 +231,12 @@ export default function Page() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbLink 
-                    className={activeBreadcrumb === 'project' ? 'text-[#71F6FF] font-bold' : ''} 
+                  <BreadcrumbLink
+                    className={
+                      activeBreadcrumb === 'project'
+                        ? 'text-[#71F6FF] font-bold'
+                        : ''
+                    }
                     onClick={() => handleBreadcrumbClick('project')}
                   >
                     {breadcrumbText.project[language]}
@@ -198,8 +244,12 @@ export default function Page() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbLink 
-                    className={activeBreadcrumb === 'topology' ? 'text-[#71F6FF] font-bold' : ''} 
+                  <BreadcrumbLink
+                    className={
+                      activeBreadcrumb === 'topology'
+                        ? 'text-[#71F6FF] font-bold'
+                        : ''
+                    }
                     onClick={() => handleBreadcrumbClick('topology')}
                   >
                     {breadcrumbText.topology[language]}
@@ -207,8 +257,12 @@ export default function Page() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbLink 
-                    className={activeBreadcrumb === 'attribute' ? 'text-[#71F6FF] font-bold' : ''} 
+                  <BreadcrumbLink
+                    className={
+                      activeBreadcrumb === 'attribute'
+                        ? 'text-[#71F6FF] font-bold'
+                        : ''
+                    }
                     onClick={() => handleBreadcrumbClick('attribute')}
                   >
                     {breadcrumbText.attribute[language]}
@@ -248,19 +302,18 @@ export default function Page() {
           </div>
         </header>
         <div className="h-screen w-screen">
-          <MapInit 
-            ref={mapRef} 
-            onRectangleDrawn={handleRectangleDrawn} 
-          />
-          
+          <MapInit ref={mapRef} onRectangleDrawn={handleRectangleDrawn} />
+
           <div className="fixed bottom-6 right-6 z-50">
-            <Button 
+            <Button
               className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white"
               onClick={handleNextClick}
               aria-label={language === 'zh' ? '下一步' : 'Next'}
               title={language === 'zh' ? '下一步' : 'Next'}
             >
-              <span className="mr-2">{language === 'zh' ? '下一步' : 'Next'}</span>
+              <span className="mr-2">
+                {language === 'zh' ? '下一步' : 'Next'}
+              </span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

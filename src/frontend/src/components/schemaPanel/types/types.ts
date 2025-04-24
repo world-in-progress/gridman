@@ -28,7 +28,7 @@ export interface SubNavPanelProps {
   itemsPerPage: number;
   onTotalItemsChange: (total: number) => void;
   onNavigateToPage: (page: number) => void;
-  onCreateProject?: (schemaName: string, epsg: string) => void;
+  onCreateProject?: (schemaName: string, epsg: string, level: string) => void;
   searchQuery?: string;
 } 
 
@@ -143,4 +143,23 @@ export interface ProjectSubNavPanelProps {
   onTotalItemsChange: (total: number) => void;
   onNavigateToPage: (page: number) => void;
   searchQuery?: string;
+}
+
+export interface GridLayer {
+  id: number;
+  width: string;
+  height: string;
+}
+
+export interface FormErrors {
+  name: boolean;
+  description: boolean;
+  coordinates: boolean;
+  epsg: boolean;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: FormErrors;
+  generalError: string | null;
 }
