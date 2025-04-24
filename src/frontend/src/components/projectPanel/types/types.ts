@@ -1,3 +1,5 @@
+import { FormErrors } from '../../schemaPanel/types/types';
+
 export interface RectangleCoordinates {
   northEast: [number, number];
   southEast: [number, number];
@@ -13,4 +15,15 @@ export interface CreateProjectProps {
   isDrawing?: boolean;
   initialSchemaName?: string;
   initialEpsg?: string;
+  initialSchemaLevel?: string;
 }
+
+export interface ProjectValidationResult {
+  isValid: boolean;
+  errors: ExtendedFormErrors;
+  generalError: string | null;
+}
+export interface ExtendedFormErrors extends FormErrors {
+  schemaName: boolean;
+}
+

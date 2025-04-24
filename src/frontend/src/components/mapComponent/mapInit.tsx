@@ -135,7 +135,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         attributionControl: false,
       });
 
-      // Store map instance as a globally accessible variable
       window.mapInstance = mapInstance;
 
       // Initialize drawing tool
@@ -146,9 +145,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
           ...MapboxDraw.modes,
           draw_rectangle: DrawRectangle,
         },
-        // Set style
         styles: [
-          // Default point style
           {
             id: 'gl-draw-point',
             type: 'circle',
@@ -209,14 +206,10 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       });
 
       mapInstance.addControl(drawInstance);
-      // Save to global variable
       window.mapboxDrawInstance = drawInstance;
 
-      // Add click event listener for point selection
       mapInstance.on('click', handleMapClick);
       
-
-      // Event handler after drawing completion
       mapInstance.on('draw.create', (e: any) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];

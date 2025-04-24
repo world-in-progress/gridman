@@ -51,23 +51,23 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
 
   const handleUpdateDescription = async () => {
     if (!textareaRef.current) return;
-    
+
     const newDescription = textareaRef.current.value;
-    
+
     try {
       if (onSaveDescription) {
         const updatedSchema = {
           ...schema,
-          description: newDescription
+          description: newDescription,
         };
         await onSaveDescription(title, updatedSchema);
       } else {
         const schemaService = new SchemaService(language);
         await schemaService.updateSchemaDescription(title, newDescription);
-        
+
         await schemaService.fetchAllSchemas();
       }
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update schema description:', error);
@@ -218,7 +218,11 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                defaultValue={(descriptionText && descriptionText[title]) || schema?.description || ''}
+                defaultValue={
+                  (descriptionText && descriptionText[title]) ||
+                  schema?.description ||
+                  ''
+                }
               />
               <div className="absolute bottom-3 right-5 flex space-x-2">
                 <button

@@ -13,7 +13,6 @@ export function SubNavPanel({
   currentPage,
   itemsPerPage,
   onTotalItemsChange,
-  onNavigateToPage,
   searchQuery = '',
 }: ProjectSubNavPanelProps) {
   const { language } = useContext(LanguageContext);

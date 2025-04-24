@@ -9,7 +9,7 @@ import { Pagination } from './components/Pagination';
 
 interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
   onCreateNew?: () => void;
-  onCreateProject?: (schemaName: string, epsg: string) => void;
+  onCreateProject?: (schemaName: string, epsg: string, level: string) => void;
 }
 
 export default function SchemaPanel({

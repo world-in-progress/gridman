@@ -25,12 +25,12 @@ import {
   enableMapPointSelection,
 } from './utils/SchemaCoordinateService';
 import {
-  GridLayer,
   validateGridLayers,
   validateSchemaForm,
   createSchemaData,
 } from './utils/SchemaFormValidation';
 import { SchemaService } from './utils/SchemaService';
+import { GridLayer } from './types/types';
 
 interface CreateSchemaProps extends React.ComponentProps<typeof Sidebar> {
   onBack?: () => void;
@@ -172,54 +172,57 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
   };
 
   const handleAddLayer = () => {
-    setGridLayers(prevLayers => {
+    setGridLayers((prevLayers) => {
       const nextId =
         prevLayers.length > 0
           ? Math.max(...prevLayers.map((layer) => layer.id)) + 1
           : 0;
-      
-      const updatedLayers = [...prevLayers, { id: nextId, width: '', height: '' }];
-      
+
+      const updatedLayers = [
+        ...prevLayers,
+        { id: nextId, width: '', height: '' },
+      ];
+
       const { errors } = validateGridLayers(updatedLayers, language);
       setLayerErrors(errors);
-      
+
       return updatedLayers;
     });
   };
 
   const handleUpdateWidth = (id: number, width: string) => {
-    setGridLayers(prevLayers => {
-      const updatedLayers = prevLayers.map(layer => 
+    setGridLayers((prevLayers) => {
+      const updatedLayers = prevLayers.map((layer) =>
         layer.id === id ? { ...layer, width } : layer
       );
-      
+
       const { errors } = validateGridLayers(updatedLayers, language);
       setLayerErrors(errors);
-      
+
       return updatedLayers;
     });
   };
 
   const handleUpdateHeight = (id: number, height: string) => {
-    setGridLayers(prevLayers => {
-      const updatedLayers = prevLayers.map(layer => 
+    setGridLayers((prevLayers) => {
+      const updatedLayers = prevLayers.map((layer) =>
         layer.id === id ? { ...layer, height } : layer
       );
-      
+
       const { errors } = validateGridLayers(updatedLayers, language);
       setLayerErrors(errors);
-      
+
       return updatedLayers;
     });
   };
 
   const handleRemoveLayer = (id: number) => {
-    setGridLayers(prevLayers => {
-      const filteredLayers = prevLayers.filter(layer => layer.id !== id);
-      
+    setGridLayers((prevLayers) => {
+      const filteredLayers = prevLayers.filter((layer) => layer.id !== id);
+
       const { errors } = validateGridLayers(filteredLayers, language);
       setLayerErrors(errors);
-      
+
       return filteredLayers;
     });
   };
