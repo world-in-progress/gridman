@@ -5,11 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12.10"
 dependencies = [
-    "c-two>=0.1.17",
+    "anthropic>=0.50.0",
+    "c-two>=0.1.18",
     "fastapi>=0.115.12",
     "gdal==3.10.2",
     "jinja2>=3.1.6",
     "numpy>=2.2.4",
+    "openai>=1.76.0",
     "pandas>=2.2.3",
     "pydantic-settings>=2.8.1",
     "uvicorn>=0.34.1",

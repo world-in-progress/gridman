@@ -373,7 +373,7 @@ export default class GridLayer implements NHCustomLayerInterface {
             }
             
             if (active === 'true' && val === 'topology') {
-                for (let dom of doms) {
+                for (const dom of doms) {
                     if (dom.dataset.type === 'mode' && dom.dataset.active === 'true') {
                         return
                     }
@@ -1383,7 +1383,7 @@ export default class GridLayer implements NHCustomLayerInterface {
                             vertexBuffer: Float32Array;
                         }
 
-                        let bufferInfo: BufferInfoItem[] = [];
+                        const bufferInfo: BufferInfoItem[] = [];
                         this.gridRecorder.parseGridTopology((isCompleted: boolean, fromStorageId: number, vertexBuffer: Float32Array) => {
 
                             this.updateGPUEdges(fromStorageId, vertexBuffer)
@@ -1708,7 +1708,7 @@ export default class GridLayer implements NHCustomLayerInterface {
 
     private _updateRibbonedEdges() {
         
-        let tempArray: number[] = []
+        const tempArray: number[] = []
         this._assignedEdges.forEach((ID) => {
             for (let i = 0; i < 4; i++) {
                 tempArray.push(this._vertexBuffer[ID * 4 + i])
@@ -1909,7 +1909,7 @@ function genAttrEditorHTML(edgeInfo: any, initGridInfo: { id: number, height: nu
               </div>
             </div>
         `
-    let html = `
+    const html = `
             ${edgesHtml}
             ${propHtml}
         `
@@ -1926,7 +1926,7 @@ function initLoadingDOM() {
     loadingDom.style.display = 'none'
     document.body.appendChild(loadingDom)
 
-    return (show: Boolean) => {
+    return (show: boolean) => {
         loadingDom.style.display = show ? 'block' : 'none'
     }
 }

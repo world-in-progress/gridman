@@ -4,50 +4,74 @@ import Page, { SidebarType } from './components/page'
 // import Page from './components/sideBar/page'
 import { Navbar } from './components/navbar';
 import { useState, createContext } from 'react';
+import ChatPanel from './components/chatPanel/chatPanel';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const SidebarContext = createContext<{
-  activeSidebar: SidebarType;
-  setActiveSidebar: (type: SidebarType) => void;
+    activeSidebar: SidebarType;
+    setActiveSidebar: (type: SidebarType) => void;
 }>({
-  activeSidebar: 'operate',
-  setActiveSidebar: () => {},
+    activeSidebar: 'operate',
+    setActiveSidebar: () => { },
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const LanguageContext = createContext<{
-  language: 'zh' | 'en';
-  setLanguage: (lang: 'zh' | 'en') => void;
+    language: 'zh' | 'en';
+    setLanguage: (lang: 'zh' | 'en') => void;
 }>({
-  language: 'en',
-  setLanguage: () => {},
+    language: 'en',
+    setLanguage: () => { },
 });
 
 function App() {
 
-  const [activeSidebar, setActiveSidebar] = useState<SidebarType>('operate'); // Default to 'operate' for development
-  const [language, setLanguage] = useState<'zh' | 'en'>('en');
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [activeSidebar, setActiveSidebar] = useState<SidebarType>('operate'); // Default to 'operate' for development
+    const [language, setLanguage] = useState<'zh' | 'en'>('en');
 
-  const handleNavClick = (item: string, type?: string) => {
-    if (type === 'schema' || type === 'operate') {
-      setActiveSidebar(type);
-    } else if (item === 'Schema' || item === '模板') {
-      setActiveSidebar('schema');
-    } else if (item === 'New' || item === '新建') {
-      setActiveSidebar('operate');
+    const toggleChat = () => {
+        setIsChatOpen(!isChatOpen);
     }
-  };
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
-      <SidebarContext.Provider value={{ activeSidebar, setActiveSidebar }}>
-        <div className="flex flex-col h-screen">
-          <Navbar className="z-50 relative border-black" onNavItemClick={handleNavClick}></Navbar>
-          <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
-            <Page />
-          </div>
+    const handleNavClick = (item: string, type?: string) => {
+        if (type === 'schema' || type === 'operate') {
+            setActiveSidebar(type);
+        } else if (item === 'Schema' || item === '模板') {
+            setActiveSidebar('schema');
+        } else if (item === 'New' || item === '新建') {
+            setActiveSidebar('operate');
+        }
+    };
+
+    return (
+        <div className='App'>
+
+            <LanguageContext.Provider value={{ language, setLanguage }}>
+                <SidebarContext.Provider value={{ activeSidebar, setActiveSidebar }}>
+                    <div className="flex flex-col h-screen">
+                        <Navbar className="z-50 relative border-black" onNavItemClick={handleNavClick}></Navbar>
+                        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
+                            <Page />
+                        </div>
+                    </div>
+                </SidebarContext.Provider>
+            </LanguageContext.Provider>
+
+
+            <button 
+                className="chat-toggle-button" 
+                onClick={toggleChat}
+            >
+                {isChatOpen ? 'Close Chat' : 'Open AI Chat'}
+            </button>
+            
+            <ChatPanel 
+                isOpen={isChatOpen} 
+                onClose={() => setIsChatOpen(false)} 
+            />
         </div>
-      </SidebarContext.Provider>
-    </LanguageContext.Provider>
-  );
+    );
 }
 
 export default App;

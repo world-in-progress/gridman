@@ -7,12 +7,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .api.router import api_router
 from .core.server import shutdown_server_subprocess, init_working_directory
+from .core.mcp_client import MCPClient
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_working_directory()
+    
+    # Initialize the MCP server from MCP client
+    agent_client = MCPClient()
+    app.state.agent_client = agent_client
+    await agent_client.connect_to_server(settings.MCP_SERVER_SCRIPT_PATH)
+    
     yield
+    
     shutdown_server_subprocess()
+    await agent_client.cleanup()
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
