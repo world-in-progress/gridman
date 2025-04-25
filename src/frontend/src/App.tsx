@@ -24,11 +24,21 @@ export const LanguageContext = createContext<{
     setLanguage: () => { },
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
+export const AIDialogContext = createContext<{
+    aiDialogEnabled: boolean;
+    setAIDialogEnabled: (enabled: boolean) => void;
+}>({
+    aiDialogEnabled: false,
+    setAIDialogEnabled: () => { },
+});
+
 function App() {
 
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [activeSidebar, setActiveSidebar] = useState<SidebarType>('operate'); // Default to 'operate' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
+    const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
 
     const toggleChat = () => {
         setIsChatOpen(!isChatOpen);
@@ -49,12 +59,14 @@ function App() {
 
             <LanguageContext.Provider value={{ language, setLanguage }}>
                 <SidebarContext.Provider value={{ activeSidebar, setActiveSidebar }}>
-                    <div className="flex flex-col h-screen">
-                        <Navbar className="z-50 relative border-black" onNavItemClick={handleNavClick}></Navbar>
-                        <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
-                            <Page />
+                    <AIDialogContext.Provider value={{ aiDialogEnabled, setAIDialogEnabled }}>
+                        <div className="flex flex-col h-screen">
+                            <Navbar className="z-50 relative border-black" onNavItemClick={handleNavClick}></Navbar>
+                            <div className="flex-1 overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
+                                <Page />
+                            </div>
                         </div>
-                    </div>
+                    </AIDialogContext.Provider>
                 </SidebarContext.Provider>
             </LanguageContext.Provider>
 

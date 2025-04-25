@@ -202,9 +202,13 @@ export default function CreateProject({
         en: `Converted Coordinates (EPSG:${epsg})`,
         zh: `转换后的坐标 (EPSG:${epsg})`,
       },
+      aligned: {
+        en: `Aligned Coordinates (EPSG:${epsg})`,
+        zh: `对齐后的坐标 (EPSG:${epsg})`,
+      },
       expanded: {
-        en: 'Expanded Rectangle (EPSG:4326)',
-        zh: '扩展后的矩形 (EPSG:4326)',
+        en: `Expanded Rectangle (EPSG:${epsg})`,
+        zh: `扩展后的矩形 (EPSG:${epsg})`,
       },
     },
   };
@@ -215,12 +219,10 @@ export default function CreateProject({
     }
   }, [isDrawing, onDrawRectangle]);
 
-  // 显示schema基准点marker
   const showSchemaMarkerOnMap = useCallback(
     (coordinates: [number, number], schemaName: string) => {
       if (!window.mapInstance) return;
 
-      // 清除之前的marker
       if (schemaMarker) {
         schemaMarker.remove();
       }
@@ -244,7 +246,7 @@ export default function CreateProject({
       }).setHTML(popupHtml);
 
       const marker = new mapboxgl.Marker({
-        color: '#00FF00', // 绿色
+        color: '#00FF00', 
       })
         .setLngLat(coordinates)
         .setPopup(popup)
@@ -267,8 +269,8 @@ export default function CreateProject({
 
       const popupHtml = `
       <div style="padding: 10px;">
-        <h4 style="margin: 0 0 5px; font-weight: bold;">${
-          language === 'zh' ? '网格对齐点' : 'Grid-Aligned Corner'
+        <h4 style="margin: 0 0 5px; font-weight: bold; font-size: 18px;">${
+          language === 'zh' ? '网格对齐左下角点' : 'Grid-Aligned bottom-left Corner'
         }</h4>
         <p style="margin: 0; font-size: 12px;">${coordinates[0].toFixed(
           6
@@ -283,7 +285,7 @@ export default function CreateProject({
       }).setHTML(popupHtml);
 
       const marker = new mapboxgl.Marker({
-        color: '#FF0000', // 红色
+        color: '#FF0000',
       })
         .setLngLat(coordinates)
         .setPopup(popup)
@@ -840,6 +842,20 @@ export default function CreateProject({
                         language === 'zh'
                           ? translations.coordinates.converted.zh
                           : translations.coordinates.converted.en
+                      }
+                      coordinates={convertedRectangle}
+                      formatCoordinate={formatCoordinate}
+                    />
+                  )}
+
+                {convertedRectangle &&
+                  epsg !== '4326' &&
+                  rectangleCoordinates && (
+                    <CoordinateBox
+                      title={
+                        language === 'zh'
+                          ? translations.coordinates.aligned.zh
+                          : translations.coordinates.aligned.en
                       }
                       coordinates={convertedRectangle}
                       formatCoordinate={formatCoordinate}

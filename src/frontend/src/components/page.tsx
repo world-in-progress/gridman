@@ -11,7 +11,7 @@ import SchemaPanel from './schemaPanel/schemaPanel';
 import CreateSchema from './schemaPanel/createSchema';
 import ProjectPanel from './projectPanel/projectPanel';
 import CreateProject from './projectPanel/createProject';
-import { SidebarContext, LanguageContext } from '../App';
+import { SidebarContext, LanguageContext, AIDialogContext } from '../App';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -35,6 +35,7 @@ import beststar from '../assets/beststar.jpg';
 import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Schema } from './schemaPanel/types/types';
+import { Switch } from '@/components/ui/switch';
 
 export type SidebarType = 'operate' | 'schema' | 'project' | null;
 export type BreadcrumbType =
@@ -71,6 +72,7 @@ export default function Page() {
 
   const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
   const { language } = useContext(LanguageContext);
+  const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
 
   useEffect(() => {
     if (activeSidebar === 'schema') {
@@ -270,6 +272,11 @@ export default function Page() {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+          </div>
+          <Separator orientation="vertical" className="mr-2 ml-4 h-4" />
+          <div className='flex items-center'>
+            <span className='ml-2 text-gray-500 justify-center text-sm'>{language === 'zh' ? 'AI对话框' : 'AI Dialog'}</span>
+            <Switch className='ml-2 cursor-pointer' checked={aiDialogEnabled} onCheckedChange={setAIDialogEnabled} />
           </div>
           <div className="fixed top-21 right-10 z-50">
             <DropdownMenu>

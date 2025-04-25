@@ -12,8 +12,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import opengms from '../assets/opengms.png';
 import grid from '../assets/grid.png';
+import bot from '../assets/bot.png';
 import { useContext } from 'react';
-import { SidebarContext, LanguageContext } from '../App';
+import { SidebarContext, LanguageContext, AIDialogContext } from '../App';
 
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
@@ -28,6 +29,7 @@ export function Navbar({
 }: NavbarProps) {
   const { language, setLanguage } = useContext(LanguageContext);
   const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
+  const { aiDialogEnabled } = useContext(AIDialogContext);
 
   const toggleLanguage = () => {
     setLanguage(language === 'zh' ? 'en' : 'zh');
@@ -79,9 +81,9 @@ export function Navbar({
     >
       <div className="flex items-center justify-center gap-4 w-1/5">
         <div className="flex items-center">
-          <img src={grid} className="h-12 w-12 mr-4" alt="Gridman" />
+          <img src={ aiDialogEnabled ? bot : grid} className="h-12 w-12 mr-4" alt="Gridman" />
           <a href="/" className="font-bold text-5xl text-white">
-            Gridman
+            {aiDialogEnabled ? 'GridBot' : 'GridMan'}
           </a>
         </div>
       </div>
