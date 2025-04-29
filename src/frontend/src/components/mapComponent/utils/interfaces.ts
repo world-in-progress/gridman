@@ -1,5 +1,5 @@
 import { NHCustomeLayerRenderMethod, NHCustomeLayerOnAddMethod } from './type'
-import NHLayerGroup from '../NHLayerGroup'
+import NHLayerGroup from './NHLayerGroup'
 
 /**
  * Interface representing a custom layer in the map

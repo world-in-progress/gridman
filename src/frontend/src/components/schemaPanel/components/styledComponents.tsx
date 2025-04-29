@@ -45,12 +45,10 @@ export const CardBackground = styled.div`
   right: 3px;
   bottom: 3px;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(50px);
-  -webkit-backdrop-filter: blur(50px);
   border-radius: 10px;
   overflow: hidden;
-  outline: 2px solid white;
 
   .dark & {
     background: rgba(40, 40, 40, 0.75);
