@@ -53,6 +53,7 @@ export default function Page() {
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
+        showProjectBounds: (show: boolean) => void;
     }>(null);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
@@ -95,6 +96,16 @@ export default function Page() {
         }
     }, [aiDialogEnabled, isChatOpen]);
 
+    useEffect(() => {
+        if (mapRef.current) {
+            if (activePanel === 'project' && !showCreateProject) {
+                mapRef.current.showProjectBounds(true);
+            } else {
+                mapRef.current.showProjectBounds(false);
+            }
+        }
+    }, [activePanel, showCreateProject]);
+
     const handleDrawRectangle = (currentlyDrawing: boolean) => {
         if (mapRef.current) {
             mapRef.current.startDrawRectangle(currentlyDrawing);
@@ -112,9 +123,15 @@ export default function Page() {
         if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
+            if (mapRef.current) {
+                mapRef.current.showProjectBounds(false);
+            }
         } else if (item === 'project') {
             setActivePanel('project');
             setShowCreateProject(false);
+            if (mapRef.current) {
+                mapRef.current.showProjectBounds(true);
+            }
         }
     };
 

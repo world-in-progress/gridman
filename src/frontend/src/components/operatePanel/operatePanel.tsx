@@ -479,7 +479,7 @@ export default function OperatePanel({
             window.mapboxDrawInstance.deleteAll();
           }
         } catch (error) {
-          console.log('Failed to remove rectangle:', error);
+          console.error('Failed to remove rectangle:', error);
         }
       } else {
         setGeneralError(

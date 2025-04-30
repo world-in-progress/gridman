@@ -9,6 +9,11 @@ import { SchemaService } from '../utils/SchemaService';
 import { MapMarkerManager } from '../utils/MapMarkerManager';
 import { CreateFromDialog } from './CreateFromDialog';
 import {
+  Copy,
+  FolderPlus,
+  Trash2,
+} from 'lucide-react';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -359,14 +364,8 @@ export function SubNavPanel({
     schema: schema,
     items: [
       {
-        title: language === 'zh' ? '显示详情' : 'Show Details',
-        onClick: (e: React.MouseEvent) => {
-          e.preventDefault();
-          flyToSchema(schema);
-        },
-      },
-      {
         title: language === 'zh' ? '基于此创建' : 'Create From',
+        icon: <Copy className="h-4 w-4 mr-2" />,
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
           openCloneDialog(schema);
@@ -374,6 +373,7 @@ export function SubNavPanel({
       },
       {
         title: language === 'zh' ? '创建项目' : 'Create Project',
+        icon: <FolderPlus className="h-4 w-4 mr-2" />,
         onClick: async (e: React.MouseEvent) => {
           e.preventDefault();
           if (onCreateProject) {
@@ -422,6 +422,7 @@ export function SubNavPanel({
       },
       {
         title: language === 'zh' ? '删除' : 'Delete',
+        icon: <Trash2 className="h-4 w-4 mr-2 text-white group-hover:text-gray-400" />,
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
           handleDeleteSchema(schema);
@@ -498,6 +499,7 @@ export function SubNavPanel({
             descriptionText={descriptionText}
             onEditDescription={toggleEditDescription}
             onSaveDescription={updateDescription}
+            onShowDetails={flyToSchema}
           />
         </div>
       ))}

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   MoreHorizontal,
   Star,
-  Grid,
   FileType2,
   SquarePen,
   MapPin,
@@ -19,7 +18,7 @@ import {
   CardBackground,
   Blob,
 } from '../../schemaPanel/components/styledComponents';
-import { ProjectCardProps, Project } from '../../schemaPanel/types/types';
+import { ProjectCardProps } from '../../schemaPanel/types/types';
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
@@ -29,13 +28,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   starredItems,
   openMenuId,
   menuItems,
+  descriptionText,
   onCardClick,
   onStarToggle,
   onMenuOpenChange,
   onEditDescription,
   onSaveDescription,
-  editingDescription,
-  descriptionText,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localStarred, setLocalStarred] = useState<boolean | null>(null);

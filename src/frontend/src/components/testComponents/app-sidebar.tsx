@@ -171,12 +171,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           currentPage={0} 
           itemsPerPage={0} 
           onTotalItemsChange={(total: number): void => {
-            // 处理项目总数变化
-            console.log("Total items:", total);
+
           }}
           onNavigateToPage={(page: number): void => {
-            // 处理页面导航
-            console.log("Navigating to page:", page);
           }}
         />
       </SidebarContent>

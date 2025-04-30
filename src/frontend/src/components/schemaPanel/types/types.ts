@@ -12,6 +12,7 @@ export interface Schema {
 export interface MenuItem {
   title: string;
   onClick?: (e: React.MouseEvent) => void;
+  icon?: React.ReactNode;
 }
 
 export interface SubNavItem {
@@ -56,6 +57,7 @@ export interface SchemaCardProps {
   onEditDescription?: (name: string) => void;
   onSaveDescription?: (name: string, schema: Schema) => Promise<void>;
   updateSchema?: (schema: Schema) => Promise<void>;
+  onShowDetails?: (schema: Schema) => void;
 }
 
 export interface SchemaNameCardProps {

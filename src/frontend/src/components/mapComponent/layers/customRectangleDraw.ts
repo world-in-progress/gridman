@@ -1,39 +1,50 @@
-import { mat4, vec3 } from 'gl-matrix';
-import { Map, CustomLayerInterface, LngLat } from 'mapbox-gl';
+import { mat4 } from 'gl-matrix';
+import { Map, CustomLayerInterface } from 'mapbox-gl';
 import * as tilebelt from '@mapbox/tilebelt';
 
-export default class CustomRectangleDraw implements CustomLayerInterface {
+export default class GLMapRectangleLayer implements CustomLayerInterface {
     id: string;
     initialized: boolean;
     z_order?: number;
     type: 'custom' = 'custom';
-    renderingMode: '2d' | '3d' = '2d';
+    renderingMode: '2d' | '3d' = '3d';
     // map
     map!: Map;
+    origin!: [number, number];
     program!: WebGLProgram;
     
-    // 矩形的四个角点坐标 (EPSG:4326)
-    corners: {
-        southWest: [number, number]; // 左下
-        southEast: [number, number]; // 右下
-        northEast: [number, number]; // 右上
-        northWest: [number, number]; // 左上
-    };
+    // 四个角点坐标
+    northEast: [number, number];
+    northWest: [number, number];
+    southEast: [number, number];
+    southWest: [number, number];
+
+    // render params
 
     constructor(options: {
         id: string;
         z_order?: number;
         corners: {
-            southWest: [number, number]; // 左下
-            southEast: [number, number]; // 右下
-            northEast: [number, number]; // 右上
-            northWest: [number, number]; // 左上
+            northEast: [number, number];
+            northWest: [number, number];
+            southEast: [number, number];
+            southWest: [number, number];
         };
     }) {
         this.id = options.id;
         options.z_order && (this.z_order = options.z_order);
         this.initialized = false;
-        this.corners = options.corners;
+        
+        // 存储四个角点坐标
+        this.northEast = options.corners.northEast;
+        this.northWest = options.corners.northWest;
+        this.southEast = options.corners.southEast;
+        this.southWest = options.corners.southWest;
+        
+        // 计算中心点作为origin
+        const centerLng = (this.northEast[0] + this.southWest[0]) / 2;
+        const centerLat = (this.northEast[1] + this.southWest[1]) / 2;
+        this.origin = [centerLng, centerLat];
     }
 
     /** Method to initialize gl resources and register event listeners. */
@@ -41,22 +52,22 @@ export default class CustomRectangleDraw implements CustomLayerInterface {
         this.map = map;
 
         const vertexSource = `#version 300 es
-        uniform mat4 u_matrix;
-        
+        uniform vec2 base_tile_pos;
+        uniform float meter_to_tile;
+        uniform mat4 tile_matrix;
+        uniform vec2 corner_positions[4]; // 四个角点在瓦片坐标系中的位置
+
         out vec3 vv;
 
         void main() {
-            // 定义矩形的四个顶点（从左下角开始，按顺时针方向）
-            vec3[] pos = vec3[4](
-                vec3(0.0, 0.0, 0.01),  // 左下 (southWest)
-                vec3(1.0, 0.0, 0.01),  // 右下 (southEast)
-                vec3(1.0, 1.0, 0.01),  // 右上 (northEast)
-                vec3(0.0, 1.0, 0.01)   // 左上 (northWest)
-            );
+            // 使用传入的四个角点位置
+            // 0: 左下(southWest), 1: 右下(southEast), 2: 右上(northEast), 3: 左上(northWest)
+            int vertexIndex = gl_VertexID % 4;
+            vec2 vertInTilexy = corner_positions[vertexIndex];
+            float z = 0.01; // 保持矩形稍微高于地面
+            gl_Position = tile_matrix * vec4(vertInTilexy, z, 1.0);
 
-            gl_Position = u_matrix * vec4(pos[gl_VertexID], 1.0);
-            
-            vv = vec3(pos[gl_VertexID]);
+            vv = vec3(vertInTilexy - base_tile_pos, 0.0); // 用于片段着色器的值
         }`;
 
         const fragmentSource = `#version 300 es
@@ -66,7 +77,7 @@ export default class CustomRectangleDraw implements CustomLayerInterface {
         out vec4 outColor;
 
         void main() {
-            outColor = vec4(0.0, 0.3, 0.7, 0.6); // 蓝色，略微增加透明度
+            outColor = vec4(0.0, 0.3, 0.7, 0.4); // 蓝色半透明
         }`;
 
         const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
@@ -107,89 +118,78 @@ export default class CustomRectangleDraw implements CustomLayerInterface {
     render(gl: WebGL2RenderingContext, matrix: Array<number>) {
         if (!this.initialized) return;
 
-        gl.useProgram(this.program);
-        
-        // 为每个角点计算投影矩阵
-        const cornerPositions = [
-            this.corners.southWest, // 左下
-            this.corners.southEast, // 右下
-            this.corners.northEast, // 右上
-            this.corners.northWest  // 左上
-        ];
-        
-        // 创建WebGL矩阵
-        const projectionMatrix = this.map.transform.projMatrix;
-        const transformMatrix = mat4.create();
-        
-        // 计算包含所有点的变换矩阵
-        this.calculateTransformMatrix(transformMatrix, cornerPositions);
-        
-        // 完整的矩阵（从经纬度到屏幕坐标）
-        const finalMatrix = mat4.create();
-        mat4.multiply(finalMatrix, projectionMatrix, transformMatrix);
-        
-        // 设置uniform
-        gl.uniformMatrix4fv(
-            gl.getUniformLocation(this.program, 'u_matrix'),
-            false,
-            finalMatrix
+        // Tick logic operation
+        const tr = this.map.transform;
+
+        /** target tile in specified point and zoom */
+        const targetTile = point2Tile(
+            this.origin[0],
+            this.origin[1],
+            Math.floor(tr.zoom)
         );
 
+        /** transform from Local-Tile-Space to Clip-Space */
+        const tileMatrix = calcTileMatrix(tr, targetTile);
+
+        /** lnglat to Local-Tile-Space in specified tile  */
+        const originInTileCoord = lnglat2TileLocalCoord(
+            this.origin,
+            targetTile
+        );
+
+        const meterPerTileUnit = tileToMeter(targetTile, originInTileCoord[1]);
+        const tileUnitPerMeter = 1.0 / meterPerTileUnit;
+
+        // 将四个角点转换为瓦片坐标系中的位置
+        const cornerPositions = new Float32Array(8); // 4个点 * 2个坐标(x,y)
+        
+        // 按照渲染顺序：左下(southWest)、右下(southEast)、右上(northEast)、左上(northWest)
+        const corners = [this.southWest, this.southEast, this.northEast, this.northWest];
+        
+        for (let i = 0; i < 4; i++) {
+            const cornerInTileCoord = lnglat2TileLocalCoord(corners[i], targetTile);
+            cornerPositions[i*2] = cornerInTileCoord[0];
+            cornerPositions[i*2+1] = cornerInTileCoord[1];
+        }
+
+        gl.useProgram(this.program);
+        gl.uniformMatrix4fv(
+            gl.getUniformLocation(this.program, 'tile_matrix'),
+            false,
+            tileMatrix
+        );
+        gl.uniform2fv(
+            gl.getUniformLocation(this.program, 'base_tile_pos'),
+            originInTileCoord
+        );
+        gl.uniform1f(
+            gl.getUniformLocation(this.program, 'meter_to_tile'),
+            tileUnitPerMeter
+        );
+        gl.uniform2fv(
+            gl.getUniformLocation(this.program, 'corner_positions'),
+            cornerPositions
+        );
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        // 定义矩形的面（两个三角形）
+        // 定义矩形的两个三角形
         const indices = new Uint16Array([
-            0, 1, 2,  // 第一个三角形 (左下 -> 右下 -> 右上)
-            0, 2, 3   // 第二个三角形 (左下 -> 右上 -> 左上)
+            0, 1, 2,  // 第一个三角形
+            0, 2, 3   // 第二个三角形
         ]);
 
-        // 使用元素数组绘制
+        // 创建缓冲区并绘制
         const indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
-        gl.disable(gl.BLEND); // 禁用混合模式
-    }
-    
-    /**
-     * 计算从经纬度坐标到矩形空间的变换矩阵
-     */
-    calculateTransformMatrix(matrix: mat4, cornerPositions: [number, number][]) {
-        const tr = this.map.transform;
-        
-        // 重置矩阵
-        mat4.identity(matrix);
-        
-        // 计算四个角的墨卡托投影坐标
-        const mercatorPoints = cornerPositions.map(coord => 
-            tr.project(new LngLat(coord[0], coord[1]))
-        );
-        
-        // 计算单位矩形到实际墨卡托坐标的变换
-        // 使用坐标系统原点在左下角的单位矩形 [0,0] -> [1,1]
-        const mercatorSW = mercatorPoints[0]; // 左下
-        const mercatorNE = mercatorPoints[2]; // 右上
-        
-        // 计算缩放和偏移
-        const scaleVec = vec3.fromValues(
-            mercatorNE.x - mercatorSW.x,
-            mercatorNE.y - mercatorSW.y,
-            1
-        );
-        
-        const translateVec = vec3.fromValues(
-            mercatorSW.x,
-            mercatorSW.y,
-            0
-        );
-        
-        // 应用变换
-        mat4.scale(matrix, matrix, scaleVec);
-        mat4.translate(matrix, matrix, translateVec);
-        
-        return matrix;
+        gl.disable(gl.DEPTH_TEST);
+        gl.disable(gl.BLEND);
     }
 
     /** Method to clean up gl resources and event listeners. */

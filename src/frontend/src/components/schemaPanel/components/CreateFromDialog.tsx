@@ -86,7 +86,7 @@ export const CreateFromDialog: React.FC<CreateFromDialogProps> = ({
                 htmlFor="schema-name"
                 className="block text-sm font-medium mb-1"
               >
-                {language === 'zh' ? '名称' : 'Name'}*
+                {language === 'zh' ? '名称' : 'Name'}<span className="text-red-500">*</span>
               </label>
               <input
                 id="schema-name"

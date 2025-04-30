@@ -10,7 +10,6 @@ interface CustomLayer {
   buffer?: WebGLBuffer;
 }
 
-// 允许传入中心点和尺寸参数
 interface RectangleOptions {
   center: { lng: number; lat: number };
   width: number; // Mercator
@@ -52,13 +51,11 @@ export const CustomLayer = (options: RectangleOptions): CustomLayer => {
 
       this.aPos = gl.getAttribLocation(this.program, 'a_pos');
 
-      // 将经纬度转换为 Mercator 坐标
       const centerCoord: mapboxgl.MercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat({
         lng: center.lng,
         lat: center.lat,
       });
 
-      // 定义矩形顶点
       const vertices: number[] = [
         centerCoord.x - width / 2, centerCoord.y - height / 2, // LB
         centerCoord.x - width / 2, centerCoord.y + height / 2, // LT
@@ -79,7 +76,7 @@ export const CustomLayer = (options: RectangleOptions): CustomLayer => {
       gl.vertexAttribPointer(this.aPos!, 2, gl.FLOAT, false, 0, 0);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // 绘制 4 个顶点的矩形
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); 
     },
   };
 };

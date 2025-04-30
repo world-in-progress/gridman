@@ -418,7 +418,6 @@ export async function getProjectByName(
   params: { name: string },
   callback: Callback<any>
 ) {
-  console.log('[Worker] getProjectByName 被调用，参数:', params);
 
   if (!params || !params.name) {
     console.error('[Worker] 无效的模板名称');
@@ -437,7 +436,6 @@ export async function getProjectByName(
     }
 
     const responseData = await response.json();
-    console.log('[Worker] 获取到响应数据:', responseData);
     callback(null, responseData);
   } catch (error) {
     console.error('[Worker] 获取模板出错:', error);

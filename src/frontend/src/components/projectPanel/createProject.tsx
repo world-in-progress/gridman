@@ -471,7 +471,6 @@ export default function CreateProject({
             );
           }
         } else {
-          console.log('坐标已经对齐网格');
 
           const swInWGS84 = convertSingleCoordinate(
             convertedRect.southWest,
