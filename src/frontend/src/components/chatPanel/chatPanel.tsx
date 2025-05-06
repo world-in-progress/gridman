@@ -176,7 +176,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed right-0 top-[144px] bottom-0 w-[350px] bg-white shadow-md flex flex-col z-[1000] border-l border-gray-600">
+        <div className="fixed right-0 top-[144px] bottom-0 w-[350px] bg-white shadow-md flex flex-col z-[10] border-l border-gray-600">
             <div className="p-4 h-16 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
                 <h3 className="flex items-center">
                     <Bot className="w-8 h-8 mr-2" />

@@ -37,6 +37,7 @@ interface MapInitHandle {
     startDrawRectangle: (cancel?: boolean) => void;
     startPointSelection: (cancel?: boolean) => void;
     showProjectBounds: (show: boolean) => void;
+    flyToProjectBounds: (projectName: string) => Promise<void>;
 }
 
 let scene: ThreejsSceneLayer | null = null;
@@ -410,7 +411,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 }
                 
                 const features = projectBoundsLayer.projects.map(project => {
-                    const { bounds, name } = project;
+                    const { bounds, name, starred } = project;
                     if (!bounds || bounds.length !== 4) return null;
                     
                     const sw = convertCoordinate([bounds[0], bounds[1]], '2326', '4326');
@@ -425,7 +426,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         properties: {
                             name,
                             selected: name === projectBoundsLayer?.selectedProject,
-                            color: randomColor 
+                            color: randomColor,
+                            starred: starred || false
                         },
                         geometry: {
                             type: 'Polygon',
@@ -463,7 +465,11 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     type: 'line',
                     source: sourceId,
                     paint: {
-                        'line-color': '#FFFF00',
+                        'line-color': [
+                            'case',
+                            ['get', 'starred'], '#FFFD00', 
+                            '#AAAAAA' 
+                        ],
                         'line-width': 2
                     }
                 });
@@ -474,11 +480,75 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         }
     };
 
+    const flyToProjectBounds = async (projectName: string) => {
+        if (!map) return;
+
+        try {
+            if (!projectBoundsLayer) {
+                projectBoundsLayer = new ProjectBoundsLayer({ id: 'project-bounds-layer' });
+                map.addLayer(projectBoundsLayer);
+                await projectBoundsLayer.loadAllProjects();
+            }
+            
+            const projectToFly = projectBoundsLayer.projects.find(
+                project => project.name === projectName
+            );
+            
+            if (!projectToFly || !projectToFly.bounds || projectToFly.bounds.length !== 4) {
+                console.warn('找不到项目或项目边界不正确:', projectName);
+                return;
+            }
+            
+            const sw = convertCoordinate(
+                [projectToFly.bounds[0], projectToFly.bounds[1]],
+                '2326',
+                '4326'
+            );
+            const ne = convertCoordinate(
+                [projectToFly.bounds[2], projectToFly.bounds[3]],
+                '2326',
+                '4326'
+            );
+            
+            if (!sw || !ne || sw.length !== 2 || ne.length !== 2) {
+                console.warn('坐标转换失败:', projectName);
+                return;
+            }
+            
+            const bounds = [
+                [sw[0], sw[1]], // 西南角
+                [ne[0], ne[1]]  // 东北角
+            ];
+            
+            projectBoundsLayer.setSelectedProject(projectName);
+            
+            if (projectBoundsLayer.getVisibility() === 'none') {
+                projectBoundsLayer.setVisibility('visible');
+                setShowingProjectBounds(true);
+            }
+            
+            map.fitBounds(bounds as [[number, number], [number, number]], {
+                padding: 50, 
+                maxZoom: 19, 
+                duration: 1000
+            });
+        } catch (error) {
+            console.error('飞行到项目边界失败:', error);
+        }
+    };
+
     React.useImperativeHandle(ref, () => ({
         startDrawRectangle,
         startPointSelection,
         showProjectBounds,
-    }));
+        flyToProjectBounds,
+    }),
+    [
+        startDrawRectangle,
+        startPointSelection,
+        showProjectBounds,
+        flyToProjectBounds,
+    ]);
 
     return (
         <div className="relative w-full h-full">

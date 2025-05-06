@@ -1,24 +1,15 @@
 import * as React from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Plus,
-} from 'lucide-react';
 import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../App';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/SubNavPanel';
 import { Pagination } from '../schemaPanel/components/Pagination';
-
-interface ProjectPanelProps extends React.ComponentProps<typeof Sidebar> {
-  onCreateNew?: () => void;
-}
+import { ProjectPanelProps } from './types/types';
 
 export default function ProjectPanel({
   onCreateNew,
+  onCreateSubProject,
   ...props
 }: ProjectPanelProps) {
   const { language } = useContext(LanguageContext);
@@ -89,6 +80,7 @@ export default function ProjectPanel({
           itemsPerPage={itemsPerPage}
           onNavigateToPage={handleNavigateToPage}
           searchQuery={searchQuery}
+          onCreateSubProject={onCreateSubProject}
         />
 
         {/* Pagination Component */}

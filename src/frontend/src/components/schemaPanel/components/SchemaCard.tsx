@@ -139,7 +139,8 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 <DropdownMenuItem key={subItem.title} asChild>
                   <a
                     className={`cursor-pointer flex items-center ${
-                      subItem.title === (language === 'zh' ? '删除' : 'Delete')
+                      subItem.title === (language === 'zh' ? '删除模板' : 'Delete Schema') || 
+                      (subItem.title.includes('Delete') && language !== 'zh')
                         ? 'bg-red-500 text-white hover:bg-red-600 group'
                         : ''
                     }`}

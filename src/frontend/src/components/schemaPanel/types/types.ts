@@ -113,40 +113,6 @@ export interface PaginationProps {
   onLastPage: () => void;
 }
 
-export interface Project {
-  name: string;
-  description?: string;
-  starred?: boolean;
-  schema_name: string;
-  bounds: number[];
-}
-
-export interface ProjectCardProps {
-  project: Project;
-  title: string;
-  isHighlighted: boolean;
-  language: string;
-  starredItems: Record<string, boolean>;
-  openMenuId: string | null;
-  menuItems: MenuItem[];
-  onCardClick: () => void;
-  onStarToggle: (name: string, project: Project) => void;
-  onMenuOpenChange: (open: boolean) => void;
-  editingDescription?: string | null;
-  descriptionText?: Record<string, string>;
-  onEditDescription?: (name: string) => void;
-  onSaveDescription?: (name: string, project: Project) => Promise<void>;
-}
-
-export interface ProjectSubNavPanelProps {
-  items?: SubNavItem[];
-  currentPage: number;
-  itemsPerPage: number;
-  onTotalItemsChange: (total: number) => void;
-  onNavigateToPage: (page: number) => void;
-  searchQuery?: string;
-}
-
 export interface GridLayer {
   id: number;
   width: string;

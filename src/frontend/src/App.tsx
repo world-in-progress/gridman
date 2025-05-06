@@ -2,7 +2,16 @@ import './App.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Page, { SidebarType } from './components/page';
 import { Navbar } from './components/navbar';
-import { useState, createContext } from 'react';
+import { useState, createContext, RefObject } from 'react';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
+
+declare global {
+    interface Window {
+        mapInstance?: mapboxgl.Map;
+        mapboxDrawInstance?: MapboxDraw;
+        mapRef?: RefObject<any>;
+    }
+}
 
 export const SidebarContext = createContext<{
     activeSidebar: SidebarType;
@@ -29,14 +38,9 @@ export const AIDialogContext = createContext<{
 });
 
 function App() {
-    const [isChatOpen, setIsChatOpen] = useState(false);
     const [activeSidebar, setActiveSidebar] = useState<SidebarType>('schema'); // Default to 'schema' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
-
-    const toggleChat = () => {
-        setIsChatOpen(!isChatOpen);
-    };
 
     const handleNavClick = (item: string, type?: string) => {
         if (type === 'schema' || type === 'operate') {

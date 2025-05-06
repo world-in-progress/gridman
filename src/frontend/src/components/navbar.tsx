@@ -15,7 +15,7 @@ import grid from '../assets/grid.png';
 import bot from '../assets/bot.png';
 import { useContext } from 'react';
 import { SidebarContext, LanguageContext, AIDialogContext } from '../App';
-import GridBotBotton from './ui/GridBotBotton';
+import GridBotBotton from './testComponents/GridBotBotton';
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
     children?: React.ReactNode;
     onNavItemClick?: (item: string, type?: string) => void;
@@ -74,12 +74,12 @@ export function Navbar({
     return (
         <nav
             className={cn(
-                'flex items-center justify-between p-4 border-b-2 bg-black text-white h-20 z-50 relative',
+                'flex   text-white h-20 z-50 relative',
                 className
             )}
             {...props}
         >
-            <div className="flex items-center justify-center gap-4 w-1/5">
+            <div className={`flex items-center justify-center gap-4 w-1/5 ${aiDialogEnabled ? 'bg-[#00C0FF]' : 'bg-black'}`}>
                 <div className="flex items-center">
                   <img src={ aiDialogEnabled ? bot : grid} className="h-12 w-12 mr-4" alt="Gridman" />
                   <a href="/" className="font-bold text-5xl text-white">
@@ -87,8 +87,8 @@ export function Navbar({
                   </a>
                 </div>
             </div>
-            <div className="flex items-center justify-between w-4/5">
-                <div className="flex items-center gap-10">
+            <div className="flex items-center justify-between bg-black w-4/5">
+                <div className="flex items-center gap-10 ml-3">
                     {navItems.map((item, index) => (
                         <a
                             key={index}
@@ -142,7 +142,7 @@ export function Navbar({
                                 id="language-switch"
                                 checked={language === 'zh'}
                                 onCheckedChange={() => toggleLanguage()}
-                                className="bg-gray-700 data-[state=checked]:bg-blue-500"
+                                className="bg-gray-700 data-[state=checked]:bg-[#00C0FF] cursor-pointer"
                             />
                             <Label
                                 htmlFor="language-switch"

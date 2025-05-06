@@ -6,6 +6,10 @@ import {
   SquarePen,
   MapPin,
   LayoutPanelTop,
+  Eye,
+  EyeOff,
+  FilePlus,
+  Blocks,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -18,7 +22,15 @@ import {
   CardBackground,
   Blob,
 } from '../../schemaPanel/components/styledComponents';
-import { ProjectCardProps } from '../../schemaPanel/types/types';
+import { ProjectCardProps } from '../types/types';
+
+declare global {
+  interface Window {
+    mapInstance?: mapboxgl.Map;
+    mapboxDrawInstance?: MapboxDraw;
+    mapRef?: React.RefObject<any>;
+  }
+}
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
@@ -34,6 +46,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onMenuOpenChange,
   onEditDescription,
   onSaveDescription,
+  onAddSubproject,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -169,7 +182,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         <h3 className="text-lg font-bold truncate pr-16">{title}</h3>
         <div className="absolute right-0 top-0 flex items-center">
           <button
-            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1"
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
             aria-label={language === 'zh' ? '标星' : 'Star'}
             title={language === 'zh' ? '标星' : 'Star'}
             onClick={handleStarClick}
@@ -180,6 +193,46 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               }`}
             />
           </button>
+          {/* <button
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
+            aria-label={language === 'zh' ? '显示详情' : 'Show Details'}
+            title={language === 'zh' ? '显示详情' : 'Show Details'}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.mapInstance && window.mapRef && window.mapRef.current) {
+                const { flyToProjectBounds } = window.mapRef.current;
+                
+                if (flyToProjectBounds && typeof flyToProjectBounds === 'function') {
+                  flyToProjectBounds(project.name).catch((error: any) => {
+                    console.error('飞行到项目边界失败:', error);
+                  });
+                }
+              }
+            }}
+          >
+            <MapPin className="h-5 w-5" />
+          </button> */}
+          <button
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
+            aria-label={language === 'zh' ? '显示子项目' : 'Show Subprojects'}
+            title={language === 'zh' ? '显示子项目' : 'Show Subprojects'}
+            // onClick={}
+          >
+            <Eye className="h-5 w-5" />
+          </button>
+          <button
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
+            aria-label={language === 'zh' ? '添加子项目' : 'Add Subproject'}
+            title={language === 'zh' ? '添加子项目' : 'Add Subproject'}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onAddSubproject) {
+                onAddSubproject(project);
+              }
+            }}
+          >
+            <FilePlus className="h-5 w-5" />
+          </button>
           <DropdownMenu
             open={openMenuId === title}
             onOpenChange={(open) => {
@@ -188,7 +241,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           >
             <DropdownMenuTrigger asChild>
               <button
-                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center cursor-pointer"
                 aria-label={language === 'zh' ? '更多选项' : 'More options'}
                 title={language === 'zh' ? '更多选项' : 'More options'}
                 onClick={(e) => {
@@ -235,8 +288,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </span>
         </div>
 
+        {/* Subproject Information */}
+        <div className="flex items-center text-gray-600 dark:text-gray-300">
+          <Blocks className="h-4 w-4 mr-2" />
+          <span>
+            {language === 'zh' ? '子项目' : 'Subproject'}:{' '}
+            {project.name || '-'}
+          </span>
+        </div>
+
         {/* Bounds Information */}
-        <div className="text-gray-600 dark:text-gray-300">
+        {/* <div className="text-gray-600 dark:text-gray-300">
           <div className="flex items-center">
             <MapPin className="h-4 w-4 mr-2" />
             <span className="font-medium">
@@ -251,7 +313,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               {language === 'zh' ? '无边界信息' : 'No bounds information'}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Description Information */}
         <div className="text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-gray-700 mb-1">
@@ -334,9 +396,30 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     </>
   );
 
+  const handleCardClick = () => {
+    if (window.mapInstance && window.mapRef && window.mapRef.current) {
+      const { flyToProjectBounds } = window.mapRef.current;
+      
+      if (flyToProjectBounds && typeof flyToProjectBounds === 'function') {
+        setTimeout(() => {
+          flyToProjectBounds(project.name).catch((error: any) => {
+            console.error('飞行到项目边界失败:', error);
+          });
+        }, 100);
+      }
+    }
+    if (onCardClick) {
+      onCardClick();
+    }
+  };
+
   if (isHighlighted) {
     return (
-      <AnimatedCard className="p-3 mb-4" id={cardId}>
+      <AnimatedCard
+        id={cardId}
+        onClick={handleCardClick}
+        className="p-3 mb-4"
+      >
         <CardBackground />
         <Blob />
         <div className="relative z-10">
@@ -344,15 +427,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </AnimatedCard>
     );
-  } else {
-    return (
-      <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-4 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
-        onClick={onCardClick}
-        id={cardId}
-      >
-        <CardContent />
-      </div>
-    );
   }
+
+  return (
+    <div
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-4 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
+      onClick={handleCardClick}
+      id={cardId}
+    >
+      <CardContent />
+    </div>
+  );
 };
+

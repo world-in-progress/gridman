@@ -37,7 +37,8 @@ import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Schema } from './schemaPanel/types/types';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import GridBotBotton from './ui/GridBotBotton';
+import GridBotBotton from './testComponents/GridBotBotton';
+import CreateSubProject from './projectPanel/createSubProject';
 
 export type SidebarType = 'operate' | 'schema' | 'project' | null;
 export type BreadcrumbType =
@@ -54,12 +55,15 @@ export default function Page() {
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
         showProjectBounds: (show: boolean) => void;
+        flyToProjectBounds: (projectName: string) => Promise<void>;
     }>(null);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [showCreateSchema, setShowCreateSchema] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
+    const [showCreateSubProject, setShowCreateSubProject] = useState(false);
+    const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
     const [activeBreadcrumb, setActiveBreadcrumb] =
         useState<BreadcrumbType>(null);
     const [activePanel, setActivePanel] = useState<'schema' | 'project' | null>(
@@ -105,6 +109,13 @@ export default function Page() {
             }
         }
     }, [activePanel, showCreateProject]);
+
+    useEffect(() => {
+        window.mapRef = mapRef;
+        return () => {
+            window.mapRef = undefined;
+        };
+    }, []);
 
     const handleDrawRectangle = (currentlyDrawing: boolean) => {
         if (mapRef.current) {
@@ -176,6 +187,19 @@ export default function Page() {
         [language]
     );
 
+    const handleCreateSubProject = useCallback(
+        (parentProject: any) => {
+            setSelectedParentProject(parentProject);
+            setActivePanel('project');
+            setShowCreateSubProject(true);
+            setActiveBreadcrumb('project');
+            if (mapRef.current) {
+                mapRef.current.showProjectBounds(false);
+            }
+        },
+        []
+    );
+
     const breadcrumbText = {
         schema: {
             zh: '模板',
@@ -236,7 +260,23 @@ export default function Page() {
                         />
                     );
                 }
-                return <ProjectPanel />;
+                if (showCreateSubProject) {
+                    return (
+                        <CreateSubProject
+                            onBack={() => setShowCreateSubProject(false)}
+                            onDrawRectangle={handleDrawRectangle}
+                            rectangleCoordinates={rectangleCoordinates}
+                            isDrawing={isDrawing}
+                            initialSchemaName={selectedParentProject?.schema_name}
+                            initialEpsg={selectedSchemaEpsg}
+                            initialSchemaLevel={selectedSchemaLevel}
+                            parentProject={selectedParentProject}
+                        />
+                    );
+                }
+                return <ProjectPanel 
+                    onCreateSubProject={handleCreateSubProject}
+                />;
             }
 
             return (
@@ -328,15 +368,17 @@ export default function Page() {
                     />
                     <div className="flex items-center">
                         <span className="ml-2 text-gray-500 justify-center text-sm">
-                            {language === 'zh' ? 'AI助手模式' : 'AI Assistant Mode'}
+                            {language === 'zh'
+                                ? 'AI助手模式'
+                                : 'AI Assistant Mode'}
                         </span>
                         <Switch
-                            className="ml-2 cursor-pointer"
+                            className="ml-2 cursor-pointer data-[state=checked]:bg-[#00C0FF]"
                             checked={aiDialogEnabled}
                             onCheckedChange={setAIDialogEnabled}
                         />
                     </div>
-                    <div className="fixed top-21 right-10 z-50">
+                    <div className="fixed top-21 right-10 z-[100]">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="cursor-pointer">
@@ -373,16 +415,16 @@ export default function Page() {
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
                     />
-                    { aiDialogEnabled && (
+                    {aiDialogEnabled && (
                         <ChatPanel
                             isOpen={isChatOpen}
                             onClose={() => setIsChatOpen(false)}
                         />
                     )}
-                    <div className="fixed flex flex-row gap-2 bottom-6 right-6 z-50">
+                    <div className="fixed flex flex-row gap-2 bottom-6 right-6 z-5">
                         {aiDialogEnabled && (
                             <Button
-                                className="rounded-md px-4 py-2 flex items-center justify-center bg-blue-500 hover:bg-blue-600 shadow-lg text-white"
+                                className="rounded-md px-4 py-2 flex items-center justify-center bg-[#00C0FF] hover:bg-blue-400 shadow-lg text-white cursor-pointer"
                                 onClick={toggleChat}
                             >
                                 <span className="mr-2">
@@ -397,7 +439,7 @@ export default function Page() {
                             </Button>
                         )}
                         <Button
-                            className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white"
+                            className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
                             onClick={handleNextClick}
                             aria-label={language === 'zh' ? '下一步' : 'Next'}
                             title={language === 'zh' ? '下一步' : 'Next'}
