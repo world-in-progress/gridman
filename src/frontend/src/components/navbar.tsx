@@ -152,7 +152,7 @@ export function Navbar({
                             </Label>
                         </div>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center mr-6">
                         <a
                             href="http://geomodeling.njnu.edu.cn/"
                             target="_blank"

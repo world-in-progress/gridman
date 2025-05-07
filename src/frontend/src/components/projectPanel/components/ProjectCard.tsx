@@ -23,6 +23,7 @@ import {
   Blob,
 } from '../../schemaPanel/components/styledComponents';
 import { ProjectCardProps } from '../types/types';
+import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 
 declare global {
   interface Window {
@@ -50,6 +51,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localStarred, setLocalStarred] = useState<boolean | null>(null);
+  const [loadingSchema, setLoadingSchema] = useState(false);
+  const [schemaError, setSchemaError] = useState<string | null>(null);
+  const [showSubprojects, setShowSubprojects] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cardId = `project-card-${title.replace(/\s+/g, '-')}`;
 
@@ -62,6 +66,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const newStarredState = !localStarred;
     setLocalStarred(newStarredState);
     onStarToggle(title, project);
+  };
+
+  const handleToggleSubprojectsVisibility = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowSubprojects(!showSubprojects);
   };
 
   const handleUpdateDescription = async () => {
@@ -84,95 +93,56 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
+  const handleAddSubproject = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onAddSubproject) return;
+    
+    try {
+      setLoadingSchema(true);
+      setSchemaError(
+        language === 'zh'
+          ? '正在加载模板信息...'
+          : 'Loading Schema Information...'
+      );
+      
+      const schemaService = new SchemaService(language);
+      const schemaInfo = await schemaService.getSchemaByName(project.schema_name);
+      
+      setSchemaError(null);
+      setLoadingSchema(false);
+      
+      onAddSubproject(
+        project,
+        schemaInfo.name,
+        schemaInfo.epsg.toString(),
+        schemaInfo.grid_info && schemaInfo.grid_info.length > 0
+          ? JSON.stringify(schemaInfo.grid_info[0])
+          : '1'
+      );
+    } catch (error) {
+      console.error('获取模板详情失败:', error);
+      setSchemaError(
+        language === 'zh'
+          ? '获取模板详情失败，使用当前信息继续'
+          : 'Failed to get schema details, continuing with current info'
+      );
+      
+      onAddSubproject(
+        project,
+        project.schema_name,
+        '4326', 
+        '1'
+      );
+      
+      setTimeout(() => {
+        setSchemaError(null);
+        setLoadingSchema(false);
+      }, 3000);
+    }
   };
 
-  const BoundsVisualization = ({ bounds }: { bounds: number[] }) => {
-    if (!bounds || bounds.length !== 4) return null;
-
-    const [minX, minY, maxX, maxY] = bounds;
-
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    const formatCoord = (value: number): string => value.toFixed(4);
-
-    return (
-      <div className="mt-2 mb-2 mx-1 p-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
-        <div className="grid grid-cols-3 gap-1 text-xs">
-          {/* 左上角 */}
-          <div className="relative h-8 flex items-center justify-center">
-            <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t border-l border-gray-400 dark:border-gray-500 rounded-tl"></div>
-          </div>
-
-          {/* 上方 - 显示maxY */}
-          <div className="text-center">
-            <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">
-              N
-            </span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">
-              {formatCoord(maxY)}
-            </div>
-          </div>
-
-          {/* 右上角 */}
-          <div className="relative h-8 flex items-center justify-center">
-            <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t border-r border-gray-400 dark:border-gray-500 rounded-tr"></div>
-          </div>
-
-          {/* 左侧 - 显示minX */}
-          <div className="text-center">
-            <span className="font-bold text-green-600 dark:text-green-400 text-sm">
-              W
-            </span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">
-              {formatCoord(minX)}
-            </div>
-          </div>
-
-          {/* 中心 */}
-          <div className="text-center">
-            <span className="font-bold text-xs">
-              {language === 'zh' ? '中心' : 'Center'}
-            </span>
-            <div className="text-[9px] text-gray-700 dark:text-gray-300">
-              [{formatCoord(centerX)}, {formatCoord(centerY)}]
-            </div>
-          </div>
-
-          {/* 右侧 - 显示maxX */}
-          <div className="text-center">
-            <span className="font-bold text-red-600 dark:text-red-400 text-sm">
-              E
-            </span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">
-              {formatCoord(maxX)}
-            </div>
-          </div>
-
-          {/* 左下角 */}
-          <div className="relative h-8 flex items-center justify-center">
-            <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b border-l border-gray-400 dark:border-gray-500 rounded-bl"></div>
-          </div>
-
-          {/* 下方 - 显示minY */}
-          <div className="text-center">
-            <span className="font-bold text-purple-600 dark:text-purple-400 text-sm">
-              S
-            </span>
-            <div className="text-[10px] text-gray-700 dark:text-gray-300">
-              {formatCoord(minY)}
-            </div>
-          </div>
-
-          {/* 右下角 */}
-          <div className="relative h-8 flex items-center justify-center">
-            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b border-r border-gray-400 dark:border-gray-500 rounded-br"></div>
-          </div>
-        </div>
-      </div>
-    );
+  const handleCancel = () => {
+    setIsEditing(false);
   };
 
   const CardContent = () => (
@@ -193,43 +163,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               }`}
             />
           </button>
-          {/* <button
-            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
-            aria-label={language === 'zh' ? '显示详情' : 'Show Details'}
-            title={language === 'zh' ? '显示详情' : 'Show Details'}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.mapInstance && window.mapRef && window.mapRef.current) {
-                const { flyToProjectBounds } = window.mapRef.current;
-                
-                if (flyToProjectBounds && typeof flyToProjectBounds === 'function') {
-                  flyToProjectBounds(project.name).catch((error: any) => {
-                    console.error('飞行到项目边界失败:', error);
-                  });
-                }
-              }
-            }}
-          >
-            <MapPin className="h-5 w-5" />
-          </button> */}
           <button
             className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
-            aria-label={language === 'zh' ? '显示子项目' : 'Show Subprojects'}
-            title={language === 'zh' ? '显示子项目' : 'Show Subprojects'}
-            // onClick={}
+            aria-label={language === 'zh' 
+              ? (showSubprojects ? '隐藏子项目' : '显示子项目') 
+              : (showSubprojects ? 'Hide Subprojects' : 'Show Subprojects')}
+            title={language === 'zh' 
+              ? (showSubprojects ? '隐藏子项目' : '显示子项目') 
+              : (showSubprojects ? 'Hide Subprojects' : 'Show Subprojects')}
+            onClick={handleToggleSubprojectsVisibility}
           >
-            <Eye className="h-5 w-5" />
+            {showSubprojects ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
           <button
-            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
+            className={`h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer ${loadingSchema ? 'opacity-50' : ''}`}
             aria-label={language === 'zh' ? '添加子项目' : 'Add Subproject'}
             title={language === 'zh' ? '添加子项目' : 'Add Subproject'}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onAddSubproject) {
-                onAddSubproject(project);
-              }
-            }}
+            onClick={handleAddSubproject}
+            disabled={loadingSchema}
           >
             <FilePlus className="h-5 w-5" />
           </button>
@@ -297,23 +248,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </span>
         </div>
 
-        {/* Bounds Information */}
-        {/* <div className="text-gray-600 dark:text-gray-300">
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-2" />
-            <span className="font-medium">
-              {language === 'zh' ? '项目边界：' : 'Project Bounds:'}
-            </span>
+        {schemaError && (
+          <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 py-1 px-2 bg-amber-50 dark:bg-amber-900/20 rounded-md">
+            {schemaError}
           </div>
-
-          {project.bounds && project.bounds.length === 4 ? (
-            <BoundsVisualization bounds={project.bounds} />
-          ) : (
-            <div className="mt-1 ml-6">
-              {language === 'zh' ? '无边界信息' : 'No bounds information'}
-            </div>
-          )}
-        </div> */}
+        )}
 
         {/* Description Information */}
         <div className="text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-gray-700 mb-1">

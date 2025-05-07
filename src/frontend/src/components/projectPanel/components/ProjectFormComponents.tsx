@@ -12,6 +12,7 @@ import {
     SubProjectDescriptionCardProps,
     BelongToProjectCardProps,
     ProjectConvertedCoordCardProps,
+    SubProjectErrorMessageProps,
 } from '../types/types';
 
 export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
@@ -242,6 +243,41 @@ export const ProjectConvertedCoordCard: React.FC<ProjectConvertedCoordCardProps>
 };
 
 export const ProjectErrorMessage: React.FC<ProjectErrorMessageProps> = ({
+    message,
+}) => {
+    if (!message) return null;
+
+    let bgColor = 'bg-red-50';
+    let textColor = 'text-red-700';
+    let borderColor = 'border-red-200';
+
+    if (
+        message.includes('正在提交数据') ||
+        message.includes('Submitting data')
+    ) {
+        bgColor = 'bg-orange-50';
+        textColor = 'text-orange-700';
+        borderColor = 'border-orange-200';
+    } else if (
+        message.includes('创建成功') ||
+        message.includes('created successfully') ||
+        message.includes('Created successfully')
+    ) {
+        bgColor = 'bg-green-50';
+        textColor = 'text-green-700';
+        borderColor = 'border-green-200';
+    }
+
+    return (
+        <div
+            className={`mt-2 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
+        >
+            {message}
+        </div>
+    );
+};
+
+export const SubProjectErrorMessage: React.FC<SubProjectErrorMessageProps> = ({
     message,
 }) => {
     if (!message) return null;

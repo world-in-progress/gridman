@@ -46,7 +46,6 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
   onMenuOpenChange,
   onEditDescription,
   onSaveDescription,
-  onAddSubproject,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -277,7 +276,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
         </div>
 
         {/* Bounds Information */}
-        {/* <div className="text-gray-600 dark:text-gray-300">
+        <div className="text-gray-600 dark:text-gray-300">
           <div className="flex items-center">
             <MapPin className="h-4 w-4 mr-2" />
             <span className="font-medium">
@@ -292,7 +291,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
               {language === 'zh' ? '无边界信息' : 'No bounds information'}
             </div>
           )}
-        </div> */}
+        </div>
 
         {/* Description Information */}
         <div className="text-gray-600 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-gray-700 mb-1">

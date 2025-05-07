@@ -246,7 +246,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
           <SidebarGroup>
             <SidebarGroupContent>
               <div className="p-1">
-                {/* 名称卡片 */}
                 <SchemaNameCard
                   name={name}
                   language={language}
@@ -254,7 +253,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                   onChange={setName}
                 />
 
-                {/* 描述卡片 */}
                 <SchemaDescriptionCard
                   description={description}
                   language={language}
@@ -262,7 +260,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                   onChange={setDescription}
                 />
 
-                {/* EPSG卡片 */}
                 <SchemaEpsgCard
                   epsg={epsg}
                   language={language}
@@ -270,7 +267,6 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                   onChange={setEpsg}
                 />
 
-                {/* 坐标卡片 */}
                 <SchemaCoordinateCard
                   lon={lon}
                   lat={lat}
@@ -282,14 +278,12 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                   onDrawClick={handleDraw}
                 />
 
-                {/* 转换后坐标卡片 */}
                 <SchemaConvertedCoordCard
                   convertedCoord={convertedCoord}
                   epsg={epsg}
                   language={language}
                 />
 
-                {/* 网格层级组件 */}
                 <GridLevel
                   layers={gridLayers}
                   layerErrors={layerErrors}
@@ -299,10 +293,8 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                   onRemoveLayer={handleRemoveLayer}
                 />
 
-                {/* 错误信息 */}
                 <SchemaErrorMessage message={generalError} />
 
-                {/* 提交按钮 */}
                 <Button
                   type="submit"
                   className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white cursor-pointer"

@@ -188,8 +188,17 @@ export default function Page() {
     );
 
     const handleCreateSubProject = useCallback(
-        (parentProject: any) => {
+        (parentProject: any, schemaName?: string, epsg?: string, gridInfo?: string) => {
             setSelectedParentProject(parentProject);
+            if (schemaName) {
+                setSelectedSchemaName(schemaName);
+            }
+            if (epsg) {
+                setSelectedSchemaEpsg(epsg);
+            }
+            if (gridInfo) {
+                setSelectedSchemaLevel(gridInfo);
+            }
             setActivePanel('project');
             setShowCreateSubProject(true);
             setActiveBreadcrumb('project');
@@ -250,7 +259,11 @@ export default function Page() {
                 if (showCreateProject) {
                     return (
                         <CreateProject
-                            onBack={() => setShowCreateProject(false)}
+                            onBack={() => {
+                                setShowCreateProject(false);
+                                setRectangleCoordinates(null);
+                                setIsDrawing(false);
+                            }}
                             onDrawRectangle={handleDrawRectangle}
                             rectangleCoordinates={rectangleCoordinates}
                             isDrawing={isDrawing}
@@ -263,7 +276,11 @@ export default function Page() {
                 if (showCreateSubProject) {
                     return (
                         <CreateSubProject
-                            onBack={() => setShowCreateSubProject(false)}
+                            onBack={() => {
+                                setShowCreateSubProject(false);
+                                setRectangleCoordinates(null);
+                                setIsDrawing(false);
+                            }}
                             onDrawRectangle={handleDrawRectangle}
                             rectangleCoordinates={rectangleCoordinates}
                             isDrawing={isDrawing}

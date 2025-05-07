@@ -165,7 +165,7 @@ export default function CreateSubProject({
                             );
                             setSchemaBasePointWGS84(wgs84Point);
                             showSchemaMarkerOnMap(wgs84Point, schema.name);
-                            
+
                             if (!initialEpsg) {
                                 setEpsg(schema.epsg.toString());
                                 setEpsgFromProps(true);
@@ -210,17 +210,13 @@ export default function CreateSubProject({
                 en: 'Rectangle Coordinates (EPSG:4326)',
                 zh: '矩形坐标 (EPSG:4326)',
             },
-            converted: {
-                en: `Converted Coordinates (EPSG:${epsg})`,
-                zh: `转换后的坐标 (EPSG:${epsg})`,
-            },
             aligned: {
                 en: `Aligned Coordinates (EPSG:${epsg})`,
                 zh: `对齐后的坐标 (EPSG:${epsg})`,
             },
             expanded: {
-                en: `Expanded Rectangle (EPSG:${epsg})`,
-                zh: `扩展后的矩形 (EPSG:${epsg})`,
+                en: `Expanded Coordinates (EPSG:${epsg})`,
+                zh: `扩展后的坐标 (EPSG:${epsg})`,
             },
         },
     };
@@ -282,7 +278,7 @@ export default function CreateSubProject({
             const popupHtml = `
       <div style="padding: 12px; font-family: 'Arial', sans-serif; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px;">${
-            language === 'zh' ? '网格对齐左下角点' : 'Grid-Aligned LB Corner'
+            language === 'zh' ? '对齐后左下角点' : 'Aligned LB Corner'
         }</h4>
         <p style="margin: 0; font-size: 13px; background-color: #f5f8ff; padding: 4px 6px; border-radius: 4px; color: #FF7700; font-family: monospace;">${coordinates[0].toFixed(
             6
@@ -508,6 +504,9 @@ export default function CreateSubProject({
                     const cornerMarker =
                         showCornerMarkerOnMap(adjustedSWInWGS84);
 
+                    console.log(adjustedSWInWGS84);
+                    console.log(convertedRect.southWest);
+
                     if (schemaBasePointWGS84) {
                         addLineBetweenPoints(
                             schemaBasePointWGS84,
@@ -572,6 +571,7 @@ export default function CreateSubProject({
             }
 
             setConvertedRectangle(convertedRect);
+            console.log(convertedRect.southWest);
 
             const mbr = calculateMinimumBoundingRectangle([
                 convertedRect.northEast,
@@ -596,16 +596,18 @@ export default function CreateSubProject({
             ];
             const expandedSE: [number, number] = [
                 mbr.southEast[0] + widthDiff,
-                mbr.southEast[1] - heightDiff,
+                mbr.southEast[1],
             ];
             const expandedSW: [number, number] = [
-                mbr.southWest[0] - widthDiff,
-                mbr.southWest[1] - heightDiff,
+                mbr.southWest[0],
+                mbr.southWest[1]
             ];
             const expandedNW: [number, number] = [
-                mbr.northWest[0] - widthDiff,
+                mbr.northWest[0],
                 mbr.northWest[1] + heightDiff,
             ];
+
+            console.log(expandedSW);
 
             const expandedNE_WGS84 = convertSingleCoordinate(
                 expandedNE,
@@ -634,11 +636,11 @@ export default function CreateSubProject({
             );
 
             setExpandedRectangle({
-                northEast: expandedNE_WGS84,
-                southEast: expandedSE_WGS84,
-                southWest: expandedSW_WGS84,
-                northWest: expandedNW_WGS84,
-                center: expandedCenter_WGS84,
+                northEast: expandedNE,
+                southEast: expandedSE,
+                southWest: expandedSW,
+                northWest: expandedNW,
+                center: mbr.center
             });
         } else {
             setConvertedRectangle(null);
@@ -669,6 +671,8 @@ export default function CreateSubProject({
         schemaBasePoint,
         schemaBasePointWGS84,
     ]);
+
+    console.log(expandedRectangle);
 
     useEffect(() => {
         return () => {
@@ -815,6 +819,14 @@ export default function CreateSubProject({
             setIsSelectingPoint(false);
         }
 
+        if (onDrawRectangle) {
+            onDrawRectangle(false);
+
+            if (window.mapboxDrawInstance) {
+                window.mapboxDrawInstance.deleteAll();
+            }
+        }
+
         if (onBack) {
             onBack();
         }
@@ -832,10 +844,10 @@ export default function CreateSubProject({
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                            {language === 'zh'
-                                ? '创建子项目'
-                                : 'Create SubProject'}
-                        </h1>
+                        {language === 'zh'
+                            ? '创建新子项目'
+                            : 'Create New SubProject'}
+                    </h1>
                 </div>
                 <form onSubmit={handleSubmit} className="p-1 pt-0 -mt-3">
                     <SidebarGroup>
@@ -896,22 +908,6 @@ export default function CreateSubProject({
                                             title={
                                                 language === 'zh'
                                                     ? translations.coordinates
-                                                          .converted.zh
-                                                    : translations.coordinates
-                                                          .converted.en
-                                            }
-                                            coordinates={convertedRectangle}
-                                            formatCoordinate={formatCoordinate}
-                                        />
-                                    )}
-
-                                {convertedRectangle &&
-                                    epsg !== '4326' &&
-                                    rectangleCoordinates && (
-                                        <CoordinateBox
-                                            title={
-                                                language === 'zh'
-                                                    ? translations.coordinates
                                                           .aligned.zh
                                                     : translations.coordinates
                                                           .aligned.en
@@ -920,7 +916,7 @@ export default function CreateSubProject({
                                             formatCoordinate={formatCoordinate}
                                         />
                                     )}
-
+                                    
                                 {expandedRectangle &&
                                     epsg !== '4326' &&
                                     rectangleCoordinates && (
@@ -941,7 +937,7 @@ export default function CreateSubProject({
 
                                 <Button
                                     type="submit"
-                                    className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                                 >
                                     <Save className="h-4 w-4 mr-2" />
                                     {language === 'zh'

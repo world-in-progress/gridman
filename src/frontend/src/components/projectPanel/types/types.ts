@@ -33,6 +33,10 @@ export interface ProjectErrorMessageProps {
     message: string | null;
 }
 
+export interface SubProjectErrorMessageProps {
+    message: string | null;
+}
+
 export interface ProjectNameCardProps {
     name: string;
     language: string;
@@ -69,7 +73,12 @@ export interface ProjectCardProps {
     descriptionText?: Record<string, string>;
     onEditDescription?: (name: string) => void;
     onSaveDescription?: (name: string, project: Project) => Promise<void>;
-    onAddSubproject?: (project: Project) => void;
+    onAddSubproject?: (
+        project: Project, 
+        schemaName?: string, 
+        epsg?: string, 
+        gridInfo?: string
+    ) => void;
 }
 
 export interface ProjectSubNavPanelProps {
@@ -79,12 +88,22 @@ export interface ProjectSubNavPanelProps {
     onTotalItemsChange: (total: number) => void;
     onNavigateToPage: (page: number) => void;
     searchQuery?: string;
-    onCreateSubProject?: (parentProject: Project) => void;
+    onCreateSubProject?: (
+        parentProject: Project, 
+        schemaName?: string, 
+        epsg?: string, 
+        gridInfo?: string
+    ) => void;
 }
 
 export interface ProjectPanelProps extends React.ComponentProps<typeof Sidebar> {
   onCreateNew?: () => void;
-  onCreateSubProject?: (parentProject: Project) => void;
+  onCreateSubProject?: (
+    parentProject: Project, 
+    schemaName?: string, 
+    epsg?: string, 
+    gridInfo?: string
+  ) => void;
 }
 
 export interface SubProjectCardProps{

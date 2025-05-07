@@ -1,11 +1,10 @@
-import * as React from 'react';
 import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../App';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/SubNavPanel';
 import { Pagination } from '../schemaPanel/components/Pagination';
-import { ProjectPanelProps } from './types/types';
+import { Project, ProjectPanelProps } from './types/types';
 
 export default function ProjectPanel({
   onCreateNew,
@@ -63,6 +62,17 @@ export default function ProjectPanel({
     setSearchQuery(query);
   };
 
+  const handleCreateSubProject = (
+    project: Project, 
+    schemaName?: string, 
+    epsg?: string, 
+    gridInfo?: string
+  ) => {
+    if (onCreateSubProject) {
+      onCreateSubProject(project, schemaName, epsg, gridInfo);
+    }
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarContent>
@@ -80,7 +90,7 @@ export default function ProjectPanel({
           itemsPerPage={itemsPerPage}
           onNavigateToPage={handleNavigateToPage}
           searchQuery={searchQuery}
-          onCreateSubProject={onCreateSubProject}
+          onCreateSubProject={handleCreateSubProject}
         />
 
         {/* Pagination Component */}
