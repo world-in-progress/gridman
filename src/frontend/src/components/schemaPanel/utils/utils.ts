@@ -1,4 +1,5 @@
 import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
+import { PaginationHandlers } from '../types/types';
 
 // Coordinate conversion functionality
 export const convertToWGS84 = (
@@ -19,4 +20,39 @@ export const convertToWGS84 = (
     console.error('坐标转换错误:', error);
     return [0, 0];
   }
+};
+
+// Pagination utility functions
+export const createPaginationHandlers = (
+  currentPage: number,
+  totalPages: number,
+  setCurrentPage: (page: number) => void
+): PaginationHandlers => {
+  return {
+    handleFirstPage: () => {
+      if (currentPage > 1) {
+        setCurrentPage(1);
+      }
+    },
+    handlePrevPage: () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    },
+    handleNextPage: () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    },
+    handleLastPage: () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(totalPages);
+      }
+    },
+    handleNavigateToPage: (page: number) => {
+      if (page > 0 && page <= totalPages && page !== currentPage) {
+        setCurrentPage(page);
+      }
+    }
+  };
 };

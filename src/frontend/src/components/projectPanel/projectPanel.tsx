@@ -7,105 +7,107 @@ import { Pagination } from '../schemaPanel/components/Pagination';
 import { Project, ProjectPanelProps } from './types/types';
 
 export default function ProjectPanel({
-  onCreateNew,
-  onCreateSubProject,
-  ...props
+    onCreateNew,
+    onCreateSubProject,
+    ...props
 }: ProjectPanelProps) {
-  const { language } = useContext(LanguageContext);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 5;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    const { language } = useContext(LanguageContext);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+    const itemsPerPage = 5;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]); 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
 
-  const handleTotalItemsChange = (total: number) => {
-    setTotalItems(total);
-  };
+    const handleTotalItemsChange = (total: number) => {
+        setTotalItems(total);
+    };
 
-  const handleFirstPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(1);
-    }
-  };
+    const handleFirstPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(1);
+        }
+    };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-    }
-  };
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            const newPage = currentPage - 1;
+            setCurrentPage(newPage);
+        }
+    };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-    }
-  };
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            const newPage = currentPage + 1;
+            setCurrentPage(newPage);
+        }
+    };
 
-  const handleLastPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(totalPages);
-    }
-  };
+    const handleLastPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(totalPages);
+        }
+    };
 
-  const handleNavigateToPage = (page: number) => {
-    if (page > 0 && page <= totalPages && page !== currentPage) {
-      setCurrentPage(page);
-    }
-  };
+    const handleNavigateToPage = (page: number) => {
+        if (page > 0 && page <= totalPages && page !== currentPage) {
+            setCurrentPage(page);
+        }
+    };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+    };
 
-  const handleCreateSubProject = (
-    project: Project, 
-    schemaName?: string, 
-    epsg?: string, 
-    gridInfo?: string
-  ) => {
-    if (onCreateSubProject) {
-      onCreateSubProject(project, schemaName, epsg, gridInfo);
-    }
-  };
+    const handleCreateSubProject = (
+        project: Project,
+        schemaName?: string,
+        epsg?: string,
+        gridInfo?: string
+    ) => {
+        if (onCreateSubProject) {
+            onCreateSubProject(project, schemaName, epsg, gridInfo);
+        }
+    };
 
-  return (
-    <Sidebar {...props}>
-      <SidebarContent>
-        <h1 className="text-4xl font-semibold p-3 text-center">
-          {language === 'zh' ? '项目列表' : 'Project List'}
-        </h1>
-        <SearchForm 
-          className="flex flex-col gap-2 mb-2"
-          onSearch={handleSearch}
-          placeholder={language === 'zh' ? '搜索项目...' : 'Search projects...'}
-        />
-        <SubNavPanel
-          currentPage={currentPage}
-          onTotalItemsChange={handleTotalItemsChange}
-          itemsPerPage={itemsPerPage}
-          onNavigateToPage={handleNavigateToPage}
-          searchQuery={searchQuery}
-          onCreateSubProject={handleCreateSubProject}
-        />
+    return (
+        <Sidebar {...props}>
+            <SidebarContent>
+                <h1 className="text-4xl font-semibold p-3 text-center">
+                    {language === 'zh' ? '项目列表' : 'Project List'}
+                </h1>
+                <SearchForm
+                    className="flex flex-col gap-2 mb-2"
+                    onSearch={handleSearch}
+                    placeholder={
+                        language === 'zh' ? '搜索项目...' : 'Search projects...'
+                    }
+                />
+                <SubNavPanel
+                    currentPage={currentPage}
+                    onTotalItemsChange={handleTotalItemsChange}
+                    itemsPerPage={itemsPerPage}
+                    onNavigateToPage={handleNavigateToPage}
+                    searchQuery={searchQuery}
+                    onCreateSubProject={handleCreateSubProject}
+                />
 
-        {/* Pagination Component */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onFirstPage={handleFirstPage}
-          onPrevPage={handlePrevPage}
-          onNextPage={handleNextPage}
-          onLastPage={handleLastPage}
-        />
-      </SidebarContent>
-      <SidebarRail />
-    </Sidebar>
-  );
+                {/* Pagination Component */}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={itemsPerPage}
+                    onFirstPage={handleFirstPage}
+                    onPrevPage={handlePrevPage}
+                    onNextPage={handleNextPage}
+                    onLastPage={handleLastPage}
+                />
+            </SidebarContent>
+            <SidebarRail />
+        </Sidebar>
+    );
 }

@@ -28,7 +28,6 @@ import CoordinateBox from '../operatePanel/components/CoordinateBox';
 import {
     formatCoordinate,
     convertCoordinate as convertSingleCoordinate,
-    calculateMinimumBoundingRectangle,
 } from '../operatePanel/utils/coordinateUtils';
 import { RectangleCoordinates } from '../operatePanel/types/types';
 import { ProjectService } from './utils/ProjectService';
@@ -36,6 +35,10 @@ import mapboxgl from 'mapbox-gl';
 import { SchemaService } from '../schemaPanel/utils/SchemaService';
 import { Schema } from '../schemaPanel/types/types';
 import { convertToWGS84 } from '../schemaPanel/utils/utils';
+import {
+    adjustAndExpandRectangle,
+    calculateGridCounts,
+} from './utils/ProjectCoordinateService';
 
 const validateProjectForm = (
     data: {
@@ -60,15 +63,10 @@ const validateProjectForm = (
 
     if (!data.name.trim()) {
         generalError =
-            language === 'zh' ? '请输入项目名称' : 'Please enter project name';
+            language === 'zh'
+                ? '请输入子项目名称'
+                : 'Please enter subproject name';
         errors.name = true;
-        return { isValid: false, errors, generalError };
-    }
-
-    if (!isSchemaNameFromProps && !data.schemaName.trim()) {
-        generalError =
-            language === 'zh' ? '请输入模板名称' : 'Please enter schema name';
-        errors.schemaName = true;
         return { isValid: false, errors, generalError };
     }
 
@@ -85,7 +83,7 @@ const validateProjectForm = (
         generalError =
             language === 'zh'
                 ? '请先绘制矩形区域'
-                : 'Please draw a rectangle area first';
+                : 'Please draw a rectangle area';
         errors.coordinates = true;
         return { isValid: false, errors, generalError };
     }
@@ -150,32 +148,31 @@ export default function CreateSubProject({
             setSchemaName(initialSchemaName);
             setSchemaNameFromProps(true);
             const schemaService = new SchemaService(language);
-            schemaService
-                .getSchemaByName(initialSchemaName)
-                .then((schema: Schema) => {
-                    if (schema && schema.base_point) {
-                        setSchemaBasePoint(
-                            schema.base_point as [number, number]
+            schemaService.getSchemaByName(initialSchemaName, (err, result) => {
+                if (err) {
+                    console.error('获取schema详情失败:', err);
+                    return;
+                }
+                if (result.project_schema && result.project_schema.base_point) {
+                    setSchemaBasePoint(
+                        result.project_schema.base_point as [number, number]
+                    );
+
+                    if (result.project_schema.epsg) {
+                        const wgs84Point = convertToWGS84(
+                            result.project_schema.base_point,
+                            result.project_schema.epsg
                         );
+                        setSchemaBasePointWGS84(wgs84Point);
+                        showSchemaMarkerOnMap(wgs84Point, result.project_schema.name);
 
-                        if (schema.epsg) {
-                            const wgs84Point = convertToWGS84(
-                                schema.base_point,
-                                schema.epsg
-                            );
-                            setSchemaBasePointWGS84(wgs84Point);
-                            showSchemaMarkerOnMap(wgs84Point, schema.name);
-
-                            if (!initialEpsg) {
-                                setEpsg(schema.epsg.toString());
-                                setEpsgFromProps(true);
-                            }
+                        if (!initialEpsg) {
+                            setEpsg(result.project_schema.epsg.toString());
+                            setEpsgFromProps(true);
                         }
                     }
-                })
-                .catch((error) => {
-                    console.error('获取schema详情失败:', error);
-                });
+                }
+            });
         }
 
         if (initialEpsg) {
@@ -237,7 +234,7 @@ export default function CreateSubProject({
 
             const popupHtml = `
       <div style="padding: 12px; font-family: 'Arial', sans-serif; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px;">${
+        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${
             language === 'zh' ? '模板基准点' : 'Schema Base Point'
         }</h4>
         <p style="margin: 0 0 4px; font-size: 13px; color: #555; font-weight: 500;">${schemaName}</p>
@@ -277,7 +274,7 @@ export default function CreateSubProject({
 
             const popupHtml = `
       <div style="padding: 12px; font-family: 'Arial', sans-serif; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px;">${
+        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${
             language === 'zh' ? '对齐后左下角点' : 'Aligned LB Corner'
         }</h4>
         <p style="margin: 0; font-size: 13px; background-color: #f5f8ff; padding: 4px 6px; border-radius: 4px; color: #FF7700; font-family: monospace;">${coordinates[0].toFixed(
@@ -393,276 +390,45 @@ export default function CreateSubProject({
     );
 
     useEffect(() => {
-        if (rectangleCoordinates && epsg && epsg !== '4326') {
-            const convertedNE = convertSingleCoordinate(
-                rectangleCoordinates.northEast,
-                '4326',
-                epsg
-            );
-            const convertedSE = convertSingleCoordinate(
-                rectangleCoordinates.southEast,
-                '4326',
-                epsg
-            );
-            const convertedSW = convertSingleCoordinate(
-                rectangleCoordinates.southWest,
-                '4326',
-                epsg
-            );
-            const convertedNW = convertSingleCoordinate(
-                rectangleCoordinates.northWest,
-                '4326',
-                epsg
-            );
-            const convertedCenter = convertSingleCoordinate(
-                rectangleCoordinates.center,
-                '4326',
-                epsg
-            );
+        if (rectangleCoordinates && epsg && gridLevel && schemaBasePoint) {
+            const { alignedRectangle, expandedRectangle } =
+                adjustAndExpandRectangle({
+                    rectangleCoordinates,
+                    epsg,
+                    gridLevel,
+                    schemaBasePoint,
+                    convertSingleCoordinate,
+                    expandFactor: 0.2,
+                });
 
-            let convertedRect: RectangleCoordinates = {
-                northEast: convertedNE,
-                southEast: convertedSE,
-                southWest: convertedSW,
-                northWest: convertedNW,
-                center: convertedCenter,
-            };
+            setConvertedRectangle(alignedRectangle);
+            setExpandedRectangle(expandedRectangle);
 
-            if (gridLevel && gridLevel.length >= 2 && schemaBasePoint) {
-                const gridWidth = gridLevel[0];
-                const gridHeight = gridLevel[1];
+            if (alignedRectangle && schemaBasePointWGS84) {
+                const alignedSWInWGS84 = convertSingleCoordinate(
+                    alignedRectangle.southWest,
+                    epsg,
+                    '4326'
+                );
 
-                const [swX, swY] = convertedRect.southWest;
-                const [baseX, baseY] = schemaBasePoint;
+                const { widthCount, heightCount } = calculateGridCounts(
+                    alignedRectangle.southWest,
+                    schemaBasePoint,
+                    gridLevel
+                );
 
-                const diffX = swX - baseX;
-                const diffY = swY - baseY;
+                showCornerMarkerOnMap(alignedSWInWGS84);
 
-                const modX = diffX % gridWidth;
-                const modY = diffY % gridHeight;
-
-                const gridWidthCount = Math.floor(diffX / gridWidth);
-                const gridHeightCount = Math.floor(diffY / gridHeight);
-
-                if (modX !== 0 || modY !== 0) {
-                    const adjustX = modX > 0 ? gridWidth - modX : -modX;
-                    const adjustY = modY > 0 ? gridHeight - modY : -modY;
-
-                    const adjustedSW: [number, number] = [
-                        convertedSW[0] + adjustX,
-                        convertedSW[1] + adjustY,
-                    ];
-
-                    const rectWidth = Math.abs(convertedNE[0] - convertedSW[0]);
-                    const rectHeight = Math.abs(
-                        convertedNE[1] - convertedSW[1]
-                    );
-
-                    const widthMod = rectWidth % gridWidth;
-                    const heightMod = rectHeight % gridHeight;
-
-                    const widthAdjust =
-                        widthMod === 0 ? 0 : gridWidth - widthMod;
-                    const heightAdjust =
-                        heightMod === 0 ? 0 : gridHeight - heightMod;
-
-                    convertedRect = {
-                        southWest: adjustedSW,
-                        southEast: [
-                            adjustedSW[0] + rectWidth + widthAdjust,
-                            adjustedSW[1],
-                        ],
-                        northEast: [
-                            adjustedSW[0] + rectWidth + widthAdjust,
-                            adjustedSW[1] + rectHeight + heightAdjust,
-                        ],
-                        northWest: [
-                            adjustedSW[0],
-                            adjustedSW[1] + rectHeight + heightAdjust,
-                        ],
-                        center: [
-                            adjustedSW[0] + (rectWidth + widthAdjust) / 2,
-                            adjustedSW[1] + (rectHeight + heightAdjust) / 2,
-                        ],
-                    };
-
-                    const adjustedDiffX = convertedRect.southWest[0] - baseX;
-                    const adjustedDiffY = convertedRect.southWest[1] - baseY;
-                    const adjustedGridWidthCount = Math.floor(
-                        adjustedDiffX / gridWidth
-                    );
-                    const adjustedGridHeightCount = Math.floor(
-                        adjustedDiffY / gridHeight
-                    );
-
-                    const adjustedSWInWGS84 = convertSingleCoordinate(
-                        convertedRect.southWest,
-                        epsg,
-                        '4326'
-                    );
-
-                    const cornerMarker =
-                        showCornerMarkerOnMap(adjustedSWInWGS84);
-
-                    console.log(adjustedSWInWGS84);
-                    console.log(convertedRect.southWest);
-
-                    if (schemaBasePointWGS84) {
-                        addLineBetweenPoints(
-                            schemaBasePointWGS84,
-                            adjustedSWInWGS84,
-                            Math.abs(adjustedGridWidthCount),
-                            Math.abs(adjustedGridHeightCount)
-                        );
-                    }
-                } else {
-                    const rectWidth = Math.abs(convertedNE[0] - convertedSW[0]);
-                    const rectHeight = Math.abs(
-                        convertedNE[1] - convertedSW[1]
-                    );
-
-                    const widthMod = rectWidth % gridWidth;
-                    const heightMod = rectHeight % gridHeight;
-
-                    const widthAdjust =
-                        widthMod === 0 ? 0 : gridWidth - widthMod;
-                    const heightAdjust =
-                        heightMod === 0 ? 0 : gridHeight - heightMod;
-
-                    if (widthAdjust > 0 || heightAdjust > 0) {
-                        convertedRect = {
-                            southWest: convertedSW,
-                            southEast: [
-                                convertedSW[0] + rectWidth + widthAdjust,
-                                convertedSW[1],
-                            ],
-                            northEast: [
-                                convertedSW[0] + rectWidth + widthAdjust,
-                                convertedSW[1] + rectHeight + heightAdjust,
-                            ],
-                            northWest: [
-                                convertedSW[0],
-                                convertedSW[1] + rectHeight + heightAdjust,
-                            ],
-                            center: [
-                                convertedSW[0] + (rectWidth + widthAdjust) / 2,
-                                convertedSW[1] +
-                                    (rectHeight + heightAdjust) / 2,
-                            ],
-                        };
-                    }
-
-                    const swInWGS84 = convertSingleCoordinate(
-                        convertedRect.southWest,
-                        epsg,
-                        '4326'
-                    );
-                    const cornerMarker = showCornerMarkerOnMap(swInWGS84);
-
-                    if (schemaBasePointWGS84) {
-                        addLineBetweenPoints(
-                            schemaBasePointWGS84,
-                            swInWGS84,
-                            Math.abs(gridWidthCount),
-                            Math.abs(gridHeightCount)
-                        );
-                    }
-                }
+                addLineBetweenPoints(
+                    schemaBasePointWGS84,
+                    alignedSWInWGS84,
+                    widthCount,
+                    heightCount
+                );
             }
-
-            setConvertedRectangle(convertedRect);
-            console.log(convertedRect.southWest);
-
-            const mbr = calculateMinimumBoundingRectangle([
-                convertedRect.northEast,
-                convertedRect.southEast,
-                convertedRect.southWest,
-                convertedRect.northWest,
-            ]);
-
-            const expandFactor = 0.2;
-            const width = Math.abs(mbr.northEast[0] - mbr.northWest[0]);
-            const height = Math.abs(mbr.northEast[1] - mbr.southEast[1]);
-
-            const expandedWidth = width * (1 + expandFactor);
-            const expandedHeight = height * (1 + expandFactor);
-
-            const widthDiff = (expandedWidth - width) / 2;
-            const heightDiff = (expandedHeight - height) / 2;
-
-            const expandedNE: [number, number] = [
-                mbr.northEast[0] + widthDiff,
-                mbr.northEast[1] + heightDiff,
-            ];
-            const expandedSE: [number, number] = [
-                mbr.southEast[0] + widthDiff,
-                mbr.southEast[1],
-            ];
-            const expandedSW: [number, number] = [
-                mbr.southWest[0],
-                mbr.southWest[1]
-            ];
-            const expandedNW: [number, number] = [
-                mbr.northWest[0],
-                mbr.northWest[1] + heightDiff,
-            ];
-
-            console.log(expandedSW);
-
-            const expandedNE_WGS84 = convertSingleCoordinate(
-                expandedNE,
-                epsg,
-                '4326'
-            );
-            const expandedSE_WGS84 = convertSingleCoordinate(
-                expandedSE,
-                epsg,
-                '4326'
-            );
-            const expandedSW_WGS84 = convertSingleCoordinate(
-                expandedSW,
-                epsg,
-                '4326'
-            );
-            const expandedNW_WGS84 = convertSingleCoordinate(
-                expandedNW,
-                epsg,
-                '4326'
-            );
-            const expandedCenter_WGS84 = convertSingleCoordinate(
-                mbr.center,
-                epsg,
-                '4326'
-            );
-
-            setExpandedRectangle({
-                northEast: expandedNE,
-                southEast: expandedSE,
-                southWest: expandedSW,
-                northWest: expandedNW,
-                center: mbr.center
-            });
         } else {
             setConvertedRectangle(null);
             setExpandedRectangle(null);
-
-            if (cornerMarker) {
-                cornerMarker.remove();
-                setCornerMarker(null);
-            }
-
-            if (gridLine && window.mapInstance) {
-                if (window.mapInstance.getSource(gridLine)) {
-                    window.mapInstance.removeLayer(gridLine);
-                    window.mapInstance.removeSource(gridLine);
-                }
-                setGridLine(null);
-            }
-
-            if (gridLabel) {
-                gridLabel.remove();
-                setGridLabel(null);
-            }
         }
     }, [
         rectangleCoordinates,
@@ -670,9 +436,8 @@ export default function CreateSubProject({
         gridLevel,
         schemaBasePoint,
         schemaBasePointWGS84,
+        convertSingleCoordinate,
     ]);
-
-    console.log(expandedRectangle);
 
     useEffect(() => {
         return () => {
@@ -722,12 +487,11 @@ export default function CreateSubProject({
                 convertedRectangle.southWest[1],
                 convertedRectangle.northEast[0],
                 convertedRectangle.northEast[1],
-            ];
+            ] as [number, number, number, number];
 
-            const projectData = {
+            const subProjectData = {
                 name,
                 description,
-                schema_name: schemaName,
                 bounds,
                 starred: false,
             };
@@ -736,47 +500,65 @@ export default function CreateSubProject({
                 language === 'zh' ? '正在提交数据...' : 'Submitting data...'
             );
 
+            const projectName = parentProject?.name || '';
+
             const projectService = new ProjectService(language);
-            projectService
-                .createProject(projectData)
-                .then((response) => {
+            projectService.createSubproject(projectName, subProjectData,
+                (err, result) => {
+                    if (result.success === false) {
+                        setGeneralError(
+                            language === 'zh'
+                                ? '子项目名称已存在，请使用不同的名称'
+                                : 'SubProject already exists. Please use a different name.'
+                        );
+                        setFormErrors((prev) => ({ ...prev, name: true }));
+                        return
+                    }
+
                     setGeneralError(
                         language === 'zh'
-                            ? '项目创建成功！'
-                            : 'Project created successfully!'
+                            ? '子项目创建成功！'
+                            : 'SubProject created successfully!'
                     );
 
                     if (window.mapInstance) {
+                        if (cornerMarker) {
+                            cornerMarker.remove();
+                            setCornerMarker(null);
+                        }
+                        if (schemaMarker) {
+                            schemaMarker.remove();
+                            setSchemaMarker(null);
+                        }
+                        if (
+                            gridLine &&
+                            window.mapInstance.getSource(gridLine)
+                        ) {
+                            window.mapInstance.removeLayer(gridLine);
+                            window.mapInstance.removeSource(gridLine);
+                            setGridLine(null);
+                        }
+                        if (gridLabel) {
+                            gridLabel.remove();
+                            setGridLabel(null);
+                        }
+                        clearMapMarkers();
+
                         if (onDrawRectangle) {
                             onDrawRectangle(false);
                             setTimeout(() => {
                                 onDrawRectangle(true);
                             }, 10);
                         }
-                        clearMapMarkers();
                     }
 
                     setTimeout(() => {
                         if (onBack) {
                             onBack();
                         }
-                    }, 1000);
+                    }, 500);
                 })
-                .catch((error: Error) => {
-                    if (
-                        error.message.includes('already exists') ||
-                        error.message.includes('已存在')
-                    ) {
-                        setGeneralError(
-                            language === 'zh'
-                                ? '项目名称已存在，请使用不同的名称'
-                                : 'Project already exists. Please use a different name.'
-                        );
-                        setFormErrors((prev) => ({ ...prev, name: true }));
-                    } else {
-                        setGeneralError(error.message);
-                    }
-                });
+                
         } else {
             setGeneralError(
                 language === 'zh'
@@ -821,7 +603,9 @@ export default function CreateSubProject({
 
         if (onDrawRectangle) {
             onDrawRectangle(false);
-
+            setTimeout(() => {
+                onDrawRectangle(true);
+            }, 10);
             if (window.mapboxDrawInstance) {
                 window.mapboxDrawInstance.deleteAll();
             }
@@ -916,7 +700,7 @@ export default function CreateSubProject({
                                             formatCoordinate={formatCoordinate}
                                         />
                                     )}
-                                    
+
                                 {expandedRectangle &&
                                     epsg !== '4326' &&
                                     rectangleCoordinates && (

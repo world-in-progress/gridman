@@ -4,7 +4,7 @@ import Page, { SidebarType } from './components/page';
 import { Navbar } from './components/navbar';
 import { useState, createContext, RefObject } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
-
+import { Toaster } from '@/components/ui/sonner';
 declare global {
     interface Window {
         mapInstance?: mapboxgl.Map;
@@ -17,7 +17,7 @@ export const SidebarContext = createContext<{
     activeSidebar: SidebarType;
     setActiveSidebar: (type: SidebarType) => void;
 }>({
-    activeSidebar: 'operate',
+    activeSidebar: 'grid',
     setActiveSidebar: () => {},
 });
 
@@ -38,17 +38,17 @@ export const AIDialogContext = createContext<{
 });
 
 function App() {
-    const [activeSidebar, setActiveSidebar] = useState<SidebarType>('schema'); // Default to 'schema' for development
+    const [activeSidebar, setActiveSidebar] = useState<SidebarType>('grid'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
 
     const handleNavClick = (item: string, type?: string) => {
-        if (type === 'schema' || type === 'operate') {
+        if (type === 'grid' || type === 'terrain') {
             setActiveSidebar(type);
-        } else if (item === 'Schema' || item === '模板') {
-            setActiveSidebar('schema');
-        } else if (item === 'New' || item === '新建') {
-            setActiveSidebar('operate');
+        } else if (item === 'Grid' || item === '网格') {
+            setActiveSidebar('grid');
+        } else if (item === 'Terrain' || item === '地形') {
+            setActiveSidebar('terrain');
         }
     };
 
@@ -71,6 +71,15 @@ function App() {
                             >
                                 <Page />
                             </div>
+                            <Toaster
+                                position="bottom-right"
+                                richColors
+                                closeButton
+                                style={{
+                                    bottom: '5rem',
+                                    right: '1.5rem',
+                                }}
+                            />
                         </div>
                     </AIDialogContext.Provider>
                 </SidebarContext.Provider>

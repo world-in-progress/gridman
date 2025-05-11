@@ -67,7 +67,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose }) => {
 
         try {
             const response = await fetch(
-                'http://localhost:8000/clever-grid/chat/stream',
+                '/api/bot/chat/stream',
                 {
                     method: 'POST',
                     headers: {

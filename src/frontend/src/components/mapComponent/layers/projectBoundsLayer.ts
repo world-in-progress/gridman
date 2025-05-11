@@ -91,18 +91,23 @@ export default class ProjectBoundsLayer implements CustomLayerInterface {
     }
 
     async loadAllProjects() {
-        try {
-            const projectService = new ProjectService('zh');
-            this.projects = await projectService.fetchAllProjects();
+        const projectService = new ProjectService('zh');
 
+        projectService.fetchAllProjects(0, 1000, (err, result) => {
+            this.projects = result.project_metas;
             this.projects.forEach((project) => {
                 if (!this.projectColors[project.name]) {
                     this.projectColors[project.name] = generateRandomRgbColor(0.5, 0.3, 0.7);
                 }
             });
-        } catch (error) {
-            console.error('加载项目失败:', error);
-        }
+        });
+        // this.projects = await projectService.fetchAllProjects();
+
+        // this.projects.forEach((project) => {
+        //     if (!this.projectColors[project.name]) {
+        //         this.projectColors[project.name] = generateRandomRgbColor(0.5, 0.3, 0.7);
+        //     }
+        // });
     }
 
     render(gl: WebGLRenderingContext, matrix: number[]) {

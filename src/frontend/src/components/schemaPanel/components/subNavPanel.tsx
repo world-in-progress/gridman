@@ -101,13 +101,20 @@ export function SubNavPanel({
                     setSchemas(pagedFilteredSchemas);
                     updateStarredItems(pagedFilteredSchemas);
                 } else {
-                    const result = await schemaService.fetchSchemas(
+                    schemaService.fetchSchemas(
                         page,
-                        itemsPerPage
+                        itemsPerPage,
+                        (err, result) => {
+                            if (err) {
+                                console.error('Failed to fetch schemas:', err);
+                            } else {
+                                console.log('result', result);
+                                onTotalItemsChange(result.totalCount);
+                                setSchemas(result.schemas);
+                                updateStarredItems(result.schemas);
+                            }
+                        }
                     );
-                    onTotalItemsChange(result.totalCount);
-                    setSchemas(result.schemas);
-                    updateStarredItems(result.schemas);
                 }
 
                 setLoading(false);
@@ -185,41 +192,72 @@ export function SubNavPanel({
     const toggleStar = async (name: string, schema: Schema) => {
         const newState = !starredItems[name];
 
-        try {
-            const updatedSchema = await schemaService.updateSchemaStarred(
-                schema.name,
-                newState
-            );
+        schemaService.updateSchemaStarred(
+            schema.name,
+            newState,
+            (err, result) => {
+                if (err) {
+                    console.error('Failed to update schema starred:', err);
+                } else {
+                    const serverStarredState =
+                        result?.starred !== undefined
+                            ? result.starred
+                            : newState;
 
-            const serverStarredState =
-                updatedSchema?.starred !== undefined
-                    ? updatedSchema.starred
-                    : newState;
+                    setStarredItems((prev) => ({
+                        ...prev,
+                        [name]: serverStarredState,
+                    }));
 
-            setStarredItems((prev) => ({
-                ...prev,
-                [name]: serverStarredState,
-            }));
+                    const updatedSchemas = schemas.map((s) =>
+                        s.name === schema.name
+                            ? { ...s, starred: serverStarredState }
+                            : s
+                    );
+                    setSchemas(updatedSchemas);
 
-            const updatedSchemas = schemas.map((s) =>
-                s.name === schema.name
-                    ? { ...s, starred: serverStarredState }
-                    : s
-            );
-            setSchemas(updatedSchemas);
+                    setAllSchemas((prevAllSchemas) => {
+                        const updatedAllSchemas = prevAllSchemas.map((s) =>
+                            s.name === schema.name
+                                ? { ...s, starred: serverStarredState }
+                                : s
+                        );
+                        markerManager.showAllSchemasOnMap(updatedAllSchemas);
+                        return updatedAllSchemas;
+                    });
+                }
+            }
+        );
 
-            setAllSchemas((prevAllSchemas) => {
-                const updatedAllSchemas = prevAllSchemas.map((s) =>
-                    s.name === schema.name
-                        ? { ...s, starred: serverStarredState }
-                        : s
-                );
-                markerManager.showAllSchemasOnMap(updatedAllSchemas);
-                return updatedAllSchemas;
-            });
-        } catch (err) {
-            console.error('Failed to update star status:', err);
-        }
+        // const updatedSchema = await schemaService.updateSchemaStarred(
+        //     schema.name,
+        //     newState
+        // );
+
+        // const serverStarredState =
+        //     updatedSchema?.starred !== undefined
+        //         ? updatedSchema.starred
+        //         : newState;
+
+        // setStarredItems((prev) => ({
+        //     ...prev,
+        //     [name]: serverStarredState,
+        // }));
+
+        // const updatedSchemas = schemas.map((s) =>
+        //     s.name === schema.name ? { ...s, starred: serverStarredState } : s
+        // );
+        // setSchemas(updatedSchemas);
+
+        // setAllSchemas((prevAllSchemas) => {
+        //     const updatedAllSchemas = prevAllSchemas.map((s) =>
+        //         s.name === schema.name
+        //             ? { ...s, starred: serverStarredState }
+        //             : s
+        //     );
+        //     markerManager.showAllSchemasOnMap(updatedAllSchemas);
+        //     return updatedAllSchemas;
+        // });
     };
 
     const flyToSchema = (schema: Schema) => {
@@ -236,27 +274,24 @@ export function SubNavPanel({
 
     const updateDescription = async (name: string, updatedSchema: Schema) => {
         const newDescription = updatedSchema.description || '';
+        schemaService.updateSchemaDescription(
+            updatedSchema.name,
+            newDescription
+        );
 
-        try {
-            const result = await schemaService.updateSchemaDescription(
-                updatedSchema.name,
-                newDescription
-            );
+        setDescriptionText((prev) => ({
+            ...prev,
+            [name]: newDescription,
+        }));
 
-            setDescriptionText((prev) => ({
-                ...prev,
-                [name]: newDescription,
-            }));
+        const refreshedSchemas = await schemaService.fetchAllSchemas();
+        setAllSchemas(refreshedSchemas);
 
-            const refreshedSchemas = await schemaService.fetchAllSchemas();
-            setAllSchemas(refreshedSchemas);
+        fetchSchemasCallback(currentPage);
 
-            fetchSchemasCallback(currentPage);
+        markerManager.showAllSchemasOnMap(refreshedSchemas);
 
-            markerManager.showAllSchemasOnMap(refreshedSchemas);
-
-            setEditingDescription(null);
-        } catch (err) {}
+        setEditingDescription(null);
     };
 
     const openCloneDialog = (schema: Schema) => {
@@ -294,43 +329,29 @@ export function SubNavPanel({
     const handleConfirmDelete = async () => {
         if (!schemaToDelete) return;
 
-        try {
-            const result = await schemaService.deleteSchema(
-                schemaToDelete.name
-            );
+        schemaService.deleteSchema(schemaToDelete.name, (err, result) => {
+            if (err) {
+                setDeleteDialogOpen(false);
+                setSchemaToDelete(null);
+                console.error('删除模板出错:', err);
 
-            setDeleteDialogOpen(false);
-            setSchemaToDelete(null);
-
-            if (result && result.success === true) {
-                setAllSchemas((prev) => {
-                    const filtered = prev.filter(
-                        (s) => s.name !== schemaToDelete.name
-                    );
-                    markerManager.showAllSchemasOnMap(filtered);
-                    return filtered;
-                });
-
-                setSchemas((prev) =>
-                    prev.filter((s) => s.name !== schemaToDelete.name)
-                );
-
-                fetchSchemasCallback(currentPage);
-
-                toast.success(
+                let errorMessage =
                     language === 'zh'
-                        ? '模板删除成功'
-                        : 'Schema deleted successfully',
-                    {
-                        style: {
-                            background: '#ecfdf5',
-                            color: '#047857',
-                            border: '1px solid #a7f3d0',
-                        },
+                        ? '模板删除失败'
+                        : 'Failed to delete schema';
+
+                if (err instanceof Error && err.message) {
+                    if (err.message.includes('still in use')) {
+                        errorMessage =
+                            language === 'zh'
+                                ? '模板正在被至少一个项目使用'
+                                : 'Schema is still in use by at least one project';
+                    } else {
+                        errorMessage = err.message;
                     }
-                );
-            } else if (result && result.detail) {
-                toast.error(result.detail, {
+                }
+
+                toast.error(errorMessage, {
                     style: {
                         background: '#fef2f2',
                         color: '#b91c1c',
@@ -338,47 +359,59 @@ export function SubNavPanel({
                     },
                 });
             } else {
-                toast.error(
-                    language === 'zh'
-                        ? '模板删除失败'
-                        : 'Failed to delete schema',
-                    {
+                setDeleteDialogOpen(false);
+                setSchemaToDelete(null);
+                if (result && result.success === true) {
+                    setAllSchemas((prev) => {
+                        const filtered = prev.filter(
+                            (s) => s.name !== schemaToDelete.name
+                        );
+                        markerManager.showAllSchemasOnMap(filtered);
+                        return filtered;
+                    });
+
+                    setSchemas((prev) =>
+                        prev.filter((s) => s.name !== schemaToDelete.name)
+                    );
+
+                    fetchSchemasCallback(currentPage);
+
+                    toast.success(
+                        language === 'zh'
+                            ? '模板删除成功'
+                            : 'Schema deleted successfully',
+                        {
+                            style: {
+                                background: '#ecfdf5',
+                                color: '#047857',
+                                border: '1px solid #a7f3d0',
+                            },
+                        }
+                    );
+                } else if (result && result.detail) {
+                    toast.error(result.detail, {
                         style: {
                             background: '#fef2f2',
                             color: '#b91c1c',
                             border: '1px solid #fecaca',
                         },
-                    }
-                );
-            }
-        } catch (err) {
-            setDeleteDialogOpen(false);
-            setSchemaToDelete(null);
-
-            console.error('删除模板出错:', err);
-
-            let errorMessage =
-                language === 'zh' ? '模板删除失败' : 'Failed to delete schema';
-
-            if (err instanceof Error && err.message) {
-                if (err.message.includes('still in use')) {
-                    errorMessage =
-                        language === 'zh'
-                            ? '模板正在被至少一个项目使用'
-                            : 'Schema is still in use by at least one project';
+                    });
                 } else {
-                    errorMessage = err.message;
+                    toast.error(
+                        language === 'zh'
+                            ? '模板删除失败'
+                            : 'Failed to delete schema',
+                        {
+                            style: {
+                                background: '#fef2f2',
+                                color: '#b91c1c',
+                                border: '1px solid #fecaca',
+                            },
+                        }
+                    );
                 }
             }
-
-            toast.error(errorMessage, {
-                style: {
-                    background: '#fef2f2',
-                    color: '#b91c1c',
-                    border: '1px solid #fecaca',
-                },
-            });
-        }
+        });
     };
 
     const items: SubNavItem[] = schemas.map((schema) => ({
@@ -406,20 +439,50 @@ export function SubNavPanel({
                                     : 'Loading Schema Information...'
                             );
 
-                            const schemaInfo =
-                                await schemaService.getSchemaByName(
-                                    schema.name
-                                );
+                            schemaService.getSchemaByName(
+                                schema.name,
+                                (err, result) => {
+                                    if (err) {
+                                        console.error(
+                                            '[SubNavPanel] 获取模板详情失败:',
+                                            err
+                                        );
+                                        setError(
+                                            language === 'zh'
+                                                ? '获取模板详情失败，使用当前信息继续'
+                                                : 'Failed to get schema details, continuing with current info'
+                                        );
 
-                            setError(null);
+                                        onCreateProject(
+                                            schema.name,
+                                            schema.epsg.toString(),
+                                            '1'
+                                        );
 
-                            onCreateProject(
-                                schemaInfo.name,
-                                schemaInfo.epsg.toString(),
-                                schemaInfo.grid_info &&
-                                    schemaInfo.grid_info.length > 0
-                                    ? JSON.stringify(schemaInfo.grid_info[0])
-                                    : '1'
+                                        setTimeout(() => {
+                                            setError(null);
+                                        }, 3000);
+                                        return;
+                                    }
+
+                                    setError(null);
+                                    onCreateProject(
+                                        result.project_schema?.name ||
+                                            schema.name,
+                                        (
+                                            result.project_schema?.epsg ||
+                                            schema.epsg
+                                        ).toString(),
+                                        result.project_schema?.grid_info &&
+                                            result.project_schema.grid_info
+                                                .length > 0
+                                            ? JSON.stringify(
+                                                  result.project_schema
+                                                      .grid_info[0]
+                                              )
+                                            : '1'
+                                    );
+                                }
                             );
                         } catch (err) {
                             console.error(
@@ -494,16 +557,6 @@ export function SubNavPanel({
 
     return (
         <div className="px-3">
-            <Toaster
-                position="bottom-right"
-                richColors
-                closeButton
-                style={{
-                    bottom: '5rem',
-                    right: '1.5rem',
-                }}
-            />
-
             {items.map((item) => (
                 <div key={item.title}>
                     <SchemaCard

@@ -131,3 +131,11 @@ export interface ValidationResult {
   errors: FormErrors;
   generalError: string | null;
 }
+
+export interface PaginationHandlers {
+  handleFirstPage: () => void;
+  handlePrevPage: () => void;
+  handleNextPage: () => void;
+  handleLastPage: () => void;
+  handleNavigateToPage: (page: number) => void;
+}

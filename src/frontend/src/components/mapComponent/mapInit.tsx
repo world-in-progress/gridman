@@ -1,4 +1,4 @@
-import React, { useEffect, useState, ForwardRefRenderFunction } from 'react';
+import React, { useEffect, useState, ForwardRefRenderFunction, useContext } from 'react';
 import mapboxgl from 'mapbox-gl';
 import NHMap from './utils/NHMap';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -15,6 +15,9 @@ import CustomRectangleDraw from './layers/customRectangleDraw';
 import ProjectBoundsLayer from './layers/projectBoundsLayer';
 import { convertCoordinate } from '../operatePanel/utils/coordinateUtils';
 import { generateRandomHexColor } from '../../utils/colorUtils';
+import { ProjectService } from '../projectPanel/utils/ProjectService';
+import { LanguageContext } from '../../App';
+import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
 
 // Add mapInstance property to window object
 declare global {
@@ -36,14 +39,15 @@ interface MapInitProps {
 interface MapInitHandle {
     startDrawRectangle: (cancel?: boolean) => void;
     startPointSelection: (cancel?: boolean) => void;
-    showProjectBounds: (show: boolean) => void;
-    flyToProjectBounds: (projectName: string) => Promise<void>;
+    flyToSubprojectBounds: (projectName: string, subprojectName: string) => Promise<void>;
+    showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
 }
 
 let scene: ThreejsSceneLayer | null = null;
 let rectangleLayer: GLMapRectangleLayer | null = null;
 let customRectangleDraw: CustomRectangleDraw | null = null;
 let projectBoundsLayer: ProjectBoundsLayer | null = null;
+let subprojectBoundsManager: SubprojectBoundsManager | null = null;
 
 const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     {
@@ -257,23 +261,26 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 customRectangleDraw = new CustomRectangleDraw({
                     id: 'custom-rectangle-draw',
                     corners: {
-                        southWest: [114.022006, 22.438286], // 左下
-                        southEast: [114.033418, 22.438286], // 右下
-                        northEast: [114.033418, 22.449498], // 右上
-                        northWest: [114.022006, 22.449498]  // 左上
+                        southWest: [114.022006, 22.438286], // LB
+                        southEast: [114.033418, 22.438286], // RB
+                        northEast: [114.033418, 22.449498], // RT
+                        northWest: [114.022006, 22.449498]  // LT
                     },
                 });
                 // mapInstance.addLayer(customRectangleDraw);
                 
-                {/* 初始化项目边界层但不立即显示 */}
+                {/* initialize project bounds layer */}
                 projectBoundsLayer = new ProjectBoundsLayer({
                     id: 'project-bounds-layer'
                 });
                 // mapInstance.addLayer(projectBoundsLayer);
-                // 开始时不显示项目边界
+                // do not show project bounds layer at the beginning
                 if (projectBoundsLayer) {
                     projectBoundsLayer.setVisibility('none');
                 }
+                
+                {/* initialize subproject bounds manager */}
+                subprojectBoundsManager = new SubprojectBoundsManager(mapInstance, 'zh');
             });
             
 //////////////////////////////////////////////////////////////////////////////
@@ -377,177 +384,33 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             }
         }
     };
+
+    const flyToSubprojectBounds = async (projectName: string, subprojectName: string) => {
+        if (!map || !subprojectBoundsManager) return;
+        await subprojectBoundsManager.flyToSubprojectBounds(projectName, subprojectName);
+    };
     
-    // Switch the visibility of the project bounds layer
-    const showProjectBounds = async (show: boolean) => {
-        if (!map) return;
-        
-        if (show === showingProjectBounds) return;
-        
-        try {
-            const sourceId = 'project-bounds-source';
-            const layerId = 'project-bounds-fill-layer';
-            const outlineLayerId = 'project-bounds-outline-layer';
-            
-            if (map.getLayer(outlineLayerId)) {
-                map.removeLayer(outlineLayerId);
-            }
-            
-            if (map.getLayer(layerId)) {
-                map.removeLayer(layerId);
-            }
-            
-            if (map.getSource(sourceId)) {
-                map.removeSource(sourceId);
-            }
-            
-            if (show) {
-                
-                if (!projectBoundsLayer || projectBoundsLayer.projects.length === 0) {
-                    if (!projectBoundsLayer) {
-                        projectBoundsLayer = new ProjectBoundsLayer({ id: 'project-bounds-layer' });
-                    }
-                    await projectBoundsLayer.loadAllProjects();
-                }
-                
-                const features = projectBoundsLayer.projects.map(project => {
-                    const { bounds, name, starred } = project;
-                    if (!bounds || bounds.length !== 4) return null;
-                    
-                    const sw = convertCoordinate([bounds[0], bounds[1]], '2326', '4326');
-                    const ne = convertCoordinate([bounds[2], bounds[3]], '2326', '4326');
-                    
-                    if (!sw || !ne || sw.length !== 2 || ne.length !== 2) return null;
-                    
-                    const randomColor = generateRandomHexColor();
-                    
-                    return {
-                        type: 'Feature',
-                        properties: {
-                            name,
-                            selected: name === projectBoundsLayer?.selectedProject,
-                            color: randomColor,
-                            starred: starred || false
-                        },
-                        geometry: {
-                            type: 'Polygon',
-                            coordinates: [[
-                                [sw[0], sw[1]], // 左下
-                                [sw[0], ne[1]], // 左上
-                                [ne[0], ne[1]], // 右上
-                                [ne[0], sw[1]], // 右下
-                                [sw[0], sw[1]]  // 闭合回左下
-                            ]]
-                        }
-                    };
-                }).filter(feature => feature !== null);
-                
-                map.addSource(sourceId, {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: features as any[]
-                    }
-                });
-                
-                map.addLayer({
-                    id: layerId,
-                    type: 'fill',
-                    source: sourceId,
-                    paint: {
-                        'fill-color': ['get', 'color'], 
-                        'fill-opacity': 0.3
-                    }
-                });
-                
-                map.addLayer({
-                    id: outlineLayerId,
-                    type: 'line',
-                    source: sourceId,
-                    paint: {
-                        'line-color': [
-                            'case',
-                            ['get', 'starred'], '#FFFD00', 
-                            '#AAAAAA' 
-                        ],
-                        'line-width': 2
-                    }
-                });
-            }
-            setShowingProjectBounds(show);
-        } catch (error) {
-            console.error('切换项目边界显示失败:', error);
-        }
+    const highlightSubproject = (projectName: string, subprojectName: string) => {
+        if (!map || !subprojectBoundsManager) return;
+        subprojectBoundsManager.highlightSubproject(projectName, subprojectName);
     };
 
-    const flyToProjectBounds = async (projectName: string) => {
-        if (!map) return;
-
-        try {
-            if (!projectBoundsLayer) {
-                projectBoundsLayer = new ProjectBoundsLayer({ id: 'project-bounds-layer' });
-                map.addLayer(projectBoundsLayer);
-                await projectBoundsLayer.loadAllProjects();
-            }
-            
-            const projectToFly = projectBoundsLayer.projects.find(
-                project => project.name === projectName
-            );
-            
-            if (!projectToFly || !projectToFly.bounds || projectToFly.bounds.length !== 4) {
-                console.warn('找不到项目或项目边界不正确:', projectName);
-                return;
-            }
-            
-            const sw = convertCoordinate(
-                [projectToFly.bounds[0], projectToFly.bounds[1]],
-                '2326',
-                '4326'
-            );
-            const ne = convertCoordinate(
-                [projectToFly.bounds[2], projectToFly.bounds[3]],
-                '2326',
-                '4326'
-            );
-            
-            if (!sw || !ne || sw.length !== 2 || ne.length !== 2) {
-                console.warn('坐标转换失败:', projectName);
-                return;
-            }
-            
-            const bounds = [
-                [sw[0], sw[1]], // 西南角
-                [ne[0], ne[1]]  // 东北角
-            ];
-            
-            projectBoundsLayer.setSelectedProject(projectName);
-            
-            if (projectBoundsLayer.getVisibility() === 'none') {
-                projectBoundsLayer.setVisibility('visible');
-                setShowingProjectBounds(true);
-            }
-            
-            map.fitBounds(bounds as [[number, number], [number, number]], {
-                padding: 50, 
-                maxZoom: 19, 
-                duration: 1000
-            });
-        } catch (error) {
-            console.error('飞行到项目边界失败:', error);
-        }
+    const showSubprojectBounds = (projectName: string, subprojects: any[], show: boolean) => {
+        if (!map || !subprojectBoundsManager) return;
+        subprojectBoundsManager.showSubprojectBounds(projectName, subprojects, show);
     };
 
     React.useImperativeHandle(ref, () => ({
         startDrawRectangle,
         startPointSelection,
-        showProjectBounds,
-        flyToProjectBounds,
+        flyToSubprojectBounds,
+        showSubprojectBounds,
     }),
     [
         startDrawRectangle,
         startPointSelection,
-        showProjectBounds,
-        flyToProjectBounds,
+        flyToSubprojectBounds,
+        showSubprojectBounds,
     ]);
 
     return (

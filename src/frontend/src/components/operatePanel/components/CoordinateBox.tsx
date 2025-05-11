@@ -16,7 +16,6 @@ const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, forma
   
   const formatSingleValue = (value: number): string => value.toFixed(6);
   
-  // 直接取各点坐标，确保与expandedRectangle一致
   const northValue = coordinates.northEast[1];
   const southValue = coordinates.southWest[1];
   const westValue = coordinates.southWest[0];

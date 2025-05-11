@@ -31,7 +31,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onFirstPage}
           disabled={currentPage === 1}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === 1
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -44,7 +44,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onPrevPage}
           disabled={currentPage === 1}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === 1
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -62,7 +62,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onNextPage}
           disabled={currentPage === totalPages || totalPages === 0}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === totalPages || totalPages === 0
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -75,7 +75,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onLastPage}
           disabled={currentPage === totalPages || totalPages === 0}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === totalPages || totalPages === 0
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'

@@ -1,4 +1,8 @@
-import { FormErrors, MenuItem, SubNavItem } from '../../schemaPanel/types/types';
+import {
+    FormErrors,
+    MenuItem,
+    SubNavItem,
+} from '../../schemaPanel/types/types';
 import { Sidebar } from '@/components/ui/sidebar';
 
 export interface RectangleCoordinates {
@@ -74,9 +78,9 @@ export interface ProjectCardProps {
     onEditDescription?: (name: string) => void;
     onSaveDescription?: (name: string, project: Project) => Promise<void>;
     onAddSubproject?: (
-        project: Project, 
-        schemaName?: string, 
-        epsg?: string, 
+        project: Project,
+        schemaName?: string,
+        epsg?: string,
         gridInfo?: string
     ) => void;
 }
@@ -89,39 +93,44 @@ export interface ProjectSubNavPanelProps {
     onNavigateToPage: (page: number) => void;
     searchQuery?: string;
     onCreateSubProject?: (
-        parentProject: Project, 
-        schemaName?: string, 
-        epsg?: string, 
+        parentProject: Project,
+        schemaName?: string,
+        epsg?: string,
         gridInfo?: string
     ) => void;
 }
 
-export interface ProjectPanelProps extends React.ComponentProps<typeof Sidebar> {
-  onCreateNew?: () => void;
-  onCreateSubProject?: (
-    parentProject: Project, 
-    schemaName?: string, 
-    epsg?: string, 
-    gridInfo?: string
-  ) => void;
+export interface ProjectPanelProps
+    extends React.ComponentProps<typeof Sidebar> {
+    onCreateNew?: () => void;
+    onCreateSubProject?: (
+        parentProject: Project,
+        schemaName?: string,
+        epsg?: string,
+        gridInfo?: string
+    ) => void;
 }
 
-export interface SubProjectCardProps{
-    project: Project;
-    title: string;
-    isHighlighted: boolean;
+export interface SubprojectData {
+    name: string;
+    bounds?: number[];
+    description?: string;
+    starred?: boolean;
+    [key: string]: any;
+}
+
+export interface SubProjectCardProps {
+    subproject: SubprojectData;
+    parentProjectTitle: string;
     language: string;
-    starredItems: Record<string, boolean>;
-    openMenuId: string | null;
-    menuItems: MenuItem[];
+    subprojectDescriptionText?: Record<string, string>;
     onCardClick: () => void;
-    onStarToggle: (name: string, project: Project) => void;
-    onMenuOpenChange: (open: boolean) => void;
-    editingDescription?: string | null;
-    descriptionText?: Record<string, string>;
-    onEditDescription?: (name: string) => void;
-    onSaveDescription?: (name: string, project: Project) => Promise<void>;
-    onAddSubproject?: (project: Project) => void;
+    onStarToggle?: (subprojectName: string, starred: boolean) => void;
+    onEditSubprojectDescription?: (subprojectName: string) => void;
+    onSaveSubprojectDescription?: (
+        subprojectName: string,
+        description: string
+    ) => Promise<void>;
 }
 
 export interface ProjectDescriptionCardProps {
@@ -165,4 +174,17 @@ export interface ProjectConvertedCoordCardProps {
     convertedCoord: { x: string; y: string } | null;
     epsg: string;
     language: string;
+}
+
+export interface AdjustAndExpandRectangleParams {
+    rectangleCoordinates: RectangleCoordinates;
+    epsg: string;
+    gridLevel: number[];
+    schemaBasePoint: [number, number];
+    convertSingleCoordinate: (
+        coord: [number, number],
+        fromEpsg: string,
+        toEpsg: string
+    ) => [number, number];
+    expandFactor?: number;
 }

@@ -1,4 +1,5 @@
 import mapboxgl from 'mapbox-gl';
+import { RectangleOptions } from '../types/types';
 
 interface CustomLayer {
   id: string;
@@ -8,12 +9,6 @@ interface CustomLayer {
   program?: WebGLProgram;
   aPos?: number;
   buffer?: WebGLBuffer;
-}
-
-interface RectangleOptions {
-  center: { lng: number; lat: number };
-  width: number; // Mercator
-  height: number; // Mercator
 }
 
 export const CustomLayer = (options: RectangleOptions): CustomLayer => {

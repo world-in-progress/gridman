@@ -126,25 +126,25 @@ export default function CreateProject({
             setSchemaNameFromProps(true);
             const schemaService = new SchemaService(language);
             schemaService
-                .getSchemaByName(initialSchemaName)
-                .then((schema: Schema) => {
-                    if (schema && schema.base_point) {
+                .getSchemaByName(initialSchemaName, (err, result) => {
+                    if (err) {
+                        console.error('获取schema详情失败:', err);
+                        return;
+                    }
+                    if (result.project_schema && result.project_schema.base_point) {
                         setSchemaBasePoint(
-                            schema.base_point as [number, number]
+                            result.project_schema.base_point as [number, number]
                         );
 
-                        if (schema.epsg) {
+                        if (result.project_schema.epsg) {
                             const wgs84Point = convertToWGS84(
-                                schema.base_point,
-                                schema.epsg
+                                result.project_schema.base_point,
+                                result.project_schema.epsg
                             );
                             setSchemaBasePointWGS84(wgs84Point);
-                            showSchemaMarkerOnMap(wgs84Point, schema.name);
+                            showSchemaMarkerOnMap(wgs84Point, result.project_schema.name);
                         }
                     }
-                })
-                .catch((error) => {
-                    console.error('获取schema详情失败:', error);
                 });
         }
 
@@ -257,9 +257,18 @@ export default function CreateProject({
         );
 
         const projectService = new ProjectService(language);
-        projectService
-            .createProject(projectData)
-            .then((response) => {
+        projectService.createProject(
+            projectData,
+            (err, result) => {
+                if (result.success === false) {
+                    setGeneralError(
+                        language === 'zh'
+                            ? '项目名称已存在，请使用不同的名称'
+                            : 'Project already exists. Please use a different name.'
+                    );
+                    setFormErrors((prev) => ({ ...prev, name: true }));
+                    return;
+                }
                 setGeneralError(
                     language === 'zh'
                         ? '项目创建成功！'
@@ -281,22 +290,8 @@ export default function CreateProject({
                         onBack();
                     }
                 }, 1000);
-            })
-            .catch((error: Error) => {
-                if (
-                    error.message.includes('already exists') ||
-                    error.message.includes('已存在')
-                ) {
-                    setGeneralError(
-                        language === 'zh'
-                            ? '项目名称已存在，请使用不同的名称'
-                            : 'Project already exists. Please use a different name.'
-                    );
-                    setFormErrors((prev) => ({ ...prev, name: true }));
-                } else {
-                    setGeneralError(error.message);
-                }
-            });
+            }
+        );
     };
 
     const handleBack = () => {

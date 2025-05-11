@@ -6,6 +6,7 @@ import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/subNavPanel';
 import { Pagination } from './components/Pagination';
+import { createPaginationHandlers } from './utils/utils';
 
 interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
     onCreateNew?: () => void;
@@ -32,41 +33,11 @@ export default function SchemaPanel({
         setTotalItems(total);
     };
 
-    const handleFirstPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(1);
-        }
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            const newPage = currentPage - 1;
-            setCurrentPage(newPage);
-        }
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            const newPage = currentPage + 1;
-            setCurrentPage(newPage);
-        }
-    };
-
-    const handleLastPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(totalPages);
-        }
-    };
-
-    const handleNavigateToPage = (page: number) => {
-        if (page > 0 && page <= totalPages && page !== currentPage) {
-            setCurrentPage(page);
-        }
-    };
-
     const handleSearch = (query: string) => {
         setSearchQuery(query);
     };
+
+    const paginationHandlers = createPaginationHandlers(currentPage, totalPages, setCurrentPage);
 
     return (
         <Sidebar {...props}>
@@ -98,7 +69,7 @@ export default function SchemaPanel({
                     currentPage={currentPage}
                     onTotalItemsChange={handleTotalItemsChange}
                     itemsPerPage={itemsPerPage}
-                    onNavigateToPage={handleNavigateToPage}
+                    onNavigateToPage={paginationHandlers.handleNavigateToPage}
                     onCreateProject={onCreateProject}
                     searchQuery={searchQuery}
                 />
@@ -109,10 +80,10 @@ export default function SchemaPanel({
                     totalPages={totalPages}
                     totalItems={totalItems}
                     itemsPerPage={itemsPerPage}
-                    onFirstPage={handleFirstPage}
-                    onPrevPage={handlePrevPage}
-                    onNextPage={handleNextPage}
-                    onLastPage={handleLastPage}
+                    onFirstPage={paginationHandlers.handleFirstPage}
+                    onPrevPage={paginationHandlers.handlePrevPage}
+                    onNextPage={paginationHandlers.handleNextPage}
+                    onLastPage={paginationHandlers.handleLastPage}
                 />
             </SidebarContent>
             <SidebarRail />

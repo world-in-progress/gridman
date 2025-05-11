@@ -1,6 +1,8 @@
 import GridManager from '../grid/NHGridManager';
 import { SubdivideRules } from '../grid/NHGrid';
 import { Callback, WorkerSelf } from '../types';
+import ProjectUtils from '../../components/projectPanel/utils/util.worker';
+import SchemaUtils from '../../components/schemaPanel/utils/util.worker';
 
 export function checkIfReady(
     this: WorkerSelf,
@@ -64,6 +66,7 @@ export async function calcEdgeRenderInfos(
     });
 }
 
+// Can be deleted
 export async function initializeGrid(
     this: WorkerSelf,
     jsonData: any,
@@ -75,7 +78,7 @@ export async function initializeGrid(
     }
 
     try {
-        const response = await fetch('http://localhost:8000/grid/init', {
+        const response = await fetch('/api/grid/grid/init', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -98,42 +101,40 @@ export async function initializeGrid(
     }
 }
 
+// export async function createSchema(
+//     this: WorkerSelf,
+//     schemaData: any,
+//     callback: Callback<any>
+// ) {
+
+
+//     const response = await fetch('/api/grid/schema', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify(schemaData),
+//     });
+
+//     if (!response.ok) {
+//         throw new Error(`HTTP错误! 状态码: ${response.status}`);
+//     }
+
+//     const responseData = await response.json();
+
+//     if (responseData && responseData.success === false) {
+//         throw new Error(responseData.message || '创建Schema失败');
+//     }
+
+//     callback(null, responseData);
+// }
 export async function createSchema(
     this: WorkerSelf,
     schemaData: any,
     callback: Callback<any>
 ) {
-    if (!schemaData) {
-        callback(new Error('无数据提供'), false);
-        return;
-    }
-
-    try {
-        const response = await fetch('http://localhost:8000/schema', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(schemaData),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-
-        if (responseData && responseData.success === false) {
-            throw new Error(responseData.message || '创建Schema失败');
-        }
-
-        callback(null, responseData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { err, result } = await SchemaUtils.createSchema(schemaData);
+    callback(err, result);
 }
 
 export async function fetchSchemas(
@@ -141,87 +142,9 @@ export async function fetchSchemas(
     params: { startIndex: number; endIndex: number },
     callback: Callback<any>
 ) {
-    try {
-        const { startIndex, endIndex } = params;
-        const response = await fetch(
-            `http://localhost:8000/schemas/?startIndex=${startIndex}&endIndex=${endIndex}`
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        try {
-            const countResponse = await fetch(
-                'http://localhost:8000/schemas/num'
-            );
-
-            if (countResponse.ok) {
-                const countText = await countResponse.text();
-
-                try {
-                    const countData = JSON.parse(countText);
-
-                    if (typeof countData.count === 'number') {
-                        responseData.total_count = countData.count;
-                    } else if (typeof countData === 'number') {
-                        responseData.total_count = countData;
-                    } else if (
-                        countData &&
-                        typeof countData.total === 'number'
-                    ) {
-                        responseData.total_count = countData.total;
-                    } else {
-                        const possibleCountFields = Object.entries(
-                            countData
-                        ).find(
-                            ([key, value]) =>
-                                typeof value === 'number' &&
-                                (key.includes('count') ||
-                                    key.includes('total') ||
-                                    key.includes('num'))
-                        );
-
-                        if (possibleCountFields) {
-                            responseData.total_count =
-                                possibleCountFields[1] as number;
-                        } else {
-                            const numericValue = parseInt(countText.trim(), 10);
-                            if (!isNaN(numericValue)) {
-                                responseData.total_count = numericValue;
-                            } else {
-                                responseData.total_count =
-                                    responseData.grid_schemas.length;
-                            }
-                        }
-                    }
-                } catch (parseError) {
-                    const numericValue = parseInt(countText.trim(), 10);
-                    if (!isNaN(numericValue)) {
-                        responseData.total_count = numericValue;
-                    } else {
-                        responseData.total_count =
-                            responseData.grid_schemas.length;
-                    }
-                }
-            } else {
-                responseData.total_count = responseData.grid_schemas.length;
-            }
-        } catch (error) {
-            responseData.total_count = responseData.grid_schemas.length;
-        }
-        if (responseData.total_count < responseData.grid_schemas.length) {
-            responseData.total_count = responseData.grid_schemas.length;
-        }
-
-        callback(null, responseData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { startIndex, endIndex } = params;
+    const { err, result } = await SchemaUtils.fetchSchemas(startIndex, endIndex);
+    callback(err, result);
 }
 
 export async function updateSchemaStarred(
@@ -229,146 +152,33 @@ export async function updateSchemaStarred(
     params: { name: string; starred: boolean },
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('Invalid schema name'), false);
-        return;
-    }
-
-    try {
-        const { name, starred } = params;
-
-        const getResponse = await fetch(`http://localhost:8000/schema/${name}`);
-
-        if (!getResponse.ok) {
-            throw new Error(
-                `Failed to get schema! Status code: ${getResponse.status}`
-            );
-        }
-
-        const responseData = await getResponse.json();
-
-        let schemaData;
-        if (responseData.grid_schema) {
-            schemaData = { ...responseData.grid_schema };
-        } else {
-            schemaData = { ...responseData };
-        }
-
-        schemaData.starred = starred;
-
-        const putResponse = await fetch(
-            `http://localhost:8000/schema/${name}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(schemaData),
-            }
-        );
-
-        if (!putResponse.ok) {
-            throw new Error(
-                `Failed to update starred status! Status code: ${putResponse.status}`
-            );
-        }
-
-        const updatedData = await putResponse.json();
-        callback(null, updatedData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { name, starred } = params;
+    const { err, result } = await SchemaUtils.updateSchemaStarred(
+        name,
+        starred
+    );
+    callback(err, result);
 }
-
 export async function updateSchemaDescription(
     this: WorkerSelf,
     params: { name: string; description: string },
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('无效的模板名称'), false);
-        return;
-    }
-
-    try {
-        const { name, description } = params;
-
-        const getResponse = await fetch(`http://localhost:8000/schema/${name}`);
-
-        if (!getResponse.ok) {
-            throw new Error(`获取模板失败! 状态码: ${getResponse.status}`);
-        }
-
-        const responseData = await getResponse.json();
-
-        let schemaData;
-        if (responseData.grid_schema) {
-            schemaData = { ...responseData.grid_schema };
-        } else {
-            schemaData = { ...responseData };
-        }
-
-        schemaData.description = description;
-
-        const putResponse = await fetch(
-            `http://localhost:8000/schema/${name}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(schemaData),
-            }
-        );
-
-        if (!putResponse.ok) {
-            throw new Error(`更新描述失败! 状态码: ${putResponse.status}`);
-        }
-
-        const updatedData = await putResponse.json();
-        callback(null, updatedData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { name, description } = params;
+    const { err, result } = await SchemaUtils.updateSchemaDescription(
+        name,
+        description
+    );
+    callback(err, result);
 }
 
 export async function getSchemaByName(
     this: WorkerSelf,
-    params: { name: string },
+    schemaName: string,
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        console.error('[Worker] 无效的模板名称');
-        callback(new Error('无效的模板名称'), false);
-        return;
-    }
-
-    try {
-        const { name } = params;
-
-        const response = await fetch(`http://localhost:8000/schema/${name}`);
-
-        if (!response.ok) {
-            const errorMsg = `获取模板失败! 状态码: ${response.status}`;
-            console.error('[Worker]', errorMsg);
-            throw new Error(errorMsg);
-        }
-
-        const responseData = await response.json();
-        callback(null, responseData);
-    } catch (error) {
-        console.error('[Worker] 获取模板出错:', error);
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { err, result } = await SchemaUtils.getSchemaByName(schemaName);
+    callback(err, result);
 }
 
 export async function fetchProjects(
@@ -376,87 +186,12 @@ export async function fetchProjects(
     params: { startIndex: number; endIndex: number },
     callback: Callback<any>
 ) {
-    try {
-        const { startIndex, endIndex } = params;
-        const response = await fetch(
-            `http://localhost:8000/project-metas/?startIndex=${startIndex}&endIndex=${endIndex}`
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        try {
-            const countResponse = await fetch(
-                'http://localhost:8000/project-metas/num'
-            );
-
-            if (countResponse.ok) {
-                const countText = await countResponse.text();
-
-                try {
-                    const countData = JSON.parse(countText);
-
-                    if (typeof countData.count === 'number') {
-                        responseData.total_count = countData.count;
-                    } else if (typeof countData === 'number') {
-                        responseData.total_count = countData;
-                    } else if (
-                        countData &&
-                        typeof countData.total === 'number'
-                    ) {
-                        responseData.total_count = countData.total;
-                    } else {
-                        const possibleCountFields = Object.entries(
-                            countData
-                        ).find(
-                            ([key, value]) =>
-                                typeof value === 'number' &&
-                                (key.includes('count') ||
-                                    key.includes('total') ||
-                                    key.includes('num'))
-                        );
-
-                        if (possibleCountFields) {
-                            responseData.total_count =
-                                possibleCountFields[1] as number;
-                        } else {
-                            const numericValue = parseInt(countText.trim(), 10);
-                            if (!isNaN(numericValue)) {
-                                responseData.total_count = numericValue;
-                            } else {
-                                responseData.total_count =
-                                    responseData.project_metas.length;
-                            }
-                        }
-                    }
-                } catch (parseError) {
-                    const numericValue = parseInt(countText.trim(), 10);
-                    if (!isNaN(numericValue)) {
-                        responseData.total_count = numericValue;
-                    } else {
-                        responseData.total_count =
-                            responseData.project_metas.length;
-                    }
-                }
-            } else {
-                responseData.total_count = responseData.project_metas.length;
-            }
-        } catch (error) {
-            responseData.total_count = responseData.project_metas.length;
-        }
-        if (responseData.total_count < responseData.project_metas.length) {
-            responseData.total_count = responseData.project_metas.length;
-        }
-
-        callback(null, responseData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { startIndex, endIndex } = params;
+    const { err, result } = await ProjectUtils.fetchProjects(
+        startIndex,
+        endIndex
+    );
+    callback(err, result);
 }
 
 export async function getProjectByName(
@@ -464,33 +199,9 @@ export async function getProjectByName(
     params: { name: string },
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        console.error('[Worker] 无效的模板名称');
-        callback(new Error('无效的模板名称'), false);
-        return;
-    }
-
-    try {
-        const { name } = params;
-
-        const response = await fetch(
-            `http://localhost:8000/project-meta/${name}`
-        );
-
-        if (!response.ok) {
-            const errorMsg = `获取模板失败! 状态码: ${response.status}`;
-            throw new Error(errorMsg);
-        }
-
-        const responseData = await response.json();
-        callback(null, responseData);
-    } catch (error) {
-        console.error('[Worker] 获取模板出错:', error);
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { name } = params;
+    const { err, result } = await ProjectUtils.getProjectByName(name);
+    callback(err, result);
 }
 
 export async function updateProjectStarred(
@@ -498,60 +209,12 @@ export async function updateProjectStarred(
     params: { name: string; starred: boolean },
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('Invalid project name'), false);
-        return;
-    }
-
-    try {
-        const { name, starred } = params;
-
-        const getResponse = await fetch(
-            `http://localhost:8000/project-meta/${name}`
-        );
-
-        if (!getResponse.ok) {
-            throw new Error(
-                `Failed to get project! Status code: ${getResponse.status}`
-            );
-        }
-
-        const responseData = await getResponse.json();
-
-        let projectData;
-        if (responseData.project_meta) {
-            projectData = { ...responseData.project_meta };
-        } else {
-            projectData = { ...responseData };
-        }
-
-        projectData.starred = starred;
-
-        const putResponse = await fetch(
-            `http://localhost:8000/project-meta/${name}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(projectData),
-            }
-        );
-
-        if (!putResponse.ok) {
-            throw new Error(
-                `Failed to update project starred status! Status code: ${putResponse.status}`
-            );
-        }
-
-        const updatedData = await putResponse.json();
-        callback(null, updatedData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { name, starred } = params;
+    const { err, result } = await ProjectUtils.updateProjectStarred(
+        name,
+        starred
+    );
+    callback(err, result);
 }
 
 export async function updateProjectDescription(
@@ -559,56 +222,12 @@ export async function updateProjectDescription(
     params: { name: string; description: string },
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('无效的项目名称'), false);
-        return;
-    }
-
-    try {
-        const { name, description } = params;
-
-        const getResponse = await fetch(
-            `http://localhost:8000/project-meta/${name}`
-        );
-
-        if (!getResponse.ok) {
-            throw new Error(`获取项目失败! 状态码: ${getResponse.status}`);
-        }
-
-        const responseData = await getResponse.json();
-
-        let projectData;
-        if (responseData.project_meta) {
-            projectData = { ...responseData.project_meta };
-        } else {
-            projectData = { ...responseData };
-        }
-
-        projectData.description = description;
-
-        const putResponse = await fetch(
-            `http://localhost:8000/project-meta/${name}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(projectData),
-            }
-        );
-
-        if (!putResponse.ok) {
-            throw new Error(`更新项目描述失败! 状态码: ${putResponse.status}`);
-        }
-
-        const updatedData = await putResponse.json();
-        callback(null, updatedData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { name, description } = params;
+    const { err, result } = await ProjectUtils.updateProjectDescription(
+        name,
+        description
+    );
+    callback(err, result);
 }
 
 export async function createProject(
@@ -616,178 +235,103 @@ export async function createProject(
     projectData: any,
     callback: Callback<any>
 ) {
-    if (!projectData) {
-        callback(new Error('无数据提供'), false);
-        return;
-    }
-
-    try {
-        const response = await fetch('http://localhost:8000/project-meta', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(projectData),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-
-        callback(null, responseData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { err, result } = await ProjectUtils.createProject(projectData);
+    callback(err, result);
 }
 
 export async function deleteSchema(
     this: WorkerSelf,
-    params: { name: string },
+    schemaName: string,
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('无效的模板名称'), false);
-        return;
-    }
-
-    try {
-        const { name } = params;
-        const response = await fetch(`http://localhost:8000/schema/${name}`, {
-            method: 'DELETE',
-        });
-        let responseData;
-        try {
-            responseData = await response.json();
-        } catch (jsonError) {
-            console.error('解析响应 JSON 失败:', jsonError);
-            if (response.ok) {
-                callback(null, { success: true, message: '操作成功' });
-            } else {
-                callback(
-                    new Error(`删除模板失败! 状态码: ${response.status}`),
-                    false
-                );
-            }
-            return;
-        }
-
-        if (!response.ok) {
-            if (responseData.detail) {
-                callback(null, { success: false, detail: responseData.detail });
-            } else if (responseData.message) {
-                callback(null, responseData);
-            } else {
-                callback(null, {
-                    success: false,
-                    detail: `删除模板失败! 状态码: ${response.status}`,
-                });
-            }
-            return;
-        }
-
-        if (responseData.success !== undefined) {
-            callback(null, responseData);
-        } else {
-            callback(null, { ...responseData, success: true });
-        }
-    } catch (error) {
-        console.error('删除模板时发生错误:', error);
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { err, result } = await SchemaUtils.deleteSchema(schemaName);
+    callback(err, result);
 }
 
 export async function deleteProject(
     this: WorkerSelf,
-    params: { name: string },
+    projectName: string,
     callback: Callback<any>
 ) {
-    if (!params || !params.name) {
-        callback(new Error('无效的模板名称'), false);
-        return;
-    }
-
-    try {
-        const { name } = params;
-        const response = await fetch(`http://localhost:8000/project/${name}`, {
-            method: 'DELETE',
-        });
-        let responseData;
-        try {
-            responseData = await response.json();
-        } catch (jsonError) {
-            console.error('解析响应 JSON 失败:', jsonError);
-            if (response.ok) {
-                callback(null, { success: true, message: '操作成功' });
-            } else {
-                callback(
-                    new Error(`删除模板失败! 状态码: ${response.status}`),
-                    false
-                );
-            }
-            return;
-        }
-
-        if (!response.ok) {
-            if (responseData.detail) {
-                callback(null, { success: false, detail: responseData.detail });
-            } else if (responseData.message) {
-                callback(null, responseData);
-            } else {
-                callback(null, {
-                    success: false,
-                    detail: `删除模板失败! 状态码: ${response.status}`,
-                });
-            }
-            return;
-        }
-
-        if (responseData.success !== undefined) {
-            callback(null, responseData);
-        } else {
-            callback(null, { ...responseData, success: true });
-        }
-    } catch (error) {
-        console.error('删除模板时发生错误:', error);
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+    const { err, result } = await ProjectUtils.deleteProject(projectName);
+    callback(err, result);
 }
 
 export async function getSubprojects(
     this: WorkerSelf,
-    params: { project_name: string; subproject_name: string },
+    params: { projectName: string; subprojectName: string },
     callback: Callback<any>
 ) {
-    if (!params || !params.project_name || !params.subproject_name) {
-        callback(new Error('无效的项目名称或子项目名称'), false);
-        return;
-    }
+    const { err, result } = await ProjectUtils.getSubprojects(
+        params.projectName,
+        params.subprojectName
+    );
+    callback(err, result);
+}
 
-    try {
-        const { project_name, subproject_name } = params;
-        const response = await fetch(
-            `http://localhost:8000/subprojects/${project_name}/${subproject_name}`
-        );
-        if (!response.ok) {
-            throw new Error(`获取子项目失败! 状态码: ${response.status}`);
-        }
+export async function fetchSubprojects(
+    this: WorkerSelf,
+    params: { projectName: string },
+    callback: Callback<any>
+) {
+    const { err, result } = await ProjectUtils.fetchSubprojects(
+        params.projectName
+    );
+    callback(err, result);
+}
 
-        const responseData = await response.json();
-        callback(null, responseData);
-    } catch (error) {
-        callback(
-            error instanceof Error ? error : new Error(String(error)),
-            false
-        );
-    }
+export async function createSubProject(
+    this: WorkerSelf,
+    SubprojectData: any,
+    callback: Callback<any>
+) {
+    const { err, result } = await ProjectUtils.createSubProject(SubprojectData);
+    callback(err, result);
+}
+
+export async function updateSubprojectStarred(
+    this: WorkerSelf,
+    params: { projectName: string; subprojectName: string; starred: boolean },
+    callback: Callback<any>
+) {
+    const { projectName, subprojectName, starred } = params;
+    const { err, result } = await ProjectUtils.updateSubprojectStarred(
+        projectName,
+        subprojectName,
+        starred
+    );
+    callback(err, result);
+}
+
+export async function updateSubprojectDescription(
+    this: WorkerSelf,
+    params: {
+        projectName: string;
+        subprojectName: string;
+        description: string;
+    },
+    callback: Callback<any>
+) {
+    const { projectName, subprojectName, description } = params;
+    const { err, result } = await ProjectUtils.updateSubprojectDescription(
+        projectName,
+        subprojectName,
+        description
+    );
+    callback(err, result);
+}
+
+export async function setSubproject(
+    this: WorkerSelf,
+    {
+        projectName,
+        subprojectName,
+    }: { projectName: string; subprojectName: string },
+    callback: Callback<any>
+) {
+    const { err, result } = await ProjectUtils.setSubproject(
+        projectName,
+        subprojectName
+    );
+    callback(err, result);
 }

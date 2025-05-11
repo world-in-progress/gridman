@@ -39,8 +39,9 @@ import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
 import GridBotBotton from './testComponents/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
+import TopologyPanel from './TopologyPanel/topologyPanel';
 
-export type SidebarType = 'operate' | 'schema' | 'project' | null;
+export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType =
     | 'schema'
     | 'project'
@@ -54,8 +55,8 @@ export default function Page() {
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
-        showProjectBounds: (show: boolean) => void;
-        flyToProjectBounds: (projectName: string) => Promise<void>;
+        flyToSubprojectBounds: (projectName: string, subprojectName: string) => Promise<void>;
+        showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
     }>(null);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
@@ -66,7 +67,7 @@ export default function Page() {
     const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
     const [activeBreadcrumb, setActiveBreadcrumb] =
         useState<BreadcrumbType>(null);
-    const [activePanel, setActivePanel] = useState<'schema' | 'project' | null>(
+    const [activePanel, setActivePanel] = useState<'schema' | 'project' | 'topology' | null>(
         null
     );
     const [selectedSchemaName, setSelectedSchemaName] = useState<
@@ -88,11 +89,18 @@ export default function Page() {
     };
 
     useEffect(() => {
-        if (activeSidebar === 'schema') {
+        if (activeSidebar === 'grid') {
             setActiveBreadcrumb('schema');
             setActivePanel('schema');
         }
     }, [activeSidebar]);
+
+    useEffect(() => {
+        if (activePanel || activeSidebar) {
+            const event = new Event('activePanelChange');
+            window.dispatchEvent(event);
+        }
+    }, [activePanel, activeSidebar]);
 
     useEffect(() => {
         if (!aiDialogEnabled && isChatOpen) {
@@ -101,19 +109,23 @@ export default function Page() {
     }, [aiDialogEnabled, isChatOpen]);
 
     useEffect(() => {
-        if (mapRef.current) {
-            if (activePanel === 'project' && !showCreateProject) {
-                mapRef.current.showProjectBounds(true);
-            } else {
-                mapRef.current.showProjectBounds(false);
-            }
-        }
-    }, [activePanel, showCreateProject]);
-
-    useEffect(() => {
         window.mapRef = mapRef;
         return () => {
             window.mapRef = undefined;
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleSwitchToTopology = (event: any) => {
+            const { projectName, subprojectName } = event.detail;
+            setActivePanel('topology');
+            setActiveBreadcrumb('topology');
+        };
+
+        window.addEventListener('switchToTopologyPanel', handleSwitchToTopology);
+        
+        return () => {
+            window.removeEventListener('switchToTopologyPanel', handleSwitchToTopology);
         };
     }, []);
 
@@ -134,15 +146,9 @@ export default function Page() {
         if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
-            if (mapRef.current) {
-                mapRef.current.showProjectBounds(false);
-            }
         } else if (item === 'project') {
             setActivePanel('project');
             setShowCreateProject(false);
-            if (mapRef.current) {
-                mapRef.current.showProjectBounds(true);
-            }
         }
     };
 
@@ -166,8 +172,12 @@ export default function Page() {
             setActiveBreadcrumb('project');
             const schemaService = new SchemaService(language);
             schemaService
-                .getSchemaByName(schemaName)
-                .then((schema: Schema) => {
+                .getSchemaByName(schemaName, (err, result) => {
+                    if (err) {
+                        console.error('获取schema详情失败:', err);
+                        return;
+                    }
+                    const schema = result;
                     if (schema) {
                         const markerManager = new MapMarkerManager(
                             language,
@@ -177,12 +187,6 @@ export default function Page() {
                         markerManager.showAllSchemasOnMap([schema]);
                     }
                 })
-                .catch((error: Error) => {
-                    console.error(
-                        'Failed to fetch schema for marker display:',
-                        error
-                    );
-                });
         },
         [language]
     );
@@ -202,9 +206,6 @@ export default function Page() {
             setActivePanel('project');
             setShowCreateSubProject(true);
             setActiveBreadcrumb('project');
-            if (mapRef.current) {
-                mapRef.current.showProjectBounds(false);
-            }
         },
         []
     );
@@ -229,7 +230,7 @@ export default function Page() {
     };
 
     const renderActivePanel = () => {
-        if (activeSidebar === 'operate') {
+        if (activeSidebar === 'terrain') {
             return (
                 <OperateSideBar
                     className="max-h-full"
@@ -240,7 +241,7 @@ export default function Page() {
             );
         }
 
-        if (activeSidebar === 'schema') {
+        if (activeSidebar === 'grid') {
             if (activePanel === 'schema') {
                 if (showCreateSchema) {
                     return (
@@ -294,9 +295,16 @@ export default function Page() {
                 return <ProjectPanel 
                     onCreateSubProject={handleCreateSubProject}
                 />;
+            } else if (activePanel === 'topology') {
+                return <TopologyPanel 
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />;
             }
-
             return (
+                
                 <SchemaPanel
                     onCreateNew={() => setShowCreateSchema(true)}
                     onCreateProject={handleCreateProjectFromSchema}
@@ -311,7 +319,7 @@ export default function Page() {
         <SidebarProvider className="h-full max-h-full">
             {renderActivePanel()}
             <SidebarInset className="max-h-full relative">
-                <header className="flex h-16 shrink-0 items-center border-b-gray-400 px-4">
+                <header className="flex h-16 shrink-0 items-center border-b-1 border-b-gray-200 px-4">
                     <SidebarTrigger className="-ml-2 mr-2 cursor-pointer" />
                     <Separator orientation="vertical" className="mr-2 h-4" />
                     <div className="flex items-center gap-2 ml-2">

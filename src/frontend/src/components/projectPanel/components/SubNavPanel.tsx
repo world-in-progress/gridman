@@ -16,7 +16,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 
 export function SubNavPanel({
@@ -37,7 +36,9 @@ export function SubNavPanel({
     const [highlightedProject, setHighlightedProject] = useState<string | null>(
         null
     );
-    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(
+        null
+    );
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [editingDescription, setEditingDescription] = useState<string | null>(
@@ -50,77 +51,212 @@ export function SubNavPanel({
         return new ProjectService(language);
     });
 
+    const applyPagingAndSearch = useCallback(
+        (projectList: Project[], page: number) => {
+            let filteredProjects = projectList;
+
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase().trim();
+                filteredProjects = projectList.filter(
+                    (project) =>
+                        (project.name && project.name.toLowerCase().includes(query)) ||
+                        (project.description &&
+                            project.description.toLowerCase().includes(query)) ||
+                        (project.schema_name &&
+                            project.schema_name.toLowerCase().includes(query))
+                );
+            }
+
+            onTotalItemsChange(filteredProjects.length);
+
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagedProjects = filteredProjects.slice(startIndex, endIndex);
+
+            setProjects(pagedProjects);
+            updateStarredItems(pagedProjects);
+            setLoading(false);
+        },
+        [searchQuery, itemsPerPage, onTotalItemsChange]
+    );
+
+    // const fetchProjectsCallback = useCallback(
+    //     async (page: number, afterFunction?: () => void) => {
+    //         try {
+    //             setLoading(true);
+
+    //             if (searchQuery.trim()) {
+    //                 let projectsToSearch = allProjects;
+    //                 if (projectsToSearch.length === 0) {
+    //                     projectService.fetchAllProjects(
+    //                         0,
+    //                         1000,
+    //                         (err, result) => {
+    //                             if (err) {
+    //                                 console.error('获取所有项目失败:', err);
+    //                             } else {
+    //                                 setAllProjects(result.project_metas);
+    //                             }
+    //                         }
+    //                     )
+    //                     // try {
+    //                     //     projectsToSearch =
+    //                     //         await projectService.fetchAllProjects();
+    //                     //     setAllProjects(projectsToSearch || []);
+    //                     // } catch (err) {
+    //                     //     console.error(
+    //                     //         'Failed to fetch all projects for search:',
+    //                     //         err
+    //                     //     );
+    //                     //     projectsToSearch = [];
+    //                     // }
+    //                 }
+
+    //                 const query = searchQuery.toLowerCase().trim();
+    //                 const filteredProjects = projectsToSearch.filter(
+    //                     (project) =>
+    //                         (project.name &&
+    //                             project.name.toLowerCase().includes(query)) ||
+    //                         (project.description &&
+    //                             project.description
+    //                                 .toLowerCase()
+    //                                 .includes(query)) ||
+    //                         (project.schema_name &&
+    //                             project.schema_name
+    //                                 .toLowerCase()
+    //                                 .includes(query))
+    //                 );
+
+    //                 onTotalItemsChange(filteredProjects.length);
+
+    //                 const startIndex = (page - 1) * itemsPerPage;
+    //                 const endIndex = startIndex + itemsPerPage;
+    //                 const pagedFilteredProjects = filteredProjects.slice(
+    //                     startIndex,
+    //                     endIndex
+    //                 );
+
+    //                 setProjects(pagedFilteredProjects);
+    //                 updateStarredItems(pagedFilteredProjects);
+    //             } else {
+
+    //                 // projectService.fetchProjects(
+    //                 //     page,
+    //                 //     itemsPerPage,
+    //                 //     (err, result) => {
+    //                 //         if (err) {
+    //                 //             setError(
+    //                 //                 language === 'zh'
+    //                 //                     ? '获取项目列表失败'
+    //                 //                     : 'Failed to fetch projects'
+    //                 //             );
+    //                 //             setProjects([]);
+    //                 //         } else {
+    //                 //             onTotalItemsChange(result.total_count);
+    //                 //             setProjects(result.project_metas);
+    //                 //             updateStarredItems(result.project_metas);
+    //                 //         }
+    //                 //     }
+    //                 // );
+
+
+    //                 try {
+    //                     const startIndex = (page - 1) * itemsPerPage;
+    //                     const endIndex = startIndex + itemsPerPage;
+    //                     projectService.fetchProjects(
+    //                         page,
+    //                         itemsPerPage,
+    //                         (err, result) => {
+    //                             if (err) {
+    //                                 setError(
+    //                                     language === 'zh'
+    //                                         ? '获取项目列表失败'
+    //                                         : 'Failed to fetch projects'
+    //                                 );
+    //                                 setProjects([]);
+    //                             } else {
+    //                                 onTotalItemsChange(result.total_count || 0);
+    //                                 const projects = result.project_metas || [];
+    //                                 setProjects(projects);
+    //                                 if (projects.length > 0) {
+    //                                     updateStarredItems(projects);
+    //                                 }
+    //                             }
+    //                             setLoading(false);
+    //                             if (afterFunction) {
+    //                                 afterFunction();
+    //                             }
+    //                         }
+    //                     );
+    //                     return;
+    //                 } catch (err) {
+    //                     setError(
+    //                         language === 'zh'
+    //                             ? '获取项目列表失败'
+    //                             : 'Failed to fetch projects'
+    //                     );
+    //                     setProjects([]);
+    //                 }
+    //             }
+    //             setLoading(false);
+    //         } catch (err) {
+    //             setError(
+    //                 language === 'zh'
+    //                     ? '获取项目列表失败'
+    //                     : 'Failed to fetch projects'
+    //             );
+    //             setProjects([]);
+    //             setLoading(false);
+    //             if (afterFunction) {
+    //                 afterFunction();
+    //             }
+    //         }
+    //     },
+    //     [
+    //         language,
+    //         itemsPerPage,
+    //         onTotalItemsChange,
+    //         projectService,
+    //         searchQuery,
+    //         allProjects,
+    //     ]
+    // );
+
     const fetchProjectsCallback = useCallback(
-        async (page: number) => {
+        async (page: number, afterFunction?: () => void) => {
             try {
                 setLoading(true);
 
-                if (searchQuery.trim()) {
-                    let projectsToSearch = allProjects;
-                    if (projectsToSearch.length === 0) {
-                        try {
-                            projectsToSearch =
-                                await projectService.fetchAllProjects();
-                            setAllProjects(projectsToSearch || []);
-                        } catch (err) {
-                            console.error(
-                                'Failed to fetch all projects for search:',
-                                err
+                if (allProjects.length === 0) {
+                    projectService.fetchAllProjects(0, 1000, (err, result) => {
+                        if (err) {
+                            console.error('获取所有项目失败:', err);
+                            setError(
+                                language === 'zh'
+                                    ? '获取项目列表失败'
+                                    : 'Failed to fetch projects'
                             );
-                            projectsToSearch = [];
+                            setProjects([]);
+                            setLoading(false);
+                            if (afterFunction) afterFunction();
+                        } else {
+                            const sortedProjects = [...(result.project_metas || [])].sort(
+                                (a, b) => {
+                                    if (a.starred && !b.starred) return -1;
+                                    if (!a.starred && b.starred) return 1;
+                                    return 0;
+                                }
+                            );
+                            setAllProjects(sortedProjects);
+                            updateStarredItems(sortedProjects);
+                            applyPagingAndSearch(sortedProjects, page);
+                            if (afterFunction) afterFunction();
                         }
-                    }
-
-                    const query = searchQuery.toLowerCase().trim();
-                    const filteredProjects = projectsToSearch.filter(
-                        (project) =>
-                            (project.name &&
-                                project.name.toLowerCase().includes(query)) ||
-                            (project.description &&
-                                project.description
-                                    .toLowerCase()
-                                    .includes(query)) ||
-                            (project.schema_name &&
-                                project.schema_name
-                                    .toLowerCase()
-                                    .includes(query))
-                    );
-
-                    onTotalItemsChange(filteredProjects.length);
-
-                    const startIndex = (page - 1) * itemsPerPage;
-                    const endIndex = startIndex + itemsPerPage;
-                    const pagedFilteredProjects = filteredProjects.slice(
-                        startIndex,
-                        endIndex
-                    );
-
-                    setProjects(pagedFilteredProjects);
-                    if (pagedFilteredProjects.length > 0) {
-                        updateStarredItems(pagedFilteredProjects);
-                    }
+                    });
                 } else {
-                    try {
-                        const result = await projectService.fetchProjects(
-                            page,
-                            itemsPerPage
-                        );
-                        onTotalItemsChange(result.totalCount);
-                        setProjects(result.projects || []);
-                        if (result.projects && result.projects.length > 0) {
-                            updateStarredItems(result.projects);
-                        }
-                    } catch (err) {
-                        setError(
-                            language === 'zh'
-                                ? '获取项目列表失败'
-                                : 'Failed to fetch projects'
-                        );
-                        setProjects([]);
-                    }
+                    applyPagingAndSearch(allProjects, page);
+                    if (afterFunction) afterFunction();
                 }
-
-                setLoading(false);
             } catch (err) {
                 setError(
                     language === 'zh'
@@ -129,28 +265,30 @@ export function SubNavPanel({
                 );
                 setProjects([]);
                 setLoading(false);
+                if (afterFunction) afterFunction();
             }
         },
-        [
-            language,
-            itemsPerPage,
-            onTotalItemsChange,
-            projectService,
-            searchQuery,
-            allProjects,
-        ]
+        [language, itemsPerPage, onTotalItemsChange, projectService, searchQuery, allProjects, applyPagingAndSearch]
     );
 
     const fetchAllProjectsCallback = useCallback(async () => {
-        try {
-            const projects = await projectService.fetchAllProjects();
-            setAllProjects(projects || []);
-            updateStarredItems(projects);
-        } catch (err) {
-            console.error('Failed to fetch all projects:', err);
-            setAllProjects([]);
-        }
-    }, [projectService]);
+        projectService.fetchAllProjects(0, 1000, (err, result) => {
+            if (err) {
+                console.error('获取所有项目失败:', err);
+            } else {
+                const sortedProjects = [...(result.project_metas || [])].sort(
+                    (a, b) => {
+                        if (a.starred && !b.starred) return -1;
+                        if (!a.starred && b.starred) return 1;
+                        return 0;
+                    }
+                );
+                setAllProjects(sortedProjects);
+                updateStarredItems(sortedProjects);
+                applyPagingAndSearch(sortedProjects, currentPage);
+            }
+        });
+    }, [projectService, currentPage, applyPagingAndSearch]);
 
     useEffect(() => {
         fetchAllProjectsCallback();
@@ -183,40 +321,35 @@ export function SubNavPanel({
 
     const toggleStar = async (name: string, project: Project) => {
         const newState = !starredItems[name];
+        projectService.updateProjectStarred(
+            project.name,
+            newState,
+            (err, result) => {
+                if (err) {
+                    console.error('Failed to update star status:', err);
+                    return;
+                }
 
-        try {
-            const updatedProject = await projectService.updateProjectStarred(
-                project.name,
-                newState
-            );
-
-            const serverStarredState =
-                updatedProject?.starred !== undefined
-                    ? updatedProject.starred
-                    : newState;
-
-            setStarredItems((prev) => ({
-                ...prev,
-                [name]: serverStarredState,
-            }));
-
-            const updatedProjects = projects.map((p) =>
-                p.name === project.name
-                    ? { ...p, starred: serverStarredState }
-                    : p
-            );
-            setProjects(updatedProjects);
-
-            setAllProjects((prevAllProjects) => {
-                return prevAllProjects.map((p) =>
+                const serverStarredState = result?.project_meta?.starred ?? newState;
+                const updatedAllProjects = allProjects.map((p) =>
                     p.name === project.name
                         ? { ...p, starred: serverStarredState }
                         : p
                 );
-            });
-        } catch (err) {
-            console.error('Failed to update star status:', err);
-        }
+                const sortedAllProjects = [...updatedAllProjects].sort((a, b) => {
+                    if (a.starred && !b.starred) return -1;
+                    if (!a.starred && b.starred) return 1;
+                    return 0;
+                });
+
+                setAllProjects(sortedAllProjects);
+                setStarredItems((prev) => ({
+                    ...prev,
+                    [name]: serverStarredState,
+                }));
+                applyPagingAndSearch(sortedAllProjects, currentPage);
+            }
+        );
     };
 
     const toggleEditDescription = (name: string) => {
@@ -226,31 +359,43 @@ export function SubNavPanel({
             setEditingDescription(name);
         }
     };
-
+ 
     const updateDescription = async (name: string, updatedProject: Project) => {
         const newDescription = updatedProject.description || '';
+        setLoading(true);
 
-        try {
-            await projectService.updateProjectDescription(
-                updatedProject.name,
-                newDescription
-            );
+        setDescriptionText((prev) => ({
+            ...prev,
+            [name]: newDescription,
+        }));
 
-            setDescriptionText((prev) => ({
-                ...prev,
-                [name]: newDescription,
-            }));
+        projectService.updateProjectDescription(
+            updatedProject.name,
+            newDescription,
+            (err, result) => {
+                if (err) {
+                    console.error('Failed to update project description:', err);
+                    setLoading(false);
+                    return;
+                }
 
-            const refreshedProjects = await projectService.fetchAllProjects();
-            setAllProjects(refreshedProjects);
-
-            fetchProjectsCallback(currentPage);
-            setEditingDescription(null);
-        } catch (err) {
-            console.error('Failed to update project description:', err);
-        }
+                const updatedAllProjects = allProjects.map((p) =>
+                    p.name === updatedProject.name
+                        ? { ...p, description: newDescription }
+                        : p
+                );
+                const sortedAllProjects = [...updatedAllProjects].sort((a, b) => {
+                    if (a.starred && !b.starred) return -1;
+                    if (!a.starred && b.starred) return 1;
+                    return 0;
+                });
+    
+                setAllProjects(sortedAllProjects);
+                applyPagingAndSearch(sortedAllProjects, currentPage);
+                setEditingDescription(null);
+            }
+        );
     };
-
     const handleDeleteProject = (project: Project) => {
         setProjectToDelete(project);
         setDeleteDialogOpen(true);
@@ -259,41 +404,9 @@ export function SubNavPanel({
     const handleConfirmDelete = async () => {
         if (!projectToDelete) return;
 
-        try {
-            const result = await projectService.deleteProject(
-                projectToDelete.name
-            );
-
-            setDeleteDialogOpen(false);
-            setProjectToDelete(null);
-
-            if (result && result.success === true) {
-                setAllProjects((prev) => {
-                    const filtered = prev.filter(
-                        (p) => p.name !== projectToDelete.name
-                    );
-                    return filtered;
-                });
-
-                setProjects((prev) =>
-                    prev.filter((p) => p.name !== projectToDelete.name)
-                );
-
-                fetchProjectsCallback(currentPage);
-
-                toast.success(
-                    language === 'zh'
-                        ? '项目删除成功'
-                        : 'Project deleted successfully',
-                    {
-                        style: {
-                            background: '#ecfdf5',
-                            color: '#047857',
-                            border: '1px solid #a7f3d0',
-                        },
-                    }
-                );
-            } else {
+        projectService.deleteProject(projectToDelete.name, async (err, result) => {
+            if (err || result.success !== true) {
+                console.error('删除项目出错:', err);
                 toast.error(
                     language === 'zh'
                         ? '项目删除失败'
@@ -306,43 +419,28 @@ export function SubNavPanel({
                         },
                     }
                 );
+            } else {
+                await fetchProjectsCallback(currentPage, 
+                    () => toast.success(
+                        language === 'zh'
+                            ? '项目删除成功'
+                            : 'Project deleted successfully',
+                        {
+                            style: {
+                                background: '#ecfdf5',
+                                color: '#047857',
+                                border: '1px solid #a7f3d0',
+                            },
+                        }
+                    )
+                );
             }
-        } catch (err) {
-            setDeleteDialogOpen(false);
-            setProjectToDelete(null);
-
-            console.error('删除项目出错:', err);
-
-            toast.error(
-                language === 'zh'
-                    ? '项目删除失败'
-                    : 'Failed to delete project',
-                {
-                    style: {
-                        background: '#fef2f2',
-                        color: '#b91c1c',
-                        border: '1px solid #fecaca',
-                    },
-                }
-            );
-        }
+        });
     };
 
     const items: SubNavItem[] = projects.map((project) => ({
         title: project.name,
         items: [
-            {
-                title: language === 'zh' ? '打开项目' : 'Open Project',
-                onClick: (e: React.MouseEvent) => {
-                    e.preventDefault();
-                },
-            },
-            {
-                title: language === 'zh' ? '导出项目' : 'Export Project',
-                onClick: (e: React.MouseEvent) => {
-                    e.preventDefault();
-                },
-            },
             {
                 title: language === 'zh' ? '删除项目' : 'Delete Project',
                 icon: (
@@ -388,16 +486,6 @@ export function SubNavPanel({
 
     return (
         <div className="px-3">
-            <Toaster
-                position="bottom-right"
-                richColors
-                closeButton
-                style={{
-                    bottom: '5rem',
-                    right: '1.5rem',
-                }}
-            />
-
             {items.map((item, index) => (
                 <div key={item.title}>
                     <ProjectCard

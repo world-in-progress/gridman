@@ -3,10 +3,10 @@ import { cn } from '@/utils/utils';
 import {
     Search,
     Home,
-    Clipboard,
-    FilePlus2,
     CircleHelp,
     UsersRound,
+    LandPlot,
+    Grid2x2Plus,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -36,23 +36,21 @@ export function Navbar({
     };
 
     const navItems = [
-        { href: '/', labelZh: '首页', labelEn: 'Home', icon: Home },
+        { labelZh: '首页', labelEn: 'Home', icon: Home },
         {
-            href: '/schemas',
-            labelZh: '模板',
-            labelEn: 'Schema',
-            type: 'schema',
-            icon: Clipboard,
+            labelZh: '网格',
+            labelEn: 'Grid',
+            type: 'grid',
+            icon: Grid2x2Plus,
         },
         {
-            href: '/new',
-            labelZh: '新建',
-            labelEn: 'New',
-            type: 'operate',
-            icon: FilePlus2,
+            labelZh: '地形',
+            labelEn: 'Terrain',
+            type: 'terrain',
+            icon: LandPlot,
         },
-        { href: '/help', labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
-        { href: '/about', labelZh: '关于', labelEn: 'About', icon: UsersRound },
+        { labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
+        { labelZh: '关于', labelEn: 'About', icon: UsersRound },
     ];
 
     const handleNavItemClick = (
@@ -73,18 +71,23 @@ export function Navbar({
 
     return (
         <nav
-            className={cn(
-                'flex   text-white h-20 z-50 relative',
-                className
-            )}
+            className={cn('flex   text-white h-20 z-50 relative', className)}
             {...props}
         >
-            <div className={`flex items-center justify-center gap-4 w-1/5 ${aiDialogEnabled ? 'bg-[#00C0FF]' : 'bg-black'}`}>
+            <div
+                className={`flex items-center justify-center gap-4 w-1/5 ${
+                    aiDialogEnabled ? 'bg-[#00C0FF]' : 'bg-black'
+                }`}
+            >
                 <div className="flex items-center">
-                  <img src={ aiDialogEnabled ? bot : grid} className="h-12 w-12 mr-4" alt="Gridman" />
-                  <a href="/" className="font-bold text-5xl text-white">
-                    {aiDialogEnabled ? 'GridBot' : 'GridMan'}
-                  </a>
+                    <img
+                        src={aiDialogEnabled ? bot : grid}
+                        className="h-12 w-12 mr-4"
+                        alt="Gridman"
+                    />
+                    <a className="font-bold text-5xl text-white">
+                        {aiDialogEnabled ? 'GridBot' : 'GridMan'}
+                    </a>
                 </div>
             </div>
             <div className="flex items-center justify-between bg-black w-4/5">
@@ -92,9 +95,8 @@ export function Navbar({
                     {navItems.map((item, index) => (
                         <a
                             key={index}
-                            href={item.href}
                             className={cn(
-                                'transition-colors text-2xl flex items-center gap-2',
+                                'transition-colors text-2xl flex items-center gap-2 cursor-pointer',
                                 isActive(item.type)
                                     ? 'text-[#71F6FF]'
                                     : 'text-gray-300 hover:text-white'
