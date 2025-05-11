@@ -4,26 +4,45 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  build: {
-    outDir: '../../templates',
-    assetsDir: 'assets',
-    emptyOutDir: false,
-  },
-  server: {
-    fs: {
-      allow: ['..', '../src/'],
+    build: {
+        outDir: '../../templates',
+        assetsDir: 'assets',
+        emptyOutDir: false,
     },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom'],
-  },
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+    server: {
+        fs: {
+            allow: ['..', '../src/'],
+        },
+        proxy: {
+            '/api': {
+                // target: 'http://10.20.79.94:8000',
+                // target: 'http://192.168.31.199:8000',
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, ''),
+            },
+            '/localhost': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/localhost/, ''),
+            },
+            '/bear': {
+                target: 'http://192.168.31.199:8000',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/bear/, ''),
+            },
+        },
     },
-  },
-  worker: {
-    format: 'es',
-  },
+    optimizeDeps: {
+        include: ['react', 'react-dom'],
+    },
+    plugins: [react(), tailwindcss()],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+        },
+    },
+    worker: {
+        format: 'es',
+    },
 });

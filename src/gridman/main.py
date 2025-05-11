@@ -1,3 +1,9 @@
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    
 from pathlib import Path
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -16,7 +22,7 @@ async def lifespan(app: FastAPI):
     # Initialize the MCP server from MCP client
     agent_client = MCPClient()
     app.state.agent_client = agent_client
-    await agent_client.connect_to_server(settings.MCP_SERVER_SCRIPT_PATH)
+    # await agent_client.connect_to_server(settings.MCP_SERVER_SCRIPT_PATH)
     
     yield
     

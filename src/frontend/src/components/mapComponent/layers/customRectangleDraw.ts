@@ -1,0 +1,265 @@
+import { mat4 } from 'gl-matrix';
+import { Map, CustomLayerInterface } from 'mapbox-gl';
+import * as tilebelt from '@mapbox/tilebelt';
+
+export default class GLMapRectangleLayer implements CustomLayerInterface {
+    id: string;
+    initialized: boolean;
+    z_order?: number;
+    type: 'custom' = 'custom';
+    renderingMode: '2d' | '3d' = '3d';
+    // map
+    map!: Map;
+    origin!: [number, number];
+    program!: WebGLProgram;
+    
+    // 四个角点坐标
+    northEast: [number, number];
+    northWest: [number, number];
+    southEast: [number, number];
+    southWest: [number, number];
+
+    // render params
+
+    constructor(options: {
+        id: string;
+        z_order?: number;
+        corners: {
+            northEast: [number, number];
+            northWest: [number, number];
+            southEast: [number, number];
+            southWest: [number, number];
+        };
+    }) {
+        this.id = options.id;
+        options.z_order && (this.z_order = options.z_order);
+        this.initialized = false;
+        
+        // 存储四个角点坐标
+        this.northEast = options.corners.northEast;
+        this.northWest = options.corners.northWest;
+        this.southEast = options.corners.southEast;
+        this.southWest = options.corners.southWest;
+        
+        // 计算中心点作为origin
+        const centerLng = (this.northEast[0] + this.southWest[0]) / 2;
+        const centerLat = (this.northEast[1] + this.southWest[1]) / 2;
+        this.origin = [centerLng, centerLat];
+    }
+
+    /** Method to initialize gl resources and register event listeners. */
+    async onAdd(map: Map, gl: WebGL2RenderingContext) {
+        this.map = map;
+
+        const vertexSource = `#version 300 es
+        uniform vec2 base_tile_pos;
+        uniform float meter_to_tile;
+        uniform mat4 tile_matrix;
+        uniform vec2 corner_positions[4]; // 四个角点在瓦片坐标系中的位置
+
+        out vec3 vv;
+
+        void main() {
+            // 使用传入的四个角点位置
+            // 0: 左下(southWest), 1: 右下(southEast), 2: 右上(northEast), 3: 左上(northWest)
+            int vertexIndex = gl_VertexID % 4;
+            vec2 vertInTilexy = corner_positions[vertexIndex];
+            float z = 0.01; // 保持矩形稍微高于地面
+            gl_Position = tile_matrix * vec4(vertInTilexy, z, 1.0);
+
+            vv = vec3(vertInTilexy - base_tile_pos, 0.0); // 用于片段着色器的值
+        }`;
+
+        const fragmentSource = `#version 300 es
+        precision highp float;
+
+        in vec3 vv;
+        out vec4 outColor;
+
+        void main() {
+            outColor = vec4(0.0, 0.3, 0.7, 0.4); // 蓝色半透明
+        }`;
+
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
+        gl.shaderSource(vertexShader, vertexSource);
+        gl.compileShader(vertexShader);
+        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+            console.error(
+                'Vertex shader compilation failed:',
+                gl.getShaderInfoLog(vertexShader)
+            );
+        }
+
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
+        gl.shaderSource(fragmentShader, fragmentSource);
+        gl.compileShader(fragmentShader);
+        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+            console.error(
+                'Fragment shader compilation failed:',
+                gl.getShaderInfoLog(fragmentShader)
+            );
+        }
+
+        this.program = gl.createProgram()!;
+        gl.attachShader(this.program, vertexShader);
+        gl.attachShader(this.program, fragmentShader);
+        gl.linkProgram(this.program);
+        if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+            console.error(
+                'Program linking failed:',
+                gl.getProgramInfoLog(this.program)
+            );
+        }
+
+        this.initialized = true;
+    }
+
+    /** Method called during a render frame */
+    render(gl: WebGL2RenderingContext, matrix: Array<number>) {
+        if (!this.initialized) return;
+
+        // Tick logic operation
+        const tr = this.map.transform;
+
+        /** target tile in specified point and zoom */
+        const targetTile = point2Tile(
+            this.origin[0],
+            this.origin[1],
+            Math.floor(tr.zoom)
+        );
+
+        /** transform from Local-Tile-Space to Clip-Space */
+        const tileMatrix = calcTileMatrix(tr, targetTile);
+
+        /** lnglat to Local-Tile-Space in specified tile  */
+        const originInTileCoord = lnglat2TileLocalCoord(
+            this.origin,
+            targetTile
+        );
+
+        const meterPerTileUnit = tileToMeter(targetTile, originInTileCoord[1]);
+        const tileUnitPerMeter = 1.0 / meterPerTileUnit;
+
+        // 将四个角点转换为瓦片坐标系中的位置
+        const cornerPositions = new Float32Array(8); // 4个点 * 2个坐标(x,y)
+        
+        // 按照渲染顺序：左下(southWest)、右下(southEast)、右上(northEast)、左上(northWest)
+        const corners = [this.southWest, this.southEast, this.northEast, this.northWest];
+        
+        for (let i = 0; i < 4; i++) {
+            const cornerInTileCoord = lnglat2TileLocalCoord(corners[i], targetTile);
+            cornerPositions[i*2] = cornerInTileCoord[0];
+            cornerPositions[i*2+1] = cornerInTileCoord[1];
+        }
+
+        gl.useProgram(this.program);
+        gl.uniformMatrix4fv(
+            gl.getUniformLocation(this.program, 'tile_matrix'),
+            false,
+            tileMatrix
+        );
+        gl.uniform2fv(
+            gl.getUniformLocation(this.program, 'base_tile_pos'),
+            originInTileCoord
+        );
+        gl.uniform1f(
+            gl.getUniformLocation(this.program, 'meter_to_tile'),
+            tileUnitPerMeter
+        );
+        gl.uniform2fv(
+            gl.getUniformLocation(this.program, 'corner_positions'),
+            cornerPositions
+        );
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        // 定义矩形的两个三角形
+        const indices = new Uint16Array([
+            0, 1, 2,  // 第一个三角形
+            0, 2, 3   // 第二个三角形
+        ]);
+
+        // 创建缓冲区并绘制
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+        gl.disable(gl.DEPTH_TEST);
+        gl.disable(gl.BLEND);
+    }
+
+    /** Method to clean up gl resources and event listeners. */
+    remove(map: Map, gl: WebGL2RenderingContext) {}
+
+    show() {}
+    hide() {}
+}
+
+// // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function point2Tile(lng: any, lat: any, z: any) {
+    const tile = tilebelt.pointToTile(lng, lat, z);
+    return { x: tile[0], y: tile[1], z: tile[2] };
+}
+
+/** Transform from lnglat to tile local coord  */
+function lnglat2TileLocalCoord([lng, lat]: any, tile: any) {
+    const EXTENT = 8192;
+    const tileXYZ = [tile.x, tile.y, tile.z];
+    const tileBBox = tilebelt.tileToBBOX(tileXYZ as any);
+
+    return [
+        Math.floor(
+            ((lng - tileBBox[0]) / (tileBBox[2] - tileBBox[0])) * EXTENT
+        ),
+        Math.floor(
+            (1.0 - (lat - tileBBox[1]) / (tileBBox[3] - tileBBox[1])) * EXTENT
+        ),
+    ];
+}
+
+function tileToMeter(canonical: any, tileYCoordinate = 0) {
+    let ycoord;
+
+    canonical.z > 10 ? (ycoord = 0) : (ycoord = tileYCoordinate);
+    const EXTENT = 8192;
+    const circumferenceAtEquator = 40075017;
+    const mercatorY = (canonical.y + ycoord / EXTENT) / (1 << canonical.z);
+    const exp = Math.exp(Math.PI * (1 - 2 * mercatorY));
+    // simplify cos(2 * atan(e) - PI/2) from mercator_coordinate.js, remove trigonometrics.
+    return (
+        (circumferenceAtEquator * 2 * exp) /
+        (exp * exp + 1) /
+        EXTENT /
+        (1 << canonical.z)
+    );
+}
+
+function calcTilePosMatrix(tr: any, tileXYZ: any) {
+    let scale, scaledX, scaledY;
+    // @ts-ignore
+    const posMatrix = mat4.identity(new Float64Array(16));
+    const EXTENT = 8192;
+
+    // Note: Delete some operations about tile.wrap
+    scale = tr.worldSize / Math.pow(2, tileXYZ.z);
+    scaledX = tileXYZ.x * scale;
+    scaledY = tileXYZ.y * scale;
+
+    mat4.translate(posMatrix, posMatrix, [scaledX, scaledY, 0]);
+    mat4.scale(posMatrix, posMatrix, [scale / EXTENT, scale / EXTENT, 1]);
+
+    return posMatrix;
+}
+
+function calcTileMatrix(tr: any, tileXYZ: any) {
+    const finalTileMatrix = mat4.create();
+    const posMatrix = calcTilePosMatrix(tr, tileXYZ);
+    const projMatrix = tr.projMatrix;
+    mat4.multiply(finalTileMatrix, projMatrix, posMatrix);
+    return finalTileMatrix;
+}

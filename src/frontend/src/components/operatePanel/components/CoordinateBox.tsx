@@ -16,7 +16,11 @@ const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, forma
   
   const formatSingleValue = (value: number): string => value.toFixed(6);
   
-
+  const northValue = coordinates.northEast[1];
+  const southValue = coordinates.southWest[1];
+  const westValue = coordinates.southWest[0];
+  const eastValue = coordinates.southEast[0];
+  
   const translations = {
     center: {
       en: 'Center',
@@ -32,47 +36,39 @@ const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, forma
         <div className="relative h-12 flex items-center justify-center">
           <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
         </div>
-        
-        {/* North/Top - Display maxY */}
+        {/* North/Top - northEast[1] */}
         <div className="text-center">
           <span className="font-bold text-blue-600 text-xl">N</span>
-          <div>[{formatSingleValue(maxY)}]</div>
+          <div>[{formatSingleValue(northValue)}]</div>
         </div>
-        
         {/* Top Right Corner */}
         <div className="relative h-12 flex items-center justify-center">
           <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
         </div>
-        
-        {/* West/Left - Display minX */}
+        {/* West/Left - southWest[0] */}
         <div className="text-center">
           <span className="font-bold text-green-600 text-xl">W</span>
-          <div>[{formatSingleValue(minX)}]</div>
+          <div>[{formatSingleValue(westValue)}]</div>
         </div>
-        
         {/* Center */}
         <div className="text-center">
           <span className="font-bold text-xl">{language === 'zh' ? translations.center.zh : translations.center.en}</span>
           <div>{formatCoordinate(coordinates.center)}</div>
         </div>
-        
-        {/* East/Right - Display maxX */}
+        {/* East/Right - southEast[0] */}
         <div className="text-center">
           <span className="font-bold text-red-600 text-xl">E</span>
-          <div>[{formatSingleValue(maxX)}]</div>
+          <div>[{formatSingleValue(eastValue)}]</div>
         </div>
-        
         {/* Bottom Left Corner */}
         <div className="relative h-12 flex items-center justify-center">
           <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
         </div>
-        
-        {/* South/Bottom - Display minY */}
+        {/* South/Bottom - southWest[1] */}
         <div className="text-center">
           <span className="font-bold text-purple-600 text-xl">S</span>
-          <div>[{formatSingleValue(minY)}]</div>
+          <div>[{formatSingleValue(southValue)}]</div>
         </div>
-        
         {/* Bottom Right Corner */}
         <div className="relative h-12 flex items-center justify-center">
           <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>

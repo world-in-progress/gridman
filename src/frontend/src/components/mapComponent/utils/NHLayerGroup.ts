@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix'
 import { Map, CustomLayerInterface, MercatorCoordinate } from "mapbox-gl"
-import { NHCustomLayerInterface } from "./utils/interfaces"
+import { NHCustomLayerInterface } from "./interfaces"
 
 export default class NHLayerGroup implements CustomLayerInterface {
 

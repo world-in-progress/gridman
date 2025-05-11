@@ -27,7 +27,7 @@ class Actor {
     ): Cancelable {
 
         const id = Math.round((Math.random() * 1e18)).toString(36).substring(0, 10)
-        if (callback) {
+        if (callback !== undefined && callback !== null) {
             callback.metadata = callbackMetadata
             this.callbacks[id] = callback
         }

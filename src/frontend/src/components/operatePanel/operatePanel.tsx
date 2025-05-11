@@ -31,7 +31,7 @@ import SubdivideRules from './components/SubdivideRules';
 import GenerateJSONButton from './components/GenerateJSONButton';
 import DrawGridButton from './components/DrawGridButton';
 import GridLayer from '../mapComponent/layers/GridLayer';
-import NHLayerGroup from '../mapComponent/NHLayerGroup';
+import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { LanguageContext } from '../../App';
@@ -479,7 +479,7 @@ export default function OperatePanel({
             window.mapboxDrawInstance.deleteAll();
           }
         } catch (error) {
-          console.log('Failed to remove rectangle:', error);
+          console.error('Failed to remove rectangle:', error);
         }
       } else {
         setGeneralError(

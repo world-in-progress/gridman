@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 import { useContext } from 'react';
 import { LanguageContext } from '../../../App';
 import { PaginationProps } from '../types/types';
@@ -26,7 +31,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onFirstPage}
           disabled={currentPage === 1}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === 1
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -39,7 +44,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onPrevPage}
           disabled={currentPage === 1}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === 1
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -51,17 +56,13 @@ export const Pagination: React.FC<PaginationProps> = ({
         </button>
         <span className="mx-3 text-sm font-medium">
           {language === 'zh'
-            ? `第 ${currentPage}/${
-                totalPages || 1
-              } 页 (共${totalItems}项)`
-            : `Page ${currentPage} of ${
-                totalPages || 1
-              } (${totalItems} items)`}
+            ? `第 ${currentPage}/${totalPages || 1} 页 (共${totalItems}项)`
+            : `Page ${currentPage} of ${totalPages || 1} (${totalItems} items)`}
         </span>
         <button
           onClick={onNextPage}
           disabled={currentPage === totalPages || totalPages === 0}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === totalPages || totalPages === 0
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -74,7 +75,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={onLastPage}
           disabled={currentPage === totalPages || totalPages === 0}
-          className={`p-1.5 rounded-full ${
+          className={`p-1.5 rounded-full cursor-pointer ${
             currentPage === totalPages || totalPages === 0
               ? 'text-gray-400'
               : 'text-primary hover:bg-primary/10'
@@ -87,4 +88,4 @@ export const Pagination: React.FC<PaginationProps> = ({
       </div>
     </div>
   );
-}; 
+};

@@ -32,6 +32,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
   onEditDescription,
   onSaveDescription,
   descriptionText,
+  onShowDetails,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -51,23 +52,23 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
 
   const handleUpdateDescription = async () => {
     if (!textareaRef.current) return;
-    
+
     const newDescription = textareaRef.current.value;
-    
+
     try {
       if (onSaveDescription) {
         const updatedSchema = {
           ...schema,
-          description: newDescription
+          description: newDescription,
         };
         await onSaveDescription(title, updatedSchema);
       } else {
         const schemaService = new SchemaService(language);
         await schemaService.updateSchemaDescription(title, newDescription);
-        
+
         await schemaService.fetchAllSchemas();
       }
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update schema description:', error);
@@ -85,7 +86,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
         <h3 className="text-lg font-bold truncate pr-16">{title}</h3>
         <div className="absolute right-0 top-0 flex items-center">
           <button
-            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1"
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
             aria-label={language === 'zh' ? '标星' : 'Star'}
             title={language === 'zh' ? '标星' : 'Star'}
             onClick={handleStarClick}
@@ -96,6 +97,19 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
               }`}
             />
           </button>
+          <button
+            className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center mr-1 cursor-pointer"
+            aria-label={language === 'zh' ? '显示详情' : 'Show Details'}
+            title={language === 'zh' ? '显示详情' : 'Show Details'}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onShowDetails) {
+                onShowDetails(schema);
+              }
+            }}
+          >
+            <MapPin className="h-5 w-5" />
+          </button>
           <DropdownMenu
             open={openMenuId === title}
             onOpenChange={(open) => {
@@ -104,7 +118,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
           >
             <DropdownMenuTrigger asChild>
               <button
-                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center cursor-pointer"
                 aria-label={language === 'zh' ? '更多选项' : 'More options'}
                 title={language === 'zh' ? '更多选项' : 'More options'}
                 onClick={(e) => {
@@ -118,19 +132,25 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
               side="right"
               align="start"
               alignOffset={40}
-              className="w-30"
+              className="w-40"
               sideOffset={-20}
             >
               {menuItems.map((subItem) => (
                 <DropdownMenuItem key={subItem.title} asChild>
                   <a
-                    className="cursor-pointer"
+                    className={`cursor-pointer flex items-center ${
+                      subItem.title === (language === 'zh' ? '删除模板' : 'Delete Schema') || 
+                      (subItem.title.includes('Delete') && language !== 'zh')
+                        ? 'bg-red-500 text-white hover:bg-red-600 group'
+                        : ''
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
                       onMenuOpenChange(false);
                       subItem.onClick && subItem.onClick(e);
                     }}
                   >
+                    {subItem.icon}
                     {subItem.title}
                   </a>
                 </DropdownMenuItem>
@@ -186,7 +206,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                   setIsEditing(!isEditing);
                   onEditDescription(title);
                 }}
-                className="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded"
+                className="hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded cursor-pointer"
                 aria-label={language === 'zh' ? '编辑描述' : 'Edit description'}
                 title={language === 'zh' ? '编辑描述' : 'Edit description'}
               >
@@ -218,11 +238,15 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                defaultValue={(descriptionText && descriptionText[title]) || schema?.description || ''}
+                defaultValue={
+                  (descriptionText && descriptionText[title]) ||
+                  schema?.description ||
+                  ''
+                }
               />
               <div className="absolute bottom-3 right-5 flex space-x-2">
                 <button
-                  className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCancel();
@@ -231,7 +255,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                   {language === 'zh' ? '取消' : 'Cancel'}
                 </button>
                 <button
-                  className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleUpdateDescription();

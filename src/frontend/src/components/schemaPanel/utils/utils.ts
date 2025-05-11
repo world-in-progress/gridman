@@ -1,5 +1,5 @@
 import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
-import { Schema } from '../types/types';
+import { PaginationHandlers } from '../types/types';
 
 // Coordinate conversion functionality
 export const convertToWGS84 = (
@@ -22,25 +22,37 @@ export const convertToWGS84 = (
   }
 };
 
-// Find which page the schema is on
-export const findSchemaPage = (
-  schemaName: string, 
-  allSchemasList: Schema[],
-  itemsPerPage: number
-): number => {
-  if (!allSchemasList || allSchemasList.length === 0) return 1;
-  
-  // Sorted schema list (starred items first)
-  const sortedSchemas = [...allSchemasList].sort((a, b) => {
-    if (a.starred && !b.starred) return -1;
-    if (!a.starred && b.starred) return 1;
-    return 0;
-  });
-  
-  // Find schema index
-  const index = sortedSchemas.findIndex(schema => schema.name === schemaName);
-  if (index === -1) return 1;
-  
-  // Calculate page number
-  return Math.floor(index / itemsPerPage) + 1;
-}; 
+// Pagination utility functions
+export const createPaginationHandlers = (
+  currentPage: number,
+  totalPages: number,
+  setCurrentPage: (page: number) => void
+): PaginationHandlers => {
+  return {
+    handleFirstPage: () => {
+      if (currentPage > 1) {
+        setCurrentPage(1);
+      }
+    },
+    handlePrevPage: () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    },
+    handleNextPage: () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    },
+    handleLastPage: () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(totalPages);
+      }
+    },
+    handleNavigateToPage: (page: number) => {
+      if (page > 0 && page <= totalPages && page !== currentPage) {
+        setCurrentPage(page);
+      }
+    }
+  };
+};

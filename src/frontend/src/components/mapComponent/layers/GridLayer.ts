@@ -6,7 +6,7 @@ import { Map, MapMouseEvent } from 'mapbox-gl'
 
 import '../../editor-style.css'
 import gll from '../utils/GlLib'
-import NHLayerGroup from '../NHLayerGroup'
+import NHLayerGroup from '../utils/NHLayerGroup'
 import FileDownloader from '../utils/DownloadHelper'
 import BoundingBox2D from '../../../core/util/boundingBox2D'
 import GridRecorder from '../../../core/grid/NHGridRecorder'
