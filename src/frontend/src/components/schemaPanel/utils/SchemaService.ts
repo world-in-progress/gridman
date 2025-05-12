@@ -22,46 +22,43 @@ export class SchemaService {
             let worker: Worker | null = null;
             let actor: Actor | null = null;
 
-            try {
-                worker = new Worker(
-                    new URL(
-                        '../../../core/worker/base.worker.ts',
-                        import.meta.url
-                    ),
-                    { type: 'module' }
-                );
-                actor = new Actor(worker, {});
+            worker = new Worker(
+                new URL(
+                    '../../../core/worker/base.worker.ts',
+                    import.meta.url
+                ),
+                { type: 'module' }
+            );
+            actor = new Actor(worker, {});
 
-                actor.send(
-                    'fetchSchemas',
-                    { startIndex: 0, endIndex: 1000 },
-                    (err, result) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            const sortedSchemas = [
-                                ...result.project_schemas,
-                            ].sort((a, b) => {
-                                if (a.starred && !b.starred) return -1;
-                                if (!a.starred && b.starred) return 1;
-                                return 0;
-                            });
+            actor.send(
+                'fetchSchemas',
+                { startIndex: 0, endIndex: 1000 },
+                (err, result) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        const sortedSchemas = [
+                            ...result.project_schemas,
+                        ].sort((a, b) => {
+                            if (a.starred && !b.starred) return -1;
+                            if (!a.starred && b.starred) return 1;
+                            return 0;
+                        });
 
-                            resolve(sortedSchemas);
-                        }
-
-                        setTimeout(() => {
-                            if (actor) actor.remove();
-                            if (worker) worker.terminate();
-                        }, 100);
+                        resolve(sortedSchemas);
                     }
-                );
-            } catch (err) {
-                console.error('Failed to create Worker:', err);
-                reject(err);
-            }
+
+                    setTimeout(() => {
+                        if (actor) actor.remove();
+                        if (worker) worker.terminate();
+                    }, 100);
+                }
+            );
         });
     }
+
+    public async fetchAllSchemas(callback?: Callback<any>) {
 
     public async fetchSchemas(page: number, itemsPerPage: number, callback?: Callback<any>) {
         this._actor.send(
@@ -233,48 +230,15 @@ export class SchemaService {
         }
     }
 
-    // Submit clone schema data and return a Promise<Schema>
-    public submitCloneSchema(schemaData: Schema): Promise<Schema> {
-        return new Promise((resolve, reject) => {
-            try {
-                const worker = new Worker(
-                    new URL(
-                        '../../../core/worker/base.worker.ts',
-                        import.meta.url
-                    ),
-                    { type: 'module' }
-                );
-
-                const actor = new Actor(worker, {});
-
-                actor.send('createSchema', schemaData, ((error, result) => {
-                    if (error) {
-                        console.error('克隆模板错误:', error);
-                        reject(error);
-                    } else {
-                        if (result && result.success === false) {
-                            console.error('克隆模板失败:', result.message);
-                            reject(new Error(result.message));
-                            return;
-                        }
-                        let createdSchema: Schema;
-                        if (result && result.project_schema) {
-                            createdSchema = result.project_schema;
-                        } else {
-                            createdSchema = result;
-                        }
-                        resolve(createdSchema);
-                    }
-
-                    setTimeout(() => {
-                        actor.remove();
-                        worker.terminate();
-                    }, 100);
-                }) as Callback<any>);
-            } catch (error) {
-                console.error('创建Worker出错:', error);
-                reject(error);
+    public submitCloneSchema(schemaData: Schema, callback?: Callback<any>) {
+        this._actor.send('createSchema', schemaData, (err, result) => {
+            let createdSchema: Schema;
+            if (result && result.project_schema) {
+                createdSchema = result.project_schema;
+            } else {
+                createdSchema = result;
             }
+            if (callback) callback(err, createdSchema);
         });
     }
 
