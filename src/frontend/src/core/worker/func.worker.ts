@@ -67,6 +67,7 @@ export async function calcEdgeRenderInfos(
 }
 
 // Can be deleted
+// nihao
 export async function initializeGrid(
     this: WorkerSelf,
     jsonData: any,
