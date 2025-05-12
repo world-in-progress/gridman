@@ -300,25 +300,22 @@ export function SubNavPanel({
     };
 
     const handleCloneSchema = async (newSchema: Schema): Promise<void> => {
-        try {
-            const createdSchema = await schemaService.submitCloneSchema(
-                newSchema
-            );
+        schemaService.submitCloneSchema(newSchema, (err, result) => {
+            if (err) {
+                console.error('Failed to clone schema:', err);
+            }
+        });
 
-            setCloneDialogOpen(false);
-            setSelectedSchema(null);
+        setCloneDialogOpen(false);
+        setSelectedSchema(null);
 
-            const allSchemasList = await schemaService.fetchAllSchemas();
+        const allSchemasList = await schemaService.fetchAllSchemas();
 
-            setAllSchemas(allSchemasList);
+        setAllSchemas(allSchemasList);
 
-            markerManager.showAllSchemasOnMap(allSchemasList);
+        markerManager.showAllSchemasOnMap(allSchemasList);
 
-            await fetchSchemasCallback(currentPage);
-        } catch (error) {
-            console.error('Failed to clone schema:', error);
-            throw error;
-        }
+        await fetchSchemasCallback(currentPage);
     };
 
     const handleDeleteSchema = (schema: Schema) => {

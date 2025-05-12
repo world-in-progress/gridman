@@ -101,33 +101,34 @@ export async function initializeGrid(
     }
 }
 
-// export async function createSchema(
-//     this: WorkerSelf,
-//     schemaData: any,
-//     callback: Callback<any>
-// ) {
+export async function createSchema(
+    this: WorkerSelf,
+    schemaData: any,
+    callback: Callback<any>
+) {
 
 
-//     const response = await fetch('/api/grid/schema', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(schemaData),
-//     });
+    const response = await fetch('/api/grid/schema', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(schemaData),
+    });
 
-//     if (!response.ok) {
-//         throw new Error(`HTTP错误! 状态码: ${response.status}`);
-//     }
+    if (!response.ok) {
+        throw new Error(`HTTP错误! 状态码: ${response.status}`);
+    }
 
-//     const responseData = await response.json();
+    const responseData = await response.json();
 
-//     if (responseData && responseData.success === false) {
-//         throw new Error(responseData.message || '创建Schema失败');
-//     }
+    if (responseData && responseData.success === false) {
+        throw new Error(responseData.message || '创建Schema失败');
+    }
 
-//     callback(null, responseData);
-// }
+    callback(null, responseData);
+}
+
 export async function createSchema(
     this: WorkerSelf,
     schemaData: any,

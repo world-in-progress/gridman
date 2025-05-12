@@ -76,14 +76,17 @@ class Actor {
     }
 
     processTask(id: string, task: any) {
+        
 
         delete this.cancelCallbacks[id]
         if (task.type === '<response>') {
 
             const callback = this.callbacks[id]
-            delete this.callbacks[id]
-            if (task.error) callback(deserialize(task.error) as Error)
-            else callback(null, deserialize(task.data))
+            if(callback) {
+                delete this.callbacks[id]
+                if (task.error) callback(deserialize(task.error) as Error)
+                else callback(null, deserialize(task.data))
+            }
         } else {
 
             const buffers: Set<Transferable> = new Set()
