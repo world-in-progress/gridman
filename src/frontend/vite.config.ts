@@ -17,7 +17,7 @@ export default defineConfig({
             '/api': {
                 // target: 'http://10.20.79.94:8000',
                 // target: 'http://192.168.31.199:8000',
-                target: 'http://localhost:8000',
+                target: 'http://192.168.1.5:8000',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, ''),
             },
