@@ -1,7 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Star, FileType2, SquarePen, PencilRuler } from 'lucide-react';
+import { Star, FileType2, SquarePen, PencilRuler, Target, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { SubProjectCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 declare global {
     interface Window {
@@ -18,7 +24,6 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
     subprojectDescriptionText,
     onCardClick,
     onStarToggle,
-    onEditSubprojectDescription,
     onSaveSubprojectDescription,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -65,17 +70,15 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
             const pageEvents = new CustomEvent('switchToTopologyPanel', {
                 detail: {
                     projectName: parentProjectTitle,
-                    subprojectName: subproject.name
-                }
+                    subprojectName: subproject.name,
+                },
             });
             window.dispatchEvent(pageEvents);
         }
 
         const projectService = new ProjectService(language);
-        const flag = {isReady: true};
+        const flag = { isReady: true };
         projectService.setSubproject(parentProjectTitle, subproject.name, flag);
-
-
     };
 
     const handleUpdateDescription = async () => {
@@ -85,6 +88,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
 
         try {
             if (onSaveSubprojectDescription) {
+                // console.log('onSaveSubprojectDescription', subproject.name, newDescription);
                 await onSaveSubprojectDescription(
                     subproject.name,
                     newDescription
@@ -113,9 +117,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                         title={language === 'zh' ? '编辑' : 'Edit'}
                         onClick={handleEditClick}
                     >
-                        <PencilRuler
-                            className={`h-4 w-4 cursor-pointer`}
-                        />
+                        <PencilRuler className={`h-4 w-4 cursor-pointer`} />
                     </button>
                     <button
                         className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
@@ -143,12 +145,24 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                         </div>
                         {/* North/Top */}
                         <div className="text-center">
-                            <span className="font-bold text-blue-600 text-sm">
-                                N
-                            </span>
-                            <div className="text-[9px]">
-                                [{subproject.bounds[3].toFixed(6)}]
-                            </div>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex flex-col items-center">
+                                            <ArrowUp className="h-4 w-4 text-blue-600" />
+                                            <span className="font-bold text-blue-600 text-sm">
+                                                N
+                                            </span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-[9px]">
+                                            <p className="font-bold mb-1">{language === 'zh' ? '北' : 'North'}</p>
+                                            <p>{language === 'zh' ? '纬度' : 'Latitude'}: {subproject.bounds[3].toFixed(6)}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         {/* Top Right Corner */}
                         <div className="relative h-8 flex items-center justify-center">
@@ -156,12 +170,24 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                         </div>
                         {/* West/Left */}
                         <div className="text-center">
-                            <span className="font-bold text-green-600 text-sm">
-                                W
-                            </span>
-                            <div className="text-[9px]">
-                                [{subproject.bounds[0].toFixed(6)}]
-                            </div>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex flex-col items-center">
+                                            <ArrowLeft className="h-4 w-4 text-green-600" />
+                                            <span className="font-bold text-green-600 text-sm">
+                                                W
+                                            </span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-[9px]">
+                                            <p className="font-bold mb-1">{language === 'zh' ? '西' : 'West'}</p>
+                                            <p>{language === 'zh' ? '经度' : 'Longitude'}: {subproject.bounds[0].toFixed(6)}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         {/* Center */}
                         <div className="text-center">
@@ -169,29 +195,42 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                                 {language === 'zh' ? '中心' : 'Center'}
                             </span>
                             <div className="text-[9px]">
-                                [
-                                {(
-                                    (subproject.bounds[0] +
-                                        subproject.bounds[2]) /
-                                    2
-                                ).toFixed(6)}
-                                ,
-                                {(
-                                    (subproject.bounds[1] +
-                                        subproject.bounds[3]) /
-                                    2
-                                ).toFixed(6)}
-                                ]
+                                <div>
+                                    {(
+                                        (subproject.bounds[0] +
+                                            subproject.bounds[2]) /
+                                        2
+                                    ).toFixed(6)}
+                                </div>
+                                <div>
+                                    {(
+                                        (subproject.bounds[1] +
+                                            subproject.bounds[3]) /
+                                        2
+                                    ).toFixed(6)}
+                                </div>
                             </div>
                         </div>
                         {/* East/Right */}
                         <div className="text-center">
-                            <span className="font-bold text-red-600 text-sm">
-                                E
-                            </span>
-                            <div className="text-[9px]">
-                                [{subproject.bounds[2].toFixed(6)}]
-                            </div>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex flex-col items-center">
+                                            <ArrowRight className="h-4 w-4 text-red-600" />
+                                            <span className="font-bold text-red-600 text-sm">
+                                                E
+                                            </span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-[9px]">
+                                            <p className="font-bold mb-1">{language === 'zh' ? '东' : 'East'}</p>
+                                            <p>{language === 'zh' ? '经度' : 'Longitude'}: {subproject.bounds[2].toFixed(6)}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         {/* Bottom Left Corner */}
                         <div className="relative h-8 flex items-center justify-center">
@@ -199,12 +238,24 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                         </div>
                         {/* South/Bottom */}
                         <div className="text-center">
-                            <span className="font-bold text-purple-600 text-sm">
-                                S
-                            </span>
-                            <div className="text-[9px]">
-                                [{subproject.bounds[1].toFixed(6)}]
-                            </div>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex flex-col items-center">
+                                            <ArrowDown className="h-4 w-4 text-purple-600" />
+                                            <span className="font-bold text-purple-600 text-sm">
+                                                S
+                                            </span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-[9px]">
+                                            <p className="font-bold mb-1">{language === 'zh' ? '南' : 'South'}</p>
+                                            <p>{language === 'zh' ? '纬度' : 'Latitude'}: {subproject.bounds[1].toFixed(6)}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         {/* Bottom Right Corner */}
                         <div className="relative h-8 flex items-center justify-center">
@@ -220,7 +271,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                 </div>
             )} */}
 
-            {subproject.description && (
+            {/* {subproject.description && (
                 <div className="text-gray-600 mt-2 border-t border-gray-200 mb-1">
                     <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center">
@@ -312,7 +363,111 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                         </div>
                     )}
                 </div>
-            )}
+            )} */}
+            <div className="text-gray-600 mt-2 border-t border-gray-200 mb-1">
+                <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center">
+                        <FileType2 className="h-4 w-4 mr-1" />
+                        <h3 className="text-xs font-bold">
+                            {language === 'zh' ? '描述' : 'Description'}
+                        </h3>
+                    </div>
+                    {/* {onEditSubprojectDescription && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsEditing(!isEditing);
+                                onEditSubprojectDescription(subproject.name);
+                            }}
+                            className="hover:bg-gray-200 cursor-pointer p-1 rounded"
+                            aria-label={
+                                language === 'zh'
+                                    ? '编辑描述'
+                                    : 'Edit description'
+                            }
+                            title={
+                                language === 'zh'
+                                    ? '编辑描述'
+                                    : 'Edit description'
+                            }
+                        >
+                            <SquarePen className="h-4 w-4" />
+                        </button>
+                    )} */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(!isEditing);
+                        }}
+                        className="hover:bg-gray-200 cursor-pointer p-1 rounded"
+                        aria-label={
+                            language === 'zh' ? '编辑描述' : 'Edit description'
+                        }
+                        title={
+                            language === 'zh' ? '编辑描述' : 'Edit description'
+                        }
+                    >
+                        <SquarePen className="h-4 w-4" />
+                    </button>
+                </div>
+
+                {!isEditing && subproject.description && (
+                    <div className="text-xs text-gray-600  mb-2 px-1">
+                        {subproject.description}
+                    </div>
+                )}
+
+                {isEditing && (
+                    <div className="relative">
+                        <textarea
+                            ref={textareaRef}
+                            id="schema-description"
+                            className="w-full px-3 py-2 border border-gray-300  rounded-md min-h-[80px]"
+                            aria-label={
+                                language === 'zh'
+                                    ? '子项目描述'
+                                    : 'Subproject description'
+                            }
+                            placeholder={
+                                language === 'zh'
+                                    ? '输入子项目描述'
+                                    : 'Enter subproject description'
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            defaultValue={
+                                (subprojectDescriptionText &&
+                                    subprojectDescriptionText[
+                                        subproject.name
+                                    ]) ||
+                                subproject?.description ||
+                                ''
+                            }
+                        />
+                        <div className="absolute bottom-3 right-5 flex space-x-2">
+                            <button
+                                className="px-2 py-0.5 text-xs bg-gray-200  rounded-md hover:bg-gray-300 cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancel();
+                                }}
+                            >
+                                {language === 'zh' ? '取消' : 'Cancel'}
+                            </button>
+                            <button
+                                className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateDescription();
+                                }}
+                            >
+                                {language === 'zh' ? '完成' : 'Done'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

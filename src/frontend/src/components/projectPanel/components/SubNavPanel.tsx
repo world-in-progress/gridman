@@ -420,19 +420,26 @@ export function SubNavPanel({
                     }
                 );
             } else {
-                await fetchProjectsCallback(currentPage, 
-                    () => toast.success(
-                        language === 'zh'
-                            ? '项目删除成功'
-                            : 'Project deleted successfully',
-                        {
-                            style: {
-                                background: '#ecfdf5',
-                                color: '#047857',
-                                border: '1px solid #a7f3d0',
-                            },
-                        }
-                    )
+                const updatedProjects = allProjects.filter(
+                    (p) => p.name !== projectToDelete.name
+                );
+                setAllProjects(updatedProjects);
+                
+                applyPagingAndSearch(updatedProjects, currentPage);
+                
+                setDeleteDialogOpen(false);
+                
+                toast.success(
+                    language === 'zh'
+                        ? '项目删除成功'
+                        : 'Project deleted successfully',
+                    {
+                        style: {
+                            background: '#ecfdf5',
+                            color: '#047857',
+                            border: '1px solid #a7f3d0',
+                        },
+                    }
                 );
             }
         });

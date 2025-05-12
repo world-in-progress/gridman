@@ -57,6 +57,7 @@ export default class ProjectUtils {
 
         // Step 1: Get subproject list
         const listResponse = await fetch(listAPI);
+        console.log('updateSubprojectDescription', listResponse);
         if (!listResponse.ok)
             return {
                 err: new Error(

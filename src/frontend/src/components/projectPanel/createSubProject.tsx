@@ -28,7 +28,7 @@ import CoordinateBox from '../operatePanel/components/CoordinateBox';
 import {
     formatCoordinate,
     convertCoordinate as convertSingleCoordinate,
-} from '../operatePanel/utils/coordinateUtils';
+} from '../../core/util/coordinateUtils';
 import { RectangleCoordinates } from '../operatePanel/types/types';
 import { ProjectService } from './utils/ProjectService';
 import mapboxgl from 'mapbox-gl';
@@ -481,12 +481,12 @@ export default function CreateSubProject({
             return;
         }
 
-        if (convertedRectangle) {
+        if (expandedRectangle) {
             const bounds = [
-                convertedRectangle.southWest[0],
-                convertedRectangle.southWest[1],
-                convertedRectangle.northEast[0],
-                convertedRectangle.northEast[1],
+                expandedRectangle.southWest[0],
+                expandedRectangle.southWest[1],
+                expandedRectangle.northEast[0],
+                expandedRectangle.northEast[1],
             ] as [number, number, number, number];
 
             const subProjectData = {

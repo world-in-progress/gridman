@@ -1,4 +1,4 @@
-import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
+import { convertCoordinate } from '../../../core/util/coordinateUtils';
 import { PaginationHandlers } from '../types/types';
 
 // Coordinate conversion functionality

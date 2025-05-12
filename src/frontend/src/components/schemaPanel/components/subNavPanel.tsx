@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { LanguageContext } from '../../../App';
 import proj4 from 'proj4';
-import { epsgDefinitions } from '../../operatePanel/utils/coordinateUtils';
+import { epsgDefinitions } from '../../../core/util/coordinateUtils';
 import { SidebarGroup } from '@/components/ui/sidebar';
 import { Schema, SubNavItem, SubNavPanelProps } from '../types/types';
 import { SchemaCard } from './SchemaCard';
@@ -72,10 +72,11 @@ export function SubNavPanel({
                 setLoading(true);
 
                 if (searchQuery.trim()) {
-                    let schemasToSearch = allSchemas;
+                    const schemasToSearch = allSchemas;
                     if (schemasToSearch.length === 0) {
-                        schemasToSearch = await schemaService.fetchAllSchemas();
-                        setAllSchemas(schemasToSearch);
+                        schemaService.fetchAllSchemas((err, result) => {
+                            setAllSchemas(result);
+                        });
                     }
 
                     const query = searchQuery.toLowerCase().trim();
@@ -105,14 +106,9 @@ export function SubNavPanel({
                         page,
                         itemsPerPage,
                         (err, result) => {
-                            if (err) {
-                                console.error('Failed to fetch schemas:', err);
-                            } else {
-                                console.log('result', result);
-                                onTotalItemsChange(result.totalCount);
-                                setSchemas(result.schemas);
-                                updateStarredItems(result.schemas);
-                            }
+                            onTotalItemsChange(result.totalCount);
+                            setSchemas(result.schemas);
+                            updateStarredItems(result.schemas);
                         }
                     );
                 }
@@ -138,17 +134,13 @@ export function SubNavPanel({
     );
 
     const fetchAllSchemasCallback = useCallback(async () => {
-        try {
-            const schemas = await schemaService.fetchAllSchemas();
-            setAllSchemas(schemas);
-            updateStarredItems(schemas);
-
-            if (schemas.length > 0) {
-                markerManager.showAllSchemasOnMap(schemas);
+        schemaService.fetchAllSchemas((err, result) => {
+            setAllSchemas(result);
+            updateStarredItems(result);
+            if (result.length > 0) {
+                markerManager.showAllSchemasOnMap(result);
             }
-        } catch (err) {
-            console.error('Failed to fetch all schemas:', err);
-        }
+        });
     }, [markerManager, schemaService]);
 
     useEffect(() => {
@@ -196,68 +188,32 @@ export function SubNavPanel({
             schema.name,
             newState,
             (err, result) => {
-                if (err) {
-                    console.error('Failed to update schema starred:', err);
-                } else {
-                    const serverStarredState =
-                        result?.starred !== undefined
-                            ? result.starred
-                            : newState;
+                const serverStarredState =
+                    result?.starred !== undefined ? result.starred : newState;
 
-                    setStarredItems((prev) => ({
-                        ...prev,
-                        [name]: serverStarredState,
-                    }));
+                setStarredItems((prev) => ({
+                    ...prev,
+                    [name]: serverStarredState,
+                }));
 
-                    const updatedSchemas = schemas.map((s) =>
+                const updatedSchemas = schemas.map((s) =>
+                    s.name === schema.name
+                        ? { ...s, starred: serverStarredState }
+                        : s
+                );
+                setSchemas(updatedSchemas);
+
+                setAllSchemas((prevAllSchemas) => {
+                    const updatedAllSchemas = prevAllSchemas.map((s) =>
                         s.name === schema.name
                             ? { ...s, starred: serverStarredState }
                             : s
                     );
-                    setSchemas(updatedSchemas);
-
-                    setAllSchemas((prevAllSchemas) => {
-                        const updatedAllSchemas = prevAllSchemas.map((s) =>
-                            s.name === schema.name
-                                ? { ...s, starred: serverStarredState }
-                                : s
-                        );
-                        markerManager.showAllSchemasOnMap(updatedAllSchemas);
-                        return updatedAllSchemas;
-                    });
-                }
+                    markerManager.showAllSchemasOnMap(updatedAllSchemas);
+                    return updatedAllSchemas;
+                });
             }
         );
-
-        // const updatedSchema = await schemaService.updateSchemaStarred(
-        //     schema.name,
-        //     newState
-        // );
-
-        // const serverStarredState =
-        //     updatedSchema?.starred !== undefined
-        //         ? updatedSchema.starred
-        //         : newState;
-
-        // setStarredItems((prev) => ({
-        //     ...prev,
-        //     [name]: serverStarredState,
-        // }));
-
-        // const updatedSchemas = schemas.map((s) =>
-        //     s.name === schema.name ? { ...s, starred: serverStarredState } : s
-        // );
-        // setSchemas(updatedSchemas);
-
-        // setAllSchemas((prevAllSchemas) => {
-        //     const updatedAllSchemas = prevAllSchemas.map((s) =>
-        //         s.name === schema.name
-        //             ? { ...s, starred: serverStarredState }
-        //             : s
-        //     );
-        //     markerManager.showAllSchemasOnMap(updatedAllSchemas);
-        //     return updatedAllSchemas;
-        // });
     };
 
     const flyToSchema = (schema: Schema) => {
@@ -284,12 +240,11 @@ export function SubNavPanel({
             [name]: newDescription,
         }));
 
-        const refreshedSchemas = await schemaService.fetchAllSchemas();
-        setAllSchemas(refreshedSchemas);
-
-        fetchSchemasCallback(currentPage);
-
-        markerManager.showAllSchemasOnMap(refreshedSchemas);
+        schemaService.fetchAllSchemas((err, result) => {
+            setAllSchemas(result);
+            fetchSchemasCallback(currentPage);
+            markerManager.showAllSchemasOnMap(result);
+        });
 
         setEditingDescription(null);
     };
@@ -300,20 +255,15 @@ export function SubNavPanel({
     };
 
     const handleCloneSchema = async (newSchema: Schema): Promise<void> => {
-        schemaService.submitCloneSchema(newSchema, (err, result) => {
-            if (err) {
-                console.error('Failed to clone schema:', err);
-            }
-        });
+        schemaService.submitCloneSchema(newSchema);
 
         setCloneDialogOpen(false);
         setSelectedSchema(null);
 
-        const allSchemasList = await schemaService.fetchAllSchemas();
-
-        setAllSchemas(allSchemasList);
-
-        markerManager.showAllSchemasOnMap(allSchemasList);
+        schemaService.fetchAllSchemas((err, result) => {
+            setAllSchemas(result);
+            markerManager.showAllSchemasOnMap(result);
+        });
 
         await fetchSchemasCallback(currentPage);
     };

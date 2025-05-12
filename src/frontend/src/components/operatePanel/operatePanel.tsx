@@ -13,7 +13,7 @@ import {
   calculateMinimumBoundingRectangle,
   formatCoordinate,
   formatNumber,
-} from './utils/coordinateUtils';
+} from '../../core/util/coordinateUtils';
 import {
   validateLayerHierarchy,
   calculateSubdivideRules,

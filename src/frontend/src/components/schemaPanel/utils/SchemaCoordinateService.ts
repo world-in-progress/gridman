@@ -1,6 +1,6 @@
 import proj4 from 'proj4';
 import mapboxgl from 'mapbox-gl';
-import { epsgDefinitions } from '../../operatePanel/utils/coordinateUtils';
+import { epsgDefinitions } from '../../../core/util/coordinateUtils';
 
 
 export const convertCoordinate = (

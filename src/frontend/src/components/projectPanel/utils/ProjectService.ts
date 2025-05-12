@@ -106,81 +106,14 @@ export class ProjectService {
                     if (!a.starred && b.starred) return 1;
                     return 0;
                 });
+
+                if (callback) callback(err, {
+                    projects: sortedProjects,
+                    totalCount,
+                });
             }
         );
     }
-    // public async fetchProjects(
-    //     page: number,
-    //     itemsPerPage: number
-    // ): Promise<{
-    //     projects: Project[];
-    //     totalCount: number;
-    // }> {
-    //     return new Promise((resolve, reject) => {
-    //         let worker: Worker | null = null;
-    //         let actor: Actor | null = null;
-
-    //         try {
-    //             const startIndex = (page - 1) * itemsPerPage;
-    //             const endIndex = startIndex + itemsPerPage;
-
-    //             worker = new Worker(
-    //                 new URL(
-    //                     '../../../core/worker/base.worker.ts',
-    //                     import.meta.url
-    //                 ),
-    //                 { type: 'module' }
-    //             );
-    //             actor = new Actor(worker, {});
-
-    //             actor.send(
-    //                 'fetchProjects',
-    //                 { startIndex, endIndex },
-    //                 (err, result) => {
-    //                     if (err) {
-    //                         reject(
-    //                             new Error(
-    //                                 this.language === 'zh'
-    //                                     ? '获取项目列表失败'
-    //                                     : 'Failed to fetch projects'
-    //                             )
-    //                         );
-    //                     } else {
-    //                         const projects = result.project_metas || [];
-    //                         const totalCount =
-    //                             result.total_count || projects.length;
-
-    //                         const sortedProjects = [...projects].sort(
-    //                             (a, b) => {
-    //                                 if (a.starred && !b.starred) return -1;
-    //                                 if (!a.starred && b.starred) return 1;
-    //                                 return 0;
-    //                             }
-    //                         );
-
-    //                         resolve({
-    //                             projects: sortedProjects,
-    //                             totalCount,
-    //                         });
-    //                     }
-
-    //                     setTimeout(() => {
-    //                         if (actor) actor.remove();
-    //                         if (worker) worker.terminate();
-    //                     }, 100);
-    //                 }
-    //             );
-    //         } catch (err) {
-    //             reject(
-    //                 new Error(
-    //                     this.language === 'zh'
-    //                         ? '获取项目列表失败'
-    //                         : 'Failed to fetch projects'
-    //                 )
-    //             );
-    //         }
-    //     });
-    // }
 
     public getProjectByName(projectName: string, callback?: Callback<any>) {
         this._actor.send(
@@ -369,28 +302,23 @@ export class ProjectService {
         );
     }
 
-    // TODO
     public updateSubprojectDescription(
         projectName: string,
         subprojectName: string,
-        description: string
+        description: string,
+        callback?: Callback<any>
     ) {
-        // this._actor.send(
-        //     'updateSubprojectDescription',
-        //     {
-        //         project_name: projectName,
-        //         subproject_name: subprojectName,
-        //         description
-        //     },
-        //     (err, result) => {
-        //         if (err) {
-        //             reject(
-        //             );
-        //         } else {
-        //             resolve(result);
-        //         }
-        //     }
-        // );
+        this._actor.send(
+            'updateSubprojectDescription',
+            {
+                projectName,
+                subprojectName,
+                description
+            },
+            (err, result) => {
+                if (callback) callback(err, result);
+            }
+        );
     }
 
     public setSubproject(

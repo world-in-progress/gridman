@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
+import { convertCoordinate } from '../../../core/util/coordinateUtils';
 import { ProjectService } from '../../projectPanel/utils/ProjectService';
 
 /**

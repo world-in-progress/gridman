@@ -13,7 +13,7 @@ import DrawRectangle from 'mapbox-gl-draw-rectangle-mode';
 import GLMapRectangleLayer from './layers/glMapRectangleLayer';
 import CustomRectangleDraw from './layers/customRectangleDraw';
 import ProjectBoundsLayer from './layers/projectBoundsLayer';
-import { convertCoordinate } from '../operatePanel/utils/coordinateUtils';
+import { convertCoordinate } from '../../core/util/coordinateUtils';
 import { generateRandomHexColor } from '../../utils/colorUtils';
 import { ProjectService } from '../projectPanel/utils/ProjectService';
 import { LanguageContext } from '../../App';
