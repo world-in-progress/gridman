@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
+import { convertCoordinate } from '../../../core/util/coordinateUtils';
 import { ProjectService } from '../../projectPanel/utils/ProjectService';
 
 /**
@@ -31,32 +31,50 @@ export class SubprojectBoundsManager {
             const labelLayerId = `subproject-label-${projectName}`;
             const labelSourceId = `subproject-label-source-${projectName}`;
             
-            // Remove existing layers and data sources (if they exist)
-            if (this.map.getLayer(labelLayerId)) {
-                this.map.removeLayer(labelLayerId);
-            }
-            
-            if (this.map.getLayer(outlineLayerId)) {
-                this.map.removeLayer(outlineLayerId);
-            }
-            
-            if (this.map.getLayer(layerId)) {
-                this.map.removeLayer(layerId);
-            }
-            
-            if (this.map.getSource(labelSourceId)) {
-                this.map.removeSource(labelSourceId);
-            }
-            
-            if (this.map.getSource(sourceId)) {
-                this.map.removeSource(sourceId);
-            }
-            
-            // If not needed to show or no subprojects, return directly
-            if (!show || !subprojects || subprojects.length === 0) {
+            if (!show) {
+                if (this.map.getLayer(labelLayerId)) {
+                    this.map.removeLayer(labelLayerId);
+                }
+                if (this.map.getLayer(outlineLayerId)) {
+                    this.map.removeLayer(outlineLayerId);
+                }
+                if (this.map.getLayer(layerId)) {
+                    this.map.removeLayer(layerId);
+                }
+                if (this.map.getSource(labelSourceId)) {
+                    this.map.removeSource(labelSourceId);
+                }
+                if (this.map.getSource(sourceId)) {
+                    this.map.removeSource(sourceId);
+                }
                 return;
             }
-            
+
+            if (subprojects.length === 1 && this.map.getSource(sourceId)) {
+                const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+                const currentData = (source as any)._data;
+                if (currentData && currentData.features) {
+                    const updatedSubproject = subprojects[0];
+                    const updatedFeatures = currentData.features.map((feature: any) => {
+                        if (feature.properties.name === updatedSubproject.name) {
+                            return {
+                                ...feature,
+                                properties: {
+                                    ...feature.properties,
+                                    starred: updatedSubproject.starred
+                                }
+                            };
+                        }
+                        return feature;
+                    });
+                    source.setData({
+                        type: 'FeatureCollection',
+                        features: updatedFeatures
+                    });
+                    return;
+                }
+            }
+
             // Prepare subproject GeoJSON features
             const features: GeoJSON.Feature[] = [];
             const labelFeatures: GeoJSON.Feature[] = [];
@@ -451,9 +469,7 @@ export class SubprojectBoundsManager {
             .setHTML(`
                 <div style="font-family: Arial, sans-serif; padding: 10px;">
                     <h3 style="margin: 0 0 8px; font-weight: bold; color: #333;">${properties.name}</h3>
-                    ${properties.description ? 
-                        `<p style="margin: 0 0 8px; color: #666;">${properties.description}</p>` : 
-                        ''}
+
                     <div style="display: flex; align-items: center; margin-top: 8px;">
                         <span style="font-size: 12px; color: #888;">
                             ${this.language === 'zh' ? '所属项目' : 'Project'}: 
@@ -461,6 +477,9 @@ export class SubprojectBoundsManager {
                         <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
                             ${properties.projectName}
                         </span>
+                        ${properties.description ? 
+                            `<p style="margin: 0 0 8px; color: #666;">${properties.description}</p>` : 
+                            ''}
                         ${properties.starred ? 
                             `<span style="margin-left: 8px; color: #f0c14b;">★</span>` : 
                             ''}

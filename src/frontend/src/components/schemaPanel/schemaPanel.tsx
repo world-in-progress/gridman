@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Plus } from 'lucide-react';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/subNavPanel';

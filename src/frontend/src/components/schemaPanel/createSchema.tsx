@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import GridLevel from '../operatePanel/components/GridLevel';
 import {
     SchemaNameCard,
@@ -115,22 +115,29 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
 
         schemaService.submitSchemaData(
             schemaData,
-            () => {
-                setGeneralError(
-                    language === 'zh' ? '创建成功！' : 'Created successfully!'
-                );
-                setTimeout(() => {
-                    if (onBack) {
-                        onBack();
-                    }
-                }, 1000);
-            },
-            (error) => {
-                setGeneralError(error);
-            },
             isSelectingPoint,
-            () => {
-                setIsSelectingPoint(false);
+            (err, result) => {
+                if (err) {
+                    setGeneralError(result.message);
+                    // clearMapMarkers();
+                } else {
+                    if (result && result.success === false) {
+                        setGeneralError(result.message);
+                        // clearMapMarkers();
+                    } else {
+                        setGeneralError(
+                            language === 'zh'
+                                ? '创建成功！'
+                                : 'Created successfully!'
+                        );
+                        setTimeout(() => {
+                            if (onBack) {
+                                onBack();
+                            }
+                        }, 1000);
+                    }
+                    setIsSelectingPoint(false);
+                }
             }
         );
     };

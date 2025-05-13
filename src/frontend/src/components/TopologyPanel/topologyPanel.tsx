@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
 

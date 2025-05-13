@@ -13,7 +13,7 @@ import {
   calculateMinimumBoundingRectangle,
   formatCoordinate,
   formatNumber,
-} from './utils/coordinateUtils';
+} from '../../core/util/coordinateUtils';
 import {
   validateLayerHierarchy,
   calculateSubdivideRules,
@@ -34,7 +34,7 @@ import GridLayer from '../mapComponent/layers/GridLayer';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 
 // Add mapInstance property to window object
 declare global {

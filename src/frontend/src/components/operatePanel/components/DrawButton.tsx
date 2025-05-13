@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { DrawButtonProps } from '../types/types';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const DrawButton: React.FC<DrawButtonProps> = ({
   isDrawing,

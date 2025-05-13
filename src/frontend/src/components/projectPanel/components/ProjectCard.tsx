@@ -9,6 +9,7 @@ import {
     EyeOff,
     FilePlus,
     Blocks,
+    Trash2
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -16,10 +17,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ProjectCardProps, SubProjectCardProps } from '../types/types';
+import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../utils/ProjectService';
-import { SubProjectCard } from './SubProjecCard';
+import { SubprojectCard } from './SubProjecCard';
 
 declare global {
     interface Window {
@@ -44,6 +45,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     onEditDescription,
     onSaveDescription,
     onAddSubproject,
+    onDeleteProject,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -129,7 +131,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         prevSubprojects.map((subproject) =>
                             subproject.name === subprojectName
                                 ? { ...subproject, starred }
-                            : subproject
+                                : subproject
                         )
                     );
                 }
@@ -152,23 +154,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             setLoadingSubprojects(false);
         });
 
-
-        // try {
-        //     setLoadingSubprojects(true);
-        //     const projectService = new ProjectService(language);
-        //     const response = await projectService.fetchSubprojects(title);
-
-        //     if (response && response.subproject_metas) {
-        //         setSubprojects(response.subproject_metas);
-        //     } else {
-        //         setSubprojects([]);
-        //     }
-        // } catch (error) {
-        //     console.error('获取子项目列表失败:', error);
-        //     setSubprojects([]);
-        // } finally {
-        //     setLoadingSubprojects(false);
-        // }
     }, [title, language]);
 
     useEffect(() => {
@@ -257,35 +242,44 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             );
 
             const schemaService = new SchemaService(language);
-            schemaService.getSchemaByName(project.schema_name, (err, result) => {
-                if (err) {
-                    console.error('获取模板详情失败:', err);
-                    setSchemaError(
-                        language === 'zh'
-                            ? '获取模板详情失败，使用当前信息继续'
-                            : 'Failed to get schema details, continuing with current info'
+            schemaService.getSchemaByName(
+                project.schema_name,
+                (err, result) => {
+                    if (err) {
+                        console.error('获取模板详情失败:', err);
+                        setSchemaError(
+                            language === 'zh'
+                                ? '获取模板详情失败，使用当前信息继续'
+                                : 'Failed to get schema details, continuing with current info'
+                        );
+                        console.log('获取模板详情失败:', err);
+                        onAddSubproject(
+                            project,
+                            project.schema_name,
+                            '4326',
+                            '1'
+                        );
+
+                        setTimeout(() => {
+                            setSchemaError(null);
+                            setLoadingSchema(false);
+                        }, 3000);
+                        return;
+                    }
+
+                    setSchemaError(null);
+                    setLoadingSchema(false);
+                    onAddSubproject(
+                        project,
+                        result.project_schema.name,
+                        result.project_schema.epsg.toString(),
+                        result.project_schema?.grid_info &&
+                            result.project_schema.grid_info.length > 0
+                            ? JSON.stringify(result.project_schema.grid_info[0])
+                            : '1'
                     );
-                    console.log('获取模板详情失败:', err);
-                    onAddSubproject(project, project.schema_name, '4326', '1');
-
-                    setTimeout(() => {
-                        setSchemaError(null);
-                        setLoadingSchema(false);
-                    }, 3000);
-                    return;
                 }
-
-                setSchemaError(null);
-                setLoadingSchema(false);
-                onAddSubproject(
-                    project,
-                    result.project_schema.name,
-                    result.project_schema.epsg.toString(),
-                    result.project_schema?.grid_info && result.project_schema.grid_info.length > 0
-                        ? JSON.stringify(result.project_schema.grid_info[0])
-                        : '1'
-                );
-            });
+            );
         } catch (error) {
             console.error('获取模板详情失败:', error);
             setSchemaError(
@@ -327,39 +321,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         }
     };
 
-    const handleEditSubprojectDescription = (subprojectName: string) => {
-        console.log(language === 'zh' ? `编辑子项目描述: ${subprojectName}` : `Editing subproject description: ${subprojectName}`);
-    };
-
     const updateSubprojectDescription = async (
         subprojectName: string,
         description: string
     ) => {
-        try {
-            const projectService = new ProjectService(language);
-            await projectService.updateSubprojectDescription(
-                title,
-                subprojectName,
-                description
-            );
+        const projectService = new ProjectService(language);
+        projectService.updateSubprojectDescription(
+            title,
+            subprojectName,
+            description
+        );
 
-            setSubprojects((prevSubprojects) =>
-                prevSubprojects.map((subproject) =>
-                    subproject.name === subprojectName
-                        ? { ...subproject, description }
-                        : subproject
-                )
-            );
-        } catch (error) {
-            console.error('更新子项目描述失败:', error);
-            setSubprojects((prevSubprojects) =>
-                prevSubprojects.map((subproject) =>
-                    subproject.name === subprojectName
-                        ? { ...subproject, description: description }
-                        : subproject
-                )
-            );
-        }
+        setSubprojects((prevSubprojects) =>
+            prevSubprojects.map((subproject) =>
+                subproject.name === subprojectName
+                    ? { ...subproject, description }
+                    : subproject
+            )
+        );
     };
 
     const CardContent = () => (
@@ -425,56 +404,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     >
                         <FilePlus className="h-5 w-5" />
                     </button>
-                    <DropdownMenu
-                        open={openMenuId === title}
-                        onOpenChange={(open) => {
-                            onMenuOpenChange(open);
+                    <button
+                        className={'h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center mr-1 justify-center cursor-pointer'}
+                        aria-label={
+                            language === 'zh' ? '删除项目' : 'Delete Project'
+                        }
+                        title={
+                            language === 'zh' ? '删除项目' : 'Delete Project'
+                        }
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteProject?.(project);
                         }}
                     >
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center justify-center cursor-pointer"
-                                aria-label={
-                                    language === 'zh'
-                                        ? '更多选项'
-                                        : 'More options'
-                                }
-                                title={
-                                    language === 'zh'
-                                        ? '更多选项'
-                                        : 'More options'
-                                }
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                            >
-                                <MoreHorizontal className="h-5 w-5" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            side="right"
-                            align="start"
-                            alignOffset={40}
-                            className="w-48"
-                            sideOffset={-20}
-                        >
-                            {menuItems.map((subItem) => (
-                                <DropdownMenuItem key={subItem.title} asChild>
-                                    <a
-                                        className="cursor-pointer"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onMenuOpenChange(false);
-                                            subItem.onClick &&
-                                                subItem.onClick(e);
-                                        }}
-                                    >
-                                        {subItem.title}
-                                    </a>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        <Trash2 className="h-5 w-5" />
+                    </button>
                 </div>
             </div>
 
@@ -511,20 +455,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                     {showSubprojects && subprojects.length > 0 && (
                         <div className="ml-6 mt-2 space-y-2">
-                            {subprojects.map((subproject, index) => (
-                                <SubProjectCard
-                                    key={index}
-                                    subproject={subproject}
-                                    parentProjectTitle={title}
-                                    language={language}
-                                    onCardClick={handleCardClick}
-                                    onStarToggle={handleSubprojectStarClick}
-                                    onEditSubprojectDescription={handleEditSubprojectDescription}
-                                    onSaveSubprojectDescription={
-                                        updateSubprojectDescription
-                                    }
-                                />
-                            ))}
+                            {[...subprojects]
+                                .sort((a, b) => {
+                                    if (a.starred && !b.starred) return -1;
+                                    if (!a.starred && b.starred) return 1;
+                                    return a.name.localeCompare(b.name);
+                                })
+                                .map((subproject, index) => (
+                                    <SubprojectCard
+                                        key={index}
+                                        subproject={subproject}
+                                        parentProjectTitle={title}
+                                        language={language}
+                                        onCardClick={handleCardClick}
+                                        onStarToggle={handleSubprojectStarClick}
+                                        onSaveSubprojectDescription={
+                                            updateSubprojectDescription
+                                        }
+                                    />
+                                ))}
                         </div>
                     )}
                 </div>
@@ -602,7 +551,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                             />
                             <div className="absolute bottom-3 right-5 flex space-x-2">
                                 <button
-                                    className="px-2 py-0.5 text-xs bg-gray-200  rounded-md hover:bg-gray-300 "
+                                    className="px-2 py-0.5 text-xs bg-gray-200  rounded-md hover:bg-gray-300 cursor-pointer"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleCancel();
@@ -611,7 +560,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                     {language === 'zh' ? '取消' : 'Cancel'}
                                 </button>
                                 <button
-                                    className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                    className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleUpdateDescription();

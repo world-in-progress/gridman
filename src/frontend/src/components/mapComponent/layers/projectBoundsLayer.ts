@@ -1,6 +1,6 @@
 import { Map, CustomLayerInterface } from 'mapbox-gl';
 import { Project } from '../../projectPanel/types/types';
-import { convertCoordinate } from '../../operatePanel/utils/coordinateUtils';
+import { convertCoordinate } from '../../../core/util/coordinateUtils';
 import { ProjectService } from '../../projectPanel/utils/ProjectService';
 import { generateRandomRgbColor } from '../../../utils/colorUtils';
 

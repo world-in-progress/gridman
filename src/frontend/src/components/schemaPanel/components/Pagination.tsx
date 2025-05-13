@@ -6,7 +6,7 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import { useContext } from 'react';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 import { PaginationProps } from '../types/types';
 
 export const Pagination: React.FC<PaginationProps> = ({

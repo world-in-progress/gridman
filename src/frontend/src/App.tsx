@@ -5,6 +5,8 @@ import { Navbar } from './components/navbar';
 import { useState, createContext, RefObject } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { Toaster } from '@/components/ui/sonner';
+import { SidebarContext, LanguageContext, AIDialogContext } from './context'
+
 declare global {
     interface Window {
         mapInstance?: mapboxgl.Map;
@@ -13,29 +15,29 @@ declare global {
     }
 }
 
-export const SidebarContext = createContext<{
-    activeSidebar: SidebarType;
-    setActiveSidebar: (type: SidebarType) => void;
-}>({
-    activeSidebar: 'grid',
-    setActiveSidebar: () => {},
-});
+// export const SidebarContext = createContext<{
+//     activeSidebar: SidebarType;
+//     setActiveSidebar: (type: SidebarType) => void;
+// }>({
+//     activeSidebar: 'grid',
+//     setActiveSidebar: () => {},
+// });
 
-export const LanguageContext = createContext<{
-    language: 'zh' | 'en';
-    setLanguage: (lang: 'zh' | 'en') => void;
-}>({
-    language: 'en',
-    setLanguage: () => {},
-});
+// export const LanguageContext = createContext<{
+//     language: 'zh' | 'en';
+//     setLanguage: (lang: 'zh' | 'en') => void;
+// }>({
+//     language: 'en',
+//     setLanguage: () => {},
+// });
 
-export const AIDialogContext = createContext<{
-    aiDialogEnabled: boolean;
-    setAIDialogEnabled: (enabled: boolean) => void;
-}>({
-    aiDialogEnabled: false,
-    setAIDialogEnabled: () => {},
-});
+// export const AIDialogContext = createContext<{
+//     aiDialogEnabled: boolean;
+//     setAIDialogEnabled: (enabled: boolean) => void;
+// }>({
+//     aiDialogEnabled: false,
+//     setAIDialogEnabled: () => {},
+// });
 
 function App() {
     const [activeSidebar, setActiveSidebar] = useState<SidebarType>('grid'); // Default to 'grid' for development

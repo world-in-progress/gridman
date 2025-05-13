@@ -14,7 +14,7 @@ import opengms from '../assets/opengms.png';
 import grid from '../assets/grid.png';
 import bot from '../assets/bot.png';
 import { useContext } from 'react';
-import { SidebarContext, LanguageContext, AIDialogContext } from '../App';
+import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
 import GridBotBotton from './testComponents/GridBotBotton';
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
     children?: React.ReactNode;

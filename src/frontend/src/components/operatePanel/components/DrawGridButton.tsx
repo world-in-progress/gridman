@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { DrawGridButtonProps } from '../types/types';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const DrawGridButton: React.FC<DrawGridButtonProps> = ({ onClick }) => {
   const { language } = useContext(LanguageContext);
