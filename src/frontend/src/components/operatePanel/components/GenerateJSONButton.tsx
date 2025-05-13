@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { GenerateJSONButtonProps } from '../types/types';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const GenerateJSONButton: React.FC<GenerateJSONButtonProps> = ({ onClick }) => {
   const { language } = useContext(LanguageContext);

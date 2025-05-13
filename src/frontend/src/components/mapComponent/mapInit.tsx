@@ -16,7 +16,7 @@ import ProjectBoundsLayer from './layers/projectBoundsLayer';
 import { convertCoordinate } from '../../core/util/coordinateUtils';
 import { generateRandomHexColor } from '../../utils/colorUtils';
 import { ProjectService } from '../projectPanel/utils/ProjectService';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
 
 // Add mapInstance property to window object

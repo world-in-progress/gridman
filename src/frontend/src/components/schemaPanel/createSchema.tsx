@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import GridLevel from '../operatePanel/components/GridLevel';
 import {
     SchemaNameCard,
@@ -119,11 +119,11 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
             (err, result) => {
                 if (err) {
                     setGeneralError(result.message);
-                    clearMapMarkers();
+                    // clearMapMarkers();
                 } else {
                     if (result && result.success === false) {
                         setGeneralError(result.message);
-                        clearMapMarkers();
+                        // clearMapMarkers();
                     } else {
                         setGeneralError(
                             language === 'zh'

@@ -1,3 +1,10 @@
+interface MultiGridRenderInfo {
+  levels: Uint8Array,
+  globalIds: Uint32Array,
+  vertices: Float32Array,
+}
+
+
 export class MultiGridInfo {
     constructor(
         public levels: Uint8Array,
@@ -5,6 +12,18 @@ export class MultiGridInfo {
     ) {
         this.levels = levels
         this.globalIds = globalIds
+    }
+
+    get renderInfo(): MultiGridRenderInfo {
+
+      // Calculate vertices of multi grids
+      
+
+      return {
+        levels: this.levels,
+        globalIds: this.globalIds,
+        vertices: new Float32Array(1)
+      }
     }
 
     static fromBuffer(buffer: ArrayBuffer): MultiGridInfo {

@@ -9,6 +9,7 @@ import {
     EyeOff,
     FilePlus,
     Blocks,
+    Trash2
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -16,10 +17,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ProjectCardProps, SubProjectCardProps } from '../types/types';
+import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../utils/ProjectService';
-import { SubProjectCard } from './SubProjecCard';
+import { SubprojectCard } from './SubProjecCard';
 
 declare global {
     interface Window {
@@ -44,6 +45,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     onEditDescription,
     onSaveDescription,
     onAddSubproject,
+    onDeleteProject,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -152,22 +154,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             setLoadingSubprojects(false);
         });
 
-        // try {
-        //     setLoadingSubprojects(true);
-        //     const projectService = new ProjectService(language);
-        //     const response = await projectService.fetchSubprojects(title);
-
-        //     if (response && response.subproject_metas) {
-        //         setSubprojects(response.subproject_metas);
-        //     } else {
-        //         setSubprojects([]);
-        //     }
-        // } catch (error) {
-        //     console.error('获取子项目列表失败:', error);
-        //     setSubprojects([]);
-        // } finally {
-        //     setLoadingSubprojects(false);
-        // }
     }, [title, language]);
 
     useEffect(() => {
@@ -418,56 +404,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     >
                         <FilePlus className="h-5 w-5" />
                     </button>
-                    <DropdownMenu
-                        open={openMenuId === title}
-                        onOpenChange={(open) => {
-                            onMenuOpenChange(open);
+                    <button
+                        className={'h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center mr-1 justify-center cursor-pointer'}
+                        aria-label={
+                            language === 'zh' ? '删除项目' : 'Delete Project'
+                        }
+                        title={
+                            language === 'zh' ? '删除项目' : 'Delete Project'
+                        }
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteProject?.(project);
                         }}
                     >
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center justify-center cursor-pointer"
-                                aria-label={
-                                    language === 'zh'
-                                        ? '更多选项'
-                                        : 'More options'
-                                }
-                                title={
-                                    language === 'zh'
-                                        ? '更多选项'
-                                        : 'More options'
-                                }
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                            >
-                                <MoreHorizontal className="h-5 w-5" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            side="right"
-                            align="start"
-                            alignOffset={40}
-                            className="w-48"
-                            sideOffset={-20}
-                        >
-                            {menuItems.map((subItem) => (
-                                <DropdownMenuItem key={subItem.title} asChild>
-                                    <a
-                                        className="cursor-pointer"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onMenuOpenChange(false);
-                                            subItem.onClick &&
-                                                subItem.onClick(e);
-                                        }}
-                                    >
-                                        {subItem.title}
-                                    </a>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        <Trash2 className="h-5 w-5" />
+                    </button>
                 </div>
             </div>
 
@@ -504,19 +455,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                     {showSubprojects && subprojects.length > 0 && (
                         <div className="ml-6 mt-2 space-y-2">
-                            {subprojects.map((subproject, index) => (
-                                <SubProjectCard
-                                    key={index}
-                                    subproject={subproject}
-                                    parentProjectTitle={title}
-                                    language={language}
-                                    onCardClick={handleCardClick}
-                                    onStarToggle={handleSubprojectStarClick}
-                                    onSaveSubprojectDescription={
-                                        updateSubprojectDescription
-                                    }
-                                />
-                            ))}
+                            {[...subprojects]
+                                .sort((a, b) => {
+                                    if (a.starred && !b.starred) return -1;
+                                    if (!a.starred && b.starred) return 1;
+                                    return a.name.localeCompare(b.name);
+                                })
+                                .map((subproject, index) => (
+                                    <SubprojectCard
+                                        key={index}
+                                        subproject={subproject}
+                                        parentProjectTitle={title}
+                                        language={language}
+                                        onCardClick={handleCardClick}
+                                        onStarToggle={handleSubprojectStarClick}
+                                        onSaveSubprojectDescription={
+                                            updateSubprojectDescription
+                                        }
+                                    />
+                                ))}
                         </div>
                     )}
                 </div>

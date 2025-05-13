@@ -7,7 +7,7 @@ import React, {
     useContext,
 } from 'react';
 import { Bot, X } from 'lucide-react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 
 interface Message {
     text: string;

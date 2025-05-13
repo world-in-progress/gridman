@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import {
     ProjectErrorMessage,
     SubProjectNameCard,
@@ -100,6 +100,14 @@ export default function CreateSubProject({
     initialEpsg,
     initialSchemaLevel,
     parentProject,
+    cornerMarker,
+    setCornerMarker,
+    schemaMarker,
+    setSchemaMarker,
+    gridLine,
+    setGridLine,
+    gridLabel,
+    setGridLabel,
     ...props
 }: CreateProjectProps) {
     const { language } = useContext(LanguageContext);
@@ -128,14 +136,6 @@ export default function CreateSubProject({
         useState<boolean>(false);
     const [epsgFromProps, setEpsgFromProps] = useState<boolean>(false);
 
-    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
-        null
-    );
-    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
-        null
-    );
-    const [gridLine, setGridLine] = useState<string | null>(null);
-    const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
     const [schemaBasePoint, setSchemaBasePoint] = useState<
         [number, number] | null
     >(null);
@@ -220,9 +220,27 @@ export default function CreateSubProject({
 
     const handleDrawRectangle = useCallback(() => {
         if (onDrawRectangle) {
+            if (rectangleCoordinates) {
+                console.log(cornerMarker, gridLine, gridLabel)
+                if (cornerMarker) {
+                    cornerMarker.remove();
+                    setCornerMarker && setCornerMarker(null);
+                }
+                if (gridLine && window.mapInstance) {
+                    if (window.mapInstance.getSource(gridLine)) {
+                        window.mapInstance.removeLayer(gridLine);
+                        window.mapInstance.removeSource(gridLine);
+                    }
+                    setGridLine && setGridLine(null);
+                }
+                if (gridLabel) {
+                    gridLabel.remove();
+                    setGridLabel && setGridLabel(null);
+                }
+            }
             onDrawRectangle(isDrawing);
         }
-    }, [isDrawing, onDrawRectangle]);
+    }, [isDrawing, onDrawRectangle, rectangleCoordinates, cornerMarker, gridLine, gridLabel]);
 
     const showSchemaMarkerOnMap = useCallback(
         (coordinates: [number, number], schemaName: string) => {
@@ -257,7 +275,7 @@ export default function CreateSubProject({
                 .setPopup(popup)
                 .addTo(window.mapInstance);
 
-            setSchemaMarker(marker);
+                setSchemaMarker && setSchemaMarker(marker);
 
             return marker;
         },
@@ -296,7 +314,7 @@ export default function CreateSubProject({
                 .setPopup(popup)
                 .addTo(window.mapInstance);
 
-            setCornerMarker(marker);
+                setCornerMarker && setCornerMarker(marker);
 
             marker.togglePopup();
 
@@ -323,7 +341,7 @@ export default function CreateSubProject({
                 gridLabel.remove();
             }
             const lineId = `grid-line-${Date.now()}`;
-            setGridLine(lineId);
+            setGridLine && setGridLine(lineId);
             window.mapInstance.addSource(lineId, {
                 type: 'geojson',
                 data: {
@@ -382,7 +400,7 @@ export default function CreateSubProject({
                 .setLngLat(midPoint)
                 .addTo(window.mapInstance);
 
-            setGridLabel(marker);
+            setGridLabel && setGridLabel(marker);
 
             return lineId;
         },
@@ -524,11 +542,11 @@ export default function CreateSubProject({
                     if (window.mapInstance) {
                         if (cornerMarker) {
                             cornerMarker.remove();
-                            setCornerMarker(null);
+                            setCornerMarker && setCornerMarker(null);
                         }
                         if (schemaMarker) {
                             schemaMarker.remove();
-                            setSchemaMarker(null);
+                            setSchemaMarker && setSchemaMarker(null);
                         }
                         if (
                             gridLine &&
@@ -536,11 +554,11 @@ export default function CreateSubProject({
                         ) {
                             window.mapInstance.removeLayer(gridLine);
                             window.mapInstance.removeSource(gridLine);
-                            setGridLine(null);
+                            setGridLine && setGridLine(null);
                         }
                         if (gridLabel) {
                             gridLabel.remove();
-                            setGridLabel(null);
+                            setGridLabel && setGridLabel(null);
                         }
                         clearMapMarkers();
 
@@ -571,14 +589,15 @@ export default function CreateSubProject({
     const handleBack = () => {
         clearMapMarkers();
 
+        console.log('cornerMarker',cornerMarker,'schemaMarker', schemaMarker,'gridLine', gridLine,'gridLabel', gridLabel)
         if (cornerMarker) {
             cornerMarker.remove();
-            setCornerMarker(null);
+            setCornerMarker && setCornerMarker(null);
         }
 
         if (schemaMarker) {
             schemaMarker.remove();
-            setSchemaMarker(null);
+            setSchemaMarker && setSchemaMarker(null);
         }
 
         if (gridLine && window.mapInstance) {
@@ -586,12 +605,12 @@ export default function CreateSubProject({
                 window.mapInstance.removeLayer(gridLine);
                 window.mapInstance.removeSource(gridLine);
             }
-            setGridLine(null);
+            setGridLine && setGridLine(null);
         }
 
         if (gridLabel) {
             gridLabel.remove();
-            setGridLabel(null);
+            setGridLabel && setGridLabel(null);
         }
 
         if (isSelectingPoint && window.mapInstance) {

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useContext, useState, useEffect } from 'react';
-import { LanguageContext } from '../../App';
+import { LanguageContext } from '../../context';
 import {
     ProjectNameCard,
     ProjectDescriptionCard,
@@ -26,7 +26,6 @@ import {
 import { ProjectService } from './utils/ProjectService';
 import mapboxgl from 'mapbox-gl';
 import { SchemaService } from '../schemaPanel/utils/SchemaService';
-import { Schema } from '../schemaPanel/types/types';
 import { convertToWGS84 } from '../schemaPanel/utils/utils';
 
 const validateProjectForm = (

@@ -11,7 +11,7 @@ import SchemaPanel from './schemaPanel/schemaPanel';
 import CreateSchema from './schemaPanel/createSchema';
 import ProjectPanel from './projectPanel/projectPanel';
 import CreateProject from './projectPanel/createProject';
-import { SidebarContext, LanguageContext, AIDialogContext } from '../App';
+import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -40,6 +40,8 @@ import ChatPanel from './chatPanel/chatPanel';
 import GridBotBotton from './testComponents/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
 import TopologyPanel from './TopologyPanel/topologyPanel';
+import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
+import mapboxgl from 'mapbox-gl';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType =
@@ -51,12 +53,26 @@ export type BreadcrumbType =
 
 export default function Page() {
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isSelectingPoint, setIsSelectingPoint] = useState(false);
+    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [gridLine, setGridLine] = useState<string | null>(null);
+    const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
+    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
-        flyToSubprojectBounds: (projectName: string, subprojectName: string) => Promise<void>;
-        showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
+        flyToSubprojectBounds: (
+            projectName: string,
+            subprojectName: string
+        ) => Promise<void>;
+        showSubprojectBounds: (
+            projectName: string,
+            subprojects: any[],
+            show: boolean
+        ) => void;
     }>(null);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
@@ -64,12 +80,13 @@ export default function Page() {
     const [showCreateSchema, setShowCreateSchema] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
     const [showCreateSubProject, setShowCreateSubProject] = useState(false);
-    const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
+    const [selectedParentProject, setSelectedParentProject] =
+        useState<any>(null);
     const [activeBreadcrumb, setActiveBreadcrumb] =
         useState<BreadcrumbType>(null);
-    const [activePanel, setActivePanel] = useState<'schema' | 'project' | 'topology' | null>(
-        null
-    );
+    const [activePanel, setActivePanel] = useState<
+        'schema' | 'project' | 'topology' | null
+    >(null);
     const [selectedSchemaName, setSelectedSchemaName] = useState<
         string | undefined
     >(undefined);
@@ -122,10 +139,16 @@ export default function Page() {
             setActiveBreadcrumb('topology');
         };
 
-        window.addEventListener('switchToTopologyPanel', handleSwitchToTopology);
-        
+        window.addEventListener(
+            'switchToTopologyPanel',
+            handleSwitchToTopology
+        );
+
         return () => {
-            window.removeEventListener('switchToTopologyPanel', handleSwitchToTopology);
+            window.removeEventListener(
+                'switchToTopologyPanel',
+                handleSwitchToTopology
+            );
         };
     }, []);
 
@@ -141,14 +164,54 @@ export default function Page() {
         setIsDrawing(false);
     };
 
+    const clearMapElements = () => {
+
+        if (window.mapboxDrawInstance) {
+            window.mapboxDrawInstance.deleteAll();
+        }
+
+        setRectangleCoordinates(null);
+
+        if (cornerMarker) {
+            cornerMarker.remove();
+            setCornerMarker(null);
+        }
+        if (gridLine && window.mapInstance) {
+            if (window.mapInstance.getSource(gridLine)) {
+                window.mapInstance.removeLayer(gridLine);
+                window.mapInstance.removeSource(gridLine);
+            }
+            setGridLine(null);
+        }
+        if (gridLabel) {
+            gridLabel.remove();
+            setGridLabel(null);
+        }
+    };
+
     const handleBreadcrumbClick = (item: BreadcrumbType) => {
         setActiveBreadcrumb(item);
         if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
+            clearMapMarkers();
+            setIsSelectingPoint(false);
+            setShowCreateProject(false);
+            setShowCreateSubProject(false);
+            clearMapElements();
+            if (window.mapInstance && window.mapInstance.getCanvas()) {
+                window.mapInstance.getCanvas().style.cursor = '';
+            }
         } else if (item === 'project') {
+            clearMapMarkers();
+            setIsSelectingPoint(false);
+            clearMapElements();
+            if (window.mapInstance && window.mapInstance.getCanvas()) {
+                window.mapInstance.getCanvas().style.cursor = '';
+            }
             setActivePanel('project');
             setShowCreateProject(false);
+            setShowCreateSubProject(false);
         }
     };
 
@@ -171,28 +234,32 @@ export default function Page() {
             setShowCreateProject(true);
             setActiveBreadcrumb('project');
             const schemaService = new SchemaService(language);
-            schemaService
-                .getSchemaByName(schemaName, (err, result) => {
-                    if (err) {
-                        console.error('获取schema详情失败:', err);
-                        return;
-                    }
-                    const schema = result;
-                    if (schema) {
-                        const markerManager = new MapMarkerManager(
-                            language,
-                            () => {}
-                        );
-                        markerManager.clearAllMarkers();
-                        markerManager.showAllSchemasOnMap([schema]);
-                    }
-                })
+            schemaService.getSchemaByName(schemaName, (err, result) => {
+                if (err) {
+                    console.error('获取schema详情失败:', err);
+                    return;
+                }
+                const schema = result;
+                if (schema) {
+                    const markerManager = new MapMarkerManager(
+                        language,
+                        () => {}
+                    );
+                    markerManager.clearAllMarkers();
+                    markerManager.showAllSchemasOnMap([schema]);
+                }
+            });
         },
         [language]
     );
 
     const handleCreateSubProject = useCallback(
-        (parentProject: any, schemaName?: string, epsg?: string, gridInfo?: string) => {
+        (
+            parentProject: any,
+            schemaName?: string,
+            epsg?: string,
+            gridInfo?: string
+        ) => {
             setSelectedParentProject(parentProject);
             if (schemaName) {
                 setSelectedSchemaName(schemaName);
@@ -289,22 +356,31 @@ export default function Page() {
                             initialEpsg={selectedSchemaEpsg}
                             initialSchemaLevel={selectedSchemaLevel}
                             parentProject={selectedParentProject}
+                            cornerMarker={cornerMarker}
+                            setCornerMarker={setCornerMarker}
+                            schemaMarker={schemaMarker}
+                            setSchemaMarker={setSchemaMarker}
+                            gridLine={gridLine}
+                            setGridLine={setGridLine}
+                            gridLabel={gridLabel}
+                            setGridLabel={setGridLabel}
                         />
                     );
                 }
-                return <ProjectPanel 
-                    onCreateSubProject={handleCreateSubProject}
-                />;
+                return (
+                    <ProjectPanel onCreateSubProject={handleCreateSubProject} />
+                );
             } else if (activePanel === 'topology') {
-                return <TopologyPanel 
-                    onBack={() => {
-                        setActivePanel('project');
-                        setActiveBreadcrumb('project');
-                    }}
-                />;
+                return (
+                    <TopologyPanel
+                        onBack={() => {
+                            setActivePanel('project');
+                            setActiveBreadcrumb('project');
+                        }}
+                    />
+                );
             }
             return (
-                
                 <SchemaPanel
                     onCreateNew={() => setShowCreateSchema(true)}
                     onCreateProject={handleCreateProjectFromSchema}
@@ -362,9 +438,6 @@ export default function Page() {
                                                 ? 'text-[#71F6FF] font-bold'
                                                 : ''
                                         }
-                                        onClick={() =>
-                                            handleBreadcrumbClick('topology')
-                                        }
                                     >
                                         {breadcrumbText.topology[language]}
                                     </BreadcrumbLink>
@@ -376,9 +449,6 @@ export default function Page() {
                                             activeBreadcrumb === 'attribute'
                                                 ? 'text-[#71F6FF] font-bold'
                                                 : ''
-                                        }
-                                        onClick={() =>
-                                            handleBreadcrumbClick('attribute')
                                         }
                                     >
                                         {breadcrumbText.attribute[language]}

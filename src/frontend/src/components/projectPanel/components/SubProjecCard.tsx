@@ -1,5 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Star, FileType2, SquarePen, PencilRuler, Target, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+    Star,
+    FileType2,
+    SquarePen,
+    PencilRuler,
+    Target,
+    ArrowUp,
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight,
+} from 'lucide-react';
 import { SubProjectCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
 import {
@@ -17,7 +27,7 @@ declare global {
     }
 }
 
-export const SubProjectCard: React.FC<SubProjectCardProps> = ({
+export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     subproject,
     parentProjectTitle,
     language,
@@ -61,6 +71,13 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
         e.stopPropagation();
         if (onStarToggle) {
             onStarToggle(subproject.name, !subproject.starred);
+            if (window.mapRef && window.mapRef.current) {
+                const { showSubprojectBounds } = window.mapRef.current;
+                if (showSubprojectBounds && typeof showSubprojectBounds === 'function') {
+                    const updatedSubproject = { ...subproject, starred: !subproject.starred };
+                    showSubprojectBounds(parentProjectTitle, [updatedSubproject], true);
+                }
+            }
         }
     };
 
@@ -86,19 +103,11 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
 
         const newDescription = textareaRef.current.value;
 
-        try {
-            if (onSaveSubprojectDescription) {
-                // console.log('onSaveSubprojectDescription', subproject.name, newDescription);
-                await onSaveSubprojectDescription(
-                    subproject.name,
-                    newDescription
-                );
-            }
-
-            setIsEditing(false);
-        } catch (error) {
-            console.error('Failed to update subproject description:', error);
+        if (onSaveSubprojectDescription) {
+            await onSaveSubprojectDescription(subproject.name, newDescription);
         }
+
+        setIsEditing(false);
     };
 
     return (
@@ -150,15 +159,23 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                                     <TooltipTrigger asChild>
                                         <div className="flex flex-col items-center">
                                             <ArrowUp className="h-4 w-4 text-blue-600" />
-                                            <span className="font-bold text-blue-600 text-sm">
+                                            <span className="font-bold text-blue-600 text-sm mb-1">
                                                 N
                                             </span>
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <div className="text-[9px]">
-                                            <p className="font-bold mb-1">{language === 'zh' ? '北' : 'North'}</p>
-                                            <p>{language === 'zh' ? '纬度' : 'Latitude'}: {subproject.bounds[3].toFixed(6)}</p>
+                                            <p className="font-bold mb-1">
+                                                {language === 'zh'
+                                                    ? '北'
+                                                    : 'North'}
+                                            </p>
+                                            <p>
+                                                {subproject.bounds[3].toFixed(
+                                                    6
+                                                )}
+                                            </p>
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -173,17 +190,25 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div className="flex flex-col items-center">
+                                        <div className="flex flex-row items-center justify-center gap-1">
                                             <ArrowLeft className="h-4 w-4 text-green-600" />
-                                            <span className="font-bold text-green-600 text-sm">
+                                            <span className="font-bold text-green-600 text-sm mr-1 mt-1">
                                                 W
                                             </span>
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <div className="text-[9px]">
-                                            <p className="font-bold mb-1">{language === 'zh' ? '西' : 'West'}</p>
-                                            <p>{language === 'zh' ? '经度' : 'Longitude'}: {subproject.bounds[0].toFixed(6)}</p>
+                                            <p className="font-bold mb-1">
+                                                {language === 'zh'
+                                                    ? '西'
+                                                    : 'West'}
+                                            </p>
+                                            <p>
+                                                {subproject.bounds[0].toFixed(
+                                                    6
+                                                )}
+                                            </p>
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -216,17 +241,25 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div className="flex flex-col items-center">
-                                            <ArrowRight className="h-4 w-4 text-red-600" />
-                                            <span className="font-bold text-red-600 text-sm">
+                                        <div className="flex flex-row items-center justify-center gap-1">
+                                            <span className="font-bold text-red-600 text-sm mt-1 ml-4">
                                                 E
                                             </span>
+                                            <ArrowRight className="h-4 w-4 text-red-600" />
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <div className="text-[9px]">
-                                            <p className="font-bold mb-1">{language === 'zh' ? '东' : 'East'}</p>
-                                            <p>{language === 'zh' ? '经度' : 'Longitude'}: {subproject.bounds[2].toFixed(6)}</p>
+                                            <p className="font-bold mb-1">
+                                                {language === 'zh'
+                                                    ? '东'
+                                                    : 'East'}
+                                            </p>
+                                            <p>
+                                                {subproject.bounds[2].toFixed(
+                                                    6
+                                                )}
+                                            </p>
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -242,16 +275,24 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <div className="flex flex-col items-center">
-                                            <ArrowDown className="h-4 w-4 text-purple-600" />
-                                            <span className="font-bold text-purple-600 text-sm">
+                                            <span className="font-bold text-purple-600 text-sm mt-1">
                                                 S
                                             </span>
+                                            <ArrowDown className="h-4 w-4 text-purple-600" />
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <div className="text-[9px]">
-                                            <p className="font-bold mb-1">{language === 'zh' ? '南' : 'South'}</p>
-                                            <p>{language === 'zh' ? '纬度' : 'Latitude'}: {subproject.bounds[1].toFixed(6)}</p>
+                                            <p className="font-bold mb-1">
+                                                {language === 'zh'
+                                                    ? '南'
+                                                    : 'South'}
+                                            </p>
+                                            <p>
+                                                {subproject.bounds[1].toFixed(
+                                                    6
+                                                )}
+                                            </p>
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>
@@ -265,105 +306,6 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                 </div>
             )}
 
-            {/* {subproject.description && (
-                <div className="text-xs text-gray-500 border-t pt-1 mt-2 truncate">
-                    {subproject.description}
-                </div>
-            )} */}
-
-            {/* {subproject.description && (
-                <div className="text-gray-600 mt-2 border-t border-gray-200 mb-1">
-                    <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center">
-                            <FileType2 className="h-4 w-4 mr-1" />
-                            <h3 className="text-xs font-bold">
-                                {language === 'zh' ? '描述' : 'Description'}
-                            </h3>
-                        </div>
-                        {onEditSubprojectDescription && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsEditing(!isEditing);
-                                    onEditSubprojectDescription(
-                                        subproject.name
-                                    );
-                                }}
-                                className="hover:bg-gray-200 cursor-pointer p-1 rounded"
-                                aria-label={
-                                    language === 'zh'
-                                        ? '编辑描述'
-                                        : 'Edit description'
-                                }
-                                title={
-                                    language === 'zh'
-                                        ? '编辑描述'
-                                        : 'Edit description'
-                                }
-                            >
-                                <SquarePen className="h-4 w-4" />
-                            </button>
-                        )}
-                    </div>
-
-                    {!isEditing && subproject.description && (
-                        <div className="text-xs text-gray-600  mb-2 px-1">
-                            {subproject.description}
-                        </div>
-                    )}
-
-                    {isEditing && (
-                        <div className="relative">
-                            <textarea
-                                ref={textareaRef}
-                                id="schema-description"
-                                className="w-full px-3 py-2 border border-gray-300  rounded-md min-h-[80px]"
-                                aria-label={
-                                    language === 'zh'
-                                        ? '子项目描述'
-                                        : 'Subproject description'
-                                }
-                                placeholder={
-                                    language === 'zh'
-                                        ? '输入子项目描述'
-                                        : 'Enter subproject description'
-                                }
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                                defaultValue={
-                                    (subprojectDescriptionText &&
-                                        subprojectDescriptionText[
-                                            subproject.name
-                                        ]) ||
-                                    subproject?.description ||
-                                    ''
-                                }
-                            />
-                            <div className="absolute bottom-3 right-5 flex space-x-2">
-                                <button
-                                    className="px-2 py-0.5 text-xs bg-gray-200  rounded-md hover:bg-gray-300 "
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCancel();
-                                    }}
-                                >
-                                    {language === 'zh' ? '取消' : 'Cancel'}
-                                </button>
-                                <button
-                                    className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleUpdateDescription();
-                                    }}
-                                >
-                                    {language === 'zh' ? '完成' : 'Done'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )} */}
             <div className="text-gray-600 mt-2 border-t border-gray-200 mb-1">
                 <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center">
@@ -372,28 +314,7 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                             {language === 'zh' ? '描述' : 'Description'}
                         </h3>
                     </div>
-                    {/* {onEditSubprojectDescription && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsEditing(!isEditing);
-                                onEditSubprojectDescription(subproject.name);
-                            }}
-                            className="hover:bg-gray-200 cursor-pointer p-1 rounded"
-                            aria-label={
-                                language === 'zh'
-                                    ? '编辑描述'
-                                    : 'Edit description'
-                            }
-                            title={
-                                language === 'zh'
-                                    ? '编辑描述'
-                                    : 'Edit description'
-                            }
-                        >
-                            <SquarePen className="h-4 w-4" />
-                        </button>
-                    )} */}
+
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -411,9 +332,13 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
                     </button>
                 </div>
 
-                {!isEditing && subproject.description && (
-                    <div className="text-xs text-gray-600  mb-2 px-1">
-                        {subproject.description}
+                {!isEditing && (
+                    <div className="text-xs text-gray-600 mb-2 px-1">
+                        {subproject.description ? (
+                            subproject.description
+                        ) : (
+                            <span className="italic">No description provided.</span>
+                        )}
                     </div>
                 )}
 
@@ -472,4 +397,4 @@ export const SubProjectCard: React.FC<SubProjectCardProps> = ({
     );
 };
 
-export default SubProjectCard;
+export default SubprojectCard;

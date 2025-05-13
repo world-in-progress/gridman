@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { CoordinateBoxProps } from '../types/types';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const CoordinateBox: React.FC<CoordinateBoxProps> = ({ title, coordinates, formatCoordinate }) => {
   const { language } = useContext(LanguageContext);

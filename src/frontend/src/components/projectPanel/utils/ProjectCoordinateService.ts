@@ -111,47 +111,9 @@ export function adjustAndExpandRectangle({
         center: adjustedCenter,
     };
 
-    // if (modX !== 0 || modY !== 0) {
-    //     const adjustX = modX > 0 ? gridWidth - modX : -modX;
-    //     const adjustY = modY > 0 ? gridHeight - modY : -modY;
-    //     const adjustedSW = [
-    //         convertedSW[0] + adjustX,
-    //         convertedSW[1] + adjustY,
-    //     ] as [number, number];
-    //     const rectWidth = Math.abs(convertedNE[0] - convertedSW[0]);
-    //     const rectHeight = Math.abs(convertedNE[1] - convertedSW[1]);
-    //     const widthMod = rectWidth % gridWidth;
-    //     const heightMod = rectHeight % gridHeight;
-    //     const widthAdjust = widthMod === 0 ? 0 : gridWidth - widthMod;
-    //     const heightAdjust = heightMod === 0 ? 0 : gridHeight - heightMod;
-    //     // console.log('if','widthAdjust', widthAdjust, 'heightAdjust', heightAdjust);
-    //     alignedRect = {
-    //         southWest: adjustedSW,
-    //         southEast: [
-    //             adjustedSW[0] + rectWidth + widthAdjust,
-    //             adjustedSW[1],
-    //         ] as [number, number],
-    //         northEast: [
-    //             adjustedSW[0] + rectWidth + widthAdjust,
-    //             adjustedSW[1] + rectHeight + heightAdjust,
-    //         ] as [number, number],
-    //         northWest: [
-    //             adjustedSW[0],
-    //             adjustedSW[1] + rectHeight + heightAdjust,
-    //         ] as [number, number],
-    //         center: [
-    //             adjustedSW[0] + (rectWidth + widthAdjust) / 2,
-    //             adjustedSW[1] + (rectHeight + heightAdjust) / 2,
-    //         ] as [number, number],
-    //     };
-    // }
-
     // Expand the rectangle
     const adjustedWidth = Math.ceil(rectWidth / gridWidth) * gridWidth;
     const adjustedHeight = Math.ceil(rectHeight / gridHeight) * gridHeight;
-
-    console.log(rectWidth / gridWidth, Math.ceil(rectWidth / gridWidth));
-    console.log(adjustedWidth)
 
     const expandedSW = alignedRect.southWest as [number, number];
 
@@ -174,37 +136,6 @@ export function adjustAndExpandRectangle({
         expandedSW[0] + adjustedWidth / 2,
         expandedSW[1] + adjustedHeight / 2,
     ] as [number, number]; 
-
-    // const width = Math.abs(alignedRect.northEast[0] - alignedRect.southWest[0]);
-    // const height = Math.abs(
-    //     alignedRect.northEast[1] - alignedRect.southWest[1]
-    // );
-    // const expandedGridWidth = gridLevel[0];
-    // const expandedGridHeight = gridLevel[1];
-
-    // const widthMod = width % expandedGridWidth;
-    // const heightMod = height % expandedGridHeight;
-
-    // const widthAdjust = widthMod === 0 ? 0 : expandedGridWidth - widthMod;
-    // const heightAdjust = heightMod === 0 ? 0 : expandedGridHeight - heightMod;
-
-    // const expandedSW = alignedRect.southWest as [number, number];
-    // const expandedSE = [
-    //     alignedRect.southWest[0] + width + widthAdjust,
-    //     alignedRect.southWest[1],
-    // ] as [number, number];
-    // const expandedNE = [
-    //     alignedRect.southWest[0] + width + widthAdjust,
-    //     alignedRect.southWest[1] + height + heightAdjust,
-    // ] as [number, number];
-    // const expandedNW = [
-    //     alignedRect.southWest[0],
-    //     alignedRect.southWest[1] + height + heightAdjust,
-    // ] as [number, number];
-    // const expandedCenter = [
-    //     alignedRect.southWest[0] + (width + widthAdjust) / 2,
-    //     alignedRect.southWest[1] + (height + heightAdjust) / 2,
-    // ] as [number, number];
 
     const expandedRect: RectangleCoordinates = {
         northEast: expandedNE,

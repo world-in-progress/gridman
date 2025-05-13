@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { EPSGInputProps } from '../types/types';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const EPSGInput: React.FC<EPSGInputProps> = ({ 
   customEPSG, 

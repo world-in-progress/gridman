@@ -1,3 +1,5 @@
+import {MultiGridInfo} from '../../../core/grid/type'
+
 type ReturnType = {
     err: Error | null;
     result: any;
@@ -40,6 +42,11 @@ export default class ProjectUtils {
         }
 
         // TODO: Step 3: Get activate grid info
+        // const info = await MultiGridInfo.fromGetUrl('/api/grid/operation/activate-info')
+        // console.log
+        
+        // Step 3: Get subproject info
+        
 
         return {
             err: null,

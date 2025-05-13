@@ -22,6 +22,14 @@ export interface CreateProjectProps {
     initialEpsg?: string;
     initialSchemaLevel?: string;
     parentProject?: Project;
+    cornerMarker?: mapboxgl.Marker | null;
+    setCornerMarker?: (marker: mapboxgl.Marker | null) => void;
+    schemaMarker?: mapboxgl.Marker | null;
+    setSchemaMarker?: (marker: mapboxgl.Marker | null) => void;
+    gridLine?: string | null;
+    setGridLine?: (line: string | null) => void;
+    gridLabel?: mapboxgl.Marker | null;
+    setGridLabel?: (label: mapboxgl.Marker | null) => void;
 }
 
 export interface ProjectValidationResult {
@@ -83,6 +91,7 @@ export interface ProjectCardProps {
         epsg?: string,
         gridInfo?: string
     ) => void;
+    onDeleteProject?: (project: Project) => void;
 }
 
 export interface ProjectSubNavPanelProps {

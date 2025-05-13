@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 import proj4 from 'proj4';
 import { epsgDefinitions } from '../../../core/util/coordinateUtils';
 import { SidebarGroup } from '@/components/ui/sidebar';

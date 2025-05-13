@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { GridLevelProps } from '../types/types';
 import GridLevelItem from './GridLevelItem';
-import { LanguageContext } from '../../../App';
+import { LanguageContext } from '../../../context';
 
 const GridLevel: React.FC<GridLevelProps> = ({
   layers,
