@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Star,
     FileType2,
@@ -18,6 +18,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import store from '@/store';
+import GridRecorder from '@/core/grid/NHGridRecorder';
+import GridLayer from '@/components/mapComponent/layers/GridLayer';
+import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
 declare global {
     interface Window {
@@ -37,7 +41,43 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     onSaveSubprojectDescription,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const showLoadingRef = useRef<Function | null>(null);
+
+    // useEffect(() => {
+    //     // 从文档中获取或创建loading元素
+    //     const loadingDom = document.getElementById('loading-container') || (() => {
+    //         const dom = document.createElement('div');
+    //         dom.id = 'loading-container';
+    //         dom.innerHTML = `
+    //             <div class="loading"></div>
+    //             <div class="loading-text">Loading ...</div>
+    //         `;
+    //         dom.style.display = 'none';
+    //         document.body.appendChild(dom);
+    //         return dom;
+    //     })();
+        
+    //     // 设置控制函数
+    //     showLoadingRef.current = (show: boolean) => {
+    //         loadingDom.style.display = show ? 'block' : 'none';
+    //     };
+        
+    //     return () => {
+    //         // 组件卸载时确保loading隐藏
+    //         if (showLoadingRef.current) {
+    //             showLoadingRef.current(false);
+    //         }
+    //     };
+    // }, []);
+
+    // useEffect(() => {
+    //     // 当isLoading状态变化时，控制loading的显示/隐藏
+    //     if (showLoadingRef.current) {
+    //         showLoadingRef.current(isLoading);
+    //     }
+    // }, [isLoading]);
 
     const handleCancel = () => {
         setIsEditing(false);
@@ -83,6 +123,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
+
         if (window.mapRef && window.mapRef.current) {
             const pageEvents = new CustomEvent('switchToTopologyPanel', {
                 detail: {
@@ -94,8 +135,26 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         }
 
         const projectService = new ProjectService(language);
-        const flag = { isReady: true };
-        projectService.setSubproject(parentProjectTitle, subproject.name, flag);
+        setIsLoading(true)
+        projectService.setSubproject(parentProjectTitle, subproject.name, (error, result) => {
+            if (error || !result) {
+                setIsLoading(false);
+                return;
+            }
+
+            const map = store.get<mapboxgl.Map>('map');
+
+            if (map?.loaded()){
+                console.log('nihao')
+            }
+
+            // Update recorder of GridLayer
+            const clg = store.get<NHLayerGroup>('clg')!
+            const gridLayer = clg.getLayerInstance('GridLayer') as GridLayer
+            gridLayer.updateGPUGrids([result.fromStorageId, result.levels, result.vertices]);
+            setIsLoading(false);
+        });
+
     };
 
     const handleUpdateDescription = async () => {

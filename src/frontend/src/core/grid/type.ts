@@ -52,7 +52,7 @@ export class MultiGridInfo {
           const uint8Array = new Uint8Array(buffer, 4, uint8Length)
           const uint32Array = new Uint32Array(buffer, 4 + uint8Length)
           
-            return new MultiGridInfo(uint8Array, uint32Array)
+          return new MultiGridInfo(uint8Array, uint32Array)
           
         } catch (error) {
           console.error('Failed to fetch MultiGridInfo:', error)

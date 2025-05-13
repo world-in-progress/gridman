@@ -470,7 +470,7 @@ export class SubprojectBoundsManager {
                 <div style="font-family: Arial, sans-serif; padding: 10px;">
                     <h3 style="margin: 0 0 8px; font-weight: bold; color: #333;">${properties.name}</h3>
 
-                    <div style="display: flex; align-items: center; margin-top: 8px;">
+                    <div style="display: flex flex-column; align-items: center; margin-top: 8px;">
                         <span style="font-size: 12px; color: #888;">
                             ${this.language === 'zh' ? '所属项目' : 'Project'}: 
                         </span>

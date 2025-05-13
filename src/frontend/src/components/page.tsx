@@ -11,7 +11,12 @@ import SchemaPanel from './schemaPanel/schemaPanel';
 import CreateSchema from './schemaPanel/createSchema';
 import ProjectPanel from './projectPanel/projectPanel';
 import CreateProject from './projectPanel/createProject';
-import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
+import {
+    SidebarContext,
+    LanguageContext,
+    AIDialogContext,
+    GridRecorderContext,
+} from '../context';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -34,14 +39,14 @@ import {
 import beststar from '../assets/beststar.jpg';
 import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
-import { Schema } from './schemaPanel/types/types';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
 import GridBotBotton from './testComponents/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
 import TopologyPanel from './TopologyPanel/topologyPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
-import mapboxgl from 'mapbox-gl';
+import GridRecorder from '@/core/grid/NHGridRecorder';
+import store from '@/store';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType =
@@ -59,7 +64,10 @@ export default function Page() {
     );
     const [gridLine, setGridLine] = useState<string | null>(null);
     const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
-    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(null);
+    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [gridRecorder, setGridRecorder] = useState<GridRecorder | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -165,7 +173,6 @@ export default function Page() {
     };
 
     const clearMapElements = () => {
-
         if (window.mapboxDrawInstance) {
             window.mapboxDrawInstance.deleteAll();
         }
@@ -202,6 +209,8 @@ export default function Page() {
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
             }
+            // const a = store.get<GridRecorder>('gridRecorder')
+            // console.log(a)
         } else if (item === 'project') {
             clearMapMarkers();
             setIsSelectingPoint(false);
@@ -352,7 +361,9 @@ export default function Page() {
                             onDrawRectangle={handleDrawRectangle}
                             rectangleCoordinates={rectangleCoordinates}
                             isDrawing={isDrawing}
-                            initialSchemaName={selectedParentProject?.schema_name}
+                            initialSchemaName={
+                                selectedParentProject?.schema_name
+                            }
                             initialEpsg={selectedSchemaEpsg}
                             initialSchemaLevel={selectedSchemaLevel}
                             parentProject={selectedParentProject}
@@ -393,6 +404,12 @@ export default function Page() {
 
     return (
         <SidebarProvider className="h-full max-h-full">
+            {/* <GridRecorderContext.Provider value={{ 
+                recorder: gridRecorder, 
+                setRecorder: setGridRecorder
+            }}>
+                
+            </GridRecorderContext.Provider> */}
             {renderActivePanel()}
             <SidebarInset className="max-h-full relative">
                 <header className="flex h-16 shrink-0 items-center border-b-1 border-b-gray-200 px-4">

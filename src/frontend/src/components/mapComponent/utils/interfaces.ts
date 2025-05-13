@@ -4,7 +4,7 @@ import NHLayerGroup from './NHLayerGroup'
 /**
  * Interface representing a custom layer in the map
  */
-export interface NHCustomLayerInterface {
+export interface NHCustomLayerInterface extends mapboxgl.CustomLayerInterface {
 
     //////////////////////////////////////////////////////////
     ///////////////// Base Property  /////////////////////////
@@ -18,11 +18,11 @@ export interface NHCustomLayerInterface {
     /** Optional: The z-index order of the layer (higher values are on top) */
     z_order?: number
 
-    /** Optional: The minimum zoom level at which the layer is visible */
-    minzoom?: number
+    // /** Optional: The minimum zoom level at which the layer is visible */
+    // minzoom?: number
 
-    /** Optional: The maximum zoom level at which the layer is visible */
-    maxzoom?: number
+    // /** Optional: The maximum zoom level at which the layer is visible */
+    // maxzoom?: number
 
     //////////////////////////////////////////////////////////
     /////////////////   Dependency   /////////////////////////

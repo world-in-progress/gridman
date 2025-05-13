@@ -307,3 +307,21 @@ export async function setSubproject(
     );
     callback(err, result);
 }
+
+export function setGridManager(
+    this: WorkerSelf & Record<'gridManager', GridManager>,
+    subdivideRules: SubdivideRules,
+    callback: Callback<any>
+) {
+    ProjectUtils.setGridManager(this, subdivideRules)
+    callback()
+}
+
+export async function getActivateGridInfo(
+    this: WorkerSelf & Record<'gridManager', GridManager>,
+    _: any,
+    callback: Callback<any>
+) {
+    const renderInfo = await ProjectUtils.getActivateGridInfo(this)
+    callback(null, renderInfo)
+}
