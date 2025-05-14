@@ -9,13 +9,17 @@ layout(location = 0) in vec2 tl;
 layout(location = 1) in vec2 tr;
 layout(location = 2) in vec2 bl;
 layout(location = 3) in vec2 br;
-layout(location = 4) in uint level;
-layout(location = 5) in uint assignment;
+layout(location = 4) in vec2 tlLow;
+layout(location = 5) in vec2 trLow;
+layout(location = 6) in vec2 blLow;
+layout(location = 7) in vec2 brLow;
+layout(location = 8) in uint level;
+layout(location = 9) in uint assignment;
+
 
 uniform mat4 uMatrix;
 uniform vec2 centerLow;
 uniform vec2 centerHigh;
-uniform vec2 relativeCenter;
 
 const float PI = 3.141592653;
 
@@ -73,18 +77,16 @@ float stitching(float coord, float minVal, float delta, float edge) {
     return -order * delta;
 }
 
-
 void main() {
 
-    vec2 layerMap[4] = vec2[4](
-        tl,
-        tr,
-        br,
-        bl
-    );
+    vec2 layerMap[4] = vec2[4](tl, tr, br, bl);
+    vec2 layerMapLow[4] = vec2[4](tlLow, trLow, brLow, blLow);
 
     vec2 xy = layerMap[gl_VertexID];
-    gl_Position = uMatrix * vec4(translateRelativeToEye(relativeCenter, xy), 0.0, 1.0);
+    vec2 xyLow = layerMapLow[gl_VertexID];
+    
+    vec2 translated = translateRelativeToEye(xy, xyLow);
+    gl_Position = uMatrix * vec4(translated.xy, 0.0, 1.0);
 }
 
 #endif
@@ -97,6 +99,7 @@ out vec4 fragColor;
 
 void main() {
     fragColor = vec4(1.0, 1.0, 1.0, 0.2);
+
 }
 
 #endif

@@ -57,6 +57,7 @@ export interface MultiGridRenderInfo {
     levels: Uint8Array;
     globalIds: Uint32Array;
     vertices: Float32Array;
+    verticesLow: Float32Array;
 }
 
 export type SubdivideRules = {

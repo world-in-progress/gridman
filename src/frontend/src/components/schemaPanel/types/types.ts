@@ -113,7 +113,7 @@ export interface PaginationProps {
   onLastPage: () => void;
 }
 
-export interface GridLayer {
+export interface TopologyLayer {
   id: number;
   width: string;
   height: string;

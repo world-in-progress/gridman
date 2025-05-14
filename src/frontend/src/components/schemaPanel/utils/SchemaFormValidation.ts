@@ -1,7 +1,7 @@
-import { GridLayer, ValidationResult, Schema } from '../types/types';
+import { TopologyLayer, ValidationResult, Schema } from '../types/types';
 
 export const validateGridLayers = (
-    gridLayers: GridLayer[],
+    topologyLayers: TopologyLayer[],
     language: string
 ): { errors: Record<number, string>; isValid: boolean } => {
     const errors: Record<number, string> = {};
@@ -68,7 +68,7 @@ export const validateGridLayers = (
 
     const lang = language === 'zh' ? 'zh' : 'en';
 
-    const sortedLayers = [...gridLayers].sort((a, b) => a.id - b.id);
+    const sortedLayers = [...topologyLayers].sort((a, b) => a.id - b.id);
 
     sortedLayers.forEach((layer, index) => {
         const width = String(layer.width).trim();
@@ -153,7 +153,7 @@ export const validateSchemaForm = (
         epsg: string;
         lon: string;
         lat: string;
-        gridLayers: GridLayer[];
+        topologyLayers: TopologyLayer[];
         convertedCoord: { x: string; y: string } | null;
     },
     language: string
@@ -190,7 +190,7 @@ export const validateSchemaForm = (
         return { isValid: false, errors, generalError };
     }
 
-    if (data.gridLayers.length === 0) {
+    if (data.topologyLayers.length === 0) {
         generalError =
             language === 'zh'
                 ? '请至少添加一级网格'
@@ -198,8 +198,8 @@ export const validateSchemaForm = (
         return { isValid: false, errors, generalError };
     }
 
-    for (let i = 0; i < data.gridLayers.length; i++) {
-        const layer = data.gridLayers[i];
+    for (let i = 0; i < data.topologyLayers.length; i++) {
+        const layer = data.topologyLayers[i];
         if (
             !layer.width.toString().trim() ||
             !layer.height.toString().trim() ||
@@ -217,7 +217,7 @@ export const validateSchemaForm = (
     }
 
     const { errors: layerErrors, isValid: gridValid } = validateGridLayers(
-        data.gridLayers,
+        data.topologyLayers,
         language
     );
     if (!gridValid) {
@@ -244,7 +244,7 @@ export const createSchemaData = (
     description: string,
     epsg: string,
     convertedCoord: { x: string; y: string } | null,
-    gridLayers: GridLayer[]
+    topologyLayers: TopologyLayer[]
 ): Schema | null => {
     if (!convertedCoord) return null;
 
@@ -257,7 +257,7 @@ export const createSchemaData = (
             parseFloat(convertedCoord.x),
             parseFloat(convertedCoord.y),
         ],
-        grid_info: gridLayers.map((layer) => [
+        grid_info: topologyLayers.map((layer) => [
             parseInt(layer.width.toString()),
             parseInt(layer.height.toString()),
         ]),

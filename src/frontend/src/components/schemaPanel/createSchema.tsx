@@ -25,12 +25,12 @@ import {
     enableMapPointSelection,
 } from './utils/SchemaCoordinateService';
 import {
-    validateGridLayers,
+    validateTopologyLayers,
     validateSchemaForm,
     createSchemaData,
 } from './utils/SchemaFormValidation';
 import { SchemaService } from './utils/SchemaService';
-import { GridLayer } from './types/types';
+import { TopologyLayer } from './types/types';
 
 interface CreateSchemaProps extends React.ComponentProps<typeof Sidebar> {
     onBack?: () => void;
@@ -43,7 +43,7 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
     const [lon, setLon] = useState('');
     const [lat, setLat] = useState('');
     const [isSelectingPoint, setIsSelectingPoint] = useState(false);
-    const [gridLayers, setGridLayers] = useState<GridLayer[]>([]);
+    const [topologyLayers, setGridLayers] = useState<TopologyLayer[]>([]);
     const [layerErrors, setLayerErrors] = useState<Record<number, string>>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [epsg, setEpsg] = useState('');
@@ -82,7 +82,7 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
         e.preventDefault();
 
         const validation = validateSchemaForm(
-            { name, epsg, lon, lat, gridLayers, convertedCoord },
+            { name, epsg, lon, lat, topologyLayers, convertedCoord },
             language
         );
 
@@ -97,7 +97,7 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
             description,
             epsg,
             convertedCoord,
-            gridLayers
+            topologyLayers
         );
 
         if (!schemaData) {
@@ -294,7 +294,7 @@ export default function CreateSchema({ onBack, ...props }: CreateSchemaProps) {
                                 />
 
                                 <GridLevel
-                                    layers={gridLayers}
+                                    layers={topologyLayers}
                                     layerErrors={layerErrors}
                                     onAddLayer={handleAddLayer}
                                     onUpdateWidth={handleUpdateWidth}

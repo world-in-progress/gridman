@@ -1184,8 +1184,9 @@ export default class GridManager {
     createNodeRenderVertices(
         level: number,
         globalId: number,
-        vertices?: Float32Array
-    ): Float32Array {
+        vertices?: Float32Array,
+        verticesLow?: Float32Array
+    ): [Float32Array, Float32Array] {
         const bBox = this._subdivideRules.bBox;
         const { width, height } = this._levelInfos[level];
 
@@ -1204,41 +1205,40 @@ export default class GridManager {
             this._projConverter.forward([xMax, yMin]), // srcBR
         ];
 
-        const center = this._projConverter.forward([
-            (bBox.xMin + bBox.xMax) / 2.0,
-            (bBox.yMin + bBox.yMax) / 2.0,
-        ]);
-        const mercatorCenter = MercatorCoordinate.fromLonLat(
-            center as [number, number]
-        );
-        const renderCoords = targetCoords.map((coord) =>
-            MercatorCoordinate.fromLonLat(coord as [number, number])
-        );
-        const relativeCoords = renderCoords.map((renderCoord) => {
-            return [
-                renderCoord[0] - mercatorCenter[0],
-                renderCoord[1] - mercatorCenter[1],
-            ] as [number, number];
-        });
+        const renderCoords:number[] = []
+        const renderCoordsLow:number[] = []
+        targetCoords.forEach((coord) => {
+            const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
+            const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
+            const mercatorCoordY = encodeFloatToDouble(mercatorCoord[1])
+            renderCoords.push(mercatorCoordX[0])
+            renderCoordsLow.push(mercatorCoordX[1])
+            renderCoords.push(mercatorCoordY[0])
+            renderCoordsLow.push(mercatorCoordY[1])
+        })
 
-        if (!vertices) vertices = new Float32Array(relativeCoords.flat());
-        else vertices.set(relativeCoords.flat(), 0);
-        return vertices;
+        if (!vertices) vertices = new Float32Array(renderCoords.flat());
+        else vertices.set(renderCoords.flat(), 0);
+        if (!verticesLow) verticesLow = new Float32Array(renderCoordsLow.flat());
+        else verticesLow.set(renderCoordsLow.flat(), 0);
+        return [vertices, verticesLow];
     }
 
     createMultiRenderVertices(
         levels: number[] | Uint8Array,
         globalIds: number[] | Uint32Array
-    ): Float32Array{
+    ): [Float32Array, Float32Array] {
 
         const gridNum = levels.length;
         const vertices = new Float32Array(8);
+        const verticesLow = new Float32Array(8);
         const vertexBuffer = new Float32Array(gridNum * 8);
+        const vertexBufferLow = new Float32Array(gridNum * 8);
         
         for (let i = 0; i < gridNum; i++) {
             const level = levels[i]
             const globalId = globalIds[i]
-            this.createNodeRenderVertices(level, globalId, vertices);
+            this.createNodeRenderVertices(level, globalId, vertices, verticesLow);
             vertexBuffer[gridNum * 2 * 0 + i * 2 + 0] = vertices[0];
             vertexBuffer[gridNum * 2 * 0 + i * 2 + 1] = vertices[1];
             vertexBuffer[gridNum * 2 * 1 + i * 2 + 0] = vertices[2];
@@ -1247,9 +1247,18 @@ export default class GridManager {
             vertexBuffer[gridNum * 2 * 2 + i * 2 + 1] = vertices[5];
             vertexBuffer[gridNum * 2 * 3 + i * 2 + 0] = vertices[6];
             vertexBuffer[gridNum * 2 * 3 + i * 2 + 1] = vertices[7];
+
+            vertexBufferLow[gridNum * 2 * 0 + i * 2 + 0] = verticesLow[0];
+            vertexBufferLow[gridNum * 2 * 0 + i * 2 + 1] = verticesLow[1];
+            vertexBufferLow[gridNum * 2 * 1 + i * 2 + 0] = verticesLow[2];
+            vertexBufferLow[gridNum * 2 * 1 + i * 2 + 1] = verticesLow[3];
+            vertexBufferLow[gridNum * 2 * 2 + i * 2 + 0] = verticesLow[4];
+            vertexBufferLow[gridNum * 2 * 2 + i * 2 + 1] = verticesLow[5];  
+            vertexBufferLow[gridNum * 2 * 3 + i * 2 + 0] = verticesLow[6];
+            vertexBufferLow[gridNum * 2 * 3 + i * 2 + 1] = verticesLow[7];
         };
 
-        return vertexBuffer
+        return [vertexBuffer, vertexBufferLow]
     }
 }
 
@@ -1257,4 +1266,13 @@ export default class GridManager {
 
 function lerp(a: number, b: number, t: number): number {
     return a + t * (b - a);
+}
+
+function encodeFloatToDouble(value: number) {
+    const result = new Float32Array(2);
+    result[0] = value;
+  
+    const delta = value - result[0];
+    result[1] = delta;
+    return result;
 }
