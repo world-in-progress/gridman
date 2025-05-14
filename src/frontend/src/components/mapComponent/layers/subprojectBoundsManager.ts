@@ -190,37 +190,6 @@ export class SubprojectBoundsManager {
                     }
                 });
                 
-                // 添加点击事件处理
-                this.map.on('click', layerId, (e) => {
-                    if (e.features && e.features.length > 0) {
-                        const feature = e.features[0];
-                        const subprojectName = feature.properties?.name;
-                        const projectName = feature.properties?.projectName;
-                        
-                        if (subprojectName && projectName) {
-                            // 高亮该子项目
-                            this.highlightSubproject(projectName, subprojectName);
-                            
-                            // 触发事件通知UI组件
-                            const highlightEvent = new CustomEvent('subprojectHighlight', {
-                                detail: {
-                                    projectName: projectName,
-                                    subprojectName: subprojectName
-                                }
-                            });
-                            window.dispatchEvent(highlightEvent);
-                        }
-                    }
-                });
-                
-                // 添加鼠标悬停效果
-                this.map.on('mouseenter', layerId, () => {
-                    this.map.getCanvas().style.cursor = 'pointer';
-                });
-                
-                this.map.on('mouseleave', layerId, () => {
-                    this.map.getCanvas().style.cursor = '';
-                });
             }
             
             // 如果轮廓图层尚不存在，添加轮廓图层
