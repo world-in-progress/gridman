@@ -1,4 +1,7 @@
-import {MultiGridInfo} from '../../../core/grid/type'
+import { MultiGridInfo } from '../../../core/grid/type';
+import { Callback, WorkerSelf } from '../../../core/types'
+import GridManager from '../../../core/grid/NHGridManager';
+import { MultiGridRenderInfo, SubdivideRules } from '../../../core/grid/NHGrid'
 
 type ReturnType = {
     err: Error | null;
@@ -14,6 +17,7 @@ export default class ProjectUtils {
     ): AsyncReturnType {
         const setAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
         const pollAPI = `/api/grid/subproject`;
+        const metaAPI = `/api/grid/operation/meta`;
 
         // Step 1: Set current subproject
         const response = await fetch(setAPI, { method: 'GET' });
@@ -41,16 +45,20 @@ export default class ProjectUtils {
             setTimeout(() => {}, 1000);
         }
 
-        // TODO: Step 3: Get activate grid info
-        // const info = await MultiGridInfo.fromGetUrl('/api/grid/operation/activate-info')
-        // console.log
-        
-        // Step 3: Get subproject info
-        
 
+
+        // Step 3: Get subproject info
+        const metaResponse = await fetch(metaAPI, { method: 'GET' });
+        if (!metaResponse.ok) {
+            return {
+                err: new Error(`获取子项目失败! 状态码: ${response.status}`),
+                result: null,
+            };
+        }
+        const metaResponseData = await metaResponse.json();
         return {
             err: null,
-            result: responseData,
+            result: metaResponseData,
         };
     }
 
@@ -64,7 +72,6 @@ export default class ProjectUtils {
 
         // Step 1: Get subproject list
         const listResponse = await fetch(listAPI);
-        console.log('updateSubprojectDescription', listResponse);
         if (!listResponse.ok)
             return {
                 err: new Error(
@@ -197,7 +204,10 @@ export default class ProjectUtils {
         };
     }
 
-    static async getSubprojects(projectName: string, subprojectName: string): AsyncReturnType {
+    static async getSubprojects(
+        projectName: string,
+        subprojectName: string
+    ): AsyncReturnType {
         const getAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
         const response = await fetch(getAPI);
         if (!response.ok)
@@ -212,10 +222,10 @@ export default class ProjectUtils {
             result: responseData,
         };
     }
-    
+
     static async deleteProject(projectName: string): AsyncReturnType {
         const deleteAPI = `/api/grid/project/${projectName}`;
-        const response = await fetch(deleteAPI, {method: 'DELETE'});
+        const response = await fetch(deleteAPI, { method: 'DELETE' });
         if (!response.ok) {
             return {
                 err: new Error(`删除模板失败! 状态码: ${response.status}`),
@@ -253,7 +263,10 @@ export default class ProjectUtils {
         };
     }
 
-    static async updateProjectDescription(projectName: string, description: string): AsyncReturnType {
+    static async updateProjectDescription(
+        projectName: string,
+        description: string
+    ): AsyncReturnType {
         const getAPI = `/api/grid/project/${projectName}`;
         const updateAPI = `/api/grid/project/${projectName}`;
 
@@ -286,7 +299,9 @@ export default class ProjectUtils {
         });
         if (!putResponse.ok) {
             return {
-                err: new Error(`更新项目描述失败! 状态码: ${putResponse.status}`),
+                err: new Error(
+                    `更新项目描述失败! 状态码: ${putResponse.status}`
+                ),
                 result: null,
             };
         }
@@ -298,10 +313,13 @@ export default class ProjectUtils {
         };
     }
 
-    static async updateProjectStarred(projectName: string, starred: boolean): AsyncReturnType {
+    static async updateProjectStarred(
+        projectName: string,
+        starred: boolean
+    ): AsyncReturnType {
         const getAPI = `/api/grid/project/${projectName}`;
         const updateAPI = `/api/grid/project/${projectName}`;
-        
+
         // Step 1: Get project
         const response = await fetch(getAPI);
         if (!response.ok) {
@@ -331,7 +349,9 @@ export default class ProjectUtils {
         });
         if (!putResponse.ok) {
             return {
-                err: new Error(`更新项目星标状态失败! 状态码: ${putResponse.status}`),
+                err: new Error(
+                    `更新项目星标状态失败! 状态码: ${putResponse.status}`
+                ),
                 result: null,
             };
         }
@@ -360,7 +380,10 @@ export default class ProjectUtils {
         };
     }
 
-    static async fetchProjects(startIndex: number, endIndex: number): AsyncReturnType {
+    static async fetchProjects(
+        startIndex: number,
+        endIndex: number
+    ): AsyncReturnType {
         const getAPI = `/api/grid/projects/?startIndex=${startIndex}&endIndex=${endIndex}`;
         const numAPI = `/api/grid/projects/num`;
 
@@ -418,4 +441,27 @@ export default class ProjectUtils {
             result: responseData,
         };
     }
+
+    static setGridManager(
+        worker: WorkerSelf & Record<'gridManager', GridManager>,
+        subdivideRules: SubdivideRules
+    ) {
+        worker.gridManager = new GridManager(subdivideRules);
+    }
+
+    static async getActivateGridInfo(
+        worker: WorkerSelf & Record<'gridManager', GridManager>
+    ): Promise<MultiGridRenderInfo> {
+        const infoAPI = '/api/grid/operation/activate-info'
+        const infoResponse = await MultiGridInfo.fromGetUrl(infoAPI)
+
+        const vertices = worker.gridManager.createMultiRenderVertices(infoResponse.levels, infoResponse.globalIds)
+        return {
+            levels: infoResponse.levels,
+            globalIds: infoResponse.globalIds,
+            vertices: vertices
+        }
+    }
 }
+
+

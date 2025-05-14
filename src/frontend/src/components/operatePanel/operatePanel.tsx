@@ -409,18 +409,18 @@ export default function OperatePanel({
       }
     } catch (error) {}
 
-    const gridLayer = new GridLayer(
-      map,
-      `EPSG:${config.epsg}`,
-      config.firstLevelSize,
-      config.subdivideRules,
-      config.boundaryCondition,
-      { maxGridNum: 4096 * 4096 }
-    );
+    // const gridLayer = new GridLayer(
+    //   map,
+    //   `EPSG:${config.epsg}`,
+    //   config.firstLevelSize,
+    //   config.subdivideRules,
+    //   config.boundaryCondition,
+    //   { maxGridNum: 4096 * 4096 }
+    // );
 
     const layerGroup = new NHLayerGroup();
     layerGroup.id = layerGroupId;
-    layerGroup.addLayer(gridLayer);
+    // layerGroup.addLayer(gridLayer);
     map.addLayer(layerGroup);
   };
 

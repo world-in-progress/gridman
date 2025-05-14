@@ -2,6 +2,14 @@ import Actor from '../../../core/message/actor';
 import { Project } from '../types/types';
 import Dispatcher from '../../../core/message/dispatcher';
 import { Callback } from '../../../core/types';
+import {GridRecorderContext} from '../../../context'
+import { SubdivideRules } from '@/core/grid/NHGrid';
+import { boundingBox2D } from '@/core/util/boundingBox2D';
+import GridRecorder from '@/core/grid/NHGridRecorder';
+import store from '../../../store' 
+import {MultiGridRenderInfo} from '@/core/grid/NHGrid'
+import GridLayer from '@/components/mapComponent/layers/GridLayer';
+import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
 export class ProjectService {
     private language: string;
@@ -15,56 +23,6 @@ export class ProjectService {
     private get _actor() {
         return this._dispatcher.actor;
     }
-    // public async fetchAllProjects(): Promise<Project[]> {
-    //     return new Promise<Project[]>((resolve, reject) => {
-    //         let worker: Worker | null = null;
-    //         let actor: Actor | null = null;
-
-    //         try {
-    //             worker = new Worker(
-    //                 new URL(
-    //                     '../../../core/worker/base.worker.ts',
-    //                     import.meta.url
-    //                 ),
-    //                 { type: 'module' }
-    //             );
-    //             actor = new Actor(worker, {});
-
-    //             actor.send(
-    //                 'fetchProjects',
-    //                 { startIndex: 0, endIndex: 1000 },
-    //                 (err, result) => {
-    //                     if (err) {
-    //                         reject(err);
-    //                     } else {
-    //                         const projectMetas =
-    //                             result && result.project_metas
-    //                                 ? result.project_metas
-    //                                 : [];
-
-    //                         const sortedProjects = [...projectMetas].sort(
-    //                             (a, b) => {
-    //                                 if (a.starred && !b.starred) return -1;
-    //                                 if (!a.starred && b.starred) return 1;
-    //                                 return 0;
-    //                             }
-    //                         );
-
-    //                         resolve(sortedProjects);
-    //                     }
-
-    //                     setTimeout(() => {
-    //                         if (actor) actor.remove();
-    //                         if (worker) worker.terminate();
-    //                     }, 100);
-    //                 }
-    //             );
-    //         } catch (err) {
-    //             console.error('Failed to create Worker:', err);
-    //             reject(err);
-    //         }
-    //     });
-    // }
 
     public fetchAllProjects(startIndex: number, endIndex: number, callback?: Callback<any>) {
         this._actor.send(
@@ -190,60 +148,6 @@ export class ProjectService {
             }
         );
     }
-    // public async getSubprojects(
-    //     projectName: string,
-    //     subprojectName: string
-    // ): Promise<{ success: boolean; message?: string }> {
-    //     return new Promise((resolve, reject) => {
-    //         let worker: Worker | null = null;
-    //         let actor: Actor | null = null;
-
-    //         try {
-    //             worker = new Worker(
-    //                 new URL(
-    //                     '../../../core/worker/base.worker.ts',
-    //                     import.meta.url
-    //                 ),
-    //                 { type: 'module' }
-    //             );
-    //             actor = new Actor(worker, {});
-
-    //             actor.send(
-    //                 'getSubprojects',
-    //                 {
-    //                     projectName: projectName,
-    //                     subprojectName: subprojectName,
-    //                 },
-    //                 (err, result) => {
-    //                     if (err) {
-    //                         reject(
-    //                             new Error(
-    //                                 this.language === 'zh'
-    //                                     ? '获取子项目失败'
-    //                                     : 'Failed to get subprojects'
-    //                             )
-    //                         );
-    //                     } else {
-    //                         resolve(result);
-    //                     }
-
-    //                     setTimeout(() => {
-    //                         if (actor) actor.remove();
-    //                         if (worker) worker.terminate();
-    //                     }, 100);
-    //                 }
-    //             );
-    //         } catch (err) {
-    //             reject(
-    //                 new Error(
-    //                     this.language === 'zh'
-    //                         ? '获取子项目失败'
-    //                         : 'Failed to get subprojects'
-    //                 )
-    //             );
-    //         }
-    //     });
-    // }
 
     public fetchSubprojects(
         projectName: string, 
@@ -324,7 +228,7 @@ export class ProjectService {
     public setSubproject(
         projectName: string,
         subprojectName: string,
-        flag: { isReady: boolean }
+        callback?: Callback<{fromStorageId: number, levels: Uint8Array, vertices: Float32Array}>
     ) {
         this._actor.send(
             'setSubproject',
@@ -332,14 +236,53 @@ export class ProjectService {
                 projectName: projectName,
                 subprojectName: subprojectName,
             },
+  
             (error, result) => {
                 if (error) {
                     console.error('设置子项目失败:', error);
                 } else {
-                    flag.isReady = true;
-                    console.log(result);
+                    // console.log(result);
+                    const epsg : number = result.epsg
+                    const bounds : [number, number, number, number] = result.bounds
+                    const subdivideRules : Array<[number, number]> = result.subdivide_rules
+                    const recorderMeta: SubdivideRules = {
+                        bBox: boundingBox2D(...bounds),
+                        rules: subdivideRules,
+                        srcCS: `EPSG:${epsg}`,
+                        targetCS: 'EPSG:4326'
+                    }
+                    const recorder: GridRecorder = new GridRecorder(recorderMeta, 4096 * 4096)
+                    // GridRecorderContext.recorder = recorder
+                    store.set('gridRecorder', recorder)
+
+                    // Update recorder of GridLayer
+                    const clg = store.get<NHLayerGroup>('clg')!
+                    const gridLayer = clg.getLayerInstance('GridLayer') as GridLayer
+                    gridLayer.gridRecorder = recorder
+
+                    // Broadcast all workers to create gridManager
+                    this._dispatcher.broadcast('setGridManager', recorderMeta, () => {
+
+                        this._actor.send('getActivateGridInfo', null, (err?: Error | null, renderInfo?: MultiGridRenderInfo) => {
+                            const recorder = store.get<GridRecorder>('gridRecorder')
+                            recorder?.updateGridRenderInfo(renderInfo!, 0)
+
+                            if (callback) {
+                                callback(null, {fromStorageId: 0, levels: renderInfo!.levels, vertices: renderInfo!.vertices})
+                            }
+                        })
+                    })
                 }
             }
         );
     }
+
+    // loading(true)
+    // setSubproject(,,, (_, renderInfo: {fromStorageId: number, levels: Uint8Array, vertices: Float32Array}) => {
+    //     Layers.updateGPUGrids(renderInfo)
+    //     Loading(false)
+
+    // })
+
+
 }

@@ -13,7 +13,7 @@ import GridRecorder from '../../../core/grid/NHGridRecorder'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import { MercatorCoordinate } from '../../../core/math/mercatorCoordinate'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
-
+import store from '../../../store'
 proj4.defs("EPSG:2326","+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
 const STATUS_URL = 'http://127.0.0.1:8000' + '/v0/mc/status'
@@ -31,10 +31,9 @@ export interface GridLayerOptions {
 export default class GridLayer implements NHCustomLayerInterface {
 
     // Layer-related //////////////////////////////////////////////////
-
-    type = 'custom'
+    type: 'custom' = 'custom'
     id = 'GridLayer'
-    renderingMode = '3d'
+    renderingMode : "2d" | "3d" = '3d'   
     initialized = false
     visible = true
     layerGroup!: NHLayerGroup
@@ -42,12 +41,13 @@ export default class GridLayer implements NHCustomLayerInterface {
     // Function-related //////////////////////////////////////////////////
 
     // Grid properties
+    srcCS!: string
     maxGridNum: number
-    bBox: BoundingBox2D
+    bBox!: BoundingBox2D
     hitSet = new Set<number>
-    gridRecorder: GridRecorder
+    _gridRecorder!: GridRecorder
     hitFlag = new Uint8Array([1])   // 0 is a special value and means no selection
-    projConverter: proj4.Converter
+    projConverter!: proj4.Converter
     
     lastPickedId: number = -1
 
@@ -146,51 +146,26 @@ export default class GridLayer implements NHCustomLayerInterface {
 
     constructor(
         public map: Map,
-        public srcCS: string,
-        public firstLevelSize: [number, number],
-        subdivideRules: [number, number][],
-        boundaryCondition: [number, number, number, number],
         options: GridLayerOptions = {}
     ) {
 
         // Set basic members
-        this.projConverter = proj4(this.srcCS, 'EPSG:4326')
         this.maxGridNum = options.maxGridNum || 4096 * 4096
 
-        // Resize boundary condition by the first level size
-        boundaryCondition[2] = boundaryCondition[0] + Math.ceil((boundaryCondition[2] - boundaryCondition[0]) / this.firstLevelSize[0]) * this.firstLevelSize[0]
-        boundaryCondition[3] = boundaryCondition[1] + Math.ceil((boundaryCondition[3] - boundaryCondition[1]) / this.firstLevelSize[1]) * this.firstLevelSize[1]
-        this.bBox = new BoundingBox2D(...boundaryCondition)
-        
-        // Calculate relative center
-        const center = this.projConverter.forward([
-            (this.bBox.xMin + this.bBox.xMax) / 2.0,
-            (this.bBox.yMin + this.bBox.yMax) / 2.0,
-        ])
-        this.relativeCenter = new Float32Array(MercatorCoordinate.fromLonLat(center as [number, number]))
+        // this.gridRecorder = store.get<GridRecorder>('gridRecorder')!
 
-        // Set first level rule of subdivide rules by new boundary condition
-        const modifiedSubdivideRules: [number, number][] = [[
-            (boundaryCondition[2] - boundaryCondition[0]) / this.firstLevelSize[0],
-            (boundaryCondition[3] - boundaryCondition[1]) / this.firstLevelSize[1],
-        ]]
-        // Add other level rules to modified subdivide rules
-        modifiedSubdivideRules.push(...subdivideRules)
+        // this.srcCS = this.gridRecorder.srcCS
 
-        // Create core recorders
-        this.gridRecorder = new GridRecorder(
-            {
-                bBox: this.bBox,
-                srcCS: this.srcCS,
-                targetCS: 'EPSG:4326',
-                rules: modifiedSubdivideRules
-            },
-            this.maxGridNum,
-            {
-                workerCount: 4,
-                operationCapacity: 200,
-                projectLoadCallback: this._updateGPUGrids.bind(this),
-            })
+        // this.projConverter = proj4(this.srcCS, 'EPSG:4326')
+
+        // this.bBox = this.gridRecorder.bBox
+
+        // // Calculate relative center
+        //   const center = this.projConverter.forward([
+        //     (this.bBox.xMin + this.bBox.xMax) / 2.0,
+        //     (this.bBox.yMin + this.bBox.yMax) / 2.0,
+        // ])
+        // this.relativeCenter = new Float32Array(MercatorCoordinate.fromLonLat(center as [number, number]))
 
         // Set WebGL2 context
         this._gl = this.map.painter.context.gl
@@ -200,8 +175,8 @@ export default class GridLayer implements NHCustomLayerInterface {
 
         // Make palette color list
         const colorGenerator = new VibrantColorGenerator()
-        this.paletteColorList = new Uint8Array(this.subdivideRules.length * 3)
-        for (let i = 0; i < this.subdivideRules.length; i++) {
+        this.paletteColorList = new Uint8Array(256 * 3)
+        for (let i = 0; i < 256; i++) {
             const color = colorGenerator.nextColor().map(channel => channel * 255.0)
             this.paletteColorList.set(color, i * 3)
         }
@@ -235,8 +210,30 @@ export default class GridLayer implements NHCustomLayerInterface {
         this.capacityController.domElement.style.pointerEvents = 'none'
     }
 
+    set gridRecorder(recorder: GridRecorder) {
+        
+        this._gridRecorder = recorder
+
+        this.srcCS = this._gridRecorder.srcCS
+
+        this.projConverter = proj4(this.srcCS, 'EPSG:4326')
+
+        this.bBox = this._gridRecorder.bBox
+
+        // Calculate relative center
+          const center = this.projConverter.forward([
+            (this.bBox.xMin + this.bBox.xMax) / 2.0,
+            (this.bBox.yMin + this.bBox.yMax) / 2.0,
+        ])
+        this.relativeCenter = new Float32Array(MercatorCoordinate.fromLonLat(center as [number, number]))
+    }
+
+    get gridRecorder(): GridRecorder {
+        return this._gridRecorder
+    }
+
     get subdivideRules() {
-        return this.gridRecorder.subdivideRules.rules
+        return this._gridRecorder.subdivideRules.rules
     }
 
     // Fast function to upload one grid rendering info to GPU stograge buffer
@@ -732,7 +729,7 @@ export default class GridLayer implements NHCustomLayerInterface {
         gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
         // Create texture
-        this._paletteTexture = gll.createTexture2D(gl, 1, this.subdivideRules.length, 1, gl.RGB8)
+        this._paletteTexture = gll.createTexture2D(gl, 1, 256, 1, gl.RGB8)
 
         // Create picking pass
         this._pickingTexture = gll.createTexture2D(gl, 0, 1, 1, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]))
@@ -745,26 +742,29 @@ export default class GridLayer implements NHCustomLayerInterface {
 
 
         // Init palette texture (default in subdivider type)
-        const colorList = new Uint8Array(this.subdivideRules.length * 3)
-        for (let i = 0; i < this.subdivideRules.length; i++) {
+        const colorList = new Uint8Array(256 * 3)
+        for (let i = 0; i < 256; i++) {
             colorList.set([0, 127, 127], i * 3)
         }
 
-        gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, this.subdivideRules.length, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
+        gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, 256, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
+
+        this.initialized = true
+        this.showLoading(false)
 
         // Init workers of gridRecorder ////////////////////////////////////////////////////////////
+                
+        // this.gridRecorder.init(() => {
 
-        this.gridRecorder.init(() => {
+        //     this.gridRecorder.subdivideGrid(0, 0, (infos: any) => {
 
-            this.gridRecorder.subdivideGrid(0, 0, (infos: any) => {
+        //         this.updateGPUGrids(infos)
 
-                this.updateGPUGrids(infos)
-
-                // Raise flag when the root grid (level: 0, globalId: 0) has been subdivided
-                this.initialized = true
-                this.showLoading!(false)
-            })
-        })
+        //         // Raise flag when the root grid (level: 0, globalId: 0) has been subdivided
+        //         this.initialized = true
+        //         this.showLoading!(false)
+        //     })
+        // })
     }
 
     removeUIHandler() {
@@ -915,7 +915,6 @@ export default class GridLayer implements NHCustomLayerInterface {
     }
 
     async initialize(_: Map, gl: WebGL2RenderingContext) {
-
         this._gl = gl
         await this.init()
     }
@@ -923,13 +922,12 @@ export default class GridLayer implements NHCustomLayerInterface {
     render(gl: WebGL2RenderingContext, _: number[]) {
 
         // Skip if not ready
-        if (!this.initialized || !this.gridRecorder.isReady) return
+        if (!this.initialized || !this.gridRecorder) return
 
         if (!this.visible) return
 
         // Tick logic
         this.tickGrids()
-
         // Tick render
         if (!this.isTransparent) {
 
@@ -942,6 +940,8 @@ export default class GridLayer implements NHCustomLayerInterface {
 
         // WebGL check
         gll.errorCheck(gl)
+
+        // console.log(this.gridRecorder.gridNum)
 
         // Update display of capacity
         this.uiOption.capacity = this.gridRecorder.gridNum
@@ -1348,6 +1348,8 @@ export default class GridLayer implements NHCustomLayerInterface {
 
         if (!(prop in target))
             throw new Error(`Property ${prop} does not exist on editorControl`)
+
+        if (!this.gridRecorder) return true
 
         target[prop] = value
         switch (prop) {

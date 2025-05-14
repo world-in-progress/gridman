@@ -9,6 +9,8 @@ import { ProjectService } from '../../projectPanel/utils/ProjectService';
 export class SubprojectBoundsManager {
     private map: mapboxgl.Map;
     private language: string;
+    // 添加一个属性来跟踪当前高亮的子项目
+    private currentHighlightedInfo: { projectName: string; subprojectName: string } | null = null;
 
     constructor(map: mapboxgl.Map, language: string = 'zh') {
         this.map = map;
@@ -75,7 +77,7 @@ export class SubprojectBoundsManager {
                 }
             }
 
-            // Prepare subproject GeoJSON features
+            // 准备子项目GeoJSON特性
             const features: GeoJSON.Feature[] = [];
             const labelFeatures: GeoJSON.Feature[] = [];
             
@@ -88,15 +90,20 @@ export class SubprojectBoundsManager {
                 
                 if (!sw || !ne || sw.length !== 2 || ne.length !== 2) continue;
                 
-                // Use different colors to distinguish different subprojects
-                const hue = (index * 137.5) % 360; // Use golden angle to generate evenly distributed colors
+                // 使用不同颜色区分不同子项目
+                const hue = (index * 137.5) % 360; // 使用黄金角生成均匀分布的颜色
                 const color = `hsl(${hue}, 70%, 60%)`;
                 
-                // Calculate center point
+                // 计算中心点
                 const centerLng = (sw[0] + ne[0]) / 2;
                 const centerLat = (sw[1] + ne[1]) / 2;
                 
-                // Add boundary polygon feature
+                // 检查此子项目是否应该被高亮显示
+                const isHighlighted = this.currentHighlightedInfo && 
+                                     this.currentHighlightedInfo.projectName === projectName && 
+                                     this.currentHighlightedInfo.subprojectName === subproject.name;
+                
+                // 添加边界多边形特性
                 features.push({
                     type: 'Feature',
                     properties: {
@@ -104,27 +111,29 @@ export class SubprojectBoundsManager {
                         color: color,
                         projectName: projectName,
                         starred: subproject.starred || false,
-                        description: subproject.description || ''
+                        description: subproject.description || '',
+                        highlighted: isHighlighted // 设置高亮状态
                     },
                     geometry: {
                         type: 'Polygon',
                         coordinates: [[
-                            [sw[0], sw[1]], // Bottom left
-                            [sw[0], ne[1]], // Top left
-                            [ne[0], ne[1]], // Top right
-                            [ne[0], sw[1]], // Bottom right
-                            [sw[0], sw[1]]  // Back to bottom left to close the polygon
+                            [sw[0], sw[1]], // 左下
+                            [sw[0], ne[1]], // 左上
+                            [ne[0], ne[1]], // 右上
+                            [ne[0], sw[1]], // 右下
+                            [sw[0], sw[1]]  // 回到左下以闭合多边形
                         ]]
                     }
                 } as GeoJSON.Feature);
                 
-                // Add center point feature for label
+                // 添加标签中心点特性
                 labelFeatures.push({
                     type: 'Feature',
                     properties: {
                         name: subproject.name,
                         projectName: projectName,
-                        starred: subproject.starred || false
+                        starred: subproject.starred || false,
+                        highlighted: isHighlighted // 设置高亮状态
                     },
                     geometry: {
                         type: 'Point',
@@ -133,122 +142,219 @@ export class SubprojectBoundsManager {
                 } as GeoJSON.Feature);
             }
             
-            // Add data source
-            this.map.addSource(sourceId, {
-                type: 'geojson',
-                data: {
+            // 添加数据源
+            if (!this.map.getSource(sourceId)) {
+                this.map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: features
+                    }
+                });
+            } else {
+                // 更新现有数据源
+                const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+                source.setData({
                     type: 'FeatureCollection',
                     features: features
-                }
-            });
+                });
+            }
             
-            // Add label data source
-            this.map.addSource(labelSourceId, {
-                type: 'geojson',
-                data: {
+            // 添加标签数据源
+            if (!this.map.getSource(labelSourceId)) {
+                this.map.addSource(labelSourceId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: labelFeatures
+                    }
+                });
+            } else {
+                // 更新现有标签数据源
+                const labelSource = this.map.getSource(labelSourceId) as mapboxgl.GeoJSONSource;
+                labelSource.setData({
                     type: 'FeatureCollection',
                     features: labelFeatures
-                }
-            });
+                });
+            }
             
-            // Add fill layer
-            this.map.addLayer({
-                id: layerId,
-                type: 'fill',
-                source: sourceId,
-                paint: {
-                    'fill-color': ['get', 'color'],
-                    'fill-opacity': 0.3
-                }
-            });
+            // 如果图层尚不存在，添加填充图层
+            if (!this.map.getLayer(layerId)) {
+                this.map.addLayer({
+                    id: layerId,
+                    type: 'fill',
+                    source: sourceId,
+                    paint: {
+                        'fill-color': ['get', 'color'],
+                        'fill-opacity': 0.3
+                    }
+                });
+                
+                // 添加点击事件处理
+                this.map.on('click', layerId, (e) => {
+                    if (e.features && e.features.length > 0) {
+                        const feature = e.features[0];
+                        const subprojectName = feature.properties?.name;
+                        const projectName = feature.properties?.projectName;
+                        
+                        if (subprojectName && projectName) {
+                            // 高亮该子项目
+                            this.highlightSubproject(projectName, subprojectName);
+                            
+                            // 触发事件通知UI组件
+                            const highlightEvent = new CustomEvent('subprojectHighlight', {
+                                detail: {
+                                    projectName: projectName,
+                                    subprojectName: subprojectName
+                                }
+                            });
+                            window.dispatchEvent(highlightEvent);
+                        }
+                    }
+                });
+                
+                // 添加鼠标悬停效果
+                this.map.on('mouseenter', layerId, () => {
+                    this.map.getCanvas().style.cursor = 'pointer';
+                });
+                
+                this.map.on('mouseleave', layerId, () => {
+                    this.map.getCanvas().style.cursor = '';
+                });
+            }
             
-            // Add outline layer
-            this.map.addLayer({
-                id: outlineLayerId,
-                type: 'line',
-                source: sourceId,
-                paint: {
-                    'line-color': [
-                        'case',
-                        ['get', 'starred'], '#FFFD00',  // The starred subproject is yellow
-                        ['get', 'color']  // The other subproject is the corresponding color
-                    ],
-                    'line-width': 2,
-                    'line-dasharray': [2, 1]  // Use dashed line style to distinguish from project boundary
-                }
-            });
-            
+            // 如果轮廓图层尚不存在，添加轮廓图层
+            if (!this.map.getLayer(outlineLayerId)) {
+                this.map.addLayer({
+                    id: outlineLayerId,
+                    type: 'line',
+                    source: sourceId,
+                    paint: {
+                        'line-color': [
+                            'case',
+                            ['get', 'highlighted'], '#FFFFFF', // 高亮的子项目为白色
+                            ['case',
+                                ['get', 'starred'], '#FFFD00',  // 标星的子项目为黄色
+                                ['get', 'color']  // 其他子项目为对应颜色
+                            ]
+                        ],
+                        'line-width': [
+                            'case',
+                            ['get', 'highlighted'], 4, // 高亮的边框更粗
+                            2 // 默认边框宽度
+                        ],
+                        'line-dasharray': [2, 1]  // 使用虚线样式区分项目边界
+                    }
+                });
+            } else {
+                // 更新现有轮廓图层样式
+                this.map.setPaintProperty(outlineLayerId, 'line-color', [
+                    'case',
+                    ['get', 'highlighted'], '#FFFFFF', // 高亮的子项目为白色
+                    ['case',
+                        ['get', 'starred'], '#FFFD00',  // 标星的子项目为黄色
+                        ['get', 'color']  // 其他子项目为对应颜色
+                    ]
+                ]);
+                
+                this.map.setPaintProperty(outlineLayerId, 'line-width', [
+                    'case',
+                    ['get', 'highlighted'], 4, // 高亮的边框更粗
+                    2 // 默认边框宽度
+                ]);
+            }
         } catch (error) {
             console.error('显示子项目边界失败:', error);
         }
     }
 
     /**
-     * Highlight a specific subproject
-     * @param projectName Project name
-     * @param subprojectName Subproject name
+     * 高亮特定子项目
+     * @param projectName 项目名称
+     * @param subprojectName 子项目名称
      */
     public highlightSubproject(projectName: string, subprojectName: string): void {
         if (!this.map) return;
+        
+        // 清除所有高亮状态
+        this.clearAllHighlights();
+        
+        // 记录当前高亮的子项目信息
+        this.currentHighlightedInfo = { projectName, subprojectName };
         
         const sourceId = `subproject-bounds-${projectName}`;
         
         if (!this.map.getSource(sourceId)) return;
         
         try {
-            // Get current data
+            // 获取当前数据
             const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
             const data = (source as any)._data;
             
-            // Update highlighted status
+            // 更新高亮状态
             if (data && data.features) {
                 const updatedFeatures = data.features.map((feature: any) => {
-                    if (feature.properties.name === subprojectName) {
-                        return {
-                            ...feature,
-                            properties: {
-                                ...feature.properties,
-                                highlighted: true
-                            }
-                        };
-                    } else {
-                        return {
+                    const isTarget = feature.properties.name === subprojectName;
+                    return {
+                        ...feature,
+                        properties: {
+                            ...feature.properties,
+                            highlighted: isTarget
+                        }
+                    };
+                });
+                
+                // 更新数据源
+                source.setData({
+                    type: 'FeatureCollection',
+                    features: updatedFeatures
+                });
+            }
+        } catch (error) {
+            console.error('高亮子项目失败:', error);
+        }
+    }
+
+    /**
+     * 清除所有高亮状态
+     */
+    private clearAllHighlights(): void {
+        if (!this.map) return;
+        
+        // 重置当前高亮信息
+        this.currentHighlightedInfo = null;
+        
+        // 获取所有的子项目边界数据源
+        const style = this.map.getStyle();
+        if (!style || !style.sources) return;
+        
+        for (const sourceId in style.sources) {
+            if (sourceId.startsWith('subproject-bounds-')) {
+                try {
+                    const source = this.map.getSource(sourceId) as mapboxgl.GeoJSONSource;
+                    if (!source) continue;
+                    
+                    const data = (source as any)._data;
+                    if (data && data.features && data.features.length > 0) {
+                        // 清除所有特性的高亮状态
+                        const updatedFeatures = data.features.map((feature: any) => ({
                             ...feature,
                             properties: {
                                 ...feature.properties,
                                 highlighted: false
                             }
-                        };
+                        }));
+                        
+                        // 更新数据源
+                        source.setData({
+                            type: 'FeatureCollection',
+                            features: updatedFeatures
+                        });
                     }
-                });
-                
-                // Update data source
-                source.setData({
-                    type: 'FeatureCollection',
-                    features: updatedFeatures
-                });
-                
-                // Update layer style to display highlighted effect
-                const outlineLayerId = `subproject-outline-${projectName}`;
-                if (this.map.getLayer(outlineLayerId)) {
-                    this.map.setPaintProperty(outlineLayerId, 'line-width', [
-                        'case',
-                        ['get', 'highlighted'], 4,  // The highlighted outline is thicker
-                        2  // Default outline
-                    ]);
-                    
-                    this.map.setPaintProperty(outlineLayerId, 'line-color', [
-                        'case',
-                        ['get', 'highlighted'], '#FFFFFF',  // The highlighted outline is white
-                        ['case',
-                            ['get', 'starred'], '#FFFD00',  // The starred outline is yellow
-                            ['get', 'color']  // The other outline is the corresponding color
-                        ]
-                    ]);
+                } catch (error) {
+                    console.error(`清除高亮状态失败: ${sourceId}`, error);
                 }
             }
-        } catch (error) {
-            console.error('高亮子项目失败:', error);
         }
     }
 
@@ -470,7 +576,7 @@ export class SubprojectBoundsManager {
                 <div style="font-family: Arial, sans-serif; padding: 10px;">
                     <h3 style="margin: 0 0 8px; font-weight: bold; color: #333;">${properties.name}</h3>
 
-                    <div style="display: flex; align-items: center; margin-top: 8px;">
+                    <div style="display: flex flex-column; align-items: center; margin-top: 8px;">
                         <span style="font-size: 12px; color: #888;">
                             ${this.language === 'zh' ? '所属项目' : 'Project'}: 
                         </span>

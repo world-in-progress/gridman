@@ -5,12 +5,12 @@ import Dispatcher from '../message/dispatcher'
 import { createDB, deleteDB } from '../database/db'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
 import UndoRedoManager, { UndoRedoOperation } from '../util/undoRedoManager'
-import { EdgeRenderInfoPack, GridNodeRenderInfoPack, GridTopologyInfo, SubdivideRules } from './NHGrid'
+import { EdgeRenderInfoPack, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo, SubdivideRules } from './NHGrid'
+import BoundingBox2D from '../util/boundingBox2D'
 
 proj4.defs('EPSG:2326',"+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
 interface GridLevelInfo {
-
     width: number
     height: number
 }
@@ -55,7 +55,8 @@ export default class GridRecorder extends UndoRedoManager {
     private _nextStorageId = 0
     private _projConverter: proj4.Converter
 
-    isReady = false
+    isReady = true
+    srcCS: string
     dispatcher: Dispatcher
     levelInfos: GridLevelInfo[]
     projectLoadCallback: undefined | ((infos: [fromStorageId: number, levels: Uint8Array, vertexBuffer: Float32Array]) => void)
@@ -73,6 +74,7 @@ export default class GridRecorder extends UndoRedoManager {
     constructor(public subdivideRules: SubdivideRules, maxGridNum: number, options: GridRecordOptions = {}) {
         super(options.operationCapacity || 50)
 
+        this.srcCS = this.subdivideRules.srcCS
         this.dispatcher = options.dispatcher || new Dispatcher(this, options.workerCount || 4)
 
         this.projectLoadCallback = options.projectLoadCallback
@@ -602,6 +604,16 @@ export default class GridRecorder extends UndoRedoManager {
         }
 
         return multiRemoveOperation
+    }
+
+    updateGridRenderInfo(renderInfo: MultiGridRenderInfo, start: number = 0) {
+
+        const gridNum = renderInfo.levels.length
+        this._nextStorageId = start + gridNum
+        for (let i = 0; i < gridNum; i++) {
+            this.storageId_gridInfo_cache[(start + i) * 2 + 0] = renderInfo.levels[i]
+            this.storageId_gridInfo_cache[(start + i) * 2 + 1] = renderInfo.globalIds[i]
+        }
     }
 
     private _generateSubdivideGridOperation(level: number, renderInfos: GridNodeRenderInfoPack, callback?: Function): UndoRedoRecordOperation {

@@ -32,9 +32,6 @@ export function SubNavPanel({
         {}
     );
     const [allProjects, setAllProjects] = useState<Project[]>([]);
-    const [highlightedProject, setHighlightedProject] = useState<string | null>(
-        null
-    );
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(
         null
     );
@@ -46,6 +43,7 @@ export function SubNavPanel({
     const [descriptionText, setDescriptionText] = useState<
         Record<string, string>
     >({});
+    const [highlightedSubproject, setHighlightedSubproject] = useState<string | null>(null);
     const [projectService] = useState(() => {
         return new ProjectService(language);
     });
@@ -321,6 +319,18 @@ export function SubNavPanel({
         );
     };
 
+    const handleSubprojectHighlight = (projectName: string, subprojectName: string) => {
+        const highlightKey = `${projectName}:${subprojectName}`;
+        setHighlightedSubproject(highlightKey);
+        
+        if (window.mapRef && window.mapRef.current) {
+            const { highlightSubproject } = window.mapRef.current;
+            if (highlightSubproject && typeof highlightSubproject === 'function') {
+                highlightSubproject(projectName, subprojectName);
+            }
+        }
+    };
+
     const items: SubNavItem[] = projects.map((project) => ({
         title: project.name,
         items: [],
@@ -363,34 +373,17 @@ export function SubNavPanel({
                     <ProjectCard
                         project={projects[index]}
                         title={item.title}
-                        isHighlighted={
-                            highlightedProject === projects[index].name
-                        }
                         language={language}
                         starredItems={starredItems}
-                        openMenuId={openMenuId}
-                        menuItems={item.items || []}
-                        onCardClick={() =>
-                            setHighlightedProject(
-                                highlightedProject !== projects[index].name
-                                    ? projects[index].name
-                                    : null
-                            )
-                        }
                         onStarToggle={toggleStar}
-                        onMenuOpenChange={(open) => {
-                            if (open) {
-                                setOpenMenuId(item.title);
-                            } else {
-                                setOpenMenuId(null);
-                            }
-                        }}
                         editingDescription={editingDescription}
                         descriptionText={descriptionText}
                         onEditDescription={toggleEditDescription}
                         onSaveDescription={updateDescription}
                         onAddSubproject={onCreateSubProject}
                         onDeleteProject={handleDeleteProject}
+                        highlightedSubproject={highlightedSubproject}
+                        onSubprojectHighlight={handleSubprojectHighlight}
                     />
                 </div>
             ))}

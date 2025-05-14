@@ -18,7 +18,9 @@ import { generateRandomHexColor } from '../../utils/colorUtils';
 import { ProjectService } from '../projectPanel/utils/ProjectService';
 import { LanguageContext } from '../../context';
 import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
-
+import store from '../../store';
+import GridLayer from './layers/GridLayer';
+import NHLayerGroup from './utils/NHLayerGroup';
 // Add mapInstance property to window object
 declare global {
     interface Window {
@@ -155,6 +157,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 attributionControl: false,
             });
 
+            store.set('map', mapInstance);
+
             window.mapInstance = mapInstance;
 
             // Initialize drawing tool
@@ -231,6 +235,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
             mapInstance.addControl(drawInstance);
 
+
 ////////////////////// Test draw custom rectangle layer //////////////////////
 
             mapInstance.on('load', () => {
@@ -281,6 +286,20 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 
                 {/* initialize subproject bounds manager */}
                 subprojectBoundsManager = new SubprojectBoundsManager(mapInstance, 'zh');
+            
+                const gridLayer = new GridLayer(
+                    mapInstance!,
+                    { maxGridNum: 4096 * 4096 }
+                );
+
+                const layerGroup = new NHLayerGroup()
+                layerGroup.id = 'gridman-custom-layer-group'
+                layerGroup.addLayer(gridLayer)
+
+                store.set('clg', layerGroup)
+                mapInstance!.addLayer(layerGroup);
+
+            
             });
             
 //////////////////////////////////////////////////////////////////////////////
@@ -324,6 +343,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             return (): void => {
                 mapInstance.remove();
             };
+        
         };
 
         if (!map) {

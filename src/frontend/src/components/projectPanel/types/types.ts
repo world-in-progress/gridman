@@ -73,14 +73,9 @@ export interface Project {
 export interface ProjectCardProps {
     project: Project;
     title: string;
-    isHighlighted: boolean;
     language: string;
     starredItems: Record<string, boolean>;
-    openMenuId: string | null;
-    menuItems: MenuItem[];
-    onCardClick: () => void;
     onStarToggle: (name: string, project: Project) => void;
-    onMenuOpenChange: (open: boolean) => void;
     editingDescription?: string | null;
     descriptionText?: Record<string, string>;
     onEditDescription?: (name: string) => void;
@@ -92,6 +87,8 @@ export interface ProjectCardProps {
         gridInfo?: string
     ) => void;
     onDeleteProject?: (project: Project) => void;
+    highlightedSubproject?: string | null;
+    onSubprojectHighlight?: (projectName: string, subprojectName: string) => void;
 }
 
 export interface ProjectSubNavPanelProps {
@@ -129,6 +126,7 @@ export interface SubprojectData {
 }
 
 export interface SubProjectCardProps {
+    isHighlighted: boolean;
     subproject: SubprojectData;
     parentProjectTitle: string;
     language: string;
@@ -140,6 +138,7 @@ export interface SubProjectCardProps {
         subprojectName: string,
         description: string
     ) => Promise<void>;
+    onHighlight?: (projectName: string, subprojectName: string) => void;
 }
 
 export interface ProjectDescriptionCardProps {
