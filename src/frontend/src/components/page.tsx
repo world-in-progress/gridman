@@ -43,10 +43,11 @@ import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
 import GridBotBotton from './testComponents/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
-import TopologyPanel from './TopologyPanel/topologyPanel';
+import EditorPanel from './editorPanel/editorPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import GridRecorder from '@/core/grid/NHGridRecorder';
 import store from '@/store';
+import Loader from './ui/loader';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType =
@@ -57,6 +58,8 @@ export type BreadcrumbType =
     | null;
 
 export default function Page() {
+    
+    const [isLoading, setIsLoading] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isSelectingPoint, setIsSelectingPoint] = useState(false);
     const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
@@ -68,6 +71,15 @@ export default function Page() {
         null
     );
     const [gridRecorder, setGridRecorder] = useState<GridRecorder | null>(null);
+
+    store.set('isLoading', {
+        on: () => {
+            setIsLoading(true)
+        },
+        off: () => {
+            setIsLoading(false)
+        }
+    })
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -109,6 +121,7 @@ export default function Page() {
     const { language } = useContext(LanguageContext);
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
 
+
     const toggleChat = () => {
         setIsChatOpen(!isChatOpen);
     };
@@ -147,14 +160,11 @@ export default function Page() {
             setActiveBreadcrumb('topology');
         };
 
-        window.addEventListener(
-            'switchToTopologyPanel',
-            handleSwitchToTopology
-        );
+        window.addEventListener('switchToEditorPanel', handleSwitchToTopology);
 
         return () => {
             window.removeEventListener(
-                'switchToTopologyPanel',
+                'switchToEditorPanel',
                 handleSwitchToTopology
             );
         };
@@ -383,7 +393,7 @@ export default function Page() {
                 );
             } else if (activePanel === 'topology') {
                 return (
-                    <TopologyPanel
+                    <EditorPanel
                         onBack={() => {
                             setActivePanel('project');
                             setActiveBreadcrumb('project');
@@ -404,12 +414,6 @@ export default function Page() {
 
     return (
         <SidebarProvider className="h-full max-h-full">
-            {/* <GridRecorderContext.Provider value={{ 
-                recorder: gridRecorder, 
-                setRecorder: setGridRecorder
-            }}>
-                
-            </GridRecorderContext.Provider> */}
             {renderActivePanel()}
             <SidebarInset className="max-h-full relative">
                 <header className="flex h-16 shrink-0 items-center border-b-1 border-b-gray-200 px-4">
@@ -523,6 +527,7 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen w-screen">
+                    {isLoading && <Loader />}
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
