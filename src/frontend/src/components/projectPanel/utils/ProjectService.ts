@@ -8,7 +8,7 @@ import { boundingBox2D } from '@/core/util/boundingBox2D';
 import GridRecorder from '@/core/grid/NHGridRecorder';
 import store from '../../../store' 
 import {MultiGridRenderInfo} from '@/core/grid/NHGrid'
-import GridLayer from '@/components/mapComponent/layers/GridLayer';
+import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
 export class ProjectService {
@@ -228,7 +228,7 @@ export class ProjectService {
     public setSubproject(
         projectName: string,
         subprojectName: string,
-        callback?: Callback<{fromStorageId: number, levels: Uint8Array, vertices: Float32Array}>
+        callback?: Callback<{fromStorageId: number, levels: Uint8Array, vertices: Float32Array, verticesLow: Float32Array}>
     ) {
         this._actor.send(
             'setSubproject',
@@ -255,10 +255,10 @@ export class ProjectService {
                     // GridRecorderContext.recorder = recorder
                     store.set('gridRecorder', recorder)
 
-                    // Update recorder of GridLayer
+                    // Update recorder of TopologyLayer
                     const clg = store.get<NHLayerGroup>('clg')!
-                    const gridLayer = clg.getLayerInstance('GridLayer') as GridLayer
-                    gridLayer.gridRecorder = recorder
+                    const topologyLayer = clg.getLayerInstance('TopologyLayer') as TopologyLayer
+                    topologyLayer.gridRecorder = recorder
 
                     // Broadcast all workers to create gridManager
                     this._dispatcher.broadcast('setGridManager', recorderMeta, () => {
@@ -268,7 +268,7 @@ export class ProjectService {
                             recorder?.updateGridRenderInfo(renderInfo!, 0)
 
                             if (callback) {
-                                callback(null, {fromStorageId: 0, levels: renderInfo!.levels, vertices: renderInfo!.vertices})
+                                callback(null, {fromStorageId: 0, levels: renderInfo!.levels, vertices: renderInfo!.vertices, verticesLow: renderInfo!.verticesLow})
                             }
                         })
                     })

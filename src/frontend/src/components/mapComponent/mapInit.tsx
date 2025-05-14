@@ -19,7 +19,7 @@ import { ProjectService } from '../projectPanel/utils/ProjectService';
 import { LanguageContext } from '../../context';
 import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
 import store from '../../store';
-import GridLayer from './layers/GridLayer';
+import TopologyLayer from './layers/TopologyLayer';
 import NHLayerGroup from './utils/NHLayerGroup';
 // Add mapInstance property to window object
 declare global {
@@ -45,7 +45,7 @@ interface MapInitHandle {
     showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
 }
 
-let scene: ThreejsSceneLayer | null = null;
+const scene: ThreejsSceneLayer | null = null;
 let rectangleLayer: GLMapRectangleLayer | null = null;
 let customRectangleDraw: CustomRectangleDraw | null = null;
 let projectBoundsLayer: ProjectBoundsLayer | null = null;
@@ -287,14 +287,14 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 {/* initialize subproject bounds manager */}
                 subprojectBoundsManager = new SubprojectBoundsManager(mapInstance, 'zh');
             
-                const gridLayer = new GridLayer(
+                const topologyLayer = new TopologyLayer(
                     mapInstance!,
                     { maxGridNum: 4096 * 4096 }
                 );
 
                 const layerGroup = new NHLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
-                layerGroup.addLayer(gridLayer)
+                layerGroup.addLayer(topologyLayer)
 
                 store.set('clg', layerGroup)
                 mapInstance!.addLayer(layerGroup);

@@ -30,7 +30,7 @@ import GridLevel from './components/GridLevel';
 import SubdivideRules from './components/SubdivideRules';
 import GenerateJSONButton from './components/GenerateJSONButton';
 import DrawGridButton from './components/DrawGridButton';
-import GridLayer from '../mapComponent/layers/GridLayer';
+import TopologyLayer from '../mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
@@ -389,7 +389,7 @@ export default function OperatePanel({
     language,
   ]);
 
-  const createGridLayer = (
+  const createTopologyLayer = (
     map: Map,
     config: {
       epsg: number | string;
@@ -409,7 +409,7 @@ export default function OperatePanel({
       }
     } catch (error) {}
 
-    // const gridLayer = new GridLayer(
+    // const topologyLayer = new GridLayer(
     //   map,
     //   `EPSG:${config.epsg}`,
     //   config.firstLevelSize,
@@ -420,7 +420,7 @@ export default function OperatePanel({
 
     const layerGroup = new NHLayerGroup();
     layerGroup.id = layerGroupId;
-    // layerGroup.addLayer(gridLayer);
+    // layerGroup.addLayer(topologyLayer);
     map.addLayer(layerGroup);
   };
 
@@ -471,7 +471,7 @@ export default function OperatePanel({
           subdivideRules: jsonData.subdivide_rules as [number, number][],
         };
 
-        createGridLayer(map, gridConfig);
+        createTopologyLayer(map, gridConfig);
         setGeneralError(null);
 
         try {

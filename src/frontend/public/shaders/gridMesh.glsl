@@ -9,9 +9,13 @@ layout(location = 0) in vec2 tl;
 layout(location = 1) in vec2 tr;
 layout(location = 2) in vec2 bl;
 layout(location = 3) in vec2 br;
-layout(location = 4) in uint level;
-layout(location = 5) in uint hit;
-layout(location = 6) in uint assignment;
+layout(location = 4) in vec2 tlLow;
+layout(location = 5) in vec2 trLow;
+layout(location = 6) in vec2 blLow;
+layout(location = 7) in vec2 brLow;
+layout(location = 8) in uint level;
+layout(location = 9) in uint hit;
+layout(location = 10) in uint assignment;
 
 uniform mat4 uMatrix;
 uniform vec2 centerLow;
@@ -82,18 +86,23 @@ float stitching(float coord, float minVal, float delta, float edge) {
 
 void main() {
 
-    vec2 layerMap[4] = vec2[4](tl, tr, bl, br);
+    // vec2 layerMap[4] = vec2[4](vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0), vec2(1.0, 1.0));
 
+    vec2 layerMap[4] = vec2[4](tl, tr, bl, br);
+    vec2 layerMapLow[4] = vec2[4](tlLow, trLow, blLow, brLow);
     vec2 uvs[4] = vec2[4](vec2(0.0, 1.0), vec2(1.0, 1.0), vec2(0.0, 0.0), vec2(1.0, 0.0));
 
     vec2 xy = layerMap[gl_VertexID];
+    vec2 xyLow = layerMapLow[gl_VertexID];
 
     u_hit = float(hit);
     u_assignment = float(assignment);
 
     uv = uvs[gl_VertexID] * 2.0 - 1.0;
     v_color = texelFetch(paletteTexture, ivec2(level, 0), 0).rgb;
-    gl_Position = uMatrix * vec4(translateRelativeToEye(relativeCenter, xy), 0.0, 1.0);
+
+    vec2 translated = translateRelativeToEye(xy, xyLow);
+    gl_Position = uMatrix * vec4(translated.xy, 0.0, 1.0);
 }
 
 #endif
@@ -130,13 +139,22 @@ bool isAssigned() {
 void main() {
 
     bool isHit = isHit();
-    
+
     // Shading in topology editor
     if(mode == 0.0) {
-        if(isHit)
-            fragColor = vec4(0.64, 0.09, 0.09, 0.5);
-        else
+        if(isHit) {
+            float distance = uv.x * uv.x + uv.y * uv.y;
+
+            // fragColor = vec4(0.64, 0.09, 0.09, 0.5); 
+            if(distance <= 0.25) {
+                // fragColor = vec4(0.64, 0.09, 0.09, 0.5);
+                fragColor = vec4(v_color, 0.5);
+            } else {
+                fragColor = vec4(0.1);
+            }
+        } else
             fragColor = vec4(0.1);
+
     }
     // Shading in attribute editor
     else {

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/tooltip';
 import { AnimatedCard, CardBackground, Blob } from './cardBackground';
 import store from '@/store';
-import GridLayer from '@/components/mapComponent/layers/GridLayer';
+import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
 declare global {
@@ -158,15 +158,16 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
                 const map = store.get<mapboxgl.Map>('map');
 
-                // Update recorder of GridLayer
+                // Update recorder of TopologyLayer
                 const clg = store.get<NHLayerGroup>('clg')!;
-                const gridLayer = clg.getLayerInstance(
-                    'GridLayer'
-                ) as GridLayer;
-                gridLayer.updateGPUGrids([
+                const topologyLayer = clg.getLayerInstance(
+                    'TopologyLayer'
+                ) as TopologyLayer;
+                topologyLayer.updateGPUGrids([
                     result.fromStorageId,
                     result.levels,
                     result.vertices,
+                    result.verticesLow
                 ]);
                 setIsLoading(false);
             }

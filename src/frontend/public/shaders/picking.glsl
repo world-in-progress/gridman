@@ -9,7 +9,11 @@ layout(location = 0) in vec2 tl;
 layout(location = 1) in vec2 tr;
 layout(location = 2) in vec2 bl;
 layout(location = 3) in vec2 br;
-layout(location = 4) in uint level;
+layout(location = 4) in vec2 tlLow;
+layout(location = 5) in vec2 trLow;
+layout(location = 6) in vec2 blLow;
+layout(location = 7) in vec2 brLow;
+layout(location = 8) in uint level;
 
 uniform mat4 uMatrix;
 uniform vec2 centerLow;
@@ -76,26 +80,19 @@ float stitching(float coord, float minVal, float delta, float edge) {
 }
 
 uvec4 idToRGBA(uint id) {
-    return uvec4(
-        (id >> 0) & uint(0xFF),
-        (id >> 8) & uint(0xFF),
-        (id >> 16) & uint(0xFF),
-        (id >> 24) & uint(0xFF)
-    );
+    return uvec4((id >> 0) & uint(0xFF), (id >> 8) & uint(0xFF), (id >> 16) & uint(0xFF), (id >> 24) & uint(0xFF));
 }
 
 void main() {
 
-    vec2 layerMap[4] = vec2[4](
-        tl,
-        tr,
-        bl,
-        br
-    );
+    vec2 layerMap[4] = vec2[4](tl, tr, bl, br);
+    vec2 layerMapLow[4] = vec2[4](tlLow, trLow, blLow, brLow);
     vec2 xy = layerMap[gl_VertexID];
+    vec2 xyLow = layerMapLow[gl_VertexID];
 
-    gl_Position = pickingMatrix * uMatrix * vec4(translateRelativeToEye(relativeCenter, xy), 0.0, 1.0);
-
+    vec2 translated = translateRelativeToEye(xy, xyLow);
+    gl_Position = uMatrix * vec4(translated.xy, 0.0, 1.0);
+    
     uvec4 id = idToRGBA(uint(gl_InstanceID));
     v_color = vec4(id) / 255.0;
 }

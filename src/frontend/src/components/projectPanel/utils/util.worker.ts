@@ -459,7 +459,8 @@ export default class ProjectUtils {
         return {
             levels: infoResponse.levels,
             globalIds: infoResponse.globalIds,
-            vertices: vertices
+            vertices: vertices[0],
+            verticesLow: vertices[1]
         }
     }
 }
