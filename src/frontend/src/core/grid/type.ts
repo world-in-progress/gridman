@@ -27,11 +27,13 @@ export class MultiGridInfo {
     }
 
     static fromBuffer(buffer: ArrayBuffer): MultiGridInfo {
-        const prefixView = new DataView(buffer, 0, 4)
-        const uint8Length = prefixView.getUint32(0, true)
-        
-        const uint8Array = new Uint8Array(buffer, 4, uint8Length)
-        const uint32Array = new Uint32Array(buffer, 4 + uint8Length)
+          
+      const prefixView = new DataView(buffer, 0, 4)
+      const uint8Length = prefixView.getUint32(0, true)
+      const alignedOffset = 4 + uint8Length + (4 - (uint8Length % 4 || 4)) % 4
+
+      const uint8Array = new Uint8Array(buffer, 4, uint8Length)
+      const uint32Array = new Uint32Array(buffer, alignedOffset)
         
         return new MultiGridInfo(uint8Array, uint32Array)
     }
@@ -48,10 +50,11 @@ export class MultiGridInfo {
           
           const prefixView = new DataView(buffer, 0, 4)
           const uint8Length = prefixView.getUint32(0, true)
-          
+          const alignedOffset = 4 + uint8Length + (4 - (uint8Length % 4 || 4)) % 4
+
           const uint8Array = new Uint8Array(buffer, 4, uint8Length)
-          const uint32Array = new Uint32Array(buffer, 4 + uint8Length)
-          
+          const uint32Array = new Uint32Array(buffer, alignedOffset)
+
           return new MultiGridInfo(uint8Array, uint32Array)
           
         } catch (error) {

@@ -56,7 +56,6 @@ export default class ProjectUtils {
             };
         }
         const metaResponseData = await metaResponse.json();
-        console.log(metaResponseData);
         return {
             err: null,
             result: metaResponseData,
@@ -73,7 +72,6 @@ export default class ProjectUtils {
 
         // Step 1: Get subproject list
         const listResponse = await fetch(listAPI);
-        console.log('updateSubprojectDescription', listResponse);
         if (!listResponse.ok)
             return {
                 err: new Error(
@@ -448,7 +446,6 @@ export default class ProjectUtils {
         worker: WorkerSelf & Record<'gridManager', GridManager>,
         subdivideRules: SubdivideRules
     ) {
-        console.log(subdivideRules)
         worker.gridManager = new GridManager(subdivideRules);
     }
 

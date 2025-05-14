@@ -241,7 +241,7 @@ export class ProjectService {
                 if (error) {
                     console.error('设置子项目失败:', error);
                 } else {
-                    console.log(result);
+                    // console.log(result);
                     const epsg : number = result.epsg
                     const bounds : [number, number, number, number] = result.bounds
                     const subdivideRules : Array<[number, number]> = result.subdivide_rules

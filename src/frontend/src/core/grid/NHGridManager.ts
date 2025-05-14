@@ -586,7 +586,6 @@ export default class GridManager {
     private _projConverter: proj4.Converter;
 
     constructor(subdivideRules: SubdivideRules) {
-        console.log(subdivideRules)
         this._projConverter = proj4(
             subdivideRules.srcCS,
             subdivideRules.targetCS

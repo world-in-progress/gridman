@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-    MoreHorizontal,
     Star,
     FileType2,
     SquarePen,
@@ -11,12 +10,6 @@ import {
     Blocks,
     Trash2
 } from 'lucide-react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../utils/ProjectService';
@@ -33,19 +26,16 @@ declare global {
 export const ProjectCard: React.FC<ProjectCardProps> = ({
     project,
     title,
-    isHighlighted,
     language,
     starredItems,
-    openMenuId,
-    menuItems,
     descriptionText,
-    onCardClick,
     onStarToggle,
-    onMenuOpenChange,
     onEditDescription,
     onSaveDescription,
     onAddSubproject,
     onDeleteProject,
+    highlightedSubproject,
+    onSubprojectHighlight,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -301,25 +291,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         setIsEditing(false);
     };
 
-    const handleCardClick = () => {
-        if (window.mapInstance && window.mapRef && window.mapRef.current) {
-            const { flyToProjectBounds } = window.mapRef.current;
-
-            if (
-                flyToProjectBounds &&
-                typeof flyToProjectBounds === 'function'
-            ) {
-                setTimeout(() => {
-                    flyToProjectBounds(title).catch((error: any) => {
-                        console.error('飞行到项目边界失败:', error);
-                    });
-                }, 100);
-            }
-        }
-        if (onCardClick) {
-            onCardClick();
-        }
-    };
 
     const updateSubprojectDescription = async (
         subprojectName: string,
@@ -464,14 +435,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 .map((subproject, index) => (
                                     <SubprojectCard
                                         key={index}
+                                        isHighlighted={highlightedSubproject === `${title}:${subproject.name}`}
                                         subproject={subproject}
                                         parentProjectTitle={title}
                                         language={language}
-                                        onCardClick={handleCardClick}
+                                        onCardClick={() => {
+                                            if (onSubprojectHighlight) {
+                                                onSubprojectHighlight(title, subproject.name);
+                                            }
+                                        }}
                                         onStarToggle={handleSubprojectStarClick}
-                                        onSaveSubprojectDescription={
-                                            updateSubprojectDescription
-                                        }
+                                        onSaveSubprojectDescription={updateSubprojectDescription}
                                     />
                                 ))}
                         </div>

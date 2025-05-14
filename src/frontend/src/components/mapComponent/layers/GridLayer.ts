@@ -915,7 +915,6 @@ export default class GridLayer implements NHCustomLayerInterface {
     }
 
     async initialize(_: Map, gl: WebGL2RenderingContext) {
-        console.log('ahahahha')
         this._gl = gl
         await this.init()
     }
@@ -942,7 +941,7 @@ export default class GridLayer implements NHCustomLayerInterface {
         // WebGL check
         gll.errorCheck(gl)
 
-        console.log(this.gridRecorder.gridNum)
+        // console.log(this.gridRecorder.gridNum)
 
         // Update display of capacity
         this.uiOption.capacity = this.gridRecorder.gridNum
