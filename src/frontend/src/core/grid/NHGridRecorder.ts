@@ -140,16 +140,90 @@ export default class GridRecorder extends UndoRedoManager {
         })
     }
 
+    // removeGrid(storageId: number, callback?: Function): void {
+
+    //     const removeOperation = this._generateRemoveGridOperation(storageId, callback)
+    //     this.execute(removeOperation)
+    // }
+
     removeGrid(storageId: number, callback?: Function): void {
 
-        const removeOperation = this._generateRemoveGridOperation(storageId, callback)
-        this.execute(removeOperation)
+        const lastStorageId = this._nextStorageId - 1
+
+        // Get render info of this removable grid and the grid having the last storageId
+        const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(lastStorageId)
+        const [removableLevel, removableGlobalId] = this.getGridInfoByStorageId(storageId)
+
+        this._nextStorageId -= 1
+
+        // Do nothing if the removable grid is the grid having the last storageId
+        if (this._nextStorageId === storageId) return
+
+        // Replace removable render info with the last render info in the cache
+        this.storageId_gridInfo_cache[storageId * 2 + 0] = lastLevel
+        this.storageId_gridInfo_cache[storageId * 2 + 1] = lastGlobalId
+        const [vertices, verticesLow] = this._createNodeRenderVertices(lastLevel, lastGlobalId)
+        callback && callback([storageId, new Uint8Array([lastLevel]), vertices, verticesLow])
     }
+
+    // removeGrids(storageIds: number[], callback?: Function): void {
+
+    //     const removeOperation = this._generateRemoveGridsOperation(storageIds, callback)
+    //     this.execute(removeOperation)
+    // }
 
     removeGrids(storageIds: number[], callback?: Function): void {
 
-        const removeOperation = this._generateRemoveGridsOperation(storageIds, callback)
-        this.execute(removeOperation)
+        // Convert removableStorageIds to ascending order and record grids' levels and globalIds which point to
+        const removableGridNum = storageIds.length
+        const removableLevels = new Array<number>(removableGridNum)
+        const removableGlobalIds = new Array<number>(removableGridNum)
+        storageIds.sort((a, b) => a - b).forEach((storageId, index) => {
+            const [level, globalId] = this.getGridInfoByStorageId(storageId)
+            removableLevels[index] = level
+            removableGlobalIds[index] = globalId
+        })
+
+        const maintainedGridNum = this.gridNum - removableGridNum
+        const replacedGridNum = maintainedGridNum > removableGridNum ? removableGridNum : maintainedGridNum
+
+        // Generate info cache about replaced grids having last valid storageIds 
+        // Note: storageId not pointing to any removable grids is valid
+        let replacedStorageId = this._nextStorageId - 1
+        const removableIdStack = storageIds.slice()
+        const replacedGridInfo = new Array<[storageId: number, level: number, globalId: number]>()
+        while (replacedGridInfo.length !== replacedGridNum) {
+
+            // No need to replace removable grids by valid grid infos since they are never be used
+            if (storageIds[replacedGridInfo.length] >= this.gridNum) break
+
+            // Check if lastStorageId is one of removable storageIds
+            if (removableIdStack.length && removableIdStack[removableIdStack.length - 1] === replacedStorageId) {
+                removableIdStack.pop()
+            } else {
+
+                // If replacedStorageId is less than removableStorageId, break for replacement not necessary
+                if (replacedStorageId <= storageIds[replacedGridInfo.length]) break
+                const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(replacedStorageId)
+                replacedGridInfo.push([replacedStorageId, lastLevel, lastGlobalId])
+            }
+            replacedStorageId--
+        }
+
+        this._nextStorageId -= removableGridNum
+
+        storageIds.forEach((storageId, index) => {
+            if (index > replacedGridInfo.length - 1) return
+
+            // Replace removable render info with the last render info in the cache
+            const [_, replacedLevel, replacedGlobalId] = replacedGridInfo[index]
+            this.storageId_gridInfo_cache[storageId * 2 + 0] = replacedLevel
+            this.storageId_gridInfo_cache[storageId * 2 + 1] = replacedGlobalId
+
+            const [vertices, verticesLow] = this._createNodeRenderVertices(replacedLevel, replacedGlobalId)
+            callback && callback([storageId, new Uint8Array([replacedLevel]), vertices, verticesLow])
+        })
+
     }
 
     subdivideGrid(level: number, globalId: number, callback?: Function): void {
@@ -164,27 +238,46 @@ export default class GridRecorder extends UndoRedoManager {
         })
     }
 
-    subdivideGrids(subdivideInfos: Array<[level: number, globalId: number]>, callback?: Function): void {
+    // subdivideGrids(subdivideInfos: Array<[level: number, globalId: number]>, callback?: Function): void {
 
-        const actorNum = WorkerPool.workerCount - 1
-        const subdivideChunk = Math.ceil(subdivideInfos.length / actorNum)
-        const renderInfoPacks = new Array<GridNodeRenderInfoPack>(actorNum)
+    //     const actorNum = WorkerPool.workerCount - 1
+    //     const subdivideChunk = Math.ceil(subdivideInfos.length / actorNum)
+    //     const renderInfoPacks = new Array<GridNodeRenderInfoPack>(actorNum)
 
-        let preparedChunkNum = 0
-        for (let actorIndex = 0; actorIndex < actorNum; actorIndex++) {
-            this._actor.send(
-                'subdivideGrids',
-                subdivideInfos.slice(actorIndex * subdivideChunk, Math.min(subdivideInfos.length, (actorIndex + 1) * subdivideChunk)),
-                (_, renderInfoPack: GridNodeRenderInfoPack) => {
+    //     let preparedChunkNum = 0
+    //     for (let actorIndex = 0; actorIndex < actorNum; actorIndex++) {
+    //         this._actor.send(
+    //             'subdivideGrids',
+    //             subdivideInfos.slice(actorIndex * subdivideChunk, Math.min(subdivideInfos.length, (actorIndex + 1) * subdivideChunk)),
+    //             (_, renderInfoPack: GridNodeRenderInfoPack) => {
 
-                    renderInfoPacks[preparedChunkNum++] = renderInfoPack
-                    if (preparedChunkNum === actorNum) {
-                        const multiSubdivideOperation = this._generateSubdivideGridsOperation(renderInfoPacks, callback)
-                        this.execute(multiSubdivideOperation)
-                    }
-                }
-            )
-        }
+    //                 renderInfoPacks[preparedChunkNum++] = renderInfoPack
+    //                 if (preparedChunkNum === actorNum) {
+    //                     const multiSubdivideOperation = this._generateSubdivideGridsOperation(renderInfoPacks, callback)
+    //                     this.execute(multiSubdivideOperation)
+    //                 }
+    //             }
+    //         )
+    //     }
+    // }
+
+    subdivideGrids(subdivideInfos: {levels: Uint8Array, globalIds: Uint32Array}, callback?: Function): void {
+        
+        // Dispatch a worker to subdivide the grid
+        this._actor.send('subdivideGrids', subdivideInfos, (_, renderInfos: MultiGridRenderInfo) => {
+
+            renderInfos.globalIds.forEach((globalId, index) => {
+                
+                const storageId = this._nextStorageId + index
+                const level = renderInfos.levels[index]
+                this.storageId_gridInfo_cache[storageId * 2 + 0] = level
+                this.storageId_gridInfo_cache[storageId * 2 + 1] = globalId
+            })
+
+            const { levels, vertices, verticesLow } = renderInfos
+            callback && callback([this._nextStorageId, levels, vertices, verticesLow])
+            this._nextStorageId += renderInfos.globalIds.length
+        })
     }
 
     parseGridTopology(callback?: (isCompleted: boolean, fromStorageId: number, vertexBuffer: Float32Array) => any): void {
@@ -345,7 +438,6 @@ export default class GridRecorder extends UndoRedoManager {
     }
 
     getGridInfoByStorageId(storageId: number): [level: number, globalId: number] {
-
         return this.storageId_gridInfo_cache.slice(storageId * 2, (storageId + 1) * 2) as [level: number, globalId: number]
     }
 
@@ -440,7 +532,7 @@ export default class GridRecorder extends UndoRedoManager {
         return this.dispatcher.dbActor
     }
 
-    private _createNodeRenderVertices(level: number, globalId: number, vertices?: Float32Array): Float32Array {
+    private _createNodeRenderVertices(level: number, globalId: number, vertices?: Float32Array, verticesLow?: Float32Array): [Float32Array, Float32Array] {
 
         const bBox = this.subdivideRules.bBox
         const { width, height } = this.levelInfos[level]
@@ -460,22 +552,23 @@ export default class GridRecorder extends UndoRedoManager {
             this._projConverter.forward([xMax, yMin]),  // srcBR
         ]
 
-        const center = this._projConverter.forward([
-            (bBox.xMin + bBox.xMax) / 2.0,
-            (bBox.yMin + bBox.yMax) / 2.0,
-        ])
-        const mercatorCenter = MercatorCoordinate.fromLonLat(center as [number, number])
-        const renderCoords = targetCoords.map(coord => MercatorCoordinate.fromLonLat(coord as [number, number]))
-        const relativeCoords = renderCoords.map(renderCoord => {
-            return [
-                renderCoord[0] - mercatorCenter[0],
-                renderCoord[1] - mercatorCenter[1],
-            ] as [ number, number ]
+        const renderCoords: number[] = []
+        const renderCoordsLow: number[] = []
+        targetCoords.forEach((coord) => {
+            const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
+            const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
+            const mercatorCoordY = encodeFloatToDouble(mercatorCoord[1])
+            renderCoords.push(mercatorCoordX[0])
+            renderCoordsLow.push(mercatorCoordX[1])
+            renderCoords.push(mercatorCoordY[0])
+            renderCoordsLow.push(mercatorCoordY[1])
         })
 
-        if (!vertices) vertices = new Float32Array(relativeCoords.flat())
-        else vertices.set(relativeCoords.flat(), 0)
-        return vertices
+        if (!vertices) vertices = new Float32Array(renderCoords.flat());
+        else vertices.set(renderCoords.flat(), 0);
+        if (!verticesLow) verticesLow = new Float32Array(renderCoordsLow.flat());
+        else verticesLow.set(renderCoordsLow.flat(), 0);
+        return [vertices, verticesLow];
     }
 
     // Fast function for removing single grid
@@ -699,4 +792,13 @@ export default class GridRecorder extends UndoRedoManager {
 
 function lerp(a: number, b: number, t: number): number {
     return (1.0 - t) * a + t * b
+}
+
+function encodeFloatToDouble(value: number) {
+    const result = new Float32Array(2);
+    result[0] = value;
+  
+    const delta = value - result[0];
+    result[1] = delta;
+    return result;
 }

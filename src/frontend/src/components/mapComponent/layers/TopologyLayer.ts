@@ -548,7 +548,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     subdivideGrids(uuIds: string[]) {
         const infos = uuIds.map(uuId => decodeInfo(uuId)) as [level: number, globalId: number][]
-        this.gridRecorder.subdivideGrids(infos, this.updateGPUGrids)
+        this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, this.updateGPUGrids)
     }
 
     tickGrids() {
@@ -821,6 +821,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     private _updateGPUGrids(infos?: [fromStorageId: number, levels: Uint8Array, vertices: Float32Array, verticesLow: Float32Array]) {
+
         if (infos) {
             this.writeMultiGridInfoToStorageBuffer(infos)
             this._gl.flush()
@@ -979,12 +980,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     executeSubdivideGrids() {
-
+        
         if (this.hitSet.size === 0) return
         
         // Parse hitSet
         const subdividableUUIDs = new Array<string>()
         const removableStorageIds = new Array<number>()
+
         this.hitSet.forEach(removableStorageId => {
 
             const level = this.gridRecorder.getGridInfoByStorageId(removableStorageId)[0]
@@ -1001,13 +1003,15 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         if (subdividableUUIDs.length === 1) {
             this.removeGrid(removableStorageIds[0])
-            this.subdivideGrid(subdividableUUIDs[0])
+            // this.subdivideGrid(subdividableUUIDs[0])
+            this.subdivideGrids(subdividableUUIDs)
         }
-        else {
+        else if (subdividableUUIDs.length > 1) {
             this.removeGrids(removableStorageIds)
             this.subdivideGrids(subdividableUUIDs)
         }
-        this.hitSet.clear()
+
+        this.executeClearSelection()
     }
 
     executeDeleteGrids() {

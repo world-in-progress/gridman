@@ -25,7 +25,7 @@ import {
     enableMapPointSelection,
 } from './utils/SchemaCoordinateService';
 import {
-    validateTopologyLayers,
+    validateGridLayers,
     validateSchemaForm,
     createSchemaData,
 } from './utils/SchemaFormValidation';
