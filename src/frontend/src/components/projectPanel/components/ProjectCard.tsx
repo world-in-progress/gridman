@@ -8,7 +8,7 @@ import {
     EyeOff,
     FilePlus,
     Blocks,
-    Trash2
+    Trash2,
 } from 'lucide-react';
 import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
@@ -143,7 +143,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             }
             setLoadingSubprojects(false);
         });
-
     }, [title, language]);
 
     useEffect(() => {
@@ -174,13 +173,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         ) {
             const { flyToProjectBounds, showSubprojectBounds } =
                 window.mapRef.current;
+            showSubprojectBounds(title, subprojects, true);
+            console.log(subprojects)
 
+            console.log('showSubprojectBounds', window.mapRef.current);
+
+            // TODO: Outline first show is black
             fetchSubprojectsList().then(() => {
-                if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
-                ) {
-                    showSubprojectBounds(title, subprojects, true);
+                // if (
+                //     showSubprojectBounds &&
+                //     typeof showSubprojectBounds === 'function'
+                // ) {
+                //     console.log('nihao')
+                //     showSubprojectBounds(title, subprojects, true);
+                // }
+                if (window.mapRef && window.mapRef.current) {
+                    const { showSubprojectBounds } = window.mapRef.current;
+                    if (
+                        showSubprojectBounds &&
+                        typeof showSubprojectBounds === 'function'
+                    ) {
+                        showSubprojectBounds(title, subprojects, true);
+                    }
                 }
             });
         } else if (
@@ -291,7 +305,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         setIsEditing(false);
     };
 
-
     const updateSubprojectDescription = async (
         subprojectName: string,
         description: string
@@ -376,7 +389,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         <FilePlus className="h-5 w-5" />
                     </button>
                     <button
-                        className={'h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center mr-1 justify-center cursor-pointer'}
+                        className={
+                            'h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center mr-1 justify-center cursor-pointer'
+                        }
                         aria-label={
                             language === 'zh' ? '删除项目' : 'Delete Project'
                         }
@@ -435,17 +450,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 .map((subproject, index) => (
                                     <SubprojectCard
                                         key={index}
-                                        isHighlighted={highlightedSubproject === `${title}:${subproject.name}`}
+                                        isHighlighted={
+                                            highlightedSubproject ===
+                                            `${title}:${subproject.name}`
+                                        }
                                         subproject={subproject}
                                         parentProjectTitle={title}
                                         language={language}
                                         onCardClick={() => {
                                             if (onSubprojectHighlight) {
-                                                onSubprojectHighlight(title, subproject.name);
+                                                onSubprojectHighlight(
+                                                    title,
+                                                    subproject.name
+                                                );
                                             }
                                         }}
                                         onStarToggle={handleSubprojectStarClick}
-                                        onSaveSubprojectDescription={updateSubprojectDescription}
+                                        onSaveSubprojectDescription={
+                                            updateSubprojectDescription
+                                        }
                                     />
                                 ))}
                         </div>

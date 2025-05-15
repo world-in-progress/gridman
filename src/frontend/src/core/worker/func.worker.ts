@@ -263,14 +263,13 @@ export async function updateSubprojectStarred(
   params: { projectName: string; subprojectName: string; starred: boolean },
   callback: Callback<any>
 ) {
-  console.log("updateSubprojectStarred", params);
-  const { projectName, subprojectName, starred } = params;
-  const { err, result } = await ProjectUtils.updateSubprojectStarred(
-    projectName,
-    subprojectName,
-    starred
-  );
-  callback(err, result);
+    const { projectName, subprojectName, starred } = params;
+    const { err, result } = await ProjectUtils.updateSubprojectStarred(
+        projectName,
+        subprojectName,
+        starred
+    );
+    callback(err, result);
 }
 
 export async function updateSubprojectDescription(
@@ -278,14 +277,13 @@ export async function updateSubprojectDescription(
   params: { projectName: string; subprojectName: string; description: string },
   callback: Callback<any>
 ) {
-  console.log("updateSubprojectDescription", params);
-  const { projectName, subprojectName, description } = params;
-  const { err, result } = await ProjectUtils.updateSubprojectDescription(
-    projectName,
-    subprojectName,
-    description
-  );
-  callback(err, result);
+    const { projectName, subprojectName, description } = params;
+    const { err, result } = await ProjectUtils.updateSubprojectDescription(
+        projectName,
+        subprojectName,
+        description
+    );
+    callback(err, result);
 }
 
 export async function setSubproject(

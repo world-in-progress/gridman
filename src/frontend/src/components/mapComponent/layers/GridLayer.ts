@@ -1838,8 +1838,10 @@ function isMacOS(): boolean {
 }
 
 // ADDON
-function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
-    const rect = canvas.getBoundingClientRect()
+function genPickingBox(map: Map, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
+    // 使用map.getCanvas()获取Mapbox的主canvas
+    const canvas = map.getCanvas();
+    const rect = canvas.getBoundingClientRect();
     const _pickingBox = [
         startEvent.originalEvent.clientX - rect.left,
         startEvent.originalEvent.clientY - rect.top,

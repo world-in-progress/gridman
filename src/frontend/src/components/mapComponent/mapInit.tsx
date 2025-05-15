@@ -42,6 +42,7 @@ interface MapInitHandle {
     startDrawRectangle: (cancel?: boolean) => void;
     startPointSelection: (cancel?: boolean) => void;
     flyToSubprojectBounds: (projectName: string, subprojectName: string) => Promise<void>;
+    highlightSubproject: (projectName: string, subprojectName: string) => void;
     showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
 }
 
@@ -424,12 +425,14 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         startDrawRectangle,
         startPointSelection,
         flyToSubprojectBounds,
+        highlightSubproject,
         showSubprojectBounds,
     }),
     [
         startDrawRectangle,
         startPointSelection,
         flyToSubprojectBounds,
+        highlightSubproject,
         showSubprojectBounds,
     ]);
 

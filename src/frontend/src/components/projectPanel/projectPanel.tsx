@@ -80,7 +80,7 @@ export default function ProjectPanel({
                     {language === 'zh' ? '项目列表' : 'Project List'}
                 </h1>
                 <SearchForm
-                    className="flex flex-col gap-2 mb-2"
+                    className="flex flex-col gap-2 mb-1 p-1 -mt-2"
                     onSearch={handleSearch}
                     placeholder={
                         language === 'zh' ? '搜索项目...' : 'Search projects...'
