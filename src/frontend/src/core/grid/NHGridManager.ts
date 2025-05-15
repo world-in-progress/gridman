@@ -1205,8 +1205,8 @@ export default class GridManager {
             this._projConverter.forward([xMax, yMin]), // srcBR
         ];
 
-        const renderCoords:number[] = []
-        const renderCoordsLow:number[] = []
+        const renderCoords: number[] = []
+        const renderCoordsLow: number[] = []
         targetCoords.forEach((coord) => {
             const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
             const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
