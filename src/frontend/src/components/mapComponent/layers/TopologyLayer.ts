@@ -624,10 +624,10 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         let storageIds
         if (e2) { //box mode
             const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, this._boxPickingStart!, this._boxPickingEnd!)
+            const box = genPickingBox(canvas, [e.originalEvent.clientX, e.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
             storageIds = this._boxPicking(box)
         } else {
-            storageIds = this._brushPicking(this._calcPickingMatrix(e))
+            storageIds = this._brushPicking(this._calcPickingMatrix([e.originalEvent.clientX, e.originalEvent.clientY]))
         }
         return storageIds
     }
@@ -843,12 +843,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.map.triggerRepaint()
     }
 
-    private _calcPickingMatrix(e: MapMouseEvent) {
+    private _calcPickingMatrix(pos: [number, number]) {
         const canvas = this._gl.canvas as HTMLCanvasElement
         const rect = canvas.getBoundingClientRect()
         
-        const offsetX = e.originalEvent.clientX - rect.left
-        const offsetY = e.originalEvent.clientY - rect.top
+        const offsetX = pos[0] - rect.left
+        const offsetY = pos[1] - rect.top
 
         const computedStyle = window.getComputedStyle(canvas)
         const canvasWidth = +computedStyle.width.split('px')[0]
@@ -898,13 +898,16 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             const e2 = this._boxPickingEnd
             // }
 
-            const storageIds = this.picking(e1, e2)
-            this.hit(storageIds, true)
+            // const storageIds = this.picking(e1, e2)
+
+            // this.hit(storageIds, true)
 
 
-            clear(this._ctx!)
-            this._boxPickingStart = null
-            this._boxPickingEnd = null
+            // clear(this._ctx!)
+            // this._boxPickingStart = null
+            // this._boxPickingEnd = null
+ 
+            this.executePickGrids(0, true, [e1.originalEvent.clientX, e1.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
             this.isShiftClick = false
         }
     }
@@ -923,7 +926,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             // Render the picking box
             this._boxPickingEnd = e
             const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, this._boxPickingStart, this._boxPickingEnd!)
+            const box = genPickingBox(canvas, [this._boxPickingStart.originalEvent.clientX, this._boxPickingStart.originalEvent.clientY], [this._boxPickingEnd.originalEvent.clientX, this._boxPickingEnd.originalEvent.clientY])
             drawRectangle(this._ctx!, box)
         }
     }
@@ -976,15 +979,15 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     // type: 0 - box, 1 - brush, 2 - feature
     // mode: true - add, false - remove
-    executePickGrids(type: number, mode: boolean, e: MapMouseEvent, e2: MapMouseEvent | undefined = undefined) {
+    executePickGrids(type: number, mode: boolean, startPos: [number, number], endPos?: [number, number]) {
 
         let storageIds
         if (type === 0) {
             const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, this._boxPickingStart!, this._boxPickingEnd!)
+            const box = genPickingBox(canvas, startPos, endPos!)
             storageIds = this._boxPicking(box)
         } else if (type === 1) {
-            storageIds = this._brushPicking(this._calcPickingMatrix(e))
+            storageIds = this._brushPicking(this._calcPickingMatrix(startPos))
         } else {
             storageIds = []
             //TODO: feature picking
@@ -1057,13 +1060,23 @@ function isMacOS(): boolean {
 }
 
 // ADDON
-function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
+// function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
+//     const rect = canvas.getBoundingClientRect()
+//     const _pickingBox = [
+//         startEvent.originalEvent.clientX - rect.left,
+//         startEvent.originalEvent.clientY - rect.top,
+//         endEvent.originalEvent.clientX - rect.left,
+//         endEvent.originalEvent.clientY - rect.top
+//     ]
+//     return _pickingBox as [number, number, number, number]
+// }
+function genPickingBox(canvas: HTMLCanvasElement, startPos: [number, number], endPos: [number, number]) {
     const rect = canvas.getBoundingClientRect()
     const _pickingBox = [
-        startEvent.originalEvent.clientX - rect.left,
-        startEvent.originalEvent.clientY - rect.top,
-        endEvent.originalEvent.clientX - rect.left,
-        endEvent.originalEvent.clientY - rect.top
+        startPos[0] - rect.left,
+        startPos[1] - rect.top,
+        endPos[0] - rect.left,
+        endPos[1] - rect.top
     ]
     return _pickingBox as [number, number, number, number]
 }
