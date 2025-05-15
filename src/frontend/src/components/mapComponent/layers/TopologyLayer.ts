@@ -33,7 +33,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     // Layer-related //////////////////////////////////////////////////
     type = 'custom' as const
     id = 'TopologyLayer'
-    initialized = false
     visible = true
     layerGroup!: NHLayerGroup
 
@@ -44,7 +43,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     maxGridNum: number
     bBox!: BoundingBox2D
     hitSet = new Set<number>
-    _gridRecorder!: GridRecorder
+    _gridRecorder: GridRecorder | null = null
     hitFlag = new Uint8Array([1])   // 0 is a special value and means no selection
     projConverter!: proj4.Converter
     
@@ -197,11 +196,23 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     get gridRecorder(): GridRecorder {
+        if (!this._gridRecorder) {
+            const err = new Error('GridRecorder is not initialized')
+            console.error(err)
+            throw err
+        }
         return this._gridRecorder
     }
 
+    get initialized() {
+        if (this._gridRecorder && this._gridRecorder!.gridNum) {
+            return true
+        }
+        return false
+    }
+
     get subdivideRules() {
-        return this._gridRecorder.subdivideRules.rules
+        return this._gridRecorder!.subdivideRules.rules
     }
 
     // Fast function to upload one grid rendering info to GPU stograge buffer
@@ -466,7 +477,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, 256, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
 
-        this.initialized = true
         this.showLoading(false)
 
         // Add event listener for topology editor
@@ -577,7 +587,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     render(gl: WebGL2RenderingContext, matrix: number[]) {
 
         // Skip if not ready
-        if (!this.initialized || !this.gridRecorder) return
+        if (!this.initialized) return // check if topology layer is initialized
 
 
         if (!this.visible) return
@@ -602,6 +612,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         // Update display of capacity
         this.uiOption.capacity = this.gridRecorder.gridNum
         this.capacityController.updateDisplay()
+    }
+
+    removeResource() {
+        this._gridRecorder = null
+        this.map.triggerRepaint()
     }
 
     picking(e: MapMouseEvent, e2: MapMouseEvent | undefined = undefined) {
@@ -693,7 +708,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         this.hitSet.clear();
 
-        this.initialized = false;
         this.visible = false;
     }
 

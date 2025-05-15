@@ -154,7 +154,7 @@ export default class SchemaUtils {
 
         const responseData = await getResponse.json();
         try {
-            const countResponse = await fetch('/api/grid/schemas/num');
+            const countResponse = await fetch(numAPI);
             if (countResponse.ok) {
                 const countText = await countResponse.text();
     

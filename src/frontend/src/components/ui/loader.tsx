@@ -200,9 +200,9 @@ const StyledWrapper = styled.div`
     width: 200px;
     height: 200px;
     position: absolute;
-    left: 40%;
+    left: 50%;
     margin-left: -100px;
-    top: 50%;
+    top: 55%;
     margin-top: -100px;
     z-index: 100;
   }

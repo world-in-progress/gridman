@@ -241,7 +241,6 @@ export class ProjectService {
                 if (error) {
                     console.error('设置子项目失败:', error);
                 } else {
-                    // console.log(result);
                     const epsg : number = result.epsg
                     const bounds : [number, number, number, number] = result.bounds
                     const subdivideRules : Array<[number, number]> = result.subdivide_rules
@@ -252,7 +251,6 @@ export class ProjectService {
                         targetCS: 'EPSG:4326'
                     }
                     const recorder: GridRecorder = new GridRecorder(recorderMeta, 4096 * 4096)
-                    // GridRecorderContext.recorder = recorder
                     store.set('gridRecorder', recorder)
 
                     // Update recorder of TopologyLayer
