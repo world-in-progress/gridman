@@ -19,6 +19,7 @@ import {
 } from '../context';
 import {
     Breadcrumb,
+    BreadcrumbEllipsis,
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
@@ -48,13 +49,14 @@ import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import GridRecorder from '@/core/grid/NHGridRecorder';
 import store from '@/store';
 import Loader from './ui/loader';
+import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
+import TopologyLayer from './mapComponent/layers/TopologyLayer';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType =
     | 'schema'
     | 'project'
-    | 'topology'
-    | 'attribute'
+    | 'editor'
     | null;
 
 export default function Page() {
@@ -72,14 +74,14 @@ export default function Page() {
     );
     const [gridRecorder, setGridRecorder] = useState<GridRecorder | null>(null);
 
-    store.set('isLoading', {
-        on: () => {
-            setIsLoading(true)
-        },
-        off: () => {
-            setIsLoading(false)
-        }
-    })
+    // store.set('isLoading', {
+    //     on: () => {
+    //         setIsLoading(true)
+    //     },
+    //     off: () => {
+    //         setIsLoading(false)
+    //     }
+    // })
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -93,6 +95,10 @@ export default function Page() {
             subprojects: any[],
             show: boolean
         ) => void;
+        highlightSubproject: (
+            projectName: string,
+            subprojectName: string
+        ) => void;
     }>(null);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
@@ -105,8 +111,11 @@ export default function Page() {
     const [activeBreadcrumb, setActiveBreadcrumb] =
         useState<BreadcrumbType>(null);
     const [activePanel, setActivePanel] = useState<
-        'schema' | 'project' | 'topology' | null
+        'schema' | 'project' | 'editor' | null
     >(null);
+    // const [activePanel, setActivePanel] = useState<
+    //     'schema' | 'project' | 'editor' | 'topology' | null
+    // >(null);
     const [selectedSchemaName, setSelectedSchemaName] = useState<
         string | undefined
     >(undefined);
@@ -156,8 +165,8 @@ export default function Page() {
     useEffect(() => {
         const handleSwitchToTopology = (event: any) => {
             const { projectName, subprojectName } = event.detail;
-            setActivePanel('topology');
-            setActiveBreadcrumb('topology');
+            setActivePanel('editor');
+            setActiveBreadcrumb('editor');
         };
 
         window.addEventListener('switchToEditorPanel', handleSwitchToTopology);
@@ -208,6 +217,12 @@ export default function Page() {
 
     const handleBreadcrumbClick = (item: BreadcrumbType) => {
         setActiveBreadcrumb(item);
+
+        // Clear TopologyLayer resource
+        const clg = store.get<NHLayerGroup>('clg')!
+        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer
+        layer.removeResource()
+
         if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
@@ -219,8 +234,6 @@ export default function Page() {
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
             }
-            // const a = store.get<GridRecorder>('gridRecorder')
-            // console.log(a)
         } else if (item === 'project') {
             clearMapMarkers();
             setIsSelectingPoint(false);
@@ -237,10 +250,6 @@ export default function Page() {
     const handleNextClick = () => {
         if (!activeBreadcrumb || activeBreadcrumb === 'schema') {
             handleBreadcrumbClick('project');
-        } else if (activeBreadcrumb === 'project') {
-            setActiveBreadcrumb('topology');
-        } else if (activeBreadcrumb === 'topology') {
-            setActiveBreadcrumb('attribute');
         }
     };
 
@@ -304,6 +313,10 @@ export default function Page() {
         project: {
             zh: '项目',
             en: 'Project',
+        },
+        editor: {
+            zh: '编辑',
+            en: 'Editor',
         },
         topology: {
             zh: '拓扑',
@@ -391,7 +404,7 @@ export default function Page() {
                 return (
                     <ProjectPanel onCreateSubProject={handleCreateSubProject} />
                 );
-            } else if (activePanel === 'topology') {
+            } else if (activePanel === 'editor') {
                 return (
                     <EditorPanel
                         onBack={() => {
@@ -455,6 +468,18 @@ export default function Page() {
                                 <BreadcrumbItem>
                                     <BreadcrumbLink
                                         className={
+                                            activeBreadcrumb === 'editor'
+                                                ? 'text-[#71F6FF] font-bold'
+                                                : ''
+                                        }
+                                    >
+                                        {breadcrumbText.editor[language]}
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                {/* <BreadcrumbSeparator className="hidden md:block" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink
+                                        className={
                                             activeBreadcrumb === 'topology'
                                                 ? 'text-[#71F6FF] font-bold'
                                                 : ''
@@ -474,7 +499,7 @@ export default function Page() {
                                     >
                                         {breadcrumbText.attribute[language]}
                                     </BreadcrumbLink>
-                                </BreadcrumbItem>
+                                </BreadcrumbItem> */}
                             </BreadcrumbList>
                         </Breadcrumb>
                     </div>
@@ -527,7 +552,15 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen w-screen">
-                    {isLoading && <Loader />}
+                    {/* {isLoading && (
+                        <>
+                            <div 
+                                className="fixed inset-0 pointer-events-auto z-10" 
+                                style={{ backgroundColor: 'rgba(200, 200, 200, 0.4)' }} 
+                            />
+                            <Loader />
+                        </>
+                    )} */}
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
@@ -538,13 +571,13 @@ export default function Page() {
                             onClose={() => setIsChatOpen(false)}
                         />
                     )}
-                    <div className="fixed flex flex-row gap-2 bottom-6 right-6 z-5">
+                    <div className="fixed flex flex-row gap-4 bottom-6 right-6 z-5">
                         {aiDialogEnabled && (
                             <Button
                                 className="rounded-md px-4 py-2 flex items-center justify-center bg-[#00C0FF] hover:bg-blue-400 shadow-lg text-white cursor-pointer"
                                 onClick={toggleChat}
                             >
-                                <span className="mr-2">
+                                <span>
                                     {isChatOpen
                                         ? language === 'zh'
                                             ? '关闭AI对话'
@@ -561,7 +594,7 @@ export default function Page() {
                             aria-label={language === 'zh' ? '下一步' : 'Next'}
                             title={language === 'zh' ? '下一步' : 'Next'}
                         >
-                            <span className="mr-2">
+                            <span>
                                 {language === 'zh' ? '下一步' : 'Next'}
                             </span>
                             <ArrowRight className="h-4 w-4" />

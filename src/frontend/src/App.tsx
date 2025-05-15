@@ -5,7 +5,9 @@ import { Navbar } from './components/navbar';
 import { useState, createContext, RefObject } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { Toaster } from '@/components/ui/sonner';
-import { SidebarContext, LanguageContext, AIDialogContext } from './context'
+import { SidebarContext, LanguageContext, AIDialogContext } from './context';
+import store from '@/store';
+import Loader from './components/ui/loader';
 
 declare global {
     interface Window {
@@ -19,6 +21,16 @@ function App() {
     const [activeSidebar, setActiveSidebar] = useState<SidebarType>('grid'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
+
+    const [isLoading, setIsLoading] = useState(false);
+    store.set('isLoading', {
+        on: () => {
+            setIsLoading(true);
+        },
+        off: () => {
+            setIsLoading(false);
+        },
+    });
 
     const handleNavClick = (item: string, type?: string) => {
         if (type === 'grid' || type === 'terrain') {
@@ -40,13 +52,23 @@ function App() {
                         value={{ aiDialogEnabled, setAIDialogEnabled }}
                     >
                         <div className="flex flex-col h-screen">
+                            {isLoading && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 pointer-events-auto z-80"
+                                        style={{
+                                            backgroundColor:
+                                                'rgba(33, 33, 33, 0.4)',
+                                        }}
+                                    />
+                                    <Loader />
+                                </>
+                            )}
                             <Navbar
                                 className="z-50 relative border-black"
                                 onNavItemClick={handleNavClick}
                             ></Navbar>
-                            <div
-                                className="flex-1 overflow-hidden h-[calc(100vh-64px)]"
-                            >
+                            <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
                                 <Page />
                             </div>
                             <Toaster

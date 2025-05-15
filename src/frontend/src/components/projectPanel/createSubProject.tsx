@@ -221,7 +221,6 @@ export default function CreateSubProject({
     const handleDrawRectangle = useCallback(() => {
         if (onDrawRectangle) {
             if (rectangleCoordinates) {
-                console.log(cornerMarker, gridLine, gridLabel)
                 if (cornerMarker) {
                     cornerMarker.remove();
                     setCornerMarker && setCornerMarker(null);
@@ -589,7 +588,6 @@ export default function CreateSubProject({
     const handleBack = () => {
         clearMapMarkers();
 
-        console.log('cornerMarker',cornerMarker,'schemaMarker', schemaMarker,'gridLine', gridLine,'gridLabel', gridLabel)
         if (cornerMarker) {
             cornerMarker.remove();
             setCornerMarker && setCornerMarker(null);

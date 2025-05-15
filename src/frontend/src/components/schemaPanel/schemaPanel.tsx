@@ -45,7 +45,7 @@ export default function SchemaPanel({
                 <h1 className="text-4xl font-semibold p-3 text-center">
                     {language === 'zh' ? '模板列表' : 'Schema List'}
                 </h1>
-                <div className="left-0 right-0 mb-2 flex justify-center">
+                <div className="left-0 right-0 mb-2 -mt-2 flex justify-center">
                     <button
                         className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 py-2 flex items-center gap-2 shadow-lg cursor-pointer"
                         onClick={onCreateNew}
@@ -59,7 +59,7 @@ export default function SchemaPanel({
                     </button>
                 </div>
                 <SearchForm
-                    className="flex flex-col gap-2 mb-2"
+                    className="flex flex-col gap-2 mb-1 p-1"
                     onSearch={handleSearch}
                     placeholder={
                         language === 'zh' ? '搜索模板...' : 'Search schemas...'

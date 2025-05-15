@@ -17,31 +17,31 @@ export default function BasicInfo({}: BrushCardProps) {
 
     return (
         <div className="bg-blue-50 p-3 rounded-md">
-            <h2 className="text-lg font-bold text-blue-900">
-                {language === 'zh' ? '当前项目' : 'Current Project'}
+            <h2 className="text-xl font-bold text-blue-900">
+                {language === 'zh' ? '当前编辑' : 'Current Editing'}
             </h2>
             <div className="text-sm text-blue-800 mt-1 grid gap-1">
                 <div>
-                    <span className="font-medium">
+                    <span className="font-bold">
                         {language === 'zh' ? '项目名称：' : 'Project: '}
                     </span>
                     {currentProject || '-'}
                 </div>
                 <div>
-                    <span className="font-medium">
+                    <span className="font-bold">
                         {language === 'zh' ? '子项目：' : 'Subproject: '}
                     </span>
                     {currentSubproject || '-'}
                 </div>
                 <div>
-                    <span className="font-medium">EPSG: {epsg || '-'}</span>
+                    <span className="font-bold">EPSG: {epsg || '-'}</span>
                 </div>
                 <div className="flex flex-row items-start">
                     <div
-                        className="font-medium"
+                        className="font-bold"
                         style={{ flexBasis: '25%', flexGrow: 0, flexShrink: 0 }}
                     >
-                        {language === 'zh' ? '网格层级：' : 'GridLevel: '}
+                        {language === 'zh' ? '细分规则：' : 'Subdivide: '}
                     </div>
                     {subdivideRules && subdivideRules.length > 0 ? (
                         <div
@@ -77,7 +77,7 @@ export default function BasicInfo({}: BrushCardProps) {
                         </div>
                     )}
                 </div>
-                <div>
+                <div className="font-bold">
                     {language === 'zh' ? '包围盒：' : 'BoundingBox: '}
                     {bounds ? (
                         <BoundsCard bounds={bounds} language={language} />
