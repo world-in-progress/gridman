@@ -1,27 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Star,
     FileType2,
     SquarePen,
     PencilRuler,
-    ArrowUp,
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
+    Ellipsis,
+    Grid,
+    Mountain,
+    Waypoints,
 } from 'lucide-react';
 import { SubProjectCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { AnimatedCard, CardBackground, Blob } from './cardBackground';
 import store from '@/store';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import BoundsCard from './boundsCard';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 declare global {
     interface Window {
@@ -42,11 +42,40 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     onSaveSubprojectDescription,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const showLoadingRef = useRef<Function | null>(null);
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
-    const isLoading = store.get<{on: Function, off: Function}>('isLoading')!
+    const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+
+    const menuItems = [
+        {
+            title: language === 'zh' ? '网格' : 'Grid',
+            icon: <Grid className="h-4 w-4 mr-2" />,
+            onClick: (e: React.MouseEvent) => {
+                console.log('Grid clicked');
+            },
+        },
+        {
+            title: language === 'zh' ? '地形' : 'Terrain',
+            icon: <Mountain className="h-4 w-4 mr-2" />,
+            onClick: (e: React.MouseEvent) => {
+                console.log('Terrain clicked');
+            },
+        },
+        {
+            title: language === 'zh' ? '管道' : 'Pipeline',
+            icon: <Waypoints className="h-4 w-4 mr-2" />,
+            onClick: (e: React.MouseEvent) => {
+                console.log('Pipeline clicked');
+            },
+        },
+    ];
+
+    const onMenuOpenChange = (newOpen: boolean) => {
+        setOpen(newOpen);
+    };
 
     const handleCancel = () => {
         setIsEditing(false);
@@ -61,17 +90,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 flyToSubprojectBounds &&
                 typeof flyToSubprojectBounds === 'function'
             ) {
-                flyToSubprojectBounds(
-                    parentProjectTitle,
-                    subproject.name
-                ).catch((error: any) => {
-                    console.error(
-                        language === 'zh'
-                            ? '飞行到子项目边界失败:'
-                            : 'Failed to fly to subproject bounds:',
-                        error
-                    );
-                });
+                flyToSubprojectBounds(parentProjectTitle, subproject.name);
             }
         }
     };
@@ -102,16 +121,37 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        isLoading.on()
+        isLoading.on();
         const projectService = new ProjectService(language);
-        store.set('ProjectName', parentProjectTitle)
-        store.set('SubprojectName', subproject.name)
+        store.set('ProjectName', parentProjectTitle);
+        store.set('SubprojectName', subproject.name);
+
+        if (window.mapInstance && window.mapRef && window.mapRef.current) {
+            const { flyToSubprojectBounds } = window.mapRef.current;
+            if (
+                flyToSubprojectBounds &&
+                typeof flyToSubprojectBounds === 'function'
+            ) {
+                flyToSubprojectBounds(
+                    parentProjectTitle,
+                    subproject.name
+                ).catch((error: any) => {
+                    console.error(
+                        language === 'zh'
+                            ? '飞行到子项目边界失败:'
+                            : 'Failed to fly to subproject bounds:',
+                        error
+                    );
+                });
+            }
+        }
+
         projectService.setSubproject(
             parentProjectTitle,
             subproject.name,
             (error, result) => {
                 if (error || !result) {
-                    isLoading.off()
+                    isLoading.off();
                     return;
                 }
 
@@ -126,7 +166,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     result.fromStorageId,
                     result.levels,
                     result.vertices,
-                    result.verticesLow
+                    result.verticesLow,
                 ]);
                 if (window.mapRef && window.mapRef.current) {
                     const pageEvents = new CustomEvent('switchToEditorPanel', {
@@ -137,7 +177,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     });
                     window.dispatchEvent(pageEvents);
                 }
-                isLoading.off()
+                isLoading.off();
             }
         );
     };
@@ -186,14 +226,52 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                             } cursor-pointer`}
                         />
                     </button>
+                    <DropdownMenu open={open} onOpenChange={onMenuOpenChange}>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
+                                aria-label={language === 'zh' ? '更多' : 'More'}
+                                title={language === 'zh' ? '更多' : 'More'}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            >
+                                <Ellipsis className="h-5 w-5" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            side="right"
+                            align="start"
+                            alignOffset={40}
+                            className="w-40"
+                            sideOffset={-20}
+                        >
+                            {menuItems.map((subItem) => (
+                                <DropdownMenuItem key={subItem.title} asChild>
+                                    <a
+                                        className="cursor-pointer flex items-center"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onMenuOpenChange(false);
+                                            subItem.onClick &&
+                                                subItem.onClick(e);
+                                        }}
+                                    >
+                                        {subItem.icon}
+                                        {subItem.title}
+                                    </a>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
             {subproject.bounds && subproject.bounds.length === 4 && (
                 <div className=" border-gray-200">
-                    <BoundsCard 
-                        bounds={subproject.bounds} 
-                        language={language} 
+                    <BoundsCard
+                        bounds={subproject.bounds}
+                        language={language}
                     />
                 </div>
             )}
@@ -303,7 +381,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     } else {
         return (
             <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-4 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-2 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
                 onClick={onCardClick}
                 id={cardId}
             >

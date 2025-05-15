@@ -326,7 +326,7 @@ export function SubNavPanel({
         if (window.mapRef && window.mapRef.current) {
             const { highlightSubproject } = window.mapRef.current;
             if (highlightSubproject && typeof highlightSubproject === 'function') {
-                highlightSubproject(projectName, subprojectName);
+                highlightSubproject(projectName, subprojectName, true);
             }
         }
     };

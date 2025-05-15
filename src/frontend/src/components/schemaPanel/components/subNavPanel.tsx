@@ -109,6 +109,9 @@ export function SubNavPanel({
                             onTotalItemsChange(result.totalCount);
                             setSchemas(result.schemas);
                             updateStarredItems(result.schemas);
+                            if (result.length > 0) {
+                                markerManager.showAllSchemasOnMap(result);
+                            }
                         }
                     );
                 }
