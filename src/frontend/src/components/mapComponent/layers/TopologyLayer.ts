@@ -1045,7 +1045,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._updateHitFlag()
         this.map.triggerRepaint()
     }
-    
+
+    executeDrawBox(startPos: [number, number], endPos: [number, number]) {
+        const canvas = this._gl.canvas as HTMLCanvasElement
+        const box = genPickingBox(canvas, startPos, endPos)
+        drawRectangle(this._ctx!, box)
+    }
 }
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
