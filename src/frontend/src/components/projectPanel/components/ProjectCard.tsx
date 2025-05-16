@@ -174,9 +174,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             const { flyToProjectBounds, showSubprojectBounds } =
                 window.mapRef.current;
             showSubprojectBounds(title, subprojects, true);
-            console.log(subprojects)
-
-            console.log('showSubprojectBounds', window.mapRef.current);
+            
+            // console.log(subprojects)
+            // console.log('showSubprojectBounds', window.mapRef.current);
 
             // TODO: Outline first show is black
             fetchSubprojectsList().then(() => {

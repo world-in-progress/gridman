@@ -1,10 +1,16 @@
-import React, { useEffect, useState, ForwardRefRenderFunction, useContext } from 'react';
+import React, {
+    useEffect,
+    useState,
+    ForwardRefRenderFunction,
+    useContext,
+} from 'react';
 import mapboxgl from 'mapbox-gl';
 import NHMap from './utils/NHMap';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { RectangleCoordinates } from '../operatePanel/operatePanel';
+import { MapInitProps, MapInitHandle } from './types/types';
 import { CustomLayer } from './layers/customLayer';
 import ThreejsSceneLayer from './threejs/threejs-scene';
 // Import rectangle drawing mode
@@ -27,23 +33,6 @@ declare global {
         mapInstance?: mapboxgl.Map;
         mapboxDrawInstance?: MapboxDraw;
     }
-}
-
-interface MapInitProps {
-    initialLongitude?: number;
-    initialLatitude?: number;
-    initialZoom?: number;
-    maxZoom?: number;
-    onRectangleDrawn?: (coordinates: RectangleCoordinates) => void;
-    onPointSelected?: (coordinates: [number, number]) => void;
-}
-
-interface MapInitHandle {
-    startDrawRectangle: (cancel?: boolean) => void;
-    startPointSelection: (cancel?: boolean) => void;
-    flyToSubprojectBounds: (projectName: string, subprojectName: string) => Promise<void>;
-    highlightSubproject: (projectName: string, subprojectName: string) => void;
-    showSubprojectBounds: (projectName: string, subprojects: any[], show: boolean) => void;
 }
 
 const scene: ThreejsSceneLayer | null = null;
@@ -75,6 +64,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         null
     );
     const [showingProjectBounds, setShowingProjectBounds] = useState(false);
+
+    let isMouseDown = false;
+    let mouseDownPos = [0, 0];
+    let mouseMovePos = [0, 0];
+    let mouseUpPos = [0, 0];
+
+    // let pickingMode = store.get<boolean>('pickingSelect')!
+    // let modeType = store.get<number>('modeSelect')!
+
+    // const clg = store.get<NHLayerGroup>('clg')!;
+    // const topologyLayer = clg.getLayerInstance(
+    //     'TopologyLayer'
+    // )! as TopologyLayer;
 
     // Calculate the four corners and center point of the rectangle (EPSG:4326)
     const calculateRectangleCoordinates = (
@@ -236,19 +238,21 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
             mapInstance.addControl(drawInstance);
 
-
-////////////////////// Test draw custom rectangle layer //////////////////////
+            ////////////////////// Test draw custom rectangle layer //////////////////////
 
             mapInstance.on('load', () => {
-                
-                {/* Load 3d scene */}
+                {
+                    /* Load 3d scene */
+                }
                 // scene = new ThreejsSceneLayer({
                 //     id: 'test-scene',
                 //     refCenter: [initialLongitude, initialLatitude],
                 // });
                 // mapInstance.addLayer(scene);
 
-                {/* Load custom rectangle layer with shaking */}
+                {
+                    /* Load custom rectangle layer with shaking */
+                }
                 const customLayer = CustomLayer({
                     center: { lng: initialLongitude, lat: initialLatitude },
                     width: 0.00002, // Mercator
@@ -256,54 +260,171 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 });
                 // mapInstance.addLayer(customLayer);
 
-                {/* Load custom rectangle layer without shaking */}
+                {
+                    /* Load custom rectangle layer without shaking */
+                }
                 rectangleLayer = new GLMapRectangleLayer({
                     id: 'rectangle-layer',
                     origin: [114.02639476404397, 22.444079016023963],
                 });
                 // mapInstance.addLayer(rectangleLayer);
 
-                {/* Load custom rectangle draw layer */}
+                {
+                    /* Load custom rectangle draw layer */
+                }
                 customRectangleDraw = new CustomRectangleDraw({
                     id: 'custom-rectangle-draw',
                     corners: {
                         southWest: [114.022006, 22.438286], // LB
                         southEast: [114.033418, 22.438286], // RB
                         northEast: [114.033418, 22.449498], // RT
-                        northWest: [114.022006, 22.449498]  // LT
+                        northWest: [114.022006, 22.449498], // LT
                     },
                 });
                 // mapInstance.addLayer(customRectangleDraw);
-                
-                {/* initialize project bounds layer */}
+
+                {
+                    /* initialize project bounds layer */
+                }
                 projectBoundsLayer = new ProjectBoundsLayer({
-                    id: 'project-bounds-layer'
+                    id: 'project-bounds-layer',
                 });
                 // mapInstance.addLayer(projectBoundsLayer);
                 // do not show project bounds layer at the beginning
                 if (projectBoundsLayer) {
                     projectBoundsLayer.setVisibility('none');
                 }
-                
-                {/* initialize subproject bounds manager */}
-                subprojectBoundsManager = new SubprojectBoundsManager(mapInstance, 'zh');
-            
-                const topologyLayer = new TopologyLayer(
-                    mapInstance!,
-                    { maxGridNum: 4096 * 4096 }
+
+                {
+                    /* initialize subproject bounds manager */
+                }
+
+                // 添加鼠标事件监听器
+                const canvas = mapInstance.getCanvas();
+
+                // 新增鼠标事件监听
+                // const handleMouseDown = (e: MouseEvent) => {
+                //     if (!mapInstance || !e.shiftKey) return;
+                //     const canvas = mapInstance.getCanvas();
+                //     const rect = canvas.getBoundingClientRect();
+                //     const point = mapInstance.unproject([
+                //         e.clientX - rect.left,
+                //         e.clientY - rect.top,
+                //     ]);
+                //     setMouseDownPos([point.lng, point.lat]);
+                //     console.log('Mouse Down (Shift):', [point.lng, point.lat]);
+                //     isMouseDown = true;
+                //     console.log('isMouseDown:', isMouseDown);
+                // };
+
+                // const handleMouseMove = (e: MouseEvent) => {
+                //     console.log('isMouseDown:', isMouseDown);
+                //     if (!mapInstance || !e.shiftKey || !isMouseDown) return;
+                //     const canvas = mapInstance.getCanvas();
+                //     const rect = canvas.getBoundingClientRect();
+                //     const point = mapInstance.unproject([
+                //         e.clientX - rect.left,
+                //         e.clientY - rect.top,
+                //     ]);
+                //     setMouseMovePos([point.lng, point.lat]);
+                //     console.log('Mouse Move (Shift, Mouse Down):', [
+                //         point.lng,
+                //         point.lat,
+                //     ]);
+                // };
+
+                // const handleMouseUp = (e: MouseEvent) => {
+                //     if (!mapInstance || !e.shiftKey) return;
+                //     const canvas = mapInstance.getCanvas();
+                //     const rect = canvas.getBoundingClientRect();
+                //     const point = mapInstance.unproject([
+                //         e.clientX - rect.left,
+                //         e.clientY - rect.top,
+                //     ]);
+                //     setMouseUpPos([point.lng, point.lat]);
+                //     console.log('Mouse Up (Shift):', [point.lng, point.lat]);
+                //     isMouseDown = false;
+                //     console.log('isMouseDown:', isMouseDown);
+                // };
+
+                subprojectBoundsManager = new SubprojectBoundsManager(
+                    mapInstance,
+                    'zh'
                 );
 
-                const layerGroup = new NHLayerGroup()
-                layerGroup.id = 'gridman-custom-layer-group'
-                layerGroup.addLayer(topologyLayer)
+                const topologyLayer = new TopologyLayer(mapInstance!, {
+                    maxGridNum: 4096 * 4096,
+                });
 
-                store.set('clg', layerGroup)
+                const layerGroup = new NHLayerGroup();
+                layerGroup.id = 'gridman-custom-layer-group';
+                layerGroup.addLayer(topologyLayer);
+
+                store.set('clg', layerGroup);
                 mapInstance!.addLayer(layerGroup);
 
-            
+                const handleMouseDown = (e: MouseEvent) => {
+                    if (!e.shiftKey) return;
+                    isMouseDown = true;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    mouseDownPos = [x, y];
+                    console.log('鼠标按下 (Shift):', mouseDownPos);
+                };
+
+                const handleMouseMove = (e: MouseEvent) => {
+                    if (!e.shiftKey || !isMouseDown) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    mouseMovePos = [x, y];
+                    
+                    if ( store.get<number>('modeSelect') === 1 ) {
+                        console.log('鼠标移动 (Shift, 按下):', [x, y]);
+                        topologyLayer.executePickGrids(
+                            store.get<number>('modeSelect')!,
+                            store.get<boolean>('pickingSelect')!,
+                            // [mouseDownPos[0], mouseDownPos[1]],
+                            [mouseMovePos[0], mouseMovePos[1]]
+                        );
+                    }
+                };
+
+                const handleMouseUp = (e: MouseEvent) => {
+                    if (!e.shiftKey) return;
+                    isMouseDown = false;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    mouseUpPos = [x, y];
+                    console.log('鼠标抬起 (Shift):', mouseUpPos);
+
+                    // 在这里重新获取最新的store值
+                    // const currentModeType = store.get<number>('modeSelect')!;
+                    // const currentPickingMode = store.get<boolean>('pickingSelect')!;
+                    // console.log(currentModeType, currentPickingMode);
+                    console.log('1', [mouseDownPos[0], mouseDownPos[1]], '2', [
+                        mouseUpPos[0],
+                        mouseUpPos[1],
+                    ]);
+
+                    topologyLayer.executePickGrids(
+                        store.get<number>('modeSelect')!,
+                        store.get<boolean>('pickingSelect')!,
+                        [mouseDownPos[0], mouseDownPos[1]],
+                        [mouseUpPos[0], mouseUpPos[1]]
+                    );
+                };
+
+                // 添加鼠标事件监听器
+                // const canvas = mapInstance.getCanvas();
+                canvas.addEventListener('mousedown', handleMouseDown);
+                canvas.addEventListener('mousemove', handleMouseMove);
+                canvas.addEventListener('mouseup', handleMouseUp);
             });
-            
-//////////////////////////////////////////////////////////////////////////////
+
+            //////////////////////////////////////////////////////////////////////////////
 
             window.mapboxDrawInstance = drawInstance;
 
@@ -342,9 +463,13 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             setDraw(drawInstance);
 
             return (): void => {
+                // 清理事件监听器
+                const canvas = mapInstance.getCanvas();
+                // canvas.removeEventListener('mousedown', handleMouseDown);
+                // canvas.removeEventListener('mousemove', handleMouseMove);
+                // canvas.removeEventListener('mouseup', handleMouseUp);
                 mapInstance.remove();
             };
-        
         };
 
         if (!map) {
@@ -406,35 +531,58 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         }
     };
 
-    const flyToSubprojectBounds = async (projectName: string, subprojectName: string) => {
+    const flyToSubprojectBounds = async (
+        projectName: string,
+        subprojectName: string
+    ) => {
         if (!map || !subprojectBoundsManager) return;
-        await subprojectBoundsManager.flyToSubprojectBounds(projectName, subprojectName);
-    };
-    
-    const highlightSubproject = (projectName: string, subprojectName: string) => {
-        if (!map || !subprojectBoundsManager) return;
-        subprojectBoundsManager.highlightSubproject(projectName, subprojectName);
-    };
-
-    const showSubprojectBounds = (projectName: string, subprojects: any[], show: boolean) => {
-        if (!map || !subprojectBoundsManager) return;
-        subprojectBoundsManager.showSubprojectBounds(projectName, subprojects, show);
+        await subprojectBoundsManager.flyToSubprojectBounds(
+            projectName,
+            subprojectName
+        );
     };
 
-    React.useImperativeHandle(ref, () => ({
-        startDrawRectangle,
-        startPointSelection,
-        flyToSubprojectBounds,
-        highlightSubproject,
-        showSubprojectBounds,
-    }),
-    [
-        startDrawRectangle,
-        startPointSelection,
-        flyToSubprojectBounds,
-        highlightSubproject,
-        showSubprojectBounds,
-    ]);
+    const highlightSubproject = (
+        projectName: string,
+        subprojectName: string
+    ) => {
+        if (!map || !subprojectBoundsManager) return;
+        subprojectBoundsManager.highlightSubproject(
+            projectName,
+            subprojectName
+        );
+    };
+
+    const showSubprojectBounds = (
+        projectName: string,
+        subprojects: any[],
+        show: boolean
+    ) => {
+        if (!map || !subprojectBoundsManager) return;
+        subprojectBoundsManager.showSubprojectBounds(
+            projectName,
+            subprojects,
+            show
+        );
+    };
+
+    React.useImperativeHandle(
+        ref,
+        () => ({
+            startDrawRectangle,
+            startPointSelection,
+            flyToSubprojectBounds,
+            highlightSubproject,
+            showSubprojectBounds,
+        }),
+        [
+            startDrawRectangle,
+            startPointSelection,
+            flyToSubprojectBounds,
+            highlightSubproject,
+            showSubprojectBounds,
+        ]
+    );
 
     return (
         <div className="relative w-full h-full">
