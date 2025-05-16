@@ -57,6 +57,10 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     private _gl: WebGL2RenderingContext
 
+    // Screen properties
+    private _screenWidth: number = 0
+    private _screenHeight: number = 0
+
     // Shader
     private _pickingShader: WebGLProgram = 0
     private _gridMeshShader: WebGLProgram = 0
@@ -458,10 +462,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._pickingTexture = gll.createTexture2D(gl, 0, 1, 1, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]))
         this._pickingRBO = gll.createRenderBuffer(gl, 1, 1)
         this._pickingFBO = gll.createFrameBuffer(gl, [this._pickingTexture], 0, this._pickingRBO)!
-
-        this._boxPickingTexture = gll.createTexture2D(gl, 0, gl.canvas.width, gl.canvas.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(gl.canvas.width * gl.canvas.height * 4).fill(0))
-        this._boxPickingRBO = gll.createRenderBuffer(gl, gl.canvas.width, gl.canvas.height)
-        this._boxPickingFBO = gll.createFrameBuffer(gl, [this._boxPickingTexture], 0, this._boxPickingRBO)!
+        this._resetScreenFBO()
 
 
         // Init palette texture (default in subdivider type)
@@ -485,9 +486,29 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         //         // Raise flag when the root grid (level: 0, globalId: 0) has been subdivided
         //         this.initialized = true
-        //         this.showLoading!(false)
+        //         this.showLoading!(false)`
         //     })
         // })
+    }
+
+    _resetScreenFBO() {
+        const gl = this._gl
+        if (this._screenWidth === gl.canvas.width && this._screenHeight === gl.canvas.height) return
+
+        if (this._boxPickingTexture !==0) {
+            console.log('@!!!!')
+            gl.deleteTexture(this._boxPickingTexture)
+        }
+        if (this._boxPickingRBO !== 0) {
+            gl.deleteRenderbuffer(this._boxPickingRBO)
+        } 
+        if (this._boxPickingFBO !== 0) {
+            gl.deleteFramebuffer(this._boxPickingFBO)
+        }
+
+        this._boxPickingTexture = gll.createTexture2D(gl, 0, gl.canvas.width, gl.canvas.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(gl.canvas.width * gl.canvas.height * 4).fill(0))
+        this._boxPickingRBO = gll.createRenderBuffer(gl, gl.canvas.width, gl.canvas.height)
+        this._boxPickingFBO = gll.createFrameBuffer(gl, [this._boxPickingTexture], 0, this._boxPickingRBO)!
     }
 
     removeUIHandler() {
@@ -765,6 +786,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         const canvasWidth = +computedStyle.width.split('px')[0]
         const canvasHeight = +computedStyle.height.split('px')[0]
 
+        this._resetScreenFBO()
         const minx = Math.min(pickingBox[0], pickingBox[2])
         const miny = Math.max(pickingBox[1], pickingBox[3])
         const maxx = Math.max(pickingBox[0], pickingBox[2])
@@ -781,6 +803,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         const boxPickingMatrix = mat4.create()
 
+        this._boxPickingTexture = gll.createTexture2D(gl, 0, gl.canvas.width, gl.canvas.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(gl.canvas.width * gl.canvas.height * 4).fill(0))
         gl.bindFramebuffer(gl.FRAMEBUFFER, this._boxPickingFBO)
         gl.viewport(0, 0, canvasWidth, canvasHeight)
 
@@ -925,7 +948,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this._boxPickingEnd = e
             const canvas = this._gl.canvas as HTMLCanvasElement
             const box = genPickingBox(canvas, [this._boxPickingStart.originalEvent.clientX, this._boxPickingStart.originalEvent.clientY], [this._boxPickingEnd.originalEvent.clientX, this._boxPickingEnd.originalEvent.clientY])
-            // drawRectangle(this._ctx!, box)
+            drawRectangle(this._ctx!, box)
         }
     }
 

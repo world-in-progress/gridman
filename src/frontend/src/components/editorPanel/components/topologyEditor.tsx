@@ -34,6 +34,7 @@ export default function TopologyPanel({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [deleteGridDialogOpen, setDeleteGridDialogOpen] = useState(false);
+    const [subdivideGridDialogOpen, setSubdivideGridDialogOpen] = useState(false);
     // const [operation, setOperation] = useState('picking');
 
 
@@ -57,13 +58,13 @@ export default function TopologyPanel({
         }
         setActiveSelectTab('brush');
         // modeSelect = 1;
-        store.set('modeSelect', 1);
+        store.set('modeSelect', 'brush');
     };
 
     const handleFeatureClick = () => {
         setActiveSelectTab('feature');
         // modeSelect = 2;
-        store.set('modeSelect', 2);
+        store.set('modeSelect', 'feature');
         if (fileInputRef.current) {
             fileInputRef.current.click();
         }
@@ -79,13 +80,12 @@ export default function TopologyPanel({
     };
 
     const handleSubdivideClick = () => {
-        topologyLayer.executeSubdivideGrids();
+        setSubdivideGridDialogOpen(true)
     };
 
     const handleConfirmDeleteSelect = () => {
         // Add real delete logic
         setPickingTab('picking');
-        // pickingSelect = true;
         store.set('pickingSelect', true);
         setDeleteSelectDialogOpen(false);
     };
@@ -93,7 +93,13 @@ export default function TopologyPanel({
     const handleConfirmDeleteGrid = () => {
         // Add real delete logic
         setDeleteGridDialogOpen(false);
+        topologyLayer.executeDeleteGrids()
     };
+
+    const handleConfirmSubdivideGrid = () => {
+        setSubdivideGridDialogOpen(false)
+        topologyLayer.executeSubdivideGrids();
+    }
 
     return (
         <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
@@ -104,7 +110,7 @@ export default function TopologyPanel({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {language === 'zh' ? '确认操作' : 'Confirm Action'}
+                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
@@ -139,7 +145,7 @@ export default function TopologyPanel({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {language === 'zh' ? '确认操作' : 'Confirm Action'}
+                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
@@ -155,7 +161,35 @@ export default function TopologyPanel({
                             onClick={handleConfirmDeleteGrid}
                             className="bg-red-600 hover:bg-red-700 cursor-pointer"
                         >
-                            {language === 'zh' ? '确认' : 'Confirm'}
+                            {language === 'zh' ? '删除' : 'Delete'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog
+                open={subdivideGridDialogOpen}
+                onOpenChange={setSubdivideGridDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {language === 'zh'
+                                ? '是否确认细分选中的网格？'
+                                : 'Are you sure you want to subdivide the selected grids?'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="cursor-pointer">
+                            {language === 'zh' ? '取消' : 'Cancel'}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmSubdivideGrid}
+                            className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        >
+                            {language === 'zh' ? '细分' : 'Subdivide'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -241,7 +275,7 @@ export default function TopologyPanel({
                         onClick={() => {
                             setActiveSelectTab('brush');
                             // modeSelect = 1;
-                            store.set('modeSelect', 1);
+                            store.set('modeSelect', 'brush');
                         }}
                     >
                         <Brush className="h-4 w-4" />
@@ -256,7 +290,7 @@ export default function TopologyPanel({
                         onClick={() => {
                             setActiveSelectTab('box');
                             // modeSelect = 0;
-                            store.set('modeSelect', 0);
+                            store.set('modeSelect', 'box');
                         }}
                     >
                         <SquareDashed className="h-4 w-4" />

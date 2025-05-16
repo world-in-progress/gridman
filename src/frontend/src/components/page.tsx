@@ -551,16 +551,7 @@ export default function Page() {
                         </DropdownMenu>
                     </div>
                 </header>
-                <div className="h-screen w-screen">
-                    {/* {isLoading && (
-                        <>
-                            <div 
-                                className="fixed inset-0 pointer-events-auto z-10" 
-                                style={{ backgroundColor: 'rgba(200, 200, 200, 0.4)' }} 
-                            />
-                            <Loader />
-                        </>
-                    )} */}
+                <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))]">
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
