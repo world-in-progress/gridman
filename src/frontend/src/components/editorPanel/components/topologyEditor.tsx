@@ -57,13 +57,13 @@ export default function TopologyPanel({
         }
         setActiveSelectTab('brush');
         // modeSelect = 1;
-        store.set('modeSelect', 1);
+        store.set('modeSelect', 'brush');
     };
 
     const handleFeatureClick = () => {
         setActiveSelectTab('feature');
         // modeSelect = 2;
-        store.set('modeSelect', 2);
+        store.set('modeSelect', 'feature');
         if (fileInputRef.current) {
             fileInputRef.current.click();
         }
@@ -93,6 +93,7 @@ export default function TopologyPanel({
     const handleConfirmDeleteGrid = () => {
         // Add real delete logic
         setDeleteGridDialogOpen(false);
+        topologyLayer.executeDeleteGrids();
     };
 
     return (
@@ -241,7 +242,7 @@ export default function TopologyPanel({
                         onClick={() => {
                             setActiveSelectTab('brush');
                             // modeSelect = 1;
-                            store.set('modeSelect', 1);
+                            store.set('modeSelect', 'brush');
                         }}
                     >
                         <Brush className="h-4 w-4" />
@@ -256,7 +257,7 @@ export default function TopologyPanel({
                         onClick={() => {
                             setActiveSelectTab('box');
                             // modeSelect = 0;
-                            store.set('modeSelect', 0);
+                            store.set('modeSelect', 'box');
                         }}
                     >
                         <SquareDashed className="h-4 w-4" />

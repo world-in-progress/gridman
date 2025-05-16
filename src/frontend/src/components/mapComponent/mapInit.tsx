@@ -158,6 +158,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 zoom: initialZoom,
                 maxZoom: maxZoom,
                 attributionControl: false,
+                boxZoom: false
             });
 
             store.set('map', mapInstance);
@@ -167,7 +168,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             // Initialize drawing tool
             const drawInstance = new MapboxDraw({
                 displayControlsDefault: false,
-
+                boxSelect: false,
                 modes: {
                     ...MapboxDraw.modes,
                     draw_rectangle: DrawRectangle,
@@ -238,6 +239,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
             mapInstance.addControl(drawInstance);
 
+            
             ////////////////////// Test draw custom rectangle layer //////////////////////
 
             mapInstance.on('load', () => {
@@ -366,11 +368,12 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 const handleMouseDown = (e: MouseEvent) => {
                     if (!e.shiftKey) return;
                     isMouseDown = true;
+                    mapInstance.dragPan.disable()
+                    mapInstance.scrollZoom.disable()
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
                     mouseDownPos = [x, y];
-                    console.log('鼠标按下 (Shift):', mouseDownPos);
                 };
 
                 const handleMouseMove = (e: MouseEvent) => {
@@ -380,37 +383,64 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     const y = e.clientY - rect.top;
                     mouseMovePos = [x, y];
                     
-                    if ( store.get<number>('modeSelect') === 1 ) {
-                        console.log('鼠标移动 (Shift, 按下):', [x, y]);
+                    if ( store.get<string>('modeSelect') === 'brush' ) {
                         topologyLayer.executePickGrids(
-                            store.get<number>('modeSelect')!,
+                            store.get<string>('modeSelect')!,
                             store.get<boolean>('pickingSelect')!,
                             // [mouseDownPos[0], mouseDownPos[1]],
+                            [mouseMovePos[0], mouseMovePos[1]]
+                        );
+                    } else {
+                        mapInstance.dragPan.disable()
+                        if (mapInstance.getCanvas()) {
+                            mapInstance.getCanvas().style.cursor = 'crosshair';
+                        }
+
+                        topologyLayer.executeDrawBox(
+                            [mouseDownPos[0], mouseDownPos[1]],
                             [mouseMovePos[0], mouseMovePos[1]]
                         );
                     }
                 };
 
                 const handleMouseUp = (e: MouseEvent) => {
+                    isMouseDown = false;
+                    mapInstance.dragPan.enable()
+                    mapInstance.scrollZoom.enable()
+                    topologyLayer.executeClearDrawBox()
+                    if (mapInstance.getCanvas()) {
+                        mapInstance.getCanvas().style.cursor = '';
+                    }
+                    if (!e.shiftKey) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    mouseUpPos = [x, y];
+
+                    topologyLayer.executePickGrids(
+                        store.get<string>('modeSelect')!,
+                        store.get<boolean>('pickingSelect')!,
+                        [mouseDownPos[0], mouseDownPos[1]],
+                        [mouseUpPos[0], mouseUpPos[1]]
+                    );
+                };
+
+                const handleMouseOut = (e: MouseEvent) => {
+                    mapInstance.dragPan.enable()
+                    mapInstance.scrollZoom.enable()
+                    topologyLayer.executeClearDrawBox()
+                    if (mapInstance.getCanvas()) {
+                        mapInstance.getCanvas().style.cursor = '';
+                    }
                     if (!e.shiftKey) return;
                     isMouseDown = false;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
                     mouseUpPos = [x, y];
-                    console.log('鼠标抬起 (Shift):', mouseUpPos);
-
-                    // 在这里重新获取最新的store值
-                    // const currentModeType = store.get<number>('modeSelect')!;
-                    // const currentPickingMode = store.get<boolean>('pickingSelect')!;
-                    // console.log(currentModeType, currentPickingMode);
-                    console.log('1', [mouseDownPos[0], mouseDownPos[1]], '2', [
-                        mouseUpPos[0],
-                        mouseUpPos[1],
-                    ]);
 
                     topologyLayer.executePickGrids(
-                        store.get<number>('modeSelect')!,
+                        store.get<string>('modeSelect')!,
                         store.get<boolean>('pickingSelect')!,
                         [mouseDownPos[0], mouseDownPos[1]],
                         [mouseUpPos[0], mouseUpPos[1]]
@@ -422,6 +452,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 canvas.addEventListener('mousedown', handleMouseDown);
                 canvas.addEventListener('mousemove', handleMouseMove);
                 canvas.addEventListener('mouseup', handleMouseUp);
+                canvas.addEventListener('mouseout', handleMouseOut);
+
             });
 
             //////////////////////////////////////////////////////////////////////////////
@@ -463,11 +495,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             setDraw(drawInstance);
 
             return (): void => {
-                // 清理事件监听器
-                const canvas = mapInstance.getCanvas();
-                // canvas.removeEventListener('mousedown', handleMouseDown);
-                // canvas.removeEventListener('mousemove', handleMouseMove);
-                // canvas.removeEventListener('mouseup', handleMouseUp);
+
                 mapInstance.remove();
             };
         };
