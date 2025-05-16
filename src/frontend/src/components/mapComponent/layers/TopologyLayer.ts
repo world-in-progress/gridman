@@ -102,7 +102,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     updateGPUGrids: Function
 
     // Interaction-related //////////////////////////////////////////////////
-    showLoading: Function | null = null
 
     typeChanged = false
     isShiftClick = false
@@ -291,10 +290,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Init DOM Elements and handlers ////////////////////////////////////////////////////////////
 
-        // [--1] init loading DOM
-        this.showLoading = initLoadingDOM()!
-        this.showLoading(true)
-
         // [0] Box Picking Canvas
         let canvas2d = document.querySelector('#canvas2d') as HTMLCanvasElement
         if (!canvas2d) {
@@ -477,8 +472,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, 256, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
 
-        this.showLoading(false)
-
         // Add event listener for topology editor
         this.addTopologyEditorUIHandler()
 
@@ -541,14 +534,18 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
     
 
-    removeGrid(storageId: number) {
-        this.gridRecorder.removeGrid(storageId, this.updateGPUGrid)
+    removeGridLocally(storageId: number) {
+        this.gridRecorder.removeGridLocally(storageId, this.updateGPUGrid)
+        this.map.triggerRepaint()
+    }
+
+    removeGridsLocally(storageIds: number[]) {
+        this.gridRecorder.removeGridsLocally(storageIds, this.updateGPUGrids)
         this.map.triggerRepaint()
     }
 
     removeGrids(storageIds: number[]) {
         this.gridRecorder.removeGrids(storageIds, this.updateGPUGrids)
-        this.map.triggerRepaint()
     }
 
     subdivideGrid(uuId: string) {
@@ -907,7 +904,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             // this._boxPickingStart = null
             // this._boxPickingEnd = null
  
-            this.executePickGrids(0, true, [e1.originalEvent.clientX, e1.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
+            this.executePickGrids('box', true, [e1.originalEvent.clientX, e1.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
             this.isShiftClick = false
         }
     }
@@ -979,21 +976,21 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     // type: 0 - box, 1 - brush, 2 - feature
     // mode: true - add, false - remove
-    executePickGrids(type: number, mode: boolean, startPos: [number, number], endPos?: [number, number]) {
+    executePickGrids(type: string, mode: boolean, startPos: [number, number], endPos?: [number, number]) {
 
         let storageIds
-        if (type === 0) {
+        if (type === 'box') {
             const canvas = this._gl.canvas as HTMLCanvasElement
             const box = genPickingBox(canvas, startPos, endPos!)
             storageIds = this._boxPicking(box)
-        } else if (type === 1) {
+        } else if (type === 'brush') {
             storageIds = this._brushPicking(this._calcPickingMatrix(startPos))
-        } else {
+        } else if (type === 'feature') {
             storageIds = []
             //TODO: feature picking
         }
 
-        this.hit(storageIds, mode)
+        this.hit(storageIds!, mode)
     }
 
     executeSubdivideGrids() {
@@ -1019,12 +1016,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         })
 
         if (subdividableUUIDs.length === 1) {
-            this.removeGrid(removableStorageIds[0])
+            this.removeGridLocally(removableStorageIds[0])
             // this.subdivideGrid(subdividableUUIDs[0])
             this.subdivideGrids(subdividableUUIDs)
         }
         else if (subdividableUUIDs.length > 1) {
-            this.removeGrids(removableStorageIds)
+            this.removeGridsLocally(removableStorageIds)
             this.subdivideGrids(subdividableUUIDs)
         }
 
@@ -1035,8 +1032,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         if (this.hitSet.size === 0) return
 
-        this.removeGrids(Array.from(this.hitSet))
-        this.hitSet.clear()
+        const removableStorageIds = Array.from(this.hitSet)
+        this.removeGrids(removableStorageIds)
+        this.executeClearSelection()
     }
 
     executeClearSelection() {
@@ -1108,19 +1106,4 @@ function drawRectangle(ctx: CanvasRenderingContext2D, pickingBox: [number, numbe
     ctx.setLineDash([5, 3])
     ctx.strokeRect(startX, startY, width, height)
     ctx.fillRect(startX, startY, width, height)
-}
-
-function initLoadingDOM() {
-    const loadingDom = document.createElement('div')
-    loadingDom.id = 'loading-container'
-    loadingDom.innerHTML = `
-        <div class="loading"></div>
-        <div class="loading-text">Loading ...</div>
-    `
-    loadingDom.style.display = 'none'
-    document.body.appendChild(loadingDom)
-
-    return (show: boolean) => {
-        loadingDom.style.display = show ? 'block' : 'none'
-    }
 }
