@@ -100,6 +100,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     private _ctx: CanvasRenderingContext2D | null = null
 
+    // ADDON
+    private _overlayCanvas: HTMLCanvasElement | null = null;
+    private _overlayCtx: CanvasRenderingContext2D | null = null;
 
     // GPU grid update function
     updateGPUGrid: Function
@@ -112,10 +115,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     isTransparent = false
 
     resizeHandler: Function
-    mouseupHandler: Function
-    mouseoutHandler: Function
-    mousedownHandler: Function
-    mousemoveHandler: Function
 
     // Dat.GUI
     gui: GUI
@@ -164,10 +163,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.updateGPUGrids = this._updateGPUGrids.bind(this)
 
         this.resizeHandler = this._resizeHandler.bind(this)
-        this.mouseupHandler = this._mouseupHandler.bind(this)
-        this.mouseoutHandler = this._mouseoutHandler.bind(this)
-        this.mousedownHandler = this._mousedownHandler.bind(this)
-        this.mousemoveHandler = this._mousemoveHandler.bind(this)
 
         // Init interaction option
         this.uiOption = {
@@ -185,6 +180,28 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.capacityController = this.gui.__controllers[0]
         this.capacityController.setValue(0.0)
         this.capacityController.domElement.style.pointerEvents = 'none'
+
+        // 创建overlay canvas
+        this._overlayCanvas = document.createElement('canvas');
+        this._overlayCanvas.style.position = 'absolute';
+        this._overlayCanvas.style.top = '0';
+        this._overlayCanvas.style.left = '0';
+        this._overlayCanvas.style.pointerEvents = 'none';
+        this._overlayCanvas.style.zIndex = '1';
+        
+        const mapContainer = this.map.getContainer();
+        mapContainer.appendChild(this._overlayCanvas);
+        
+        this._overlayCtx = this._overlayCanvas.getContext('2d');
+        
+        // 设置canvas大小
+        this._resizeOverlayCanvas();
+        
+        // 监听地图容器大小变化
+        const resizeObserver = new ResizeObserver(() => {
+            this._resizeOverlayCanvas();
+        });
+        resizeObserver.observe(mapContainer);
     }
 
     set gridRecorder(recorder: GridRecorder) {
@@ -311,57 +328,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         canvas2d.width = rect.width
         canvas2d.height = rect.height
         this._ctx = canvas2d.getContext('2d')
-
-        // [4] Remove Event handler for map boxZoom
-        this.map.boxZoom.disable()
-
-        // // [5] Add event listner for <Shift + T> (Set grid transparent or not)
-        // document.addEventListener('keydown', e => {
-
-        //     if (e.shiftKey && e.key === 'T') {
-        //         this.isTransparent = !this.isTransparent
-        //         console.log(`Grid Transparent: ${this.isTransparent ? 'ON' : 'OFF'}`)
-        //         this.map.triggerRepaint()
-        //     }
-        // })
-
-        // // [6.5] Add event listener for <Esc> (Clear hitset)
-        // window.addEventListener('keydown', (e) => {
-        //     if (e.key === 'Escape') {
-        //         this.executeClearSelection()
-        //     }
-        // })
-
-        // // TODO: remove this test
-        // window.addEventListener('keydown', (e) => {
-        //     if (e.key === '1') {
-        //         this.executeSubdivideGrids()
-        //     }
-        // })
-
-        // window.addEventListener('keydown', (e) => {
-        //     if (e.key === '2') {
-        //         this.executeDeleteGrids()
-        //     }
-        // })
-
-        // // [-1] Add event lister for gridRecorder
-        // document.addEventListener('keydown', e => {
-
-        //     const ctrlOrCmd = isMacOS() ? e.metaKey : e.ctrlKey
-
-        //     // Register UNDO operation
-        //     if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && !e.shiftKey) {
-        //         e.preventDefault()
-        //         this.gridRecorder.undo()
-        //     }
-
-        //     // Register REDO operation
-        //     if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && e.shiftKey) {
-        //         e.preventDefault()
-        //         this.gridRecorder.redo()
-        //     }
-        // })
 
         // Init GPU resources ////////////////////////////////////////////////////////////
 
@@ -511,28 +477,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._boxPickingFBO = gll.createFrameBuffer(gl, [this._boxPickingTexture], 0, this._boxPickingRBO)!
     }
 
-    removeUIHandler() {
-
-        this.map
-            .off('mouseup', this.mouseupHandler as any)
-            .off('mousedown', this.mousedownHandler as any)
-            .off('mousemove', this.mousemoveHandler as any)
-            .off('mouseout', this.mouseoutHandler as any)
-            .off('resize', this.resizeHandler as any)
-    }
-
-    // addTopologyEditorUIHandler() {
-
-    //     this.removeUIHandler()
-
-    //     this.map
-    //         .on('mouseup', this.mouseupHandler as any)
-    //         .on('mousedown', this.mousedownHandler as any)
-    //         .on('mousemove', this.mousemoveHandler as any)
-    //         .on('mouseout', this.mouseoutHandler as any)
-    //         .on('resize', this.resizeHandler as any)
-    // }
-
     hit(storageIds: number | number[], addMode = true) {
 
         const ids = Array.isArray(storageIds) ? storageIds : [storageIds]
@@ -637,19 +581,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.map.triggerRepaint()
     }
 
-    picking(e: MapMouseEvent, e2: MapMouseEvent | undefined = undefined) {
-
-        let storageIds
-        if (e2) { //box mode
-            const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, [e.originalEvent.clientX, e.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
-            storageIds = this._boxPicking(box)
-        } else {
-            storageIds = this._brushPicking(this._calcPickingMatrix([e.originalEvent.clientX, e.originalEvent.clientY]))
-        }
-        return storageIds
-    }
-
     drawGridMeshes() {
 
         const gl = this._gl
@@ -727,14 +658,26 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.hitSet.clear();
 
         this.visible = false;
+
+        if (this._overlayCanvas && this._overlayCanvas.parentNode) {
+            this._overlayCanvas.parentNode.removeChild(this._overlayCanvas);
+        }
+        this._overlayCanvas = null;
+        this._overlayCtx = null;
     }
 
-    show() {
-        this.visible = true
+    show(): void {
+        this.visible = true;
+        if (this._overlayCanvas) {
+            this._overlayCanvas.style.display = 'block';
+        }
     }
 
-    hide() {
-        this.visible = false
+    hide(): void {
+        this.visible = false;
+        if (this._overlayCanvas) {
+            this._overlayCanvas.style.display = 'none';
+        }
     }
 
     /**
@@ -866,7 +809,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     private _calcPickingMatrix(pos: [number, number]) {
         const canvas = this._gl.canvas as HTMLCanvasElement
-        const rect = canvas.getBoundingClientRect()
         
         const offsetX = pos[0]
         const offsetY = pos[1]
@@ -883,92 +825,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         mat4.translate(pickingMatrix, pickingMatrix, [-ndcX, -ndcY, 0.0])
 
         return pickingMatrix
-    }
-
-    private _mousedownHandler(e: MapMouseEvent) {
-        // if (e.originalEvent.shiftKey && e.originalEvent.button === 0 && this.EditorState.tool === 'brush') {
-        //     this.isShiftClick = true
-        //     this.map.dragPan.disable()
-        // }
-        //// ADDON
-        // TODO: brush mode
-        if (e.originalEvent.shiftKey && e.originalEvent.button === 0) {
-            this.isShiftClick = true
-            this.map.dragPan.disable()
-            this.map.scrollZoom.disable()
-            this._boxPickingStart = e
-            this._boxPickingEnd = e
-        }
-    }
-
-    private _mouseupHandler(e: MapMouseEvent) {
-
-        if (this.isShiftClick) {
-
-            this.map.dragPan.enable()
-            this.map.scrollZoom.enable()
-
-            // TODO: brush mode
-
-            // if (this.EditorState.tool === 'brush') {
-            //     e1 = e
-            //     e2 = undefined
-            // } else {
-            this._boxPickingEnd = e
-            const e1 = this._boxPickingStart!
-            const e2 = this._boxPickingEnd
-            // }
-
-            // const storageIds = this.picking(e1, e2)
-
-            // this.hit(storageIds, true)
-
-
-            // clear(this._ctx!)
-            // this._boxPickingStart = null
-            // this._boxPickingEnd = null
- 
-            this.executePickGrids('box', true, [e1.originalEvent.clientX, e1.originalEvent.clientY], [e2.originalEvent.clientX, e2.originalEvent.clientY])
-            this.isShiftClick = false
-        }
-    }
-
-    private _mousemoveHandler(e: MapMouseEvent) {
-
-        // if (this.isShiftClick && this.EditorState.tool === 'brush') {
-        //     this.map.dragPan.disable()
-        //     const storageId = this.picking(e) as number
-        //     if (this.lastPickedId === storageId) return
-        //     this.lastPickedId = storageId
-        //     this.hit(storageId)
-        // }
-
-        if (this.isShiftClick && this._boxPickingStart) {
-            // Render the picking box
-            this._boxPickingEnd = e
-            const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, [this._boxPickingStart.originalEvent.clientX, this._boxPickingStart.originalEvent.clientY], [this._boxPickingEnd.originalEvent.clientX, this._boxPickingEnd.originalEvent.clientY])
-            drawRectangle(this._ctx!, box)
-        }
-    }
-
-    private _mouseoutHandler(e: MapMouseEvent) {
-
-        if (this.isShiftClick) {
-
-            this._boxPickingEnd = e
-
-            const storageIds = this.picking(this._boxPickingStart!, this._boxPickingEnd!)
-            this.hit(storageIds)
-
-            // Reset
-            clear(this._ctx!)
-            this._boxPickingStart = null
-            this._boxPickingEnd = null
-        }
-        this.map.dragPan.enable()
-        this.map.scrollZoom.enable()
-        this.isShiftClick = false
     }
 
     private _resizeHandler() {
@@ -1005,13 +861,15 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         let storageIds
         if (type === 'box') {
             const canvas = this._gl.canvas as HTMLCanvasElement
-            const box = genPickingBox(canvas, startPos, endPos!)
+            const box = genPickingBox(startPos, endPos!)
             storageIds = this._boxPicking(box)
         } else if (type === 'brush') {
             storageIds = this._brushPicking(this._calcPickingMatrix(startPos))
         } else if (type === 'feature') {
             storageIds = []
             //TODO: feature picking
+        } else {
+            return
         }
 
         this.hit(storageIds!, mode)
@@ -1034,7 +892,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
             // Add removable grids
             removableStorageIds.push(removableStorageId)
-
             // Add subdividable grids
             subdividableUUIDs.push(this.gridRecorder.getGridInfoByStorageId(removableStorageId).join('-'))
         })
@@ -1068,10 +925,26 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.map.triggerRepaint()
     }
 
-    executeDrawBox(startPos: [number, number], endPos: [number, number]) {
-        const canvas = this._gl.canvas as HTMLCanvasElement
-        const box = genPickingBox(canvas, startPos, endPos)
-        drawRectangle(this._ctx!, box)
+    executeDrawBox(startPos: [number, number], endPos: [number, number]): void {
+        if (!this._overlayCtx) return;
+        
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas!.width, this._overlayCanvas!.height);
+        
+        const box = genPickingBox(startPos, endPos);
+        drawRectangle(this._overlayCtx, box);
+    }
+
+    executeClearDrawBox(): void {
+        if (!this._overlayCtx) return;
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas!.width, this._overlayCanvas!.height);
+    }
+
+    private _resizeOverlayCanvas(): void {
+        if (!this._overlayCanvas) return;
+        const container = this.map.getContainer();
+        const { width, height } = container.getBoundingClientRect();
+        this._overlayCanvas.width = width;
+        this._overlayCanvas.height = height;
     }
 }
 
@@ -1087,18 +960,8 @@ function isMacOS(): boolean {
 }
 
 // ADDON
-// function genPickingBox(canvas: HTMLCanvasElement, startEvent: MapMouseEvent, endEvent: MapMouseEvent) {
-//     const rect = canvas.getBoundingClientRect()
-//     const _pickingBox = [
-//         startEvent.originalEvent.clientX - rect.left,
-//         startEvent.originalEvent.clientY - rect.top,
-//         endEvent.originalEvent.clientX - rect.left,
-//         endEvent.originalEvent.clientY - rect.top
-//     ]
-//     return _pickingBox as [number, number, number, number]
-// }
-function genPickingBox(canvas: HTMLCanvasElement, startPos: [number, number], endPos: [number, number]) {
-    const rect = canvas.getBoundingClientRect()
+function genPickingBox(startPos: [number, number], endPos: [number, number]) {
+
     const _pickingBox = [
         startPos[0], 
         startPos[1], 

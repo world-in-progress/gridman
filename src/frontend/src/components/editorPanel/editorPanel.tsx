@@ -27,7 +27,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     useEffect(() => {
         store.set('modeSelect', 'brush');
         store.set('pickingSelect', true);
-        console.log(store.get<number>('modeSelect'), store.get<boolean>('pickingSelect'))
+        console.log(store.get<string>('modeSelect'), store.get<boolean>('pickingSelect'))
     }, []);
 
     const handleBack = () => {

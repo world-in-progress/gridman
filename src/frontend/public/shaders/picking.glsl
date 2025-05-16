@@ -19,7 +19,6 @@ uniform mat4 uMatrix;
 uniform vec2 centerLow;
 uniform vec2 centerHigh;
 uniform mat4 pickingMatrix;
-uniform vec2 relativeCenter;
 
 out vec4 v_color;
 
