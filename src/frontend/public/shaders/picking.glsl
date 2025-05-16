@@ -91,7 +91,7 @@ void main() {
     vec2 xyLow = layerMapLow[gl_VertexID];
 
     vec2 translated = translateRelativeToEye(xy, xyLow);
-    gl_Position = uMatrix * vec4(translated.xy, 0.0, 1.0);
+    gl_Position = pickingMatrix * uMatrix * vec4(translated.xy, 0.0, 1.0);
     
     uvec4 id = idToRGBA(uint(gl_InstanceID));
     v_color = vec4(id) / 255.0;

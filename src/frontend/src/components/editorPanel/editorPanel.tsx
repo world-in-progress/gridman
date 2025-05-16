@@ -2,7 +2,6 @@ import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
-import BrushCard from './components/brushCard';
 import { EditorPanelProps } from './types/types';
 import BasicInfo from './components/basicInfo';
 import TopologyPanel from './components/topologyEditor';
@@ -22,10 +21,19 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
         'brush' | 'box' | 'feature'
     >('brush');
 
+    // let modeSelect = 1;
+    // let pickingSelect = true;
+
+    useEffect(() => {
+        store.set('modeSelect', 1);
+        store.set('pickingSelect', true);
+        console.log(store.get<number>('modeSelect'), store.get<boolean>('pickingSelect'))
+    }, []);
+
     const handleBack = () => {
-        const clg = store.get<NHLayerGroup>('clg')!
-        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer
-        layer.removeResource()
+        const clg = store.get<NHLayerGroup>('clg')!;
+        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
+        layer.removeResource();
 
         if (onBack) {
             onBack();

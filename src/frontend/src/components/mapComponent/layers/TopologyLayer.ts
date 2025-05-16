@@ -287,7 +287,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     async init() {
-        console.log('init!!!!')
+        // console.log('init!!!!')
 
         // Init DOM Elements and handlers ////////////////////////////////////////////////////////////
 
@@ -316,53 +316,53 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         // [4] Remove Event handler for map boxZoom
         this.map.boxZoom.disable()
 
-        // [5] Add event listner for <Shift + T> (Set grid transparent or not)
-        document.addEventListener('keydown', e => {
+        // // [5] Add event listner for <Shift + T> (Set grid transparent or not)
+        // document.addEventListener('keydown', e => {
 
-            if (e.shiftKey && e.key === 'T') {
-                this.isTransparent = !this.isTransparent
-                console.log(`Grid Transparent: ${this.isTransparent ? 'ON' : 'OFF'}`)
-                this.map.triggerRepaint()
-            }
-        })
+        //     if (e.shiftKey && e.key === 'T') {
+        //         this.isTransparent = !this.isTransparent
+        //         console.log(`Grid Transparent: ${this.isTransparent ? 'ON' : 'OFF'}`)
+        //         this.map.triggerRepaint()
+        //     }
+        // })
 
-        // [6.5] Add event listener for <Esc> (Clear hitset)
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.executeClearSelection()
-            }
-        })
+        // // [6.5] Add event listener for <Esc> (Clear hitset)
+        // window.addEventListener('keydown', (e) => {
+        //     if (e.key === 'Escape') {
+        //         this.executeClearSelection()
+        //     }
+        // })
 
-        // TODO: remove this test
-        window.addEventListener('keydown', (e) => {
-            if (e.key === '1') {
-                this.executeSubdivideGrids()
-            }
-        })
+        // // TODO: remove this test
+        // window.addEventListener('keydown', (e) => {
+        //     if (e.key === '1') {
+        //         this.executeSubdivideGrids()
+        //     }
+        // })
 
-        window.addEventListener('keydown', (e) => {
-            if (e.key === '2') {
-                this.executeDeleteGrids()
-            }
-        })
+        // window.addEventListener('keydown', (e) => {
+        //     if (e.key === '2') {
+        //         this.executeDeleteGrids()
+        //     }
+        // })
 
-        // [-1] Add event lister for gridRecorder
-        document.addEventListener('keydown', e => {
+        // // [-1] Add event lister for gridRecorder
+        // document.addEventListener('keydown', e => {
 
-            const ctrlOrCmd = isMacOS() ? e.metaKey : e.ctrlKey
+        //     const ctrlOrCmd = isMacOS() ? e.metaKey : e.ctrlKey
 
-            // Register UNDO operation
-            if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && !e.shiftKey) {
-                e.preventDefault()
-                this.gridRecorder.undo()
-            }
+        //     // Register UNDO operation
+        //     if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && !e.shiftKey) {
+        //         e.preventDefault()
+        //         this.gridRecorder.undo()
+        //     }
 
-            // Register REDO operation
-            if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && e.shiftKey) {
-                e.preventDefault()
-                this.gridRecorder.redo()
-            }
-        })
+        //     // Register REDO operation
+        //     if (ctrlOrCmd && e.key.toLocaleLowerCase() === 'z' && e.shiftKey) {
+        //         e.preventDefault()
+        //         this.gridRecorder.redo()
+        //     }
+        // })
 
         // Init GPU resources ////////////////////////////////////////////////////////////
 
@@ -480,7 +480,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.showLoading(false)
 
         // Add event listener for topology editor
-        this.addTopologyEditorUIHandler()
+        // this.addTopologyEditorUIHandler()
 
         // Init workers of gridRecorder ////////////////////////////////////////////////////////////
                 
@@ -507,17 +507,17 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             .off('resize', this.resizeHandler as any)
     }
 
-    addTopologyEditorUIHandler() {
+    // addTopologyEditorUIHandler() {
 
-        this.removeUIHandler()
+    //     this.removeUIHandler()
 
-        this.map
-            .on('mouseup', this.mouseupHandler as any)
-            .on('mousedown', this.mousedownHandler as any)
-            .on('mousemove', this.mousemoveHandler as any)
-            .on('mouseout', this.mouseoutHandler as any)
-            .on('resize', this.resizeHandler as any)
-    }
+    //     this.map
+    //         .on('mouseup', this.mouseupHandler as any)
+    //         .on('mousedown', this.mousedownHandler as any)
+    //         .on('mousemove', this.mousemoveHandler as any)
+    //         .on('mouseout', this.mouseoutHandler as any)
+    //         .on('resize', this.resizeHandler as any)
+    // }
 
     hit(storageIds: number | number[], addMode = true) {
 
@@ -741,7 +741,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.useProgram(this._pickingShader)
 
         gl.bindVertexArray(this._gridStorageVAO)
-
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'pickingMatrix'), false, pickingMatrix)
@@ -752,9 +751,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.flush()
 
         const pixel = new Uint8Array(4)
+        console.log(pixel)
         gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
+        console.log(pixel[0] + (pixel[1] << 8) + (pixel[2] << 16) + (pixel[3] << 24))
         // Return storageId of the picked grid
         return pixel[0] + (pixel[1] << 8) + (pixel[2] << 16) + (pixel[3] << 24)
     }
@@ -847,8 +848,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         const canvas = this._gl.canvas as HTMLCanvasElement
         const rect = canvas.getBoundingClientRect()
         
-        const offsetX = pos[0] - rect.left
-        const offsetY = pos[1] - rect.top
+        const offsetX = pos[0]
+        const offsetY = pos[1]
 
         const computedStyle = window.getComputedStyle(canvas)
         const canvasWidth = +computedStyle.width.split('px')[0]
@@ -927,7 +928,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this._boxPickingEnd = e
             const canvas = this._gl.canvas as HTMLCanvasElement
             const box = genPickingBox(canvas, [this._boxPickingStart.originalEvent.clientX, this._boxPickingStart.originalEvent.clientY], [this._boxPickingEnd.originalEvent.clientX, this._boxPickingEnd.originalEvent.clientY])
-            drawRectangle(this._ctx!, box)
+            // drawRectangle(this._ctx!, box)
         }
     }
 
@@ -980,12 +981,14 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     // type: 0 - box, 1 - brush, 2 - feature
     // mode: true - add, false - remove
     executePickGrids(type: number, mode: boolean, startPos: [number, number], endPos?: [number, number]) {
-
+        // console.log('params', type, mode, startPos, endPos)
         let storageIds
         if (type === 0) {
+            console.log('start picking')
             const canvas = this._gl.canvas as HTMLCanvasElement
             const box = genPickingBox(canvas, startPos, endPos!)
             storageIds = this._boxPicking(box)
+            console.log('storageIds', storageIds)
         } else if (type === 1) {
             storageIds = this._brushPicking(this._calcPickingMatrix(startPos))
         } else {
@@ -1073,10 +1076,10 @@ function isMacOS(): boolean {
 function genPickingBox(canvas: HTMLCanvasElement, startPos: [number, number], endPos: [number, number]) {
     const rect = canvas.getBoundingClientRect()
     const _pickingBox = [
-        startPos[0] - rect.left,
-        startPos[1] - rect.top,
-        endPos[0] - rect.left,
-        endPos[1] - rect.top
+        startPos[0], 
+        startPos[1], 
+        endPos[0],
+        endPos[1]
     ]
     return _pickingBox as [number, number, number, number]
 }
