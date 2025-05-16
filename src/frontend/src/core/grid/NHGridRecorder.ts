@@ -146,7 +146,7 @@ export default class GridRecorder extends UndoRedoManager {
     //     this.execute(removeOperation)
     // }
 
-    removeGrid(storageId: number, callback?: Function): void {
+    removeGridLocally(storageId: number, callback?: Function): void {
 
         const lastStorageId = this._nextStorageId - 1
 
@@ -172,7 +172,7 @@ export default class GridRecorder extends UndoRedoManager {
     //     this.execute(removeOperation)
     // }
 
-    removeGrids(storageIds: number[], callback?: Function): void {
+    removeGridsLocally(storageIds: number[], callback?: Function): void {
 
         // Convert removableStorageIds to ascending order and record grids' levels and globalIds which point to
         const removableGridNum = storageIds.length
@@ -224,6 +224,21 @@ export default class GridRecorder extends UndoRedoManager {
             callback && callback([storageId, new Uint8Array([replacedLevel]), vertices, verticesLow])
         })
 
+    }
+
+    removeGrids(removableStorageIds: number[], callback?: Function): void {
+
+        const levels = new Uint8Array(removableStorageIds.length)
+        const globalIds = new Uint32Array(removableStorageIds.length)
+        for (let i = 0; i < removableStorageIds.length; i++) {
+            const [level, globalId] = this.getGridInfoByStorageId(removableStorageIds[i])
+            levels[i] = level
+            globalIds[i] = globalId
+        }
+        // Dispatch a worker to remove the grid
+        this._actor.send('removeGrids', { levels, globalIds }, () => {
+            this.removeGridsLocally(removableStorageIds, callback)
+        })
     }
 
     subdivideGrid(level: number, globalId: number, callback?: Function): void {

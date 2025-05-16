@@ -327,3 +327,11 @@ export async function subdivideGrids(
   const renderInfo = await GridUtils.subdivideGrids(this, gridInfo);
   callback(null, renderInfo);
 }
+
+export async function removeGrids(
+  gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+  callback: Callback<any>
+) {
+  const result = await GridUtils.removeGrids(gridInfo);
+  callback(null, result);
+}
