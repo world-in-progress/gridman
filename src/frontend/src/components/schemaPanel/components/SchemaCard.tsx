@@ -194,22 +194,6 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 </div>
 
                 {/* Grid Level Information */}
-                {/* <div className="flex items-center text-gray-600 dark:text-gray-300">
-                    <Layers className="h-4 w-4 mr-2" />
-                    <span>
-                        {language === 'zh' ? '网格层级' : 'Grid Levels'}:
-                        {schema?.grid_info ? (
-                            schema.grid_info.map((levelArray: number[], index: number) => (
-                                <div key={index} className="ml-2">
-                                    {levelArray.join('-')}
-                                </div>
-                            ))
-                        ) : (
-                            ' -'
-                        )}
-                    </span>
-                </div> */}
-
                 <div className="flex flex-row items-start text-gray-600 dark:text-gray-300">
                     <div className={`flex ${language === 'zh' ? 'w-[35%]' : 'w-[40%]'}`}>
                         <Layers className="h-4 w-4 mr-2" />
@@ -263,9 +247,15 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                         )}
                     </div>
                     {/* Display description text when not in editing mode */}
-                    {!isEditing && schema?.description && (
+                    {!isEditing &&  (
                         <div className="text-sm text-gray-600 dark:text-gray-300 mb-2 px-1">
-                            {schema.description}
+                            {schema.description ? (
+                                schema.description
+                            ) : (
+                                <span className="italic">
+                                   {language === 'zh' ? '无描述' : 'No description provided.'}
+                                </span>
+                            )}
                         </div>
                     )}
                     {/* Display text input when in editing mode */}

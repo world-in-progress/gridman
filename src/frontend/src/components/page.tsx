@@ -42,7 +42,7 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import GridBotBotton from './testComponents/GridBotBotton';
+import GridBotBotton from './ui/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
 import EditorPanel from './editorPanel/editorPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
