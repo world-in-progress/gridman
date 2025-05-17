@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 
 function createWindow(): void {
@@ -37,6 +37,21 @@ function createWindow(): void {
   });
 
 }
+
+ipcMain.handle('dialog:openFile', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: 'Vector Files', extensions: ['shp', 'geojson'] },
+      { name: 'All Files', extensions: ['*'] }
+    ],
+  });
+
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  return filePaths[0];
+});
 
 app.whenReady().then(() => {
   createWindow();
