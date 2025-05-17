@@ -519,7 +519,7 @@ export default function Page() {
                             onCheckedChange={setAIDialogEnabled}
                         />
                     </div>
-                    <div className="fixed top-21 right-10 z-[100]">
+                    <div className="fixed top-21 right-10 z-[50]">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="cursor-pointer">

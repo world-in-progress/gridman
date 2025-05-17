@@ -14,3 +14,7 @@ export interface TopologyPanelProps {
     activeSelectTab: 'brush' | 'box' | 'feature' | undefined;
     setActiveSelectTab: (tab: 'brush' | 'box' | 'feature') => void;
 }
+
+export interface AttributePanelProps {
+    
+}
