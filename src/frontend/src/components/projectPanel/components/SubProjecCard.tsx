@@ -324,7 +324,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                             subproject.description
                         ) : (
                             <span className="italic">
-                                No description provided.
+                                {language === 'zh' ? '无描述' : 'No description provided.'}
                             </span>
                         )}
                     </div>
