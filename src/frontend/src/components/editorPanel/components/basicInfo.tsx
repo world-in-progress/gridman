@@ -1,11 +1,12 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { LanguageContext } from '../../../context';
-import { BrushCardProps } from '../types/types';
 import store from '@/store';
 import GridRecorder from '@/core/grid/NHGridRecorder';
 import BoundsCard from '@/components/projectPanel/components/boundsCard';
+import { SchemaService } from '../../schemaPanel/utils/SchemaService';
+import { ProjectService } from '../../projectPanel/utils/ProjectService';
 
-export default function BasicInfo({}: BrushCardProps) {
+export default function BasicInfo() {
     const { language } = useContext(LanguageContext);
 
     const currentProject = store.get<any>('ProjectName');
@@ -14,6 +15,22 @@ export default function BasicInfo({}: BrushCardProps) {
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
     const subdivideRules = gridCore?.subdivideRules.rules;
     const bounds = gridCore?.subdivideRules.bBox.data;
+
+    useEffect(() => {
+        const schemaService = new SchemaService(language);
+        const projectService = new ProjectService(language);
+        const schemaName = projectService.getProjectByName(currentProject);
+        console.log(schemaName);
+            // schemaService.getSchemaByName(schemaName, (err, result) => {
+            //     if (!err && result?.project_schema?.epsg) {
+            //         setSchemaEpsg(result.project_schema.epsg.toString());
+            //     }
+            //     if (!err && result?.project_schema?.grid_info) {
+            //         console.log(result.project_schema.grid_info);
+            //         setSchemaGridInfo(result.project_schema.grid_info);
+            //     }
+        // });
+    }, [currentProject, language]);
 
     return (
         <div className="bg-blue-50 p-3 rounded-md">
