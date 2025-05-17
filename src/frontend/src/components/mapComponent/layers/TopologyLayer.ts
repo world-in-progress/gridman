@@ -528,12 +528,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         const infos = uuIds.map(uuId => decodeInfo(uuId)) as [level: number, globalId: number][]
         this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, (renderInfos: any) => {
             this.updateGPUGrids(renderInfos)
-            const [fromStorageId, levels] = renderInfos
-            const storageIds = []
-            for (let i = fromStorageId; i <= fromStorageId + levels.length - 1; i++) {
-                storageIds.push(i)
-            }
-            this.hit(storageIds)
+            // const [fromStorageId, levels] = renderInfos
+            // const storageIds = []
+            // for (let i = fromStorageId; i <= fromStorageId + levels.length - 1; i++) {
+            //     storageIds.push(i)
+            // }
+            // this.hit(storageIds)
         })
     }
 
@@ -808,11 +808,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     private _updateGPUGrid(info?: [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array]) {
-
+        
         if (info) {
             this.writeGridInfoToStorageBuffer(info)
             this._gl.flush()
         }
+        console.log(1)
+
         this.map.triggerRepaint()
     }
 

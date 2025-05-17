@@ -80,15 +80,19 @@ export default class NHLayerGroup implements CustomLayerInterface {
 
     this.mercatorCenterX = encodeFloatToDouble(mercatorCenter.x);
     this.mercatorCenterY = encodeFloatToDouble(mercatorCenter.y);
-
     mat4.translate(
         this.relativeEyeMatrix, 
         matrix, 
-        vec3.fromValues(
+        // vec3.fromValues(
+        //     mercatorCenter.x,
+        //     mercatorCenter.y,
+        //     0.0
+        // )
+        [
             mercatorCenter.x,
             mercatorCenter.y,
             0.0
-        )
+        ]
     );
   }
 
