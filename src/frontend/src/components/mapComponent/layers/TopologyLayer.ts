@@ -48,7 +48,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     projConverter!: proj4.Converter
     
     lastPickedId: number = -1
-
+    _forceUpdate = false
 
     // GPU-related //////////////////////////////////////////////////
 
@@ -491,11 +491,16 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 if (storageId < 0) return
 
                 if (this.hitSet.has(storageId)) {
-                    if (this.hitSet.size === 1) return
                     this.hitSet.delete(storageId)
+
+                    // handle the situation that the hitset's length changes to 0
+                    if (this.hitSet.size === 0) {
+                        this._forceUpdate = true
+                    }
                 }
             })
         }
+        
         this.map.triggerRepaint()
     }
     
@@ -524,8 +529,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, (renderInfos: any) => {
             this.updateGPUGrids(renderInfos)
             const [fromStorageId, levels] = renderInfos
-            console.log('infos', infos)
-            console.log('start', fromStorageId, 'end', fromStorageId + levels.length - 1)
             const storageIds = []
             for (let i = fromStorageId; i <= fromStorageId + levels.length - 1; i++) {
                 storageIds.push(i)
@@ -538,7 +541,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Highlight all hit grids //////////////////////////////
 
-        if (this.hitSet.size === 0) return
+        if (this.hitSet.size === 0 && !this._forceUpdate) return
+
+        this._forceUpdate = false
 
         // Update hit flag for this current frame
         this._updateHitFlag()
