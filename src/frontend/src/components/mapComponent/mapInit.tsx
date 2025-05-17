@@ -66,23 +66,23 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
   },
   ref
 ) => {
-  const [map, setMap] = useState<mapboxgl.Map | null>(null);
-  const [draw, setDraw] = useState<MapboxDraw | null>(null);
-  const mapWrapperRef = useRef<HTMLDivElement>(null);
-  const subprojectBoundsManagerRef = useRef<SubprojectBoundsManager | null>(
-    null
-  );
-  const [isDrawMode, setIsDrawMode] = useState(false);
-  const [isPointSelectionMode, setIsPointSelectionMode] = useState(false);
-  const [hasDrawnRectangle, setHasDrawnRectangle] = useState(false);
-  const [currentRectangleId, setCurrentRectangleId] = useState<string | null>(
-    null
-  );
-  const [currentMarker, setCurrentMarker] = useState<mapboxgl.Marker | null>(
-    null
-  );
-  const [showingProjectBounds, setShowingProjectBounds] = useState(false);
-  const { language } = useContext(LanguageContext);
+    const [map, setMap] = useState<mapboxgl.Map | null>(null);
+    const [draw, setDraw] = useState<MapboxDraw | null>(null);
+    const mapWrapperRef = useRef<HTMLDivElement>(null);
+    const subprojectBoundsManagerRef = useRef<SubprojectBoundsManager | null>(
+        null
+    );
+    const [isDrawMode, setIsDrawMode] = useState(false);
+    const [isPointSelectionMode, setIsPointSelectionMode] = useState(false);
+    const [hasDrawnRectangle, setHasDrawnRectangle] = useState(false);
+    const [currentRectangleId, setCurrentRectangleId] = useState<string | null>(
+        null
+    );
+    const [currentMarker, setCurrentMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [showingProjectBounds, setShowingProjectBounds] = useState(false);
+    const { language } = useContext(LanguageContext);
 
   let isMouseDown = false;
   const mouseDownPos = [0, 0];
@@ -262,21 +262,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         // console.log('Map loaded, scrollZoom handler:', mapInstance?.scrollZoom);
         // console.log('Is Scroll Zoom Enabled:', mapInstance?.isScrollZoomEnabled());
 
-        // Initialize SubprojectBoundsManager via ref, using the language from context
-        if (mapInstance) {
-          // Ensure mapInstance is valid
-          subprojectBoundsManagerRef.current = new SubprojectBoundsManager(
-            mapInstance,
-            language
-          );
-        }
+                // Initialize SubprojectBoundsManager via ref, using the language from context
+                if (mapInstance) {
+                    // Ensure mapInstance is valid
+                    subprojectBoundsManagerRef.current =
+                        new SubprojectBoundsManager(mapInstance, language);
+                }
 
-        const customLayer = CustomLayer({
-          center: { lng: initialLongitude, lat: initialLatitude },
-          width: 0.00002, // Mercator
-          height: 0.00002, // Mercator
-        });
-        // mapInstance.addLayer(customLayer);
+                const customLayer = CustomLayer({
+                    center: { lng: initialLongitude, lat: initialLatitude },
+                    width: 0.00002, // Mercator
+                    height: 0.00002, // Mercator
+                });
+                // mapInstance.addLayer(customLayer);
 
         rectangleLayer = new GLMapRectangleLayer({
           id: "rectangle-layer",
@@ -310,21 +308,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 // const attributeLayer = new AttributeLayer(mapInstance!, {
                 // })
 
-
                 const layerGroup = new NHLayerGroup();
                 layerGroup.id = 'gridman-custom-layer-group';
                 layerGroup.addLayer(topologyLayer);
                 // layerGroup.addLayer(attributeLayer)
 
-
         store.set("clg", layerGroup);
         mapInstance!.addLayer(layerGroup);
 
 
-        const canvas = mapInstance!.getCanvas();
-        const localIsMouseDown = { current: false };
-        const localMouseDownPos = { current: [0, 0] };
-        const localMouseMovePos = { current: [0, 0] };
+                const canvas = mapInstance!.getCanvas();
+                const localIsMouseDown = { current: false };
+                const localMouseDownPos = { current: [0, 0] };
+                const localMouseMovePos = { current: [0, 0] };
 
         const onMouseDown = (e: MouseEvent) => {
           if (!e.shiftKey) return;
@@ -451,40 +447,40 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
       setMap(mapInstance);
       setDraw(drawInstance);
 
-      // Setup ResizeObserver
-      if (mapWrapperRef.current) {
-        const currentMapInstance = mapInstance; // Capture for the debounced function
-        resizer = new ResizeObserver(
-          debounce(() => {
-            currentMapInstance?.resize();
-          }, 100)
-        );
-        resizer.observe(mapWrapperRef.current);
-      }
-    }
+            // Setup ResizeObserver
+            if (mapWrapperRef.current) {
+                const currentMapInstance = mapInstance; // Capture for the debounced function
+                resizer = new ResizeObserver(
+                    debounce(() => {
+                        currentMapInstance?.resize();
+                    }, 100)
+                );
+                resizer.observe(mapWrapperRef.current);
+            }
+        }
 
-    return () => {
-      if (resizer && mapWrapperRef.current) {
-        resizer.unobserve(mapWrapperRef.current);
-        resizer.disconnect();
-      }
-      if (mapInstance) {
-        mapInstance.remove();
-      }
-      window.mapInstance = undefined;
-      window.mapboxDrawInstance = undefined;
-      setMap(null);
-      setDraw(null);
-      subprojectBoundsManagerRef.current = null; // Clean up the ref
-    };
-  }, [
-    language,
-    initialLatitude,
-    initialLongitude,
-    initialZoom,
-    maxZoom,
-    onPointSelected,
-  ]);
+        return () => {
+            if (resizer && mapWrapperRef.current) {
+                resizer.unobserve(mapWrapperRef.current);
+                resizer.disconnect();
+            }
+            if (mapInstance) {
+                mapInstance.remove();
+            }
+            window.mapInstance = undefined;
+            window.mapboxDrawInstance = undefined;
+            setMap(null);
+            setDraw(null);
+            subprojectBoundsManagerRef.current = null; // Clean up the ref
+        };
+    }, [
+        language,
+        initialLatitude,
+        initialLongitude,
+        initialZoom,
+        maxZoom,
+        onPointSelected,
+    ]);
 
   // Method to start drawing rectangle
   const startDrawRectangle = (cancel?: boolean) => {
