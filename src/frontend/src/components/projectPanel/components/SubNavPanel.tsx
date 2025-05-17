@@ -36,7 +36,6 @@ export function SubNavPanel({
         null
     );
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [editingDescription, setEditingDescription] = useState<string | null>(
         null
     );
