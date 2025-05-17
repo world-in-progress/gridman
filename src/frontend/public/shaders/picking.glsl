@@ -19,6 +19,7 @@ uniform mat4 uMatrix;
 uniform vec2 centerLow;
 uniform vec2 centerHigh;
 uniform mat4 pickingMatrix;
+uniform vec4 relativeCenter;
 
 out vec4 v_color;
 
@@ -53,8 +54,11 @@ float nan() {
 }
 
 vec2 translateRelativeToEye(vec2 high, vec2 low) {
-    vec2 highDiff = high - centerHigh;
-    vec2 lowDiff = low - centerLow;
+    vec2 relativeCenterHigh = relativeCenter.xz;
+    vec2 relativeCenterLow = relativeCenter.yw;
+
+    vec2 highDiff = high + relativeCenterHigh - centerHigh;
+    vec2 lowDiff = low + relativeCenterLow - centerLow;
     return highDiff + lowDiff;
 }
 

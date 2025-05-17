@@ -54,6 +54,7 @@ export default class GridRecorder extends UndoRedoManager {
 
     private _nextStorageId = 0
     private _projConverter: proj4.Converter
+    private _center: [number, number]
 
     isReady = true
     srcCS: string
@@ -101,6 +102,12 @@ export default class GridRecorder extends UndoRedoManager {
         this.storageId_gridInfo_cache = new Array<number>(maxGridNum * 2)
         this.grid_attribute_cache = Array.from({ length: maxGridNum }, () => { return { height: -9999, type: 0 } })
 
+        // Calculate center
+        this._center = [
+            (this.subdivideRules.bBox.xMin + this.subdivideRules.bBox.xMax) / 2.0,
+            (this.subdivideRules.bBox.yMin + this.subdivideRules.bBox.yMax) / 2.0
+        ]
+
         // Create IndexedDB
         createDB('GridDB', 'GridNode', 'uuId')
         if (options.autoDeleteIndexedDB === undefined ? true : options.autoDeleteIndexedDB) {
@@ -126,6 +133,14 @@ export default class GridRecorder extends UndoRedoManager {
 
     get srcCRS() {
         return this.subdivideRules.srcCS
+    }
+
+    get relativeCenter(): Float32Array {
+        const relativeCenter: [number, number] = this._projConverter.forward(this._center);
+        const mercatorCenter = MercatorCoordinate.fromLonLat(relativeCenter);
+        const centerX = encodeFloatToDouble(mercatorCenter[0]);
+        const centerY = encodeFloatToDouble(mercatorCenter[1]);
+        return new Float32Array([...centerX, ...centerY])
     }
 
     init(callback?: Function) {

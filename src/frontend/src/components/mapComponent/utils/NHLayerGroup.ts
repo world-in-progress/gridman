@@ -1,12 +1,12 @@
-import { mat4, vec3 } from "gl-matrix";
+import { glMatrix, mat4, vec3 } from "gl-matrix";
 import { Map, CustomLayerInterface, MercatorCoordinate } from "mapbox-gl";
 import { NHCustomLayerInterface } from "./interfaces";
 
 export default class NHLayerGroup implements CustomLayerInterface {
   /// base
-  id: string = "NH-LayerGroup";
-  type: "custom" = "custom";
-  renderingMode?: "2d" | "3d" = "3d";
+  id: string = 'NH-LayerGroup';
+  type = 'custom' as const;
+  renderingMode?: '2d' | '3d' = '3d';
 
   /// map
   map!: Map;
@@ -14,8 +14,6 @@ export default class NHLayerGroup implements CustomLayerInterface {
   layers!: Array<NHCustomLayerInterface>;
 
   mercatorCenter!: MercatorCoordinate;
-  // centerHigh = [0.0, 0.0]
-  // centerLow = [0.0, 0.0]
   mercatorCenterX = new Float32Array(0);
   mercatorCenterY = new Float32Array(0);
   relativeEyeMatrix = mat4.create();
@@ -26,6 +24,8 @@ export default class NHLayerGroup implements CustomLayerInterface {
   constructor() {
     this.layers = [];
     this.prepared = false;
+    // this.relativeEyeMatrix = new Float64Array(16)
+    // mat4.identity(this.relativeEyeMatrix as any);
   }
 
   ///////////////////////////////////////////////////////////
@@ -72,21 +72,24 @@ export default class NHLayerGroup implements CustomLayerInterface {
 
   ///////////////// Tick Logic //////////////////////////////
   /** Calculate some data to avoid map jitter .*/
-  private update(matrix: Array<number>) {
+  private update(matrix: mat4) {
 
     const mercatorCenter = MercatorCoordinate.fromLngLat(
         this.map.transform._center.toArray()
     );
 
-
-    this.relativeEyeMatrix = mat4.translate([] as any, matrix as mat4, [
-      mercatorCenter.x,
-      mercatorCenter.y,
-      0,
-    ]);
-
     this.mercatorCenterX = encodeFloatToDouble(mercatorCenter.x);
     this.mercatorCenterY = encodeFloatToDouble(mercatorCenter.y);
+
+    mat4.translate(
+        this.relativeEyeMatrix, 
+        matrix, 
+        vec3.fromValues(
+            mercatorCenter.x,
+            mercatorCenter.y,
+            0.0
+        )
+    );
   }
 
   //////////////// Layers Control ///////////////////////////

@@ -581,6 +581,7 @@ export type GridInfo = {
 };
 
 export default class GridManager {
+    private _center: [number, number]
     private _levelInfos: GridLevelInfo[];
     private _subdivideRules: SubdivideRules;
     private _projConverter: proj4.Converter;
@@ -605,6 +606,11 @@ export default class GridManager {
             }
             this._levelInfos[level] = { width, height };
         });
+
+        this._center = [
+            (this._subdivideRules.bBox.xMin + this._subdivideRules.bBox.xMax) / 2.0,
+            (this._subdivideRules.bBox.yMin + this._subdivideRules.bBox.yMax) / 2.0,
+        ]
     }
 
     set subdivideRules(rules: SubdivideRules) {
@@ -1205,22 +1211,28 @@ export default class GridManager {
             this._projConverter.forward([xMax, yMin]), // srcBR
         ];
 
+        const relativeCenter: [number, number] = this._projConverter.forward(this._center);
+        const mercatorCenter = MercatorCoordinate.fromLonLat(relativeCenter);
+        const centerX = encodeFloatToDouble(mercatorCenter[0]);
+        const centerY = encodeFloatToDouble(mercatorCenter[1]);
+
         const renderCoords: number[] = []
         const renderCoordsLow: number[] = []
         targetCoords.forEach((coord) => {
             const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
             const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
             const mercatorCoordY = encodeFloatToDouble(mercatorCoord[1])
-            renderCoords.push(mercatorCoordX[0])
-            renderCoordsLow.push(mercatorCoordX[1])
-            renderCoords.push(mercatorCoordY[0])
-            renderCoordsLow.push(mercatorCoordY[1])
+            renderCoords.push(mercatorCoordX[0] - centerX[0])
+            renderCoordsLow.push(mercatorCoordX[1] - centerX[1])
+            renderCoords.push(mercatorCoordY[0] - centerY[0])
+            renderCoordsLow.push(mercatorCoordY[1] - centerY[1])
         })
 
         if (!vertices) vertices = new Float32Array(renderCoords.flat());
         else vertices.set(renderCoords.flat(), 0);
         if (!verticesLow) verticesLow = new Float32Array(renderCoordsLow.flat());
         else verticesLow.set(renderCoordsLow.flat(), 0);
+
         return [vertices, verticesLow];
     }
 

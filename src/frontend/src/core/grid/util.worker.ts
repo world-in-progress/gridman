@@ -5,28 +5,6 @@ import GridManager from "./NHGridManager";
 import { MultiGridInfo } from "./type";
 
 export default class GridUtils {
-  // static async subdivideGrids(
-  //   this: WorkerSelf & Record<"gridManager", GridManager>,
-  //   gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
-  //   callback: Callback<any>
-  // ) {
-  //   const multiGridInfo = await MultiGridInfo.fromPostUrl(
-  //     "/api/grid/operation/subdivide",
-  //     gridInfo
-  //   );
-  //   const { levels, globalIds } = multiGridInfo;
-  //   const [vertices, verticesLow] = this.gridManager.createMultiRenderVertices(
-  //     levels,
-  //     globalIds
-  //   );
-  //   const renderInfo: MultiGridRenderInfo = {
-  //     levels,
-  //     globalIds,
-  //     vertices,
-  //     verticesLow,
-  //   };
-  //   callback(null, renderInfo);
-  // }
 
   static async subdivideGrids(
     worker: WorkerSelf & Record<"gridManager", GridManager>,
