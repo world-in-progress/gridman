@@ -32,7 +32,7 @@ export class MultiGridInfo {
   }
 
   static async fromGetUrl(url: string): Promise<MultiGridInfo> {
-    try {
+    // try {
       const response = await fetch(url, { method: "GET" });
 
       if (!response.ok) {
@@ -50,10 +50,10 @@ export class MultiGridInfo {
       const uint32Array = new Uint32Array(buffer, alignedOffset);
 
       return new MultiGridInfo(uint8Array, uint32Array);
-    } catch (error) {
-      console.error("Failed to fetch MultiGridInfo:", error);
-      throw error;
-    }
+    // } catch (error) {
+    //   console.error("Failed to fetch MultiGridInfo:", error);
+    //   throw error;
+    // }
   }
 
   static async fromPostUrl(url: string, data: any): Promise<MultiGridInfo> {

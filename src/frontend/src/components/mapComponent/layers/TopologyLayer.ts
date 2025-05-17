@@ -14,6 +14,7 @@ import { NHCustomLayerInterface } from '../utils/interfaces'
 import { MercatorCoordinate } from '../../../core/math/mercatorCoordinate'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
 import store from '../../../store'
+import { log } from 'console'
 proj4.defs("EPSG:2326","+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
 const STATUS_URL = 'http://127.0.0.1:8000' + '/v0/mc/status'
@@ -302,6 +303,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     async init() {
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F') {
+                const path = '/Users/XXX/Desktop/river_mask/river.shp'
+                this.executePickGridsByFeature(path)
+            }
+        })
 
         // Init DOM Elements and handlers ////////////////////////////////////////////////////////////
 
@@ -892,6 +900,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.hit(storageIds!, mode)
     }
 
+    executePickGridsByFeature(path: string) {
+        this.gridRecorder.getGridInfoByFeature(path, (storageIds: number[])=>{
+            console.log(storageIds)
+            this.hit(storageIds)
+        })
+    }
+
     executeSubdivideGrids() {
         
         if (this.hitSet.size === 0) return
@@ -963,6 +978,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._overlayCanvas.width = width;
         this._overlayCanvas.height = height;
     }
+  
 }
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////

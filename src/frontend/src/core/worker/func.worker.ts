@@ -334,3 +334,14 @@ export async function removeGrids(
   const result = await GridUtils.removeGrids(gridInfo);
   callback(null, result);
 }
+
+export async function getGridInfoByFeature(
+  path: string,
+  callback: Callback<any>
+) {
+  const result = await GridUtils.getGridInfoByFeature(path);
+  callback(null, {
+    levels: result.levels,
+    globalIds: result.globalIds
+  });
+}

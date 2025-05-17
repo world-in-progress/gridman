@@ -5,7 +5,6 @@ import GridManager from "./NHGridManager";
 import { MultiGridInfo } from "./type";
 
 export default class GridUtils {
-
   static async subdivideGrids(
     worker: WorkerSelf & Record<"gridManager", GridManager>,
     gridInfo: { levels: Uint8Array; globalIds: Uint32Array }
@@ -31,10 +30,10 @@ export default class GridUtils {
     return renderInfo;
   }
 
-  static async removeGrids(
-    gridInfo: { levels: Uint8Array; globalIds: Uint32Array }
-  ) {
-
+  static async removeGrids(gridInfo: {
+    levels: Uint8Array;
+    globalIds: Uint32Array;
+  }) {
     const global_ids = Array.from(gridInfo.globalIds);
     const body = {
       levels: Array.from(gridInfo.levels),
@@ -54,5 +53,12 @@ export default class GridUtils {
     }
 
     return global_ids;
+  }
+
+  static async getGridInfoByFeature(path: string) {
+
+    const multiGridInfo = await MultiGridInfo.fromGetUrl(`/api/grid/operation/pick?feature_dir=${path}`);
+    console.log(multiGridInfo)
+    return multiGridInfo
   }
 }
