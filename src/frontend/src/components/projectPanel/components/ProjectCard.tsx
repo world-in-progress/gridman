@@ -257,7 +257,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 ? '获取模板详情失败，使用当前信息继续'
                                 : 'Failed to get schema details, continuing with current info'
                         );
-                        console.log('获取模板详情失败:', err);
                         onAddSubproject(
                             project,
                             project.schema_name,
@@ -428,17 +427,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     </span>
                 </div>
                 <div className="flex items-start text-gray-600">
-                    <div className={`flex items-center ${language === 'zh' ? 'w-[35%]' : 'w-[40%]'}`}>
+                    <div
+                        className={`flex items-center ${
+                            language === 'zh' ? 'w-[35%]' : 'w-[40%]'
+                        }`}
+                    >
                         <Layers className="h-4 w-4 mr-2" />
-                        <span>{language === 'zh' ? '网格等级' : 'Grid Levels'}(m):</span>
+                        <span>
+                            {language === 'zh' ? '网格等级' : 'Grid Levels'}(m):
+                        </span>
                     </div>
                     <div className="flex flex-col">
                         {schemaGridInfo && schemaGridInfo.length > 0 ? (
-                            schemaGridInfo.map((level: number[], index: number) => (
-                                <div key={index} className="ml-2 text-sm">
-                                    level {index + 1}: [{level.join(', ')}]
-                                </div>
-                            ))
+                            schemaGridInfo.map(
+                                (level: number[], index: number) => (
+                                    <div key={index} className="ml-2 text-sm">
+                                        level {index + 1}: [{level.join(', ')}]
+                                    </div>
+                                )
+                            )
                         ) : (
                             <span>-</span>
                         )}
@@ -540,9 +547,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         )}
                     </div>
                     {/* Display description text when not in editing mode */}
-                    {!isEditing && project.description && (
+                    {!isEditing && (
                         <div className="text-sm text-gray-600  mb-2 px-1">
-                            {project.description}
+                            {project.description ? (
+                                project.description
+                            ) : (
+                                <span className="italic">
+                                    {language === 'zh' ? '无描述' : 'No description provided.'}
+                                </span>
+                            )}
                         </div>
                     )}
                     {/* Display text input when in editing mode */}

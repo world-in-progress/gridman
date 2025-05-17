@@ -304,7 +304,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     async init() {
-        // console.log('init!!!!')
 
         // Init DOM Elements and handlers ////////////////////////////////////////////////////////////
 
