@@ -1,4 +1,5 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { Layers } from 'lucide-react';
 import { LanguageContext } from '../../../context';
 import store from '@/store';
 import GridRecorder from '@/core/grid/NHGridRecorder';
@@ -15,22 +16,7 @@ export default function BasicInfo() {
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
     const subdivideRules = gridCore?.subdivideRules.rules;
     const bounds = gridCore?.subdivideRules.bBox.data;
-
-    useEffect(() => {
-        const schemaService = new SchemaService(language);
-        const projectService = new ProjectService(language);
-        const schemaName = projectService.getProjectByName(currentProject);
-        console.log(schemaName);
-            // schemaService.getSchemaByName(schemaName, (err, result) => {
-            //     if (!err && result?.project_schema?.epsg) {
-            //         setSchemaEpsg(result.project_schema.epsg.toString());
-            //     }
-            //     if (!err && result?.project_schema?.grid_info) {
-            //         console.log(result.project_schema.grid_info);
-            //         setSchemaGridInfo(result.project_schema.grid_info);
-            //     }
-        // });
-    }, [currentProject, language]);
+    const schemaGridInfo = store.get<number[][]>('SchemaGridInfo');
 
     return (
         <div className="bg-blue-50 p-3 rounded-md">
@@ -53,47 +39,29 @@ export default function BasicInfo() {
                 <div>
                     <span className="font-bold">EPSG: {epsg || '-'}</span>
                 </div>
-                <div className="flex flex-row items-start">
+                <div className="flex items-start flex-row">
                     <div
-                        className="font-bold"
-                        style={{ flexBasis: '25%', flexGrow: 0, flexShrink: 0 }}
+                        className={`font-bold ${language === 'zh' ? 'w-[28%]' : 'w-[35%]'}`}
                     >
-                        {language === 'zh' ? '细分规则：' : 'Subdivide: '}
+                        {language === 'zh' ? '网格等级' : 'Grid Levels'}(m):
                     </div>
-                    {subdivideRules && subdivideRules.length > 0 ? (
-                        <div
-                            className="space-y-1"
-                            style={{
-                                flexBasis: '80%',
-                                flexGrow: 0,
-                                flexShrink: 0,
-                            }}
-                        >
-                            {subdivideRules.map((rule, index) => (
-                                <div key={index} className="text-sm">
-                                    {language === 'zh'
-                                        ? `第 ${index + 1} 级: [${rule.join(
-                                              ', '
-                                          )}]`
-                                        : `Level ${index + 1}: [${rule.join(
-                                              ', '
-                                          )}]`}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div
-                            className="text-sm"
-                            style={{
-                                flexBasis: '73%',
-                                flexGrow: 0,
-                                flexShrink: 0,
-                            }}
-                        >
-                            -
-                        </div>
-                    )}
+                    <div
+                        className="space-y-1"
+                    >
+                        {schemaGridInfo ? (
+                            schemaGridInfo.map(
+                                (level: number[], index: number) => (
+                                    <div key={index} className="text-sm">
+                                        level {index + 1}: [{level.join(', ')}]
+                                    </div>
+                                )
+                            )
+                        ) : (
+                            <span>-</span>
+                        )}
+                    </div>
                 </div>
+               
                 <div className="font-bold">
                     {language === 'zh' ? '包围盒：' : 'BoundingBox: '}
                     {bounds ? (
