@@ -349,7 +349,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
               mapInstance!.getCanvas().style.cursor = "crosshair";
             }
 
-            console.log(localMouseDownPos.current, localMouseMovePos.current)
             topologyLayer.executeDrawBox(
               [localMouseDownPos.current[0], localMouseDownPos.current[1]],
               [localMouseMovePos.current[0], localMouseMovePos.current[1]]
@@ -358,7 +357,9 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         };
 
         const onMouseUp = (e: MouseEvent) => {
+          if (!localIsMouseDown.current) return;
           localIsMouseDown.current = false;
+
           if (mapInstance) {
             mapInstance.dragPan.enable();
             mapInstance.scrollZoom.enable();
@@ -374,7 +375,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
           const y = e.clientY - rect.top;
           const localMouseUpPos = [x, y];
 
-          console.log(window.devicePixelRatio)
           topologyLayer.executePickGrids(
             store.get<string>("modeSelect")!,
             store.get<boolean>("pickingSelect")!,

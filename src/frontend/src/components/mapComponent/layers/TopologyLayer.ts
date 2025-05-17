@@ -460,7 +460,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         if (this._screenWidth === gl.canvas.width && this._screenHeight === gl.canvas.height) return
 
         if (this._boxPickingTexture !==0) {
-            console.log('@!!!!')
             gl.deleteTexture(this._boxPickingTexture)
         }
         if (this._boxPickingRBO !== 0) {
