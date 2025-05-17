@@ -34,14 +34,8 @@ export default function TopologyPanel({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [deleteGridDialogOpen, setDeleteGridDialogOpen] = useState(false);
-    const [subdivideGridDialogOpen, setSubdivideGridDialogOpen] = useState(false);
-    // const [operation, setOperation] = useState('picking');
-
-
-    // let modeSelect = 1;
-    // let pickingSelect = true;
-    // store.set('modeSelect', modeSelect);
-    // store.set('pickingSelect', pickingSelect);
+    const [subdivideGridDialogOpen, setSubdivideGridDialogOpen] =
+        useState(false);
 
     const clg = store.get<NHLayerGroup>('clg')!;
     const topologyLayer = clg.getLayerInstance(
@@ -80,7 +74,7 @@ export default function TopologyPanel({
     };
 
     const handleSubdivideClick = () => {
-        setSubdivideGridDialogOpen(true)
+        setSubdivideGridDialogOpen(true);
     };
 
     const handleConfirmDeleteSelect = () => {
@@ -93,13 +87,74 @@ export default function TopologyPanel({
     const handleConfirmDeleteGrid = () => {
         // Add real delete logic
         setDeleteGridDialogOpen(false);
-        topologyLayer.executeDeleteGrids()
+        topologyLayer.executeDeleteGrids();
     };
 
     const handleConfirmSubdivideGrid = () => {
-        setSubdivideGridDialogOpen(false)
+        setSubdivideGridDialogOpen(false);
         topologyLayer.executeSubdivideGrids();
-    }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if ( event.ctrlKey || event.metaKey ) {
+                if (event.key === 'P' || event.key === 'p') {
+                    event.preventDefault();
+                    setPickingTab('picking');
+                    store.set('pickingSelect', true);
+                }
+                if (event.key === 'U' || event.key === 'u') {
+                    event.preventDefault();
+                    setPickingTab('unpicking');
+                    store.set('pickingSelect', false);
+                }
+                if (event.key === 'A' || event.key === 'a') {
+                    event.preventDefault();
+                    setPickingTab('delete');
+                    store.set('pickingSelect', false);
+                }
+                if (event.key === '1') {
+                    event.preventDefault();
+                    setActiveSelectTab('brush');
+                    store.set('modeSelect', 'brush');
+                }
+                if (event.key === '2') {
+                    event.preventDefault();
+                    setActiveSelectTab('box');
+                    store.set('modeSelect', 'box');
+                }
+                if (event.key === '3') {
+                    event.preventDefault();
+                    setActiveSelectTab('feature');
+                    store.set('modeSelect', 'feature');
+                    if (fileInputRef.current) {
+                        fileInputRef.current.click();
+                    }
+                }
+                if (event.key === 'Q' || event.key === 'q') {
+                    event.preventDefault();
+                    setSubdivideGridDialogOpen(true);
+                }
+                if (event.key === 'W' || event.key === 'w') {
+                    event.preventDefault();
+                }
+                if (event.key === 'E' || event.key === 'e') {
+                    event.preventDefault();
+                    setDeleteGridDialogOpen(true);
+                }
+                if (event.key === 'R' || event.key === 'r') {
+                    event.preventDefault();
+                }
+
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [setPickingTab]);
 
     return (
         <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
@@ -110,7 +165,9 @@ export default function TopologyPanel({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
+                            {language === 'zh'
+                                ? '操作确认'
+                                : 'Operation Confirm'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
@@ -145,7 +202,9 @@ export default function TopologyPanel({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
+                            {language === 'zh'
+                                ? '操作确认'
+                                : 'Operation Confirm'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
@@ -173,7 +232,9 @@ export default function TopologyPanel({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            {language === 'zh' ? '操作确认' : 'Operation Confirm'}
+                            {language === 'zh'
+                                ? '操作确认'
+                                : 'Operation Confirm'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
@@ -217,47 +278,72 @@ export default function TopologyPanel({
                 <h3 className="text-md ml-1 mb-1 font-bold">
                     {language === 'zh' ? '操作' : 'Operation'}
                 </h3>
-                <div className="flex items-center p-1 h-[43px] bg-gray-200 rounded-lg">
+                <div className="flex items-center p-1 h-[64px] bg-gray-200 rounded-lg">
                     <button
-                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             pickingTab === 'picking'
-                                ? 'bg-[#757575] text-white'
+                                ? 'bg-[#4d4d4d] text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={() => {
                             setPickingTab('picking');
-                            // pickingSelect = true;
                             store.set('pickingSelect', true);
                         }}
                     >
-                        <SquareMousePointer className="h-4 w-4" />
-                        {language === 'zh' ? '选择' : 'Picking'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <SquareMousePointer className="h-4 w-4" />
+                            {language === 'zh' ? '选择' : 'Picking'}
+                        </div>
+                        <div
+                            className={`text-xs ${
+                                pickingTab === 'picking' && ' text-white'
+                            }`}
+                        >
+                            [ Ctrl+P ] 
+                        </div>
                     </button>
                     <button
-                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             pickingTab === 'unpicking'
-                                ? 'bg-[#757575] text-white'
+                                ? 'bg-[#4d4d4d] text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={() => {
                             setPickingTab('unpicking');
-                            // pickingSelect = false;
                             store.set('pickingSelect', false);
                         }}
                     >
-                        <SquareDashedMousePointer className="h-4 w-4" />
-                        {language === 'zh' ? '撤选' : 'Unpicking'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <SquareDashedMousePointer className="h-4 w-4" />
+                            {language === 'zh' ? '撤选' : 'Unpicking'}
+                        </div>
+                        <div
+                            className={`text-xs ${
+                                pickingTab === 'unpicking' && ' text-white'
+                            }`}
+                        >
+                            [Ctrl+U]
+                        </div>
                     </button>
                     <button
-                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             pickingTab === 'delete'
                                 ? 'bg-red-500 text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={handleDeleteSelectClick}
                     >
-                        <Trash2 className="h-4 w-4" />
-                        {language === 'zh' ? '删除' : 'Delete'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <Trash2 className="h-4 w-4" />
+                            {language === 'zh' ? '删除' : 'Delete'}
+                        </div>
+                        <div
+                            className={`text-xs ${
+                                pickingTab === 'delete' && ' text-white'
+                            }`}
+                        >
+                            [ Ctrl+A ]
+                        </div>
                     </button>
                 </div>
             </div>
@@ -265,76 +351,99 @@ export default function TopologyPanel({
                 <h3 className="text-md ml-1 mb-1 font-bold">
                     {language === 'zh' ? '模式' : 'Mode'}
                 </h3>
-                <div className="flex items-center h-[43px] p-1 bg-gray-200 rounded-lg">
+                <div className="flex items-center h-[64px] p-1 bg-gray-200 rounded-lg shadow-md">
                     <button
-                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             activeSelectTab === 'brush'
                                 ? 'bg-[#FF8F2E] text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={() => {
                             setActiveSelectTab('brush');
-                            // modeSelect = 1;
                             store.set('modeSelect', 'brush');
                         }}
                     >
-                        <Brush className="h-4 w-4" />
-                        {language === 'zh' ? '笔刷' : 'Brush'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <Brush className="h-4 w-4" />
+                            {language === 'zh' ? '笔刷' : 'Brush'}
+                        </div>
+                        <div className={`text-xs ${activeSelectTab === 'brush' && 'text-white'} `}>[ Ctrl+1 ]</div>
                     </button>
                     <button
-                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             activeSelectTab === 'box'
                                 ? 'bg-[#FF8F2E] text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={() => {
                             setActiveSelectTab('box');
-                            // modeSelect = 0;
                             store.set('modeSelect', 'box');
                         }}
                     >
-                        <SquareDashed className="h-4 w-4" />
-                        {language === 'zh' ? '框选' : 'Box'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <SquareDashed className="h-4 w-4" />
+                            {language === 'zh' ? '框选' : 'Box'}
+                        </div>
+                        <div className={`text-xs ${activeSelectTab === 'box' && 'text-white'} `}>[ Ctrl+2 ]</div>
                     </button>
                     <button
-                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer ${
+                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
                             activeSelectTab === 'feature'
                                 ? 'bg-[#FF8F2E] text-white'
                                 : 'bg-transparent hover:bg-gray-300'
                         }`}
                         onClick={handleFeatureClick}
                     >
-                        <FolderOpen className="h-4 w-4" />
-                        {language === 'zh' ? '要素' : 'Feature'}
+                        <div className="flex flex-row gap-1 items-center">
+                            <FolderOpen className="h-4 w-4" />
+                            {language === 'zh' ? '要素' : 'Feature'}
+                        </div>
+                        <div className={`text-xs ${activeSelectTab === 'feature' && 'text-white'} `}>[ Ctrl+3 ]</div>
                     </button>
                 </div>
             </div>
             <Separator />
-            <h3 className="text-2xl ml-1 mb-1 -mt-1 font-bold">
+            <h3 className="text-2xl ml-1 mb-1 mt-0 font-bold">
                 {language === 'zh' ? '拓扑' : 'Topology'}
             </h3>
-            <div className="flex items-center h-[43px] space-x-1 mt-2 p-2 bg-gray-200 rounded-md shadow-sm border border-gray-200">
+            <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
                 <button
-                    className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-blue-600"
+                    className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer  text-white ${
+                        subdivideGridDialogOpen
+                            ? 'bg-blue-600'
+                            : 'bg-gray-600 hover:bg-blue-600 '
+                    }`}
                     onClick={handleSubdivideClick}
                 >
-                    {language === 'zh' ? '细分' : 'Subdivide'}
+                    <div className="flex flex-row items-center">
+                        {language === 'zh' ? '细分' : 'Subdivide'}
+                    </div>
+                    <div className="text-xs text-white">[ Ctrl+Q ]</div>
                 </button>
-                <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-green-600">
-                    {language === 'zh' ? '合并' : 'Merge'}
+                <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-green-600">
+                    <div className="flex flex-row items-center">
+                        {language === 'zh' ? '合并' : 'Merge'}
+                    </div>
+                    <div className="text-xs text-white">[ Ctrl+W ]</div>
                 </button>
                 <button
-                    className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer text-white ${
+                    className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer text-white ${
                         deleteGridDialogOpen
                             ? 'bg-red-600'
                             : 'bg-gray-600 hover:bg-red-600 '
                     }`}
                     onClick={handleDeleteGridClick}
                 >
-                    {language === 'zh' ? '删除' : 'Delete'}
+                    <div className="flex flex-row items-center">
+                        {language === 'zh' ? '删除' : 'Delete'}
+                    </div>
+                    <div className="text-xs text-white">[ Ctrl+E ]</div>
                 </button>
-                <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-row gap-2 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-purple-600">
-                    {language === 'zh' ? '恢复' : 'Recover'}
+                <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-purple-600">
+                    <div className="flex flex-rowitems-center">
+                        {language === 'zh' ? '恢复' : 'Recover'}
+                    </div>
+                    <div className="text-xs text-white">[ Ctrl+R ]</div>
                 </button>
             </div>
         </div>
