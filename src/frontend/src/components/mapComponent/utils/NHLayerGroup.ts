@@ -21,6 +21,9 @@ export default class NHLayerGroup implements CustomLayerInterface {
   /// state
   prepared!: boolean;
 
+  // System
+  isWindows = navigator.userAgent.includes('Windows');
+
   constructor() {
     this.layers = [];
     this.prepared = false;
@@ -72,6 +75,7 @@ export default class NHLayerGroup implements CustomLayerInterface {
 
   ///////////////// Tick Logic //////////////////////////////
   /** Calculate some data to avoid map jitter .*/
+
   private update(matrix: mat4) {
 
     const mercatorCenter = MercatorCoordinate.fromLngLat(
@@ -81,15 +85,29 @@ export default class NHLayerGroup implements CustomLayerInterface {
     this.mercatorCenterX = encodeFloatToDouble(mercatorCenter.x);
     this.mercatorCenterY = encodeFloatToDouble(mercatorCenter.y);
 
-    mat4.translate(
-        this.relativeEyeMatrix, 
-        matrix, 
-        vec3.fromValues(
-            mercatorCenter.x,
-            mercatorCenter.y,
-            0.0
-        )
-    );
+    if (this.isWindows) {
+        // Update the relativeEyeMatrix for Windows
+        mat4.translate(
+            this.relativeEyeMatrix, 
+            matrix, 
+            [
+                mercatorCenter.x,
+                mercatorCenter.y,
+                0.0
+            ]
+        );
+    } else {
+        // Update the relativeEyeMatrix for Mac
+        mat4.translate(
+            this.relativeEyeMatrix, 
+            matrix, 
+            vec3.fromValues(
+                mercatorCenter.x,
+                mercatorCenter.y,
+                0.0
+            )
+        );
+    }
   }
 
   //////////////// Layers Control ///////////////////////////
