@@ -67,9 +67,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     private _gridLineShader: WebGLProgram = 0
 
     // Texture resource
-    private _levelTexture: WebGLTexture = 0
     private _paletteTexture: WebGLTexture = 0
-    private _storageTextureArray: WebGLTexture = 0
 
     // Buffer resource
     private _gridSignalBuffer: WebGLBuffer = 0      // [ [isHit], [isSssigned] ]
@@ -592,6 +590,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     removeResource() {
+        
+        if (!this._gridRecorder) return
+
+        this.executeClearSelection()
+        console.log(this.hitSet)
+
         this._gridRecorder = null
         this.map.triggerRepaint()
     }
@@ -643,6 +647,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     remove(_: Map, gl: WebGL2RenderingContext) {
 
+        this.removeResource()
+        
         gl.deleteProgram(this._pickingShader);
         gl.deleteProgram(this._gridMeshShader);
         gl.deleteProgram(this._gridLineShader);
@@ -660,9 +666,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         gl.deleteVertexArray(this._gridStorageVAO);
 
-        gl.deleteTexture(this._levelTexture);
         gl.deleteTexture(this._paletteTexture);
-        gl.deleteTexture(this._storageTextureArray);
         gl.deleteTexture(this._pickingTexture);
         gl.deleteTexture(this._boxPickingTexture);
 
@@ -672,10 +676,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.deleteRenderbuffer(this._pickingRBO);
         gl.deleteRenderbuffer(this._boxPickingRBO);
 
-        this.hitSet.clear();
-
-        this.visible = false;
-
+        // remove overlay canvas
         if (this._overlayCanvas && this._overlayCanvas.parentNode) {
             this._overlayCanvas.parentNode.removeChild(this._overlayCanvas);
         }
