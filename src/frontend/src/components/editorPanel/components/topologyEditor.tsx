@@ -31,7 +31,10 @@ export default function TopologyPanel({
     setActiveSelectTab,
 }: TopologyPanelProps) {
     const { language } = useContext(LanguageContext);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // NOT USED For Electron
+    // const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [deleteGridDialogOpen, setDeleteGridDialogOpen] = useState(false);
     const [subdivideGridDialogOpen, setSubdivideGridDialogOpen] =
@@ -42,26 +45,50 @@ export default function TopologyPanel({
         'TopologyLayer'
     )! as TopologyLayer;
 
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (files && files.length > 0) {
-            // Process the selected file
-            console.log('选择的文件:', files[0].name);
-            // Clear the file input so the same file can be selected again
-            event.target.value = '';
-        }
-        setActiveSelectTab('brush');
-        // modeSelect = 1;
-        store.set('modeSelect', 'brush');
-    };
+    // NOT USED For Electron
+    // const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     const files = event.target.files;
+    //     if (files && files.length > 0) {
+    //         const file = files[0];
+    //         const filePath = (file as any).path
+    //         console.log('文件路径:', filePath);
+    //         // Process the selected file
+    //         console.log('选择的文件:', files[0].name);
+    //         // Clear the file input so the same file can be selected again
+    //         event.target.value = '';
+    //     }
+    //     setActiveSelectTab('brush');
+    //     // modeSelect = 1;
+    //     store.set('modeSelect', 'brush');
+    // };
 
-    const handleFeatureClick = () => {
+    const handleFeatureClick = async () => {
         setActiveSelectTab('feature');
         // modeSelect = 2;
         store.set('modeSelect', 'feature');
-        if (fileInputRef.current) {
-            fileInputRef.current.click();
+        if (window.electronAPI && typeof window.electronAPI.openFileDialog === 'function') {
+            try {
+                const filePath = await window.electronAPI.openFileDialog();
+                if (filePath) {
+                    console.log('Selected file path:', filePath);
+                } else {
+                    console.log('No file selected');
+                    setActiveSelectTab('brush');
+                    store
+                }
+            } catch (error) {
+                console.error('Error opening file dialog:', error);
+                setActiveSelectTab('brush');
+                store.set('modeSelect', 'brush');
+            }
+        } else {
+            console.warn('Electron API not available');
+            setActiveSelectTab('brush');
+            store.set('modeSelect', 'brush');
         }
+        // if (fileInputRef.current) {
+        //     fileInputRef.current.click();
+        // }
     };
 
     const handleDeleteSelectClick = () => {
@@ -257,7 +284,7 @@ export default function TopologyPanel({
             </AlertDialog>
 
             {/* 隐藏的文件输入元素 */}
-            <input
+            {/* <input
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
@@ -269,7 +296,7 @@ export default function TopologyPanel({
                 aria-label={
                     language === 'zh' ? '选择要素文件' : 'Select feature file'
                 }
-            />
+            /> */}
 
             <h3 className="text-2xl mt-1 ml-1 font-bold">
                 {language === 'zh' ? '模式选择' : 'Picking'}
