@@ -235,7 +235,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     // Fast function to upload one grid rendering info to GPU stograge buffer
     writeGridInfoToStorageBuffer(info: [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array]) {
-
         const gl = this._gl
         const levelByteStride = 1 * 1
         const vertexByteStride = 2 * 4
@@ -506,12 +505,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     removeGridsLocally(storageIds: number[]) {
-        this.gridRecorder.removeGridsLocally(storageIds, this.updateGPUGrids)
+        this.gridRecorder.removeGridsLocally(storageIds, this.updateGPUGrid)
         this.map.triggerRepaint()
     }
 
     removeGrids(storageIds: number[]) {
-        this.gridRecorder.removeGrids(storageIds, this.updateGPUGrids)
+        this.gridRecorder.removeGrids(storageIds, this.updateGPUGrid)
     }
 
     subdivideGrid(uuId: string) {

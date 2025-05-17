@@ -178,7 +178,7 @@ export default class GridRecorder extends UndoRedoManager {
         this.storageId_gridInfo_cache[storageId * 2 + 0] = lastLevel
         this.storageId_gridInfo_cache[storageId * 2 + 1] = lastGlobalId
         const [vertices, verticesLow] = this._createNodeRenderVertices(lastLevel, lastGlobalId)
-        callback && callback([storageId, new Uint8Array([lastLevel]), vertices, verticesLow])
+        callback && callback([storageId, lastLevel, vertices, verticesLow])
     }
 
     // removeGrids(storageIds: number[], callback?: Function): void {
@@ -236,7 +236,7 @@ export default class GridRecorder extends UndoRedoManager {
             this.storageId_gridInfo_cache[storageId * 2 + 1] = replacedGlobalId
 
             const [vertices, verticesLow] = this._createNodeRenderVertices(replacedLevel, replacedGlobalId)
-            callback && callback([storageId, new Uint8Array([replacedLevel]), vertices, verticesLow])
+            callback && callback([storageId, replacedLevel, vertices, verticesLow])
         })
 
     }
@@ -581,6 +581,11 @@ export default class GridRecorder extends UndoRedoManager {
             this._projConverter.forward([xMin, yMin]),  // srcBL
             this._projConverter.forward([xMax, yMin]),  // srcBR
         ]
+        
+        const relativeCenter: [number, number] = this._projConverter.forward(this._center);
+        const mercatorCenter = MercatorCoordinate.fromLonLat(relativeCenter);
+        const centerX = encodeFloatToDouble(mercatorCenter[0]);
+        const centerY = encodeFloatToDouble(mercatorCenter[1]);
 
         const renderCoords: number[] = []
         const renderCoordsLow: number[] = []
@@ -588,10 +593,10 @@ export default class GridRecorder extends UndoRedoManager {
             const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
             const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
             const mercatorCoordY = encodeFloatToDouble(mercatorCoord[1])
-            renderCoords.push(mercatorCoordX[0])
-            renderCoordsLow.push(mercatorCoordX[1])
-            renderCoords.push(mercatorCoordY[0])
-            renderCoordsLow.push(mercatorCoordY[1])
+            renderCoords.push(mercatorCoordX[0] - centerX[0])
+            renderCoordsLow.push(mercatorCoordX[1] - centerX[1])
+            renderCoords.push(mercatorCoordY[0] - centerY[0])
+            renderCoordsLow.push(mercatorCoordY[1] - centerY[1])
         })
 
         if (!vertices) vertices = new Float32Array(renderCoords.flat());
