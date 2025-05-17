@@ -51,13 +51,11 @@ export default function TopologyPanel({
             event.target.value = '';
         }
         setActiveSelectTab('brush');
-        // modeSelect = 1;
         store.set('modeSelect', 'brush');
     };
 
     const handleFeatureClick = () => {
         setActiveSelectTab('feature');
-        // modeSelect = 2;
         store.set('modeSelect', 'feature');
         if (fileInputRef.current) {
             fileInputRef.current.click();
@@ -78,14 +76,13 @@ export default function TopologyPanel({
     };
 
     const handleConfirmDeleteSelect = () => {
-        // Add real delete logic
         setPickingTab('picking');
         store.set('pickingSelect', true);
         setDeleteSelectDialogOpen(false);
+        topologyLayer.executeClearSelection();
     };
 
     const handleConfirmDeleteGrid = () => {
-        // Add real delete logic
         setDeleteGridDialogOpen(false);
         topologyLayer.executeDeleteGrids();
     };
@@ -97,7 +94,7 @@ export default function TopologyPanel({
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if ( event.ctrlKey || event.metaKey ) {
+            if (event.ctrlKey || event.metaKey) {
                 if (event.key === 'P' || event.key === 'p') {
                     event.preventDefault();
                     setPickingTab('picking');
@@ -112,6 +109,7 @@ export default function TopologyPanel({
                     event.preventDefault();
                     setPickingTab('delete');
                     store.set('pickingSelect', false);
+                    setDeleteSelectDialogOpen(true);
                 }
                 if (event.key === '1') {
                     event.preventDefault();
@@ -145,7 +143,6 @@ export default function TopologyPanel({
                 if (event.key === 'R' || event.key === 'r') {
                     event.preventDefault();
                 }
-
             }
         };
 
@@ -299,7 +296,7 @@ export default function TopologyPanel({
                                 pickingTab === 'picking' && ' text-white'
                             }`}
                         >
-                            [ Ctrl+P ] 
+                            [ Ctrl+P ]
                         </div>
                     </button>
                     <button
@@ -367,7 +364,13 @@ export default function TopologyPanel({
                             <Brush className="h-4 w-4" />
                             {language === 'zh' ? '笔刷' : 'Brush'}
                         </div>
-                        <div className={`text-xs ${activeSelectTab === 'brush' && 'text-white'} `}>[ Ctrl+1 ]</div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'brush' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+1 ]
+                        </div>
                     </button>
                     <button
                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
@@ -384,7 +387,13 @@ export default function TopologyPanel({
                             <SquareDashed className="h-4 w-4" />
                             {language === 'zh' ? '框选' : 'Box'}
                         </div>
-                        <div className={`text-xs ${activeSelectTab === 'box' && 'text-white'} `}>[ Ctrl+2 ]</div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'box' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+2 ]
+                        </div>
                     </button>
                     <button
                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
@@ -398,7 +407,13 @@ export default function TopologyPanel({
                             <FolderOpen className="h-4 w-4" />
                             {language === 'zh' ? '要素' : 'Feature'}
                         </div>
-                        <div className={`text-xs ${activeSelectTab === 'feature' && 'text-white'} `}>[ Ctrl+3 ]</div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'feature' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+3 ]
+                        </div>
                     </button>
                 </div>
             </div>
