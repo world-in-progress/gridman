@@ -520,7 +520,17 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     subdivideGrids(uuIds: string[]) {
         const infos = uuIds.map(uuId => decodeInfo(uuId)) as [level: number, globalId: number][]
-        this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, this.updateGPUGrids)
+        this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, (renderInfos: any) => {
+            this.updateGPUGrids(renderInfos)
+            const [fromStorageId, levels] = renderInfos
+            console.log('infos', infos)
+            console.log('start', fromStorageId, 'end', fromStorageId + levels.length - 1)
+            const storageIds = []
+            for (let i = fromStorageId; i <= fromStorageId + levels.length - 1; i++) {
+                storageIds.push(i)
+            }
+            this.hit(storageIds)
+        })
     }
 
     tickGrids() {
@@ -897,6 +907,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             subdividableUUIDs.push(this.gridRecorder.getGridInfoByStorageId(removableStorageId).join('-'))
         })
 
+        this.executeClearSelection()
+
         if (subdividableUUIDs.length === 1) {
             this.removeGridLocally(removableStorageIds[0])
             // this.subdivideGrid(subdividableUUIDs[0])
@@ -906,8 +918,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this.removeGridsLocally(removableStorageIds)
             this.subdivideGrids(subdividableUUIDs)
         }
-
-        this.executeClearSelection()
     }
 
     executeDeleteGrids() {
