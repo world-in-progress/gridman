@@ -194,10 +194,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         
         this._overlayCtx = this._overlayCanvas.getContext('2d');
         
-        // 设置canvas大小
         this._resizeOverlayCanvas();
         
-        // 监听地图容器大小变化
         const resizeObserver = new ResizeObserver(() => {
             this._resizeOverlayCanvas();
         });
@@ -472,8 +470,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             gl.deleteFramebuffer(this._boxPickingFBO)
         }
 
-        this._boxPickingTexture = gll.createTexture2D(gl, 0, gl.canvas.width, gl.canvas.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(gl.canvas.width * gl.canvas.height * 4).fill(0))
-        this._boxPickingRBO = gll.createRenderBuffer(gl, gl.canvas.width, gl.canvas.height)
+        const factor = Math.min(1.0, window.devicePixelRatio)
+        const width = Math.floor(gl.canvas.width / factor)
+        const height = Math.floor(gl.canvas.height / factor)
+        
+        this._boxPickingTexture = gll.createTexture2D(gl, 0, width, height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4).fill(0))
+        this._boxPickingRBO = gll.createRenderBuffer(gl, width, height)
         this._boxPickingFBO = gll.createFrameBuffer(gl, [this._boxPickingTexture], 0, this._boxPickingRBO)!
     }
 
@@ -860,7 +862,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         let storageIds
         if (type === 'box') {
-            const canvas = this._gl.canvas as HTMLCanvasElement
+            console.log(startPos, endPos)
             const box = genPickingBox(startPos, endPos!)
             storageIds = this._boxPicking(box)
         } else if (type === 'brush') {

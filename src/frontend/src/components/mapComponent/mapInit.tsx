@@ -329,6 +329,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
           const y = e.clientY - rect.top;
           localMouseDownPos.current = [x, y];
         };
+
         const onMouseMove = (e: MouseEvent) => {
           if (!e.shiftKey || !localIsMouseDown.current) return;
           const rect = canvas.getBoundingClientRect();
@@ -348,12 +349,14 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
               mapInstance!.getCanvas().style.cursor = "crosshair";
             }
 
+            console.log(localMouseDownPos.current, localMouseMovePos.current)
             topologyLayer.executeDrawBox(
-              [mouseDownPos[0], mouseDownPos[1]],
-              [mouseMovePos[0], mouseMovePos[1]]
+              [localMouseDownPos.current[0], localMouseDownPos.current[1]],
+              [localMouseMovePos.current[0], localMouseMovePos.current[1]]
             );
           }
         };
+
         const onMouseUp = (e: MouseEvent) => {
           localIsMouseDown.current = false;
           if (mapInstance) {
@@ -371,6 +374,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
           const y = e.clientY - rect.top;
           const localMouseUpPos = [x, y];
 
+          console.log(window.devicePixelRatio)
           topologyLayer.executePickGrids(
             store.get<string>("modeSelect")!,
             store.get<boolean>("pickingSelect")!,
@@ -405,7 +409,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         canvas.addEventListener("mousedown", onMouseDown);
         canvas.addEventListener("mousemove", onMouseMove);
         canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseup", onMouseOut);
+        canvas.addEventListener("mouseout", onMouseOut);
       });
 
       mapInstance.on("click", handleMapClick);
