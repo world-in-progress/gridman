@@ -50,7 +50,7 @@ export default class NHLayerGroup implements CustomLayerInterface {
       this.map.triggerRepaint();
       return;
     }
-    this.update(matrix);
+    this.update(matrix as any);
 
     this.layers.forEach((ly) => {
       ly.render(gl, matrix);
