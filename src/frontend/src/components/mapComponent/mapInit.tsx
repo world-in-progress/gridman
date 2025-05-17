@@ -303,16 +303,23 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
           projectBoundsLayer.setVisibility("none");
         }
 
-        const topologyLayer = new TopologyLayer(mapInstance!, {
-          maxGridNum: 4096 * 4096,
-        });
+                const topologyLayer = new TopologyLayer(mapInstance!, {
+                    maxGridNum: 4096 * 4096,
+                });
 
-        const layerGroup = new NHLayerGroup();
-        layerGroup.id = "gridman-custom-layer-group";
-        layerGroup.addLayer(topologyLayer);
+                // const attributeLayer = new AttributeLayer(mapInstance!, {
+                // })
+
+
+                const layerGroup = new NHLayerGroup();
+                layerGroup.id = 'gridman-custom-layer-group';
+                layerGroup.addLayer(topologyLayer);
+                // layerGroup.addLayer(attributeLayer)
+
 
         store.set("clg", layerGroup);
         mapInstance!.addLayer(layerGroup);
+
 
         const canvas = mapInstance!.getCanvas();
         const localIsMouseDown = { current: false };

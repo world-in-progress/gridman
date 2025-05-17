@@ -8,6 +8,7 @@ import TopologyPanel from './components/topologyEditor';
 import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
+import AttributePanel from './components/AttributeEditor';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const { language } = useContext(LanguageContext);
@@ -83,14 +84,19 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                     <BasicInfo />
 
                     {/* 拓扑编辑 */}
-                    <TopologyPanel
-                        pickingTab={pickingTab}
-                        setPickingTab={setPickingTab}
-                        activeSelectTab={activeSelectTab}
-                        setActiveSelectTab={setActiveSelectTab}
-                    />
+                    {activeTab === 'topology' && (
+                        <TopologyPanel
+                            pickingTab={pickingTab}
+                            setPickingTab={setPickingTab}
+                            activeSelectTab={activeSelectTab}
+                            setActiveSelectTab={setActiveSelectTab}
+                        />
+                    )}
 
                     {/* 属性编辑面板 */}
+                    {activeTab === 'attribute' && (
+                        <AttributePanel/>
+                    )}
                 </div>
             </SidebarContent>
             <SidebarRail />
