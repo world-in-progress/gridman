@@ -1,0 +1,16 @@
+{
+  "name": "gridman",
+  "version": "1.0.0",
+  "main": "electron/dist/main.js",
+  "scripts": {
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "start": "npm run build:electron && electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "electron": "^36.2.1"
+  }
+}
