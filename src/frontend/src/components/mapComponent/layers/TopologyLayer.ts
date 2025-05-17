@@ -602,6 +602,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniform1f(gl.getUniformLocation(this._gridMeshShader, 'mode'), 0.0)
+        gl.uniform4fv(gl.getUniformLocation(this._gridMeshShader, 'relativeCenter'), this.gridRecorder.relativeCenter)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._gridMeshShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
@@ -621,6 +622,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._gridLineShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
+        gl.uniform4fv(gl.getUniformLocation(this._gridLineShader, 'relativeCenter'), this.gridRecorder.relativeCenter)
 
         gl.drawArraysInstanced(gl.LINE_LOOP, 0, 4, this.gridRecorder.gridNum)
     }
@@ -706,6 +708,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'pickingMatrix'), false, pickingMatrix)
+        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridRecorder.relativeCenter)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
@@ -713,11 +716,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.flush()
 
         const pixel = new Uint8Array(4)
-        console.log(pixel)
         gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-        console.log(pixel[0] + (pixel[1] << 8) + (pixel[2] << 16) + (pixel[3] << 24))
         // Return storageId of the picked grid
         return pixel[0] + (pixel[1] << 8) + (pixel[2] << 16) + (pixel[3] << 24)
     }
@@ -766,6 +767,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'pickingMatrix'), false, boxPickingMatrix)
+        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridRecorder.relativeCenter)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
