@@ -51,21 +51,21 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
     const menuItems = [
         {
-            title: language === 'zh' ? '网格' : 'Grid',
+            title: language === 'zh' ? '网格编辑' : 'Edit Grid',
             icon: <Grid className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Grid clicked');
             },
         },
         {
-            title: language === 'zh' ? '地形' : 'Terrain',
+            title: language === 'zh' ? '地形编辑' : 'Edit Terrain',
             icon: <Mountain className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Terrain clicked');
             },
         },
         {
-            title: language === 'zh' ? '管道' : 'Pipeline',
+            title: language === 'zh' ? '管道编辑' : 'Edit Pipeline',
             icon: <Waypoints className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Pipeline clicked');
