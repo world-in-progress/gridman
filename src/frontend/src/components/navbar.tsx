@@ -15,7 +15,7 @@ import grid from '../assets/grid.png';
 import bot from '../assets/bot.png';
 import { useContext } from 'react';
 import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
-import GridBotBotton from './testComponents/GridBotBotton';
+import GridBotBotton from './ui/GridBotBotton';
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
     children?: React.ReactNode;
     onNavItemClick?: (item: string, type?: string) => void;

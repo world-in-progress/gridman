@@ -261,10 +261,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             window.mapboxDrawInstance = drawInstance;
 
             mapInstance.on('load', () => {
-                // If NHMap or other parts of your application might be changing default scroll zoom behavior,
-                // investigate those. Mapbox GL JS by default zooms towards the mouse cursor.
-                // console.log('Map loaded, scrollZoom handler:', mapInstance?.scrollZoom);
-                // console.log('Is Scroll Zoom Enabled:', mapInstance?.isScrollZoomEnabled());
 
                 // Initialize SubprojectBoundsManager via ref, using the language from context
                 if (mapInstance) {
@@ -608,7 +604,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
     return (
         <div className="relative w-full h-full" ref={mapWrapperRef}>
-            {/* <div id="map-container" className="w-full h-full"></div> */}
             <div
                 id="control-panel-container"
                 className="absolute top-0 left-0 z-10 flex flex-row items-start"

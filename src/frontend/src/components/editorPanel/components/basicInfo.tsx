@@ -1,11 +1,13 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { Layers } from 'lucide-react';
 import { LanguageContext } from '../../../context';
-import { BrushCardProps } from '../types/types';
 import store from '@/store';
 import GridRecorder from '@/core/grid/NHGridRecorder';
 import BoundsCard from '@/components/projectPanel/components/boundsCard';
+import { SchemaService } from '../../schemaPanel/utils/SchemaService';
+import { ProjectService } from '../../projectPanel/utils/ProjectService';
 
-export default function BasicInfo({}: BrushCardProps) {
+export default function BasicInfo() {
     const { language } = useContext(LanguageContext);
 
     const currentProject = store.get<any>('ProjectName');
@@ -14,6 +16,7 @@ export default function BasicInfo({}: BrushCardProps) {
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
     const subdivideRules = gridCore?.subdivideRules.rules;
     const bounds = gridCore?.subdivideRules.bBox.data;
+    const schemaGridInfo = store.get<number[][]>('SchemaGridInfo');
 
     return (
         <div className="bg-blue-50 p-3 rounded-md">
@@ -36,47 +39,29 @@ export default function BasicInfo({}: BrushCardProps) {
                 <div>
                     <span className="font-bold">EPSG: {epsg || '-'}</span>
                 </div>
-                <div className="flex flex-row items-start">
+                <div className="flex items-start flex-row">
                     <div
-                        className="font-bold"
-                        style={{ flexBasis: '25%', flexGrow: 0, flexShrink: 0 }}
+                        className={`font-bold ${language === 'zh' ? 'w-[28%]' : 'w-[35%]'}`}
                     >
-                        {language === 'zh' ? '细分规则：' : 'Subdivide: '}
+                        {language === 'zh' ? '网格等级' : 'Grid Levels'}(m):
                     </div>
-                    {subdivideRules && subdivideRules.length > 0 ? (
-                        <div
-                            className="space-y-1"
-                            style={{
-                                flexBasis: '80%',
-                                flexGrow: 0,
-                                flexShrink: 0,
-                            }}
-                        >
-                            {subdivideRules.map((rule, index) => (
-                                <div key={index} className="text-sm">
-                                    {language === 'zh'
-                                        ? `第 ${index + 1} 级: [${rule.join(
-                                              ', '
-                                          )}]`
-                                        : `Level ${index + 1}: [${rule.join(
-                                              ', '
-                                          )}]`}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div
-                            className="text-sm"
-                            style={{
-                                flexBasis: '73%',
-                                flexGrow: 0,
-                                flexShrink: 0,
-                            }}
-                        >
-                            -
-                        </div>
-                    )}
+                    <div
+                        className="space-y-1"
+                    >
+                        {schemaGridInfo ? (
+                            schemaGridInfo.map(
+                                (level: number[], index: number) => (
+                                    <div key={index} className="text-sm">
+                                        level {index + 1}: [{level.join(', ')}]
+                                    </div>
+                                )
+                            )
+                        ) : (
+                            <span>-</span>
+                        )}
+                    </div>
                 </div>
+               
                 <div className="font-bold">
                     {language === 'zh' ? '包围盒：' : 'BoundingBox: '}
                     {bounds ? (

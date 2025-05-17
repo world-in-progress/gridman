@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Star,
     FileType2,
@@ -22,6 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 
 declare global {
     interface Window {
@@ -44,28 +45,29 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const showLoadingRef = useRef<Function | null>(null);
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+    const projectService = new ProjectService(language);
+    const schemaService = new SchemaService(language);
 
     const menuItems = [
         {
-            title: language === 'zh' ? '网格' : 'Grid',
+            title: language === 'zh' ? '网格编辑' : 'Edit Grid',
             icon: <Grid className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Grid clicked');
             },
         },
         {
-            title: language === 'zh' ? '地形' : 'Terrain',
+            title: language === 'zh' ? '地形编辑' : 'Edit Terrain',
             icon: <Mountain className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Terrain clicked');
             },
         },
         {
-            title: language === 'zh' ? '管道' : 'Pipeline',
+            title: language === 'zh' ? '管道编辑' : 'Edit Pipeline',
             icon: <Waypoints className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Pipeline clicked');
@@ -119,12 +121,26 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         }
     };
 
+
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         isLoading.on();
-        const projectService = new ProjectService(language);
+
         store.set('ProjectName', parentProjectTitle);
         store.set('SubprojectName', subproject.name);
+
+        projectService.getProjectByName(parentProjectTitle, (err, result) => {
+            store.set('SchemaName', result.project_meta.schema_name);
+            if (store.get('SchemaName')) {
+                const schemaName = store.get('SchemaName') as string;
+                schemaService.getSchemaByName(
+                    schemaName,
+                    (err, result) => {
+                        store.set('SchemaGridInfo', result.project_schema.grid_info);
+                    }
+                );
+            }
+        });
 
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
             const { flyToSubprojectBounds } = window.mapRef.current;
@@ -308,7 +324,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                             subproject.description
                         ) : (
                             <span className="italic">
-                                No description provided.
+                                {language === 'zh' ? '无描述' : 'No description provided.'}
                             </span>
                         )}
                     </div>

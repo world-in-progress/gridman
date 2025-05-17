@@ -42,7 +42,7 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import GridBotBotton from './testComponents/GridBotBotton';
+import GridBotBotton from './ui/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
 import EditorPanel from './editorPanel/editorPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
@@ -53,14 +53,9 @@ import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
-export type BreadcrumbType =
-    | 'schema'
-    | 'project'
-    | 'editor'
-    | null;
+export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
 
 export default function Page() {
-    
     const [isLoading, setIsLoading] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isSelectingPoint, setIsSelectingPoint] = useState(false);
@@ -129,7 +124,6 @@ export default function Page() {
     const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
     const { language } = useContext(LanguageContext);
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
-
 
     const toggleChat = () => {
         setIsChatOpen(!isChatOpen);
@@ -219,9 +213,9 @@ export default function Page() {
         setActiveBreadcrumb(item);
 
         // Clear TopologyLayer resource
-        const clg = store.get<NHLayerGroup>('clg')!
-        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer
-        layer.removeResource()
+        const clg = store.get<NHLayerGroup>('clg')!;
+        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
+        layer.removeResource();
 
         if (item === 'schema') {
             setActivePanel('schema');
@@ -234,6 +228,7 @@ export default function Page() {
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
             }
+            layer.removeResource();
         } else if (item === 'project') {
             clearMapMarkers();
             setIsSelectingPoint(false);
@@ -244,6 +239,7 @@ export default function Page() {
             setActivePanel('project');
             setShowCreateProject(false);
             setShowCreateSubProject(false);
+            layer.removeResource();
         }
     };
 
@@ -579,17 +575,21 @@ export default function Page() {
                                 </span>
                             </Button>
                         )}
-                        <Button
-                            className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
-                            onClick={handleNextClick}
-                            aria-label={language === 'zh' ? '下一步' : 'Next'}
-                            title={language === 'zh' ? '下一步' : 'Next'}
-                        >
-                            <span>
-                                {language === 'zh' ? '下一步' : 'Next'}
-                            </span>
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
+                        {(activePanel === 'schema' || 'project') && (
+                            <Button
+                                className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
+                                onClick={handleNextClick}
+                                aria-label={
+                                    language === 'zh' ? '下一步' : 'Next'
+                                }
+                                title={language === 'zh' ? '下一步' : 'Next'}
+                            >
+                                <span>
+                                    {language === 'zh' ? '下一步' : 'Next'}
+                                </span>
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        )}
                     </div>
                 </div>
             </SidebarInset>

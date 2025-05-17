@@ -165,11 +165,10 @@ export async function fetchProjects(
 
 export async function getProjectByName(
   this: WorkerSelf,
-  params: { name: string },
+   projectName: string,
   callback: Callback<any>
 ) {
-  const { name } = params;
-  const { err, result } = await ProjectUtils.getProjectByName(name);
+  const { err, result } = await ProjectUtils.getProjectByName(projectName);
   callback(err, result);
 }
 

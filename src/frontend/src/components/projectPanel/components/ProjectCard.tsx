@@ -3,12 +3,14 @@ import {
     Star,
     FileType2,
     SquarePen,
-    LayoutPanelTop,
+    FileBox,
     Eye,
     EyeOff,
     FilePlus,
     Blocks,
     Trash2,
+    Earth,
+    Layers,
 } from 'lucide-react';
 import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
@@ -46,6 +48,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const [loadingSubprojects, setLoadingSubprojects] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const cardId = `project-card-${title.replace(/\s+/g, '-')}`;
+    const [schemaEpsg, setSchemaEpsg] = useState<string>('');
+    const [schemaGridInfo, setSchemaGridInfo] = useState<any[]>([]);
 
     useEffect(() => {
         setLocalStarred(starredItems?.[title] || false);
@@ -155,6 +159,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         }
     }, [showSubprojects, fetchSubprojectsList]);
 
+    useEffect(() => {
+        const schemaService = new SchemaService(language);
+        schemaService.getSchemaByName(project.schema_name, (err, result) => {
+            if (!err && result?.project_schema?.epsg) {
+                setSchemaEpsg(result.project_schema.epsg.toString());
+            }
+            if (!err && result?.project_schema?.grid_info) {
+                setSchemaGridInfo(result.project_schema.grid_info);
+            }
+        });
+    }, [project.schema_name, language]);
+
     const handleToggleSubprojectsVisibility = (e: React.MouseEvent) => {
         e.stopPropagation();
         const newState = !showSubprojects;
@@ -174,19 +190,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             const { flyToProjectBounds, showSubprojectBounds } =
                 window.mapRef.current;
             showSubprojectBounds(title, subprojects, true);
-            
-            // console.log(subprojects)
-            // console.log('showSubprojectBounds', window.mapRef.current);
 
-            // TODO: Outline first show is black
             fetchSubprojectsList().then(() => {
-                // if (
-                //     showSubprojectBounds &&
-                //     typeof showSubprojectBounds === 'function'
-                // ) {
-                //     console.log('nihao')
-                //     showSubprojectBounds(title, subprojects, true);
-                // }
                 if (window.mapRef && window.mapRef.current) {
                     const { showSubprojectBounds } = window.mapRef.current;
                     if (
@@ -218,19 +223,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
         const newDescription = textareaRef.current.value;
 
-        try {
-            if (onSaveDescription) {
-                const updatedProject = {
-                    ...project,
-                    description: newDescription,
-                };
-                await onSaveDescription(title, updatedProject);
-            }
-
-            setIsEditing(false);
-        } catch (error) {
-            console.error('Failed to update project description:', error);
+        if (onSaveDescription) {
+            const updatedProject = {
+                ...project,
+                description: newDescription,
+            };
+            await onSaveDescription(title, updatedProject);
         }
+
+        setIsEditing(false);
     };
 
     const handleAddSubproject = async (e: React.MouseEvent) => {
@@ -256,7 +257,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 ? '获取模板详情失败，使用当前信息继续'
                                 : 'Failed to get schema details, continuing with current info'
                         );
-                        console.log('获取模板详情失败:', err);
                         onAddSubproject(
                             project,
                             project.schema_name,
@@ -412,11 +412,44 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             <div className="text-sm space-y-2">
                 {/* Schema Information */}
                 <div className="flex items-center text-gray-600 ">
-                    <LayoutPanelTop className="h-4 w-4 mr-2" />
+                    <FileBox className="h-4 w-4 mr-2" />
                     <span>
                         {language === 'zh' ? '模板' : 'Schema'}:{' '}
                         {project.schema_name}
                     </span>
+                </div>
+
+                <div className="flex items-center text-gray-600 ">
+                    <Earth className="h-4 w-4 mr-2" />
+                    <span>
+                        {language === 'zh' ? 'EPSG' : 'EPSG'}:{' '}
+                        {schemaEpsg || '-'}
+                    </span>
+                </div>
+                <div className="flex items-start text-gray-600">
+                    <div
+                        className={`flex items-center ${
+                            language === 'zh' ? 'w-[35%]' : 'w-[40%]'
+                        }`}
+                    >
+                        <Layers className="h-4 w-4 mr-2" />
+                        <span>
+                            {language === 'zh' ? '网格等级' : 'Grid Levels'}(m):
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        {schemaGridInfo && schemaGridInfo.length > 0 ? (
+                            schemaGridInfo.map(
+                                (level: number[], index: number) => (
+                                    <div key={index} className="ml-2 text-sm">
+                                        level {index + 1}: [{level.join(', ')}]
+                                    </div>
+                                )
+                            )
+                        ) : (
+                            <span>-</span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Subproject Information */}
@@ -514,9 +547,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         )}
                     </div>
                     {/* Display description text when not in editing mode */}
-                    {!isEditing && project.description && (
+                    {!isEditing && (
                         <div className="text-sm text-gray-600  mb-2 px-1">
-                            {project.description}
+                            {project.description ? (
+                                project.description
+                            ) : (
+                                <span className="italic">
+                                    {language === 'zh' ? '无描述' : 'No description provided.'}
+                                </span>
+                            )}
                         </div>
                     )}
                     {/* Display text input when in editing mode */}
