@@ -108,6 +108,7 @@ export default function TopologyPanel({
         store.set('pickingSelect', true);
         setDeleteSelectDialogOpen(false);
         topologyLayer.executeClearSelection();
+        topologyLayer.executeClearSelection();
     };
 
     const handleConfirmDeleteGrid = () => {
@@ -123,6 +124,7 @@ export default function TopologyPanel({
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
+            if (event.ctrlKey || event.metaKey) {
                 if (event.key === 'P' || event.key === 'p') {
                     event.preventDefault();
                     setPickingTab('picking');
@@ -137,6 +139,7 @@ export default function TopologyPanel({
                     event.preventDefault();
                     setPickingTab('delete');
                     store.set('pickingSelect', false);
+                    setDeleteSelectDialogOpen(true);
                     setDeleteSelectDialogOpen(true);
                 }
                 if (event.key === '1') {
@@ -325,6 +328,7 @@ export default function TopologyPanel({
                             }`}
                         >
                             [ Ctrl+P ]
+                            [ Ctrl+P ]
                         </div>
                     </button>
                     <button
@@ -399,6 +403,13 @@ export default function TopologyPanel({
                         >
                             [ Ctrl+1 ]
                         </div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'brush' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+1 ]
+                        </div>
                     </button>
                     <button
                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
@@ -422,6 +433,13 @@ export default function TopologyPanel({
                         >
                             [ Ctrl+2 ]
                         </div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'box' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+2 ]
+                        </div>
                     </button>
                     <button
                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-1 text-sm justify-center items-center cursor-pointer ${
@@ -434,6 +452,13 @@ export default function TopologyPanel({
                         <div className="flex flex-row gap-1 items-center">
                             <FolderOpen className="h-4 w-4" />
                             {language === 'zh' ? '要素' : 'Feature'}
+                        </div>
+                        <div
+                            className={`text-xs ${
+                                activeSelectTab === 'feature' && 'text-white'
+                            } `}
+                        >
+                            [ Ctrl+3 ]
                         </div>
                         <div
                             className={`text-xs ${
