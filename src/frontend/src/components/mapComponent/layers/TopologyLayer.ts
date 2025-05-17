@@ -48,7 +48,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     projConverter!: proj4.Converter
     
     lastPickedId: number = -1
-
+    _forceUpdate = false
 
     // GPU-related //////////////////////////////////////////////////
 
@@ -490,11 +490,16 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 if (storageId < 0) return
 
                 if (this.hitSet.has(storageId)) {
-                    if (this.hitSet.size === 1) return
                     this.hitSet.delete(storageId)
+
+                    // handle the situation that the hitset's length changes to 0
+                    if (this.hitSet.size === 0) {
+                        this._forceUpdate = true
+                    }
                 }
             })
         }
+        
         this.map.triggerRepaint()
     }
     
@@ -520,14 +525,24 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     subdivideGrids(uuIds: string[]) {
         const infos = uuIds.map(uuId => decodeInfo(uuId)) as [level: number, globalId: number][]
-        this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, this.updateGPUGrids)
+        this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, (renderInfos: any) => {
+            this.updateGPUGrids(renderInfos)
+            const [fromStorageId, levels] = renderInfos
+            const storageIds = []
+            for (let i = fromStorageId; i <= fromStorageId + levels.length - 1; i++) {
+                storageIds.push(i)
+            }
+            this.hit(storageIds)
+        })
     }
 
     tickGrids() {
 
         // Highlight all hit grids //////////////////////////////
 
-        if (this.hitSet.size === 0) return
+        if (this.hitSet.size === 0 && !this._forceUpdate) return
+
+        this._forceUpdate = false
 
         // Update hit flag for this current frame
         this._updateHitFlag()
@@ -792,11 +807,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     private _updateGPUGrid(info?: [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array]) {
-
+        
         if (info) {
             this.writeGridInfoToStorageBuffer(info)
             this._gl.flush()
         }
+
         this.map.triggerRepaint()
     }
 
@@ -897,6 +913,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             subdividableUUIDs.push(this.gridRecorder.getGridInfoByStorageId(removableStorageId).join('-'))
         })
 
+        this.executeClearSelection()
+
         if (subdividableUUIDs.length === 1) {
             this.removeGridLocally(removableStorageIds[0])
             // this.subdivideGrid(subdividableUUIDs[0])
@@ -906,8 +924,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this.removeGridsLocally(removableStorageIds)
             this.subdivideGrids(subdividableUUIDs)
         }
-
-        this.executeClearSelection()
     }
 
     executeDeleteGrids() {

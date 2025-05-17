@@ -167,7 +167,6 @@ export default class GridRecorder extends UndoRedoManager {
 
         // Get render info of this removable grid and the grid having the last storageId
         const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(lastStorageId)
-        const [removableLevel, removableGlobalId] = this.getGridInfoByStorageId(storageId)
 
         this._nextStorageId -= 1
 
