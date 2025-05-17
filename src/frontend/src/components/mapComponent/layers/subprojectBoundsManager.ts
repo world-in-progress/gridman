@@ -368,11 +368,12 @@ export class SubprojectBoundsManager {
 
                         // 在边界中心创建弹窗显示信息
                         setTimeout(() => {
+                            console.log(subprojectFeature)
                             this.showSubprojectPopup(
                                 subprojectFeature.properties,
                                 [centerLng, centerLat]
                             );
-                        }, 1000); // 等飞行动画结束后显示
+                        }, 300);
 
                         return;
                     }
@@ -437,8 +438,6 @@ export class SubprojectBoundsManager {
                                 this.showSubprojectPopup(
                                     {
                                         name: subproject.name,
-                                        description:
-                                            subproject.description || '',
                                         projectName: projectName,
                                         starred: subproject.starred || false,
                                     },
@@ -501,11 +500,6 @@ export class SubprojectBoundsManager {
                         <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
                             ${properties.projectName}
                         </span>
-                        ${
-                            properties.description
-                                ? `<p style="margin: 0 0 8px; color: #666;">${properties.description}</p>`
-                                : ''
-                        }
                         ${
                             properties.starred
                                 ? `<span style="margin-left: 8px; color: #f0c14b;">★</span>`
