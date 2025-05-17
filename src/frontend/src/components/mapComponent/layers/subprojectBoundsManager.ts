@@ -368,6 +368,7 @@ export class SubprojectBoundsManager {
 
                         // 在边界中心创建弹窗显示信息
                         setTimeout(() => {
+                            console.log(subprojectFeature)
                             this.showSubprojectPopup(
                                 subprojectFeature.properties,
                                 [centerLng, centerLat]
