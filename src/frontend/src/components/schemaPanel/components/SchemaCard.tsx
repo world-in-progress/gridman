@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     MoreHorizontal,
     Star,
-    Grid,
+    Earth ,
     MapPin,
     Layers,
     SquarePen,
@@ -176,7 +176,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
             <div className="text-sm space-y-2">
                 {/* EPSG Information */}
                 <div className="flex items-center text-gray-600 dark:text-gray-300">
-                    <Grid className="h-4 w-4 mr-2" />
+                    <Earth  className="h-4 w-4 mr-2" />
                     <span>EPSG: {schema?.epsg}</span>
                 </div>
 
@@ -210,8 +210,8 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                     </span>
                 </div> */}
 
-                <div className="flex flex-row items-center text-gray-600 dark:text-gray-300">
-                    <div className="flex-1 flex flex-col">
+                <div className="flex flex-row items-start text-gray-600 dark:text-gray-300">
+                    <div className="flex w-[32%]">
                         <Layers className="h-4 w-4 mr-2" />
                         <span>
                             {language === 'zh' ? '网格层级' : 'Grid Levels'}:
@@ -222,7 +222,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                             ? schema.grid_info.map(
                                   (levelArray: number[], index: number) => (
                                       <div key={index} className="ml-2">
-                                          {levelArray.join('-')}
+                                          {`level ${index + 1}: [${levelArray.join(', ')}]`}
                                       </div>
                                   )
                               )
