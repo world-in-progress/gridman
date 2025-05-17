@@ -10,11 +10,10 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
   "dependencies": {
     "electron": "^36.2.1"
-  },
-  "devDependencies": {
-    "tsc": "^2.0.4",
-    "typescript": "^5.8.3"
   }
 }
