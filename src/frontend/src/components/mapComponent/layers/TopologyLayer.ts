@@ -1,7 +1,6 @@
 import proj4 from 'proj4'
 import axios from 'axios'
 import { mat4 } from 'gl-matrix'
-import { GUI, GUIController } from 'dat.gui'
 import { Map, MapMouseEvent } from 'mapbox-gl'
 
 import '../../editor-style.css'
@@ -117,8 +116,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     resizeHandler: Function
 
     // Dat.GUI
-    gui: GUI
-    capacityController: GUIController
     uiOption: { capacity: number, level: number }
 
     constructor(
@@ -171,15 +168,14 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         }
 
         // Launch Dat.GUI
-        this.gui = new GUI()
         // const brushFolder = this.gui.addFolder('Brush')
         // brushFolder.add(this.uiOption, 'level', 1, this.subdivideRules.length - 1, 1)
         // brushFolder.open()
-        this.gui.add(this.uiOption, 'capacity', 0, this.maxGridNum).name('Capacity').listen()
+        // this.gui.add(this.uiOption, 'capacity', 0, this.maxGridNum).name('Capacity').listen()
 
-        this.capacityController = this.gui.__controllers[0]
-        this.capacityController.setValue(0.0)
-        this.capacityController.domElement.style.pointerEvents = 'none'
+        // this.capacityController = this.gui.__controllers[0]
+        // this.capacityController.setValue(0.0)
+        // this.capacityController.domElement.style.pointerEvents = 'none'
 
         // 创建overlay canvas
         this._overlayCanvas = document.createElement('canvas');
@@ -587,7 +583,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Update display of capacity
         this.uiOption.capacity = this.gridRecorder.gridNum
-        this.capacityController.updateDisplay()
+        // this.capacityController.updateDisplay()
     }
 
     removeResource() {

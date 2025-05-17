@@ -33,7 +33,7 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.setZoomFactor(0.75);
+    mainWindow.webContents.setZoomFactor(1.0);
   });
 
 }

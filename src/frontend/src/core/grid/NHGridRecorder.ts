@@ -72,7 +72,7 @@ export default class GridRecorder extends UndoRedoManager {
     adjGrids_cache: number[][] = []
     edge_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
 
-    constructor(public subdivideRules: SubdivideRules, maxGridNum: number, options: GridRecordOptions = {}) {
+    constructor(public subdivideRules: SubdivideRules, public maxGridNum: number, options: GridRecordOptions = {}) {
         super(options.operationCapacity || 50)
 
         this.srcCS = this.subdivideRules.srcCS

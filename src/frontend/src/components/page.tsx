@@ -42,15 +42,13 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import GridBotBotton from './ui/GridBotBotton';
 import CreateSubProject from './projectPanel/createSubProject';
 import EditorPanel from './editorPanel/editorPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
-import GridRecorder from '@/core/grid/NHGridRecorder';
 import store from '@/store';
-import Loader from './ui/loader';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
+import CapacityTest from './capacityTest';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
@@ -67,16 +65,6 @@ export default function Page() {
     const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
         null
     );
-    const [gridRecorder, setGridRecorder] = useState<GridRecorder | null>(null);
-
-    // store.set('isLoading', {
-    //     on: () => {
-    //         setIsLoading(true)
-    //     },
-    //     off: () => {
-    //         setIsLoading(false)
-    //     }
-    // })
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -547,7 +535,10 @@ export default function Page() {
                         </DropdownMenu>
                     </div>
                 </header>
-                <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))]">
+                <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
+                    <div className="absolute flex flex-row gap-4 top-0 left-0 z-5">
+                        <CapacityTest />
+                    </div>
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}

@@ -262,6 +262,7 @@ export class ProjectService {
                         4096 * 4096
                     );
                     store.set('gridRecorder', recorder);
+                    
 
                     // Update recorder of TopologyLayer
                     const clg = store.get<NHLayerGroup>('clg')!;

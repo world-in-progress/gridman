@@ -89,13 +89,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     const mouseMovePos = [0, 0];
     let mouseUpPos = [0, 0];
 
-    // let pickingMode = store.get<boolean>('pickingSelect')!
-    // let modeType = store.get<number>('modeSelect')!
-
-    // const clg = store.get<NHLayerGroup>('clg')!;
-    // const topologyLayer = clg.getLayerInstance(
-    //     'TopologyLayer'
-    // )! as TopologyLayer;
 
     // Calculate the four corners and center point of the rectangle (EPSG:4326)
     const calculateRectangleCoordinates = (
@@ -261,7 +254,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             window.mapboxDrawInstance = drawInstance;
 
             mapInstance.on('load', () => {
-
                 // Initialize SubprojectBoundsManager via ref, using the language from context
                 if (mapInstance) {
                     // Ensure mapInstance is valid
@@ -308,7 +300,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 const layerGroup = new NHLayerGroup();
                 layerGroup.id = 'gridman-custom-layer-group';
                 layerGroup.addLayer(topologyLayer);
-
                 store.set('clg', layerGroup);
                 mapInstance!.addLayer(layerGroup);
 
