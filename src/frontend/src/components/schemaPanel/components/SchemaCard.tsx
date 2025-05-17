@@ -211,10 +211,10 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 </div> */}
 
                 <div className="flex flex-row items-start text-gray-600 dark:text-gray-300">
-                    <div className="flex w-[32%]">
+                    <div className={`flex ${language === 'zh' ? 'w-[35%]' : 'w-[40%]'}`}>
                         <Layers className="h-4 w-4 mr-2" />
                         <span>
-                            {language === 'zh' ? '网格层级' : 'Grid Levels'}:
+                            {language === 'zh' ? '网格层级' : 'Grid Levels'}(m):
                         </span>
                     </div>
                     <div className="flex-1">

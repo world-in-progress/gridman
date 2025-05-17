@@ -166,7 +166,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 setSchemaEpsg(result.project_schema.epsg.toString());
             }
             if (!err && result?.project_schema?.grid_info) {
-                console.log(result.project_schema.grid_info);
                 setSchemaGridInfo(result.project_schema.grid_info);
             }
         });
@@ -429,9 +428,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     </span>
                 </div>
                 <div className="flex items-start text-gray-600">
-                    <div className={`flex items-center ${language === 'zh' ? 'w-[27%]' : 'w-[32%]'}`}>
+                    <div className={`flex items-center ${language === 'zh' ? 'w-[35%]' : 'w-[40%]'}`}>
                         <Layers className="h-4 w-4 mr-2" />
-                        <span>{language === 'zh' ? '网格等级' : 'Grid Levels'}:</span>
+                        <span>{language === 'zh' ? '网格等级' : 'Grid Levels'}(m):</span>
                     </div>
                     <div className="flex flex-col">
                         {schemaGridInfo && schemaGridInfo.length > 0 ? (

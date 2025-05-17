@@ -2,12 +2,12 @@ import Actor from '../../../core/message/actor';
 import { Project } from '../types/types';
 import Dispatcher from '../../../core/message/dispatcher';
 import { Callback } from '../../../core/types';
-import {GridRecorderContext} from '../../../context'
+import { GridRecorderContext } from '../../../context';
 import { SubdivideRules } from '@/core/grid/NHGrid';
 import { boundingBox2D } from '@/core/util/boundingBox2D';
 import GridRecorder from '@/core/grid/NHGridRecorder';
-import store from '../../../store' 
-import {MultiGridRenderInfo} from '@/core/grid/NHGrid'
+import store from '../../../store';
+import { MultiGridRenderInfo } from '@/core/grid/NHGrid';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
@@ -24,7 +24,11 @@ export class ProjectService {
         return this._dispatcher.actor;
     }
 
-    public fetchAllProjects(startIndex: number, endIndex: number, callback?: Callback<any>) {
+    public fetchAllProjects(
+        startIndex: number,
+        endIndex: number,
+        callback?: Callback<any>
+    ) {
         this._actor.send(
             'fetchProjects',
             { startIndex: startIndex, endIndex: endIndex },
@@ -65,22 +69,19 @@ export class ProjectService {
                     return 0;
                 });
 
-                if (callback) callback(err, {
-                    projects: sortedProjects,
-                    totalCount,
-                });
+                if (callback)
+                    callback(err, {
+                        projects: sortedProjects,
+                        totalCount,
+                    });
             }
         );
     }
 
     public getProjectByName(projectName: string, callback?: Callback<any>) {
-        this._actor.send(
-            'getProjectByName',
-            { name: projectName },
-            (err, result) => {
-                if (callback) callback(err, result);
-            }
-        );
+        this._actor.send('getProjectByName', projectName, (err, result) => {
+            if (callback) callback(err, result);
+        });
     }
 
     public updateProjectStarred(
@@ -139,7 +140,7 @@ export class ProjectService {
         projectName: string,
         subprojectName: string,
         callback?: Callback<any>
-    ){
+    ) {
         this._actor.send(
             'getSubprojects',
             { projectName: projectName, subprojectName: subprojectName },
@@ -149,15 +150,14 @@ export class ProjectService {
         );
     }
 
-    public fetchSubprojects(
-        projectName: string, 
-        callback?: Callback<any>) {
+    public fetchSubprojects(projectName: string, callback?: Callback<any>) {
         this._actor.send(
-            'fetchSubprojects', 
-            { projectName: projectName },  
+            'fetchSubprojects',
+            { projectName: projectName },
             (err, result) => {
                 if (callback) callback(err, result);
-        });
+            }
+        );
     }
 
     public createSubproject(
@@ -217,7 +217,7 @@ export class ProjectService {
             {
                 projectName,
                 subprojectName,
-                description
+                description,
             },
             (err, result) => {
                 if (callback) callback(err, result);
@@ -228,7 +228,12 @@ export class ProjectService {
     public setSubproject(
         projectName: string,
         subprojectName: string,
-        callback?: Callback<{fromStorageId: number, levels: Uint8Array, vertices: Float32Array, verticesLow: Float32Array}>
+        callback?: Callback<{
+            fromStorageId: number;
+            levels: Uint8Array;
+            vertices: Float32Array;
+            verticesLow: Float32Array;
+        }>
     ) {
         this._actor.send(
             'setSubproject',
@@ -236,40 +241,67 @@ export class ProjectService {
                 projectName: projectName,
                 subprojectName: subprojectName,
             },
-  
+
             (error, result) => {
                 if (error) {
                     console.error('设置子项目失败:', error);
                 } else {
-                    const epsg : number = result.epsg
-                    const bounds : [number, number, number, number] = result.bounds
-                    const subdivideRules : Array<[number, number]> = result.subdivide_rules
+                    const epsg: number = result.epsg;
+                    const bounds: [number, number, number, number] =
+                        result.bounds;
+                    const subdivideRules: Array<[number, number]> =
+                        result.subdivide_rules;
                     const recorderMeta: SubdivideRules = {
                         bBox: boundingBox2D(...bounds),
                         rules: subdivideRules,
                         srcCS: `EPSG:${epsg}`,
-                        targetCS: 'EPSG:4326'
-                    }
-                    const recorder: GridRecorder = new GridRecorder(recorderMeta, 4096 * 4096)
-                    store.set('gridRecorder', recorder)
+                        targetCS: 'EPSG:4326',
+                    };
+                    const recorder: GridRecorder = new GridRecorder(
+                        recorderMeta,
+                        4096 * 4096
+                    );
+                    store.set('gridRecorder', recorder);
 
                     // Update recorder of TopologyLayer
-                    const clg = store.get<NHLayerGroup>('clg')!
-                    const topologyLayer = clg.getLayerInstance('TopologyLayer') as TopologyLayer
-                    topologyLayer.gridRecorder = recorder
+                    const clg = store.get<NHLayerGroup>('clg')!;
+                    const topologyLayer = clg.getLayerInstance(
+                        'TopologyLayer'
+                    ) as TopologyLayer;
+                    topologyLayer.gridRecorder = recorder;
 
                     // Broadcast all workers to create gridManager
-                    this._dispatcher.broadcast('setGridManager', recorderMeta, () => {
+                    this._dispatcher.broadcast(
+                        'setGridManager',
+                        recorderMeta,
+                        () => {
+                            this._actor.send(
+                                'getActivateGridInfo',
+                                null,
+                                (
+                                    err?: Error | null,
+                                    renderInfo?: MultiGridRenderInfo
+                                ) => {
+                                    const recorder =
+                                        store.get<GridRecorder>('gridRecorder');
+                                    recorder?.updateGridRenderInfo(
+                                        renderInfo!,
+                                        0
+                                    );
 
-                        this._actor.send('getActivateGridInfo', null, (err?: Error | null, renderInfo?: MultiGridRenderInfo) => {
-                            const recorder = store.get<GridRecorder>('gridRecorder')
-                            recorder?.updateGridRenderInfo(renderInfo!, 0)
-
-                            if (callback) {
-                                callback(null, {fromStorageId: 0, levels: renderInfo!.levels, vertices: renderInfo!.vertices, verticesLow: renderInfo!.verticesLow})
-                            }
-                        })
-                    })
+                                    if (callback) {
+                                        callback(null, {
+                                            fromStorageId: 0,
+                                            levels: renderInfo!.levels,
+                                            vertices: renderInfo!.vertices,
+                                            verticesLow:
+                                                renderInfo!.verticesLow,
+                                        });
+                                    }
+                                }
+                            );
+                        }
+                    );
                 }
             }
         );
@@ -281,6 +313,4 @@ export class ProjectService {
     //     Loading(false)
 
     // })
-
-
 }

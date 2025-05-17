@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Star,
     FileType2,
@@ -22,6 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 
 declare global {
     interface Window {
@@ -44,10 +45,11 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const showLoadingRef = useRef<Function | null>(null);
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+    const projectService = new ProjectService(language);
+    const schemaService = new SchemaService(language);
 
     const menuItems = [
         {
@@ -119,12 +121,26 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         }
     };
 
+
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         isLoading.on();
-        const projectService = new ProjectService(language);
+
         store.set('ProjectName', parentProjectTitle);
         store.set('SubprojectName', subproject.name);
+
+        projectService.getProjectByName(parentProjectTitle, (err, result) => {
+            store.set('SchemaName', result.project_meta.schema_name);
+            if (store.get('SchemaName')) {
+                const schemaName = store.get('SchemaName') as string;
+                schemaService.getSchemaByName(
+                    schemaName,
+                    (err, result) => {
+                        store.set('SchemaGridInfo', result.project_schema.grid_info);
+                    }
+                );
+            }
+        });
 
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
             const { flyToSubprojectBounds } = window.mapRef.current;
