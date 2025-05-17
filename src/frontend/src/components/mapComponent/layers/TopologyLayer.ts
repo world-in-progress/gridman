@@ -862,7 +862,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         let storageIds
         if (type === 'box') {
-            console.log(startPos, endPos)
             const box = genPickingBox(startPos, endPos!)
             storageIds = this._boxPicking(box)
         } else if (type === 'brush') {
