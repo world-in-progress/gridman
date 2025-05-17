@@ -322,106 +322,68 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 const localMouseDownPos = { current: [0, 0] };
                 const localMouseMovePos = { current: [0, 0] };
 
-        const onMouseDown = (e: MouseEvent) => {
-          if (!e.shiftKey) return;
-          localIsMouseDown.current = true;
-          mapInstance!.dragPan.disable();
-          mapInstance!.scrollZoom.disable();
-          const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          localMouseDownPos.current = [x, y];
-        };
+                const onMouseDown = (e: MouseEvent) => {
+                    if (!e.shiftKey) return;
+                    localIsMouseDown.current = true;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    localMouseDownPos.current = [x, y];
+                };
+                const onMouseMove = (e: MouseEvent) => {
+                    if (!e.shiftKey || !localIsMouseDown.current) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    localMouseMovePos.current = [x, y];
 
-        const onMouseMove = (e: MouseEvent) => {
-          if (!e.shiftKey || !localIsMouseDown.current) return;
-          const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          localMouseMovePos.current = [x, y];
+                    if (store.get<string>('modeSelect') === 'brush') {
+                        console.log('鼠标移动 (Shift, 按下):', [x, y]);
+                        topologyLayer.executePickGrids(
+                            store.get<string>('modeSelect')!,
+                            store.get<boolean>('pickingSelect')!,
+                            [
+                                localMouseMovePos.current[0],
+                                localMouseMovePos.current[1],
+                            ]
+                        );
+                    }
+                };
+                const onMouseUp = (e: MouseEvent) => {
+                    if (!e.shiftKey || !localIsMouseDown.current) return;
+                    localIsMouseDown.current = false;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const localMouseUpPos = [x, y];
+                    console.log('鼠标抬起 (Shift):', localMouseUpPos);
+                    console.log(
+                        'mouse mouse',
+                        localMouseDownPos.current[0],
+                        localMouseDownPos.current[1]
+                    );
+                    topologyLayer.executePickGrids(
+                        store.get<string>('modeSelect')!,
+                        store.get<boolean>('pickingSelect')!,
+                        [
+                            localMouseDownPos.current[0],
+                            localMouseDownPos.current[1],
+                        ],
+                        [localMouseUpPos[0], localMouseUpPos[1]]
+                    );
+                };
+                canvas.addEventListener('mousedown', onMouseDown);
+                canvas.addEventListener('mousemove', onMouseMove);
+                canvas.addEventListener('mouseup', onMouseUp);
+            });
 
-          if (store.get<string>("modeSelect") === "brush") {
-            topologyLayer.executePickGrids(
-              store.get<string>("modeSelect")!,
-              store.get<boolean>("pickingSelect")!,
-              [localMouseMovePos.current[0], localMouseMovePos.current[1]]
-            );
-          } else {
-            mapInstance!.dragPan.disable();
-            if (mapInstance!.getCanvas()) {
-              mapInstance!.getCanvas().style.cursor = "crosshair";
-            }
-
-            topologyLayer.executeDrawBox(
-              [localMouseDownPos.current[0], localMouseDownPos.current[1]],
-              [localMouseMovePos.current[0], localMouseMovePos.current[1]]
-            );
-          }
-        };
-
-        const onMouseUp = (e: MouseEvent) => {
-          if (!localIsMouseDown.current) return;
-          localIsMouseDown.current = false;
-
-          if (mapInstance) {
-            mapInstance.dragPan.enable();
-            mapInstance.scrollZoom.enable();
-            topologyLayer.executeClearDrawBox();
-            if (mapInstance.getCanvas()) {
-              mapInstance.getCanvas().style.cursor = "";
-            }
-          }
-          if (!e.shiftKey) return;
-
-          const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const localMouseUpPos = [x, y];
-
-          topologyLayer.executePickGrids(
-            store.get<string>("modeSelect")!,
-            store.get<boolean>("pickingSelect")!,
-            [localMouseDownPos.current[0], localMouseDownPos.current[1]],
-            [localMouseUpPos[0], localMouseUpPos[1]]
-          );
-        };
-
-        const onMouseOut = (e: MouseEvent) => {
-          if (mapInstance) {
-            mapInstance.dragPan.enable();
-            mapInstance.scrollZoom.enable();
-            topologyLayer.executeClearDrawBox();
-            if (mapInstance.getCanvas()) {
-              mapInstance.getCanvas().style.cursor = "";
-            }
-          }
-          if (!e.shiftKey) return;
-          isMouseDown = false;
-          const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          mouseUpPos = [x, y];
-
-          topologyLayer.executePickGrids(
-            store.get<string>("modeSelect")!,
-            store.get<boolean>("pickingSelect")!,
-            [localMouseDownPos.current[0], localMouseDownPos.current[1]],
-            [mouseUpPos[0], mouseUpPos[1]]
-          );
-        };
-        canvas.addEventListener("mousedown", onMouseDown);
-        canvas.addEventListener("mousemove", onMouseMove);
-        canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseout", onMouseOut);
-      });
-
-      mapInstance.on("click", handleMapClick);
-      mapInstance.on("draw.create", (e: any) => {
-        if (e.features && e.features.length > 0) {
-          const feature = e.features[0];
-          setIsDrawMode(false);
-          setHasDrawnRectangle(true);
-          setCurrentRectangleId(feature.id);
+            mapInstance.on('click', handleMapClick);
+            mapInstance.on('draw.create', (e: any) => {
+                if (e.features && e.features.length > 0) {
+                    const feature = e.features[0];
+                    setIsDrawMode(false);
+                    setHasDrawnRectangle(true);
+                    setCurrentRectangleId(feature.id);
 
           const rectangleCoordinates = calculateRectangleCoordinates(feature);
           if (onRectangleDrawn) {
