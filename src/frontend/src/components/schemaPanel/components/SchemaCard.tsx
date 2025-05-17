@@ -63,10 +63,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
             await onSaveDescription(title, updatedSchema);
         } else {
             const schemaService = new SchemaService(language);
-            schemaService.updateSchemaDescription(
-                title,
-                newDescription
-            );
+            schemaService.updateSchemaDescription(title, newDescription);
             schemaService.fetchAllSchemas();
         }
 
@@ -197,14 +194,40 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                 </div>
 
                 {/* Grid Level Information */}
-                <div className="flex items-center text-gray-600 dark:text-gray-300">
+                {/* <div className="flex items-center text-gray-600 dark:text-gray-300">
                     <Layers className="h-4 w-4 mr-2" />
                     <span>
                         {language === 'zh' ? '网格层级' : 'Grid Levels'}:
-                        {schema?.grid_info
-                            ? ` ${schema.grid_info.length}`
-                            : ' -'}
+                        {schema?.grid_info ? (
+                            schema.grid_info.map((levelArray: number[], index: number) => (
+                                <div key={index} className="ml-2">
+                                    {levelArray.join('-')}
+                                </div>
+                            ))
+                        ) : (
+                            ' -'
+                        )}
                     </span>
+                </div> */}
+
+                <div className="flex flex-row items-center text-gray-600 dark:text-gray-300">
+                    <div className="flex-1 flex flex-col">
+                        <Layers className="h-4 w-4 mr-2" />
+                        <span>
+                            {language === 'zh' ? '网格层级' : 'Grid Levels'}:
+                        </span>
+                    </div>
+                    <div className="flex-1">
+                        {schema?.grid_info
+                            ? schema.grid_info.map(
+                                  (levelArray: number[], index: number) => (
+                                      <div key={index} className="ml-2">
+                                          {levelArray.join('-')}
+                                      </div>
+                                  )
+                              )
+                            : ' -'}
+                    </div>
                 </div>
 
                 {/* Description Information */}
