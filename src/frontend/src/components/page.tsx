@@ -15,11 +15,9 @@ import {
     SidebarContext,
     LanguageContext,
     AIDialogContext,
-    GridRecorderContext,
 } from '../context';
 import {
     Breadcrumb,
-    BreadcrumbEllipsis,
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
@@ -54,9 +52,7 @@ export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
 
 export default function Page() {
-    const [isLoading, setIsLoading] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [isSelectingPoint, setIsSelectingPoint] = useState(false);
     const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
         null
     );
@@ -65,6 +61,16 @@ export default function Page() {
     const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
         null
     );
+
+    const [updateCapacity, setUpdateCapacity] = useState(false);
+    store.set('updateCapacity', {
+        on: () => {
+            setUpdateCapacity(true);
+        },
+        off: () => {
+            setUpdateCapacity(false);
+        },
+    });
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -96,9 +102,7 @@ export default function Page() {
     const [activePanel, setActivePanel] = useState<
         'schema' | 'project' | 'editor' | null
     >(null);
-    // const [activePanel, setActivePanel] = useState<
-    //     'schema' | 'project' | 'editor' | 'topology' | null
-    // >(null);
+
     const [selectedSchemaName, setSelectedSchemaName] = useState<
         string | undefined
     >(undefined);
@@ -209,7 +213,6 @@ export default function Page() {
             setActivePanel('schema');
             setShowCreateSchema(false);
             clearMapMarkers();
-            setIsSelectingPoint(false);
             setShowCreateProject(false);
             setShowCreateSubProject(false);
             clearMapElements();
@@ -219,7 +222,6 @@ export default function Page() {
             layer.removeResource();
         } else if (item === 'project') {
             clearMapMarkers();
-            setIsSelectingPoint(false);
             clearMapElements();
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
@@ -517,7 +519,12 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
-                    {activeBreadcrumb === 'editor' && <CapacityBar />}
+                    {/* {activeBreadcrumb === 'editor' && updateCapacity && (
+                        <CapacityBar />
+                    )} */}
+                    {activeBreadcrumb === 'editor' && (
+                        <CapacityBar />
+                    )}
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}

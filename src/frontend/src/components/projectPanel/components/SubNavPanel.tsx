@@ -328,7 +328,7 @@ export function SubNavPanel({
         if (window.mapRef && window.mapRef.current) {
             const { highlightSubproject } = window.mapRef.current;
             if (highlightSubproject && typeof highlightSubproject === 'function') {
-                highlightSubproject(projectName, subprojectName, true);
+                highlightSubproject(projectName, subprojectName);
             }
         }
     };
@@ -408,12 +408,14 @@ export function SubNavPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>
+                        <AlertDialogCancel
+                            className="cursor-pointer"
+                        >
                             {language === 'zh' ? '取消' : 'Cancel'}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmDelete}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-600 hover:bg-red-700 cursor-pointer"
                         >
                             {language === 'zh' ? '删除' : 'Delete'}
                         </AlertDialogAction>

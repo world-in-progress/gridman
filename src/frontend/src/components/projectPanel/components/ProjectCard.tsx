@@ -174,7 +174,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const handleToggleSubprojectsVisibility = (e: React.MouseEvent) => {
         e.stopPropagation();
         const newState = !showSubprojects;
+        console.log('showSubprojects', showSubprojects);
+        console.log('newState', newState);
         setShowSubprojects(newState);
+
 
         if (!newState && window.mapInstance) {
             const existingPopups = document.querySelectorAll('.mapboxgl-popup');
@@ -187,13 +190,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             window.mapRef &&
             window.mapRef.current
         ) {
-            const { flyToProjectBounds, showSubprojectBounds } =
-                window.mapRef.current;
-            showSubprojectBounds(title, subprojects, true);
+            const {showSubprojectBounds} = window.mapRef.current;
+            showSubprojectBounds(title, subprojects, newState);
 
             fetchSubprojectsList().then(() => {
                 if (window.mapRef && window.mapRef.current) {
                     const { showSubprojectBounds } = window.mapRef.current;
+                    console.log('showSubprojectBounds', showSubprojectBounds !== 'function');
+                    console.log('subprojects', subprojects);
                     if (
                         showSubprojectBounds &&
                         typeof showSubprojectBounds === 'function'
@@ -553,7 +557,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 project.description
                             ) : (
                                 <span className="italic">
-                                    {language === 'zh' ? '无描述' : 'No description provided.'}
+                                    {language === 'zh'
+                                        ? '无描述'
+                                        : 'No description provided.'}
                                 </span>
                             )}
                         </div>

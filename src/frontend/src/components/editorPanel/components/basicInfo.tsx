@@ -21,7 +21,7 @@ export default function BasicInfo() {
     return (
         <div className="bg-blue-50 p-3 rounded-md">
             <h2 className="text-xl font-bold text-blue-900">
-                {language === 'zh' ? '当前编辑' : 'Current Editing'}
+                {language === 'zh' ? '当前编辑信息' : 'Current Editing Information'}
             </h2>
             <div className="text-sm text-blue-800 mt-1 grid gap-1">
                 <div>
