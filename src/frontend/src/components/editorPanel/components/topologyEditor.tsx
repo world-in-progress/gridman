@@ -5,7 +5,6 @@ import {
     Grip,
     Brush,
     CircleOff,
-    Trash2,
     SquareDashed,
     FolderOpen,
     SquareMousePointer,
@@ -40,6 +39,8 @@ export default function TopologyPanel({
         useState(false);
     const [selectAllDialogOpen, setSelectAllDialogOpen] = useState(false);
 
+    const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+
     const clg = store.get<NHLayerGroup>('clg')!;
     const topologyLayer = clg.getLayerInstance(
         'TopologyLayer'
@@ -56,6 +57,7 @@ export default function TopologyPanel({
                 const filePath = await window.electronAPI.openFileDialog();
                 if (filePath) {
                     console.log('Selected file path:', filePath);
+                    topologyLayer.executePickGridsByFeature(filePath);
                 } else {
                     console.log('No file selected');
                     setActiveSelectTab('brush');
@@ -74,12 +76,10 @@ export default function TopologyPanel({
     };
 
     const handleDeleteSelectClick = () => {
-        setPickingTab('delete');
         setDeleteSelectDialogOpen(true);
     };
 
     const handleSelectAllClick = () => {
-        setPickingTab('all');
         setSelectAllDialogOpen(true);
     };
 
@@ -92,16 +92,12 @@ export default function TopologyPanel({
     };
 
     const handleConfirmSelectAll = () => {
-        setPickingTab('picking');
-        store.set('pickingSelect', true);
         setSelectAllDialogOpen(false);
+        topologyLayer.executePickAllGrids();
     };
 
     const handleConfirmDeleteSelect = () => {
-        setPickingTab('picking');
-        store.set('pickingSelect', true);
         setDeleteSelectDialogOpen(false);
-        topologyLayer.executeClearSelection();
         topologyLayer.executeClearSelection();
     };
 
@@ -111,6 +107,9 @@ export default function TopologyPanel({
     };
 
     const handleConfirmSubdivideGrid = () => {
+        isLoading.on();
+        console.log(isLoading);
+
         setSubdivideGridDialogOpen(false);
         topologyLayer.executeSubdivideGrids();
     };
@@ -130,14 +129,10 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
-                    setPickingTab('all');
                     setSelectAllDialogOpen(true);
-                    // store.set('pickingSelect', false);
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
-                    setPickingTab('delete');
-                    store.set('pickingSelect', false);
                     setDeleteSelectDialogOpen(true);
                 }
                 if (event.key === '1') {
@@ -240,7 +235,6 @@ export default function TopologyPanel({
                             className="cursor-pointer"
                             onClick={() => {
                                 setPickingTab('picking');
-                                // pickingSelect = true;
                                 store.set('pickingSelect', true);
                             }}
                         >
@@ -374,7 +368,7 @@ export default function TopologyPanel({
                 <div className="flex items-center gap-1 p-1 mt-2 h-[64px] bg-gray-200 rounded-lg">
                     <button
                         className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                            pickingTab === 'all'
+                            selectAllDialogOpen
                                 ? 'bg-green-500 '
                                 : 'bg-gray-600 hover:bg-green-500'
                         }`}
@@ -386,7 +380,7 @@ export default function TopologyPanel({
                         </div>
                         <div
                             className={`text-xs ${
-                                pickingTab === 'all' && ' text-white'
+                                selectAllDialogOpen && ' text-white'
                             }`}
                         >
                             [ Ctrl+A ]
@@ -394,7 +388,7 @@ export default function TopologyPanel({
                     </button>
                     <button
                         className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                            pickingTab === 'delete'
+                            deleteSelectDialogOpen
                                 ? 'bg-red-500 '
                                 : 'bg-gray-600 hover:bg-red-500'
                         }`}
@@ -406,7 +400,7 @@ export default function TopologyPanel({
                         </div>
                         <div
                             className={`text-xs ${
-                                pickingTab === 'delete' && ' text-white'
+                                deleteSelectDialogOpen && ' text-white'
                             }`}
                         >
                             [ Ctrl+D ]

@@ -5,8 +5,8 @@ export interface EditorPanelProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export interface TopologyPanelProps {
-    pickingTab: 'picking' | 'unpicking' | 'delete' | 'all' | undefined;
-    setPickingTab: (tab: 'picking' | 'unpicking' | 'delete' | 'all') => void;
+    pickingTab: 'picking' | 'unpicking'| undefined;
+    setPickingTab: (tab: 'picking' | 'unpicking') => void;
     activeSelectTab: 'brush' | 'box' | 'feature' | undefined;
     setActiveSelectTab: (tab: 'brush' | 'box' | 'feature') => void;
 }

@@ -174,8 +174,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const handleToggleSubprojectsVisibility = (e: React.MouseEvent) => {
         e.stopPropagation();
         const newState = !showSubprojects;
-        console.log('showSubprojects', showSubprojects);
-        console.log('newState', newState);
         setShowSubprojects(newState);
 
 
@@ -196,8 +194,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             fetchSubprojectsList().then(() => {
                 if (window.mapRef && window.mapRef.current) {
                     const { showSubprojectBounds } = window.mapRef.current;
-                    console.log('showSubprojectBounds', showSubprojectBounds !== 'function');
-                    console.log('subprojects', subprojects);
                     if (
                         showSubprojectBounds &&
                         typeof showSubprojectBounds === 'function'

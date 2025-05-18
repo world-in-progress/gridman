@@ -20,6 +20,8 @@ const RESULT_URL = 'http://127.0.0.1:8000' + '/v0/mc/result'
 const DOWNLOAD_URL = 'http://127.0.0.1:8000' + '/v0/fs/result/zip'
 const PROCESS_URL = 'http://127.0.0.1:8000' + '/v0/nh/grid-process'
 
+// let isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+
 
 export interface TopologyLayerOptions {
 
@@ -599,6 +601,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             }
             this.hit(storageIds)
             this.executionEndCallback()
+            store.get<{ on: Function; off: Function }>('isLoading')!.off();
         })
     }
 
