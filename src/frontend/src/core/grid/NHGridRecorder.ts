@@ -325,7 +325,7 @@ export default class GridRecorder extends UndoRedoManager {
     }
 
     getGridInfoByFeature(path: string, callback?: Function) {
-        this._actor.send('getGridInfoByFeature', path, (_, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
+        this._actor.send('getGridInfoByFeature', path, (error: any, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
             const { levels, globalIds } = gridInfo
             const gridNum = levels.length
             const storageIds: number[] = new Array(gridNum)

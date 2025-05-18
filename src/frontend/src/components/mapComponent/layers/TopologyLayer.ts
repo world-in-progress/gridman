@@ -12,7 +12,7 @@ import GridRecorder from '../../../core/grid/NHGridRecorder'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import { MercatorCoordinate } from '../../../core/math/mercatorCoordinate'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
-import store from '../../../store'
+import store from '@/store';
 import { log } from 'console'
 proj4.defs("EPSG:2326","+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
@@ -35,8 +35,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     id = 'TopologyLayer'
     visible = true
     layerGroup!: NHLayerGroup
-
-    // Function-related //////////////////////////////////////////////////
 
     // Grid properties
     srcCS!: string
@@ -94,9 +92,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     private _boxPickingTexture: WebGLTexture = 0
     private _boxPickingRBO: WebGLRenderbuffer = 0
 
-    private _boxPickingStart: MapMouseEvent | null = null
-    private _boxPickingEnd: MapMouseEvent | null = null
-
     private _ctx: CanvasRenderingContext2D | null = null
 
     // ADDON
@@ -115,8 +110,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     resizeHandler: Function
 
-    // Dat.GUI
-    uiOption: { capacity: number, level: number }
+    // // Dat.GUI
+    // uiOption: { capacity: number, level: number }
+    // isLoading: { on: Function, off: Function }
+    _executionStartCallback: Function = () => {}
+    _executionEndCallback: Function = () => {}
 
     constructor(
         public map: Map,
@@ -161,11 +159,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         this.resizeHandler = this._resizeHandler.bind(this)
 
+        // this.isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+
         // Init interaction option
-        this.uiOption = {
-            level: 2,
-            capacity: 0.0,
-        }
+        // this.uiOption = {
+        //     level: 2,
+        //     capacity: 0.0,
+        // }
 
         // Launch Dat.GUI
         // const brushFolder = this.gui.addFolder('Brush')
@@ -227,6 +227,22 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     get subdivideRules() {
         return this._gridRecorder!.subdivideRules.rules
+    }
+
+    get executionStartCallback() {
+        return this._executionStartCallback
+    }
+
+    set executionStartCallback(callback: Function) {
+        this._executionStartCallback = callback
+    }
+
+    get executionEndCallback() {
+        return this._executionEndCallback
+    }
+
+    set executionEndCallback(callback: Function) {
+        this._executionEndCallback = callback
     }
 
     // Fast function to upload one grid rendering info to GPU stograge buffer
@@ -305,6 +321,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             if (e.key === 'F') {
                 const path = '/Users/XXX/Desktop/river_mask/river.shp'
                 this.executePickGridsByFeature(path)
+            }
+        })
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'A') {
+                this.executePickAllGrids()
             }
         })
 
@@ -488,12 +510,21 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
 
         const ids = Array.isArray(storageIds) ? storageIds : [storageIds]
-        if (addMode) {  
-            ids.forEach(storageId => {
-                if (storageId < 0) return
-                this.hitSet.add(storageId)
-                gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.hitFlag, 0)
-            })
+        if (addMode) {
+
+            //pick all grids
+            if (ids.length === this.gridRecorder.gridNum) {
+
+                this.hitSet = new Set<number>(ids)
+                gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(this.maxGridNum).fill(this.hitFlag[0]))
+
+            } else {
+                ids.forEach(storageId => {
+                    if (storageId < 0) return
+                    this.hitSet.add(storageId)
+                    gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.hitFlag, 0)
+                })
+            }
         } else {
             ids.forEach(storageId => {
                 if (storageId < 0) return
@@ -516,25 +547,49 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
     
     removeGridLocally(storageId: number) {
-        this.gridRecorder.removeGridLocally(storageId, this.updateGPUGrid)
-        this.map.triggerRepaint()
+
+        this.executionStartCallback()
+        this.gridRecorder.removeGridLocally(storageId, (info: any) => {
+            this.updateGPUGrid(info)
+            this.map.triggerRepaint()
+            this.executionEndCallback()
+        })
     }
 
     removeGridsLocally(storageIds: number[]) {
-        this.gridRecorder.removeGridsLocally(storageIds, this.updateGPUGrid)
-        this.map.triggerRepaint()
+
+        this.executionStartCallback()
+        this.gridRecorder.removeGridsLocally(storageIds, (info: any) => {
+            this.updateGPUGrid(info)
+            this.map.triggerRepaint()
+            this.executionEndCallback()
+        })
     }
 
     removeGrids(storageIds: number[]) {
-        this.gridRecorder.removeGrids(storageIds, this.updateGPUGrid)
+
+        this.executionStartCallback()
+        this.gridRecorder.removeGrids(storageIds, (info: any) => {
+            this.updateGPUGrid(info)
+            this.map.triggerRepaint()
+            this.executionEndCallback()
+        })
     }
 
     subdivideGrid(uuId: string) {
+
+        this.executionStartCallback()
         const [level, globalId] = decodeInfo(uuId)
-        this.gridRecorder.subdivideGrid(level, globalId, this.updateGPUGrids)
+        this.gridRecorder.subdivideGrid(level, globalId, (info: any) => {
+            this.updateGPUGrid(info)
+            this.map.triggerRepaint()
+            this.executionEndCallback()
+        })
     }
 
     subdivideGrids(uuIds: string[]) {
+
+        this.executionStartCallback()
         const infos = uuIds.map(uuId => decodeInfo(uuId)) as [level: number, globalId: number][]
         this.gridRecorder.subdivideGrids({levels: new Uint8Array(infos.map(info => info[0])), globalIds: new Uint32Array(infos.map(info => info[1]))}, (renderInfos: any) => {
             this.updateGPUGrids(renderInfos)
@@ -544,6 +599,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 storageIds.push(i)
             }
             this.hit(storageIds)
+            this.executionEndCallback()
         })
     }
 
@@ -598,7 +654,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         // console.log(this.gridRecorder.gridNum)
 
         // Update display of capacity
-        this.uiOption.capacity = this.gridRecorder.gridNum
+        // this.uiOption.capacity = this.gridRecorder.gridNum
         // this.capacityController.updateDisplay()
     }
 
@@ -607,7 +663,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         if (!this._gridRecorder) return
 
         this.executeClearSelection()
-        console.log(this.hitSet)
 
         this._gridRecorder = null
         this.map.triggerRepaint()
@@ -890,6 +945,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     // mode: true - add, false - remove
     executePickGrids(type: string, mode: boolean, startPos: [number, number], endPos?: [number, number]) {
 
+        this.executionStartCallback()
         let storageIds
         if (type === 'box') {
             const box = genPickingBox(startPos, endPos!)
@@ -900,17 +956,32 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             storageIds = []
             //TODO: feature picking
         } else {
+            this.executionEndCallback()
             return
         }
 
         this.hit(storageIds!, mode)
+        this.executionEndCallback()
     }
 
     executePickGridsByFeature(path: string) {
+    
+        this.executionStartCallback()
         this.gridRecorder.getGridInfoByFeature(path, (storageIds: number[])=>{
-            console.log(storageIds)
+
             this.hit(storageIds)
+            this.executionEndCallback()
         })
+    }
+
+    executePickAllGrids() {
+        this.executionStartCallback()
+        const storageIds = new Array<number>()
+        for (let i = 0; i < this.gridRecorder.gridNum; i++) {
+            storageIds.push(i)
+        }
+        this.hit(storageIds)
+        this.executionEndCallback()
     }
 
     executeSubdivideGrids() {
@@ -964,6 +1035,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     executeDrawBox(startPos: [number, number], endPos: [number, number]): void {
+
         if (!this._overlayCtx) return;
         
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas!.width, this._overlayCanvas!.height);
