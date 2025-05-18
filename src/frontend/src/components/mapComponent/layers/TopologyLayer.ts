@@ -45,6 +45,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     hitSet = new Set<number>
     _gridRecorder: GridRecorder | null = null
     hitFlag = new Uint8Array([1])   // 0 is a special value and means no selection
+    unhitFlag = new Uint8Array([0])
     projConverter!: proj4.Converter
     
     lastPickedId: number = -1
@@ -478,13 +479,20 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._boxPickingFBO = gll.createFrameBuffer(gl, [this._boxPickingTexture], 0, this._boxPickingRBO)!
     }
 
+    /**
+     * @description: Update hit set and make the hit grids visible or not
+     */
     hit(storageIds: number | number[], addMode = true) {
+
+        const gl = this._gl
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
 
         const ids = Array.isArray(storageIds) ? storageIds : [storageIds]
         if (addMode) {  
             ids.forEach(storageId => {
                 if (storageId < 0) return
                 this.hitSet.add(storageId)
+                gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.hitFlag, 0)
             })
         } else {
             ids.forEach(storageId => {
@@ -492,6 +500,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
                 if (this.hitSet.has(storageId)) {
                     this.hitSet.delete(storageId)
+                    gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.unhitFlag, 0)
 
                     // handle the situation that the hitset's length changes to 0
                     if (this.hitSet.size === 0) {
@@ -500,11 +509,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 }
             })
         }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, null)
         
         this.map.triggerRepaint()
     }
     
-
     removeGridLocally(storageId: number) {
         this.gridRecorder.removeGridLocally(storageId, this.updateGPUGrid)
         this.map.triggerRepaint()
@@ -546,13 +556,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this._forceUpdate = false
 
         // Update hit flag for this current frame
-        this._updateHitFlag()
+        // this._updateHitFlag()
 
         // Update grid signal buffer
-        const gl = this._gl
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
-        this.hitSet.forEach(hitStorageId => gl.bufferSubData(gl.ARRAY_BUFFER, hitStorageId, this.hitFlag, 0))
-        gl.bindBuffer(gl.ARRAY_BUFFER, null)
+        // const gl = this._gl
+        // gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
+        // this.hitSet.forEach(hitStorageId => gl.bufferSubData(gl.ARRAY_BUFFER, hitStorageId, this.hitFlag, 0))
+        // gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
         this.typeChanged = false
     }
