@@ -176,6 +176,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         const newState = !showSubprojects;
         setShowSubprojects(newState);
 
+
         if (!newState && window.mapInstance) {
             const existingPopups = document.querySelectorAll('.mapboxgl-popup');
             existingPopups.forEach((popup) => popup.remove());
@@ -187,9 +188,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             window.mapRef &&
             window.mapRef.current
         ) {
-            const { flyToProjectBounds, showSubprojectBounds } =
-                window.mapRef.current;
-            showSubprojectBounds(title, subprojects, true);
+            const {showSubprojectBounds} = window.mapRef.current;
+            showSubprojectBounds(title, subprojects, newState);
 
             fetchSubprojectsList().then(() => {
                 if (window.mapRef && window.mapRef.current) {
@@ -553,7 +553,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 project.description
                             ) : (
                                 <span className="italic">
-                                    {language === 'zh' ? '无描述' : 'No description provided.'}
+                                    {language === 'zh'
+                                        ? '无描述'
+                                        : 'No description provided.'}
                                 </span>
                             )}
                         </div>

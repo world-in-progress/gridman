@@ -3,7 +3,7 @@ import axios from 'axios'
 import { mat4 } from 'gl-matrix'
 import { Map, MapMouseEvent } from 'mapbox-gl'
 
-import '../../editor-style.css'
+import '../../../App.css'
 import gll from '../utils/GlLib'
 import NHLayerGroup from '../utils/NHLayerGroup'
 import FileDownloader from '../utils/DownloadHelper'
@@ -12,14 +12,15 @@ import GridRecorder from '../../../core/grid/NHGridRecorder'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import { MercatorCoordinate } from '../../../core/math/mercatorCoordinate'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
-import store from '@/store';
-import { log } from 'console'
+import store from '../../../store'
 proj4.defs("EPSG:2326","+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
 const STATUS_URL = 'http://127.0.0.1:8000' + '/v0/mc/status'
 const RESULT_URL = 'http://127.0.0.1:8000' + '/v0/mc/result'
 const DOWNLOAD_URL = 'http://127.0.0.1:8000' + '/v0/fs/result/zip'
 const PROCESS_URL = 'http://127.0.0.1:8000' + '/v0/nh/grid-process'
+
+// let isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
 
 
 export interface TopologyLayerOptions {
@@ -600,6 +601,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             }
             this.hit(storageIds)
             this.executionEndCallback()
+            store.get<{ on: Function; off: Function }>('isLoading')!.off();
         })
     }
 

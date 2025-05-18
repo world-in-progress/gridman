@@ -15,11 +15,9 @@ import {
     SidebarContext,
     LanguageContext,
     AIDialogContext,
-    GridRecorderContext,
 } from '../context';
 import {
     Breadcrumb,
-    BreadcrumbEllipsis,
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
@@ -28,7 +26,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -48,15 +46,13 @@ import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
-import CapacityTest from './capacityTest';
+import CapacityBar from './ui/capacityBar';
 
 export type SidebarType = 'grid' | 'terrain' | 'project' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
 
 export default function Page() {
-    const [isLoading, setIsLoading] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [isSelectingPoint, setIsSelectingPoint] = useState(false);
     const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
         null
     );
@@ -65,6 +61,16 @@ export default function Page() {
     const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
         null
     );
+
+    const [updateCapacity, setUpdateCapacity] = useState(false);
+    store.set('updateCapacity', {
+        on: () => {
+            setUpdateCapacity(true);
+        },
+        off: () => {
+            setUpdateCapacity(false);
+        },
+    });
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -96,9 +102,7 @@ export default function Page() {
     const [activePanel, setActivePanel] = useState<
         'schema' | 'project' | 'editor' | null
     >(null);
-    // const [activePanel, setActivePanel] = useState<
-    //     'schema' | 'project' | 'editor' | 'topology' | null
-    // >(null);
+
     const [selectedSchemaName, setSelectedSchemaName] = useState<
         string | undefined
     >(undefined);
@@ -209,7 +213,6 @@ export default function Page() {
             setActivePanel('schema');
             setShowCreateSchema(false);
             clearMapMarkers();
-            setIsSelectingPoint(false);
             setShowCreateProject(false);
             setShowCreateSubProject(false);
             clearMapElements();
@@ -219,7 +222,6 @@ export default function Page() {
             layer.removeResource();
         } else if (item === 'project') {
             clearMapMarkers();
-            setIsSelectingPoint(false);
             clearMapElements();
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
@@ -234,6 +236,11 @@ export default function Page() {
     const handleNextClick = () => {
         if (!activeBreadcrumb || activeBreadcrumb === 'schema') {
             handleBreadcrumbClick('project');
+        }
+    };
+    const handlePreviousClick = () => {
+        if (!activeBreadcrumb || activeBreadcrumb === 'project') {
+            handleBreadcrumbClick('schema');
         }
     };
 
@@ -460,30 +467,6 @@ export default function Page() {
                                         {breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
-                                {/* <BreadcrumbSeparator className="hidden md:block" />
-                                <BreadcrumbItem>
-                                    <BreadcrumbLink
-                                        className={
-                                            activeBreadcrumb === 'topology'
-                                                ? 'text-[#71F6FF] font-bold'
-                                                : ''
-                                        }
-                                    >
-                                        {breadcrumbText.topology[language]}
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                                <BreadcrumbSeparator className="hidden md:block" />
-                                <BreadcrumbItem>
-                                    <BreadcrumbLink
-                                        className={
-                                            activeBreadcrumb === 'attribute'
-                                                ? 'text-[#71F6FF] font-bold'
-                                                : ''
-                                        }
-                                    >
-                                        {breadcrumbText.attribute[language]}
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem> */}
                             </BreadcrumbList>
                         </Breadcrumb>
                     </div>
@@ -536,9 +519,12 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
-                    <div className="absolute flex flex-row gap-4 top-0 left-0 z-5">
-                        <CapacityTest />
-                    </div>
+                    {/* {activeBreadcrumb === 'editor' && updateCapacity && (
+                        <CapacityBar />
+                    )} */}
+                    {activeBreadcrumb === 'editor' && (
+                        <CapacityBar />
+                    )}
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
@@ -566,20 +552,55 @@ export default function Page() {
                                 </span>
                             </Button>
                         )}
-                        {(activePanel === 'schema' || 'project') && (
-                            <Button
-                                className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
-                                onClick={handleNextClick}
-                                aria-label={
-                                    language === 'zh' ? '下一步' : 'Next'
-                                }
-                                title={language === 'zh' ? '下一步' : 'Next'}
-                            >
-                                <span>
-                                    {language === 'zh' ? '下一步' : 'Next'}
-                                </span>
-                                <ArrowRight className="h-4 w-4" />
-                            </Button>
+                        {activeBreadcrumb !== 'editor' && (
+                            <>
+                                {activeBreadcrumb === 'schema' && (
+                                    <Button
+                                        className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
+                                        onClick={handleNextClick}
+                                        aria-label={
+                                            language === 'zh'
+                                                ? '下一步'
+                                                : 'Next'
+                                        }
+                                        title={
+                                            language === 'zh'
+                                                ? '下一步'
+                                                : 'Next'
+                                        }
+                                    >
+                                        <span>
+                                            {language === 'zh'
+                                                ? '下一步'
+                                                : 'Next'}
+                                        </span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                {activeBreadcrumb === 'project' && (
+                                    <Button
+                                        className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
+                                        onClick={handlePreviousClick}
+                                        aria-label={
+                                            language === 'zh'
+                                                ? '上一步'
+                                                : 'Previous'
+                                        }
+                                        title={
+                                            language === 'zh'
+                                                ? '上一步'
+                                                : 'Previous'
+                                        }
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                        <span>
+                                            {language === 'zh'
+                                                ? '上一步'
+                                                : 'Previous'}
+                                        </span>
+                                    </Button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

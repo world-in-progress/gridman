@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { LanguageContext } from '../../../context';
 import { SidebarGroup } from '@/components/ui/sidebar';
-import { SubNavItem } from '../../schemaPanel/types/types';
-import { Project, ProjectSubNavPanelProps } from '../types/types';
+// import { SubNavItem } from '../../schemaPanel/types/types';
+import { Project, ProjectSubNavPanelProps, SubNavItem } from '../types/types';
 import { ProjectCard } from './ProjectCard';
 import { ProjectService } from '../utils/ProjectService';
 import {
@@ -46,6 +46,7 @@ export function SubNavPanel({
     const [projectService] = useState(() => {
         return new ProjectService(language);
     });
+    const [hasInitialFetch, setHasInitialFetch] = useState(false);
 
     const applyPagingAndSearch = useCallback(
         (projectList: Project[], page: number) => {
@@ -84,7 +85,8 @@ export function SubNavPanel({
             try {
                 setLoading(true);
 
-                if (allProjects.length === 0) {
+                if (allProjects.length === 0 && !hasInitialFetch) {
+                    setHasInitialFetch(true);
                     projectService.fetchAllProjects(0, 1000, (err, result) => {
                         if (err) {
                             console.error('获取所有项目失败:', err);
@@ -133,6 +135,7 @@ export function SubNavPanel({
             searchQuery,
             allProjects,
             applyPagingAndSearch,
+            hasInitialFetch
         ]
     );
 
@@ -325,7 +328,7 @@ export function SubNavPanel({
         if (window.mapRef && window.mapRef.current) {
             const { highlightSubproject } = window.mapRef.current;
             if (highlightSubproject && typeof highlightSubproject === 'function') {
-                highlightSubproject(projectName, subprojectName, true);
+                highlightSubproject(projectName, subprojectName);
             }
         }
     };
@@ -334,7 +337,6 @@ export function SubNavPanel({
         title: project.name,
         items: [],
     }));
-
     if (loading) {
         return (
             <SidebarGroup>
@@ -406,12 +408,14 @@ export function SubNavPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>
+                        <AlertDialogCancel
+                            className="cursor-pointer"
+                        >
                             {language === 'zh' ? '取消' : 'Cancel'}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmDelete}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-600 hover:bg-red-700 cursor-pointer"
                         >
                             {language === 'zh' ? '删除' : 'Delete'}
                         </AlertDialogAction>

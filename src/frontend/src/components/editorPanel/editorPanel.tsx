@@ -16,7 +16,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
         'topology'
     );
     const [pickingTab, setPickingTab] = useState<
-        'picking' | 'unpicking' | 'delete'
+        'picking' | 'unpicking'
     >('picking');
     const [activeSelectTab, setActiveSelectTab] = useState<
         'brush' | 'box' | 'feature'

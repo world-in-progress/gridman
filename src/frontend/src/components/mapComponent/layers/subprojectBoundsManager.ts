@@ -187,16 +187,21 @@ export class SubprojectBoundsManager {
                     paint: {
                         'line-color': [
                             'case',
-                            ['get', 'highlighted'],
+                            ['coalesce', ['get', 'highlighted'], false],
                             '#FFFFFF',
                             [
                                 'case',
-                                ['get', 'starred'],
+                                ['coalesce', ['get', 'starred'], false],
                                 '#FFFD00',
                                 ['get', 'color'],
                             ],
                         ],
-                        'line-width': ['case', ['get', 'highlighted'], 4, 2],
+                        'line-width': [
+                            'case',
+                            ['coalesce', ['get', 'highlighted'], false],
+                            4, 
+                            2
+                        ],
                         'line-dasharray': [2, 1],
                     },
                 });
