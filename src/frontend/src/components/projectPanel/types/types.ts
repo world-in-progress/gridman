@@ -1,8 +1,9 @@
 import {
     FormErrors,
     MenuItem,
-    SubNavItem,
+    // SubNavItem,
 } from '../../schemaPanel/types/types';
+import { LucideIcon } from 'lucide-react';
 import { Sidebar } from '@/components/ui/sidebar';
 
 export interface RectangleCoordinates {
@@ -90,6 +91,14 @@ export interface ProjectCardProps {
     highlightedSubproject?: string | null;
     onSubprojectHighlight?: (projectName: string, subprojectName: string) => void;
 }
+
+export interface SubNavItem {
+    title: string;
+    project?: Project;
+    items?: MenuItem[];
+    icon?: LucideIcon;
+    isActive?: boolean;
+  }
 
 export interface ProjectSubNavPanelProps {
     items?: SubNavItem[];
