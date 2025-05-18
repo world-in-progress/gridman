@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useState, useContext } from 'react';
 import { cn } from '@/utils/utils';
 import {
     Search,
@@ -13,9 +13,19 @@ import { Label } from '@/components/ui/label';
 import opengms from '../assets/opengms.png';
 import grid from '../assets/grid.png';
 import bot from '../assets/bot.png';
-import { useContext } from 'react';
 import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
 import GridBotBotton from './ui/GridBotBotton';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
     children?: React.ReactNode;
     onNavItemClick?: (item: string, type?: string) => void;
@@ -30,9 +40,12 @@ export function Navbar({
     const { language, setLanguage } = useContext(LanguageContext);
     const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
     const { aiDialogEnabled } = useContext(AIDialogContext);
+    const [languageSwitchDialogOpen, setLanguageSwitchDialogOpen] =
+        useState(false);
 
     const toggleLanguage = () => {
         setLanguage(language === 'zh' ? 'en' : 'zh');
+        setLanguageSwitchDialogOpen(false);
     };
 
     const navItems = [
@@ -74,6 +87,55 @@ export function Navbar({
             className={cn('flex   text-white h-20 z-50 relative', className)}
             {...props}
         >
+            <AlertDialog
+                open={languageSwitchDialogOpen}
+                onOpenChange={setLanguageSwitchDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {language === 'zh'
+                                ? '操作确认'
+                                : 'Operation Confirm'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {language === 'zh' ? (
+                                <>
+                                    是否确认切换语言？
+                                    <br />
+                                    这将导致地图已绘制元素的清除，在编辑网格时请谨慎选择。
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to switch language?
+                                    <br />
+                                    This will clear the map elements that have
+                                    been drawn, please be careful when editing
+                                    grids.
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
+                            className="cursor-pointer"
+                            onClick={() => {
+                                setLanguageSwitchDialogOpen(false);
+                            }}
+                        >
+                            {language === 'zh' ? '取消' : 'Cancel'}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                toggleLanguage();
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        >
+                            {language === 'zh' ? '确认' : 'Confirm'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div
                 className={`flex items-center justify-center gap-4 w-1/5 ${
                     aiDialogEnabled ? 'bg-[#00C0FF]' : 'bg-black'
@@ -143,9 +205,18 @@ export function Navbar({
                             <Switch
                                 id="language-switch"
                                 checked={language === 'zh'}
-                                onCheckedChange={() => toggleLanguage()}
+                                onClick={() =>
+                                    setLanguageSwitchDialogOpen(true)
+                                }
+                                // onCheckedChange={() => toggleLanguage()}
                                 className="bg-gray-700 data-[state=checked]:bg-[#00C0FF] cursor-pointer"
                             />
+                            {/* <Switch
+                                id="language-switch"
+                                checked={language === 'zh'}
+                                onCheckedChange={() => toggleLanguage()}
+                                className="bg-gray-700 data-[state=checked]:bg-[#00C0FF] cursor-pointer"
+                            /> */}
                             <Label
                                 htmlFor="language-switch"
                                 className="text-md font-bold text-gray-300"

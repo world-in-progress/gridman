@@ -176,6 +176,7 @@ export class SubprojectBoundsManager {
                         'fill-opacity': 0.3,
                     },
                 });
+                console.log('添加填充图层');
             }
 
             // 2. 然后添加轮廓图层
@@ -200,6 +201,7 @@ export class SubprojectBoundsManager {
                         'line-dasharray': [2, 1],
                     },
                 });
+                console.log('添加轮廓图层');
             }
         } catch (error) {
             console.error('显示子项目边界失败:', error);

@@ -27,14 +27,6 @@ export const AIDialogContext = createContext<{
     setAIDialogEnabled: () => {},
 });
 
-// export const GridRecorderContext = createContext<{
-//     recorder: GridRecorder | null;
-//     setRecorder: ( recorder: GridRecorder | null ) => void
-// }>({
-//     recorder: null,
-//     setRecorder: () => {}
-// })
-
 export const GridRecorderContext : {
     recorder: GridRecorder | undefined 
 }= {
