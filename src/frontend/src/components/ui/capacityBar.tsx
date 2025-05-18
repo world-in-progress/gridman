@@ -167,7 +167,7 @@ export default function CapacityBar({
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="p-2 w-[200px] bg-white/50 backdrop-blur-xs rounded-br-lg space-y-6 shadow-sm z-200">
+                        <div className="p-2 w-[200px] bg-white/50 backdrop-blur-xs rounded-br-lg space-y-6 z-200">
                             <div
                                 className={cn(
                                     'flex items-center gap-3',
