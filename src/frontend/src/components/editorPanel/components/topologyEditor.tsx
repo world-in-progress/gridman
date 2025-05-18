@@ -57,6 +57,7 @@ export default function TopologyPanel({
                 const filePath = await window.electronAPI.openFileDialog();
                 if (filePath) {
                     console.log('Selected file path:', filePath);
+                    store.get<{ on: Function; off: Function }>('isLoading')!.on();
                     topologyLayer.executePickGridsByFeature(filePath);
                 } else {
                     console.log('No file selected');
@@ -131,7 +132,7 @@ export default function TopologyPanel({
                     event.preventDefault();
                     setSelectAllDialogOpen(true);
                 }
-                if (event.key === 'D' || event.key === 'd') {
+                if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
                     setDeleteSelectDialogOpen(true);
                 }
@@ -151,14 +152,14 @@ export default function TopologyPanel({
                     handleFeatureClick();
                     store.set('modeSelect', 'feature');
                 }
-                if (event.key === 'Q' || event.key === 'q') {
+                if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
                     setSubdivideGridDialogOpen(true);
                 }
-                if (event.key === 'W' || event.key === 'w') {
+                if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
                 }
-                if (event.key === 'E' || event.key === 'e') {
+                if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
                     setDeleteGridDialogOpen(true);
                 }
@@ -403,7 +404,7 @@ export default function TopologyPanel({
                                 deleteSelectDialogOpen && ' text-white'
                             }`}
                         >
-                            [ Ctrl+D ]
+                            [ Ctrl+C ]
                         </div>
                     </button>{' '}
                 </div>
@@ -497,13 +498,13 @@ export default function TopologyPanel({
                     <div className="flex flex-row items-center">
                         {language === 'zh' ? '细分' : 'Subdivide'}
                     </div>
-                    <div className="text-xs text-white">[ Ctrl+Q ]</div>
+                    <div className="text-xs text-white">[ Ctrl+S ]</div>
                 </button>
                 <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-green-600">
                     <div className="flex flex-row items-center">
                         {language === 'zh' ? '合并' : 'Merge'}
                     </div>
-                    <div className="text-xs text-white">[ Ctrl+W ]</div>
+                    <div className="text-xs text-white">[ Ctrl+M ]</div>
                 </button>
                 <button
                     className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white ${
@@ -516,7 +517,7 @@ export default function TopologyPanel({
                     <div className="flex flex-row items-center">
                         {language === 'zh' ? '删除' : 'Delete'}
                     </div>
-                    <div className="text-xs text-white">[ Ctrl+E ]</div>
+                    <div className="text-xs text-white">[ Ctrl+D ]</div>
                 </button>
                 <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-purple-600">
                     <div className="flex flex-rowitems-center">
