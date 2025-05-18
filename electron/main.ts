@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, screen } from 'electron';
 import path from 'path';
 
 function createWindow(): void {
@@ -33,9 +33,13 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.setZoomFactor(1.0);
-  });
+    // Get the screen resolution
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
 
+    let zoomFactor = Math.min(width / 1920, height / 1080);
+    mainWindow.webContents.setZoomFactor(zoomFactor);
+  });
 }
 
 ipcMain.handle('dialog:openFile', async () => {
