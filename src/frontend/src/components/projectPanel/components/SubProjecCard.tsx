@@ -178,6 +178,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     window.dispatchEvent(pageEvents);
                 }
                 isLoading.off();
+                updateCapacity.on();
             }
         );
     };

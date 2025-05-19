@@ -296,6 +296,15 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 const topologyLayer = new TopologyLayer(mapInstance!, {
                     maxGridNum: 4096 * 4096,
                 });
+                const updateLoading = store.get<{on: () => void; off: () => void}>('isLoading')!
+                const updateCapacity = store.get<{on: () => void; off: () => void}>('updateCapacity')!
+                topologyLayer.executionStartCallback = () => {
+                    updateLoading.on();
+                }
+                topologyLayer.executionEndCallback = () => {
+                    updateCapacity.on();
+                    updateLoading.off();
+                }
 
                 const layerGroup = new NHLayerGroup();
                 layerGroup.id = 'gridman-custom-layer-group';
