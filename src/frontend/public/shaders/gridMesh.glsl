@@ -142,22 +142,25 @@ bool isAssigned() {
 void main() {
 
     bool isHit = isHit();
+    float fillAlpha = 1.0;
+    vec3 fillColor = vec3(1.0);
 
     // Shading in topology editor
     if(mode == 0.0) {
         if(isHit) {
             float distance = uv.x * uv.x + uv.y * uv.y;
 
-            // fragColor = vec4(0.64, 0.09, 0.09, 0.5); 
             if(distance <= 0.25) {
-                // fragColor = vec4(0.64, 0.09, 0.09, 0.5);
-                fragColor = vec4(v_color, 0.5);
+                fillAlpha = 0.8;
+                fillColor = v_color;
             } else {
-                fragColor = vec4(0.1);
+                fillAlpha = 0.1;
+                fillColor = vec3(0.1);
             }
-        } else
-            fragColor = vec4(0.1);
-
+        } else {
+            fillAlpha = 0.1;
+            fillColor = vec3(0.1);
+        }
     }
     // Shading in attribute editor
     else {
@@ -167,21 +170,31 @@ void main() {
         bool isAssigned = isAssigned();
 
         if(distance <= 0.25 && distance >= 0.2) {
-            if(isHit)
-                fragColor = vec4(1.0, 1.0, 1.0, 0.2);
-            else
-                fragColor = vec4(0.64, 0.09, 0.09, 0.8);
+            if(isHit){
+                fillAlpha = 0.2;
+                fillColor = vec3(1.0);
+            }
+            else {
+                fillAlpha = 0.8;
+                fillColor = vec3(0.64, 0.09, 0.09);
+            }
         } else {
-            if(isHit)
-                fragColor = vec4(0.64, 0.09, 0.09, 0.8);
-            else
-                fragColor = vec4(1.0, 1.0, 1.0, 0.2);
+            if(isHit) {
+                fillAlpha = 0.8;
+                fillColor = vec3(0.64, 0.09, 0.09);
+            }
+            else {
+                fillAlpha = 0.2;
+                fillColor = vec3(1.0);
+            }
         }
 
         if(isAssigned) {
-            fragColor = vec4(1.0 - fragColor.rgb, fragColor.a);
+            fillColor = 1.0 - fillColor;
         }
     }
+
+    fragColor = vec4(fillColor * fillAlpha, fillAlpha);
 }
 
 #endif

@@ -107,9 +107,6 @@ export default function TopologyPanel({
     };
 
     const handleConfirmSubdivideGrid = () => {
-        isLoading.on();
-        console.log(isLoading);
-
         setSubdivideGridDialogOpen(false);
         topologyLayer.executeSubdivideGrids();
     };
