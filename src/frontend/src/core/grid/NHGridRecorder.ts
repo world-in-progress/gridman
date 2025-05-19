@@ -38,14 +38,11 @@ export interface GridLayerSerializedInfo {
     }[]
 }
 
-export interface UndoRedoRecordOperation extends UndoRedoOperation {
-    action: 'RemoveGrid' | 'RemoveGrids' | 'SubdivideGrid' | 'SubdivideGrids'
-}
-
 export interface GridRecordOptions {
-
+    maxGridNum?: number
     workerCount?: number
     dispatcher?: Dispatcher
+    callbackAfterConstruct?: (info: MultiGridRenderInfo) => void
 }
 
 export default class GridRecorder {
@@ -71,9 +68,9 @@ export default class GridRecorder {
     adjGrids_cache: number[][] = []
     edge_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
 
-    constructor(public subdivideRules: SubdivideRules, maxGridNum?: number, options: GridRecordOptions = {}) {
+    constructor(public subdivideRules: SubdivideRules, options: GridRecordOptions = {}) {
 
-        this.maxGridNum = maxGridNum ?? 4096 * 4096
+        this.maxGridNum = options.maxGridNum ?? 4096 * 4096
         this.dispatcher = new Dispatcher(this, Math.min(options.workerCount ?? 4, 4))
         this.projConverter = proj4(this.subdivideRules.srcCS, this.subdivideRules.targetCS)
 
@@ -103,6 +100,21 @@ export default class GridRecorder {
         const centerX = encodeFloatToDouble(mercatorCenter[0])
         const centerY = encodeFloatToDouble(mercatorCenter[1])
         this.bBoxCenterF32 = new Float32Array([...centerX, ...centerY])
+
+        // Brodcast actors to init grid manager and initialize grid cache
+        this.dispatcher.broadcast('setGridManager', subdivideRules, () => {
+            this._actor.send('getActivateGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
+                // Initialize grid cache
+                const gridNum = renderInfo.levels.length
+                this._nextStorageId = gridNum
+                for (let storageId = 0; storageId < gridNum; storageId++) {
+                    this.updateDict(storageId, renderInfo.levels[storageId], renderInfo.globalIds[storageId])
+                    this.gridLevelCache[storageId] = renderInfo.levels[storageId]
+                    this.gridGlobalIdCache[storageId] = renderInfo.globalIds[storageId]
+                }
+                options.callbackAfterConstruct && options.callbackAfterConstruct(renderInfo)
+            })
+        })
     }
 
     updateGridRenderInfo(renderInfo: MultiGridRenderInfo, start: number = 0) {
@@ -250,20 +262,15 @@ export default class GridRecorder {
         })
     }
 
+    /**
+     * Subdivide the grids by subdivideInfos  
+     * Reason for use subdivideInfos instead of storageIds:  
+     * Info stored in cache (indexed by storageIds) of the subdividable grids is replaced because of the previous delete operation,
+     * use storageIds to get info of subdividable grids is incorrect.
+     */
     subdivideGrids(subdivideInfos: {levels: Uint8Array, globalIds: Uint32Array}, callback?: Function): void {
-    // subdivideGrids(storageIds: number[], callback?: Function): void {
-    //     const subdivideInfos = {
-    //         levels: new Uint8Array(storageIds.length),
-    //         globalIds: new Uint32Array(storageIds.length)
-    //     }
 
-    //     storageIds.forEach((storageId, index) => {
-    //         const [level, globalId] = this.getGridInfoByStorageId(storageId)
-    //         subdivideInfos.levels[index] = level
-    //         subdivideInfos.globalIds[index] = globalId
-    //     })
-
-        // Dispatch a worker to subdivide the grid
+        // Dispatch a worker to subdivide the grids
         this._actor.send('subdivideGrids', subdivideInfos, (_, renderInfos: MultiGridRenderInfo) => {
 
             renderInfos.globalIds.forEach((globalId, index) => {
