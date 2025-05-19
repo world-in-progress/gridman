@@ -25,9 +25,11 @@ function App() {
     const [isLoading, setIsLoading] = useState(false);
     store.set('isLoading', {
         on: () => {
+            console.log('isLoading on');
             setIsLoading(true);
         },
         off: () => {
+            console.log('isLoading off');
             setIsLoading(false);
         },
     });

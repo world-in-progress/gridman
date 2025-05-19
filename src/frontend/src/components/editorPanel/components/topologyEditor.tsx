@@ -110,7 +110,6 @@ export default function TopologyPanel({
     const handleConfirmSubdivideGrid = () => {
         isLoading.on();
         console.log(isLoading);
-
         setSubdivideGridDialogOpen(false);
         topologyLayer.executeSubdivideGrids();
     };
@@ -191,7 +190,7 @@ export default function TopologyPanel({
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {language === 'zh'
-                                ? '是否确认框选所以网格？'
+                                ? '是否确认框选所有网格？'
                                 : 'Are you sure you want to select all grids?'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -214,6 +213,8 @@ export default function TopologyPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 取消全部网格框选 */}
             <AlertDialog
                 open={deleteSelectDialogOpen}
                 onOpenChange={setDeleteSelectDialogOpen}
@@ -250,6 +251,8 @@ export default function TopologyPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 删除选中网格 */}
             <AlertDialog
                 open={deleteGridDialogOpen}
                 onOpenChange={setDeleteGridDialogOpen}
@@ -280,6 +283,8 @@ export default function TopologyPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 细分选中网格 */}
             <AlertDialog
                 open={subdivideGridDialogOpen}
                 onOpenChange={setSubdivideGridDialogOpen}
