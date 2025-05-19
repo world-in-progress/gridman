@@ -2,7 +2,7 @@ import proj4 from 'proj4';
 
 import {
     GridNode,
-    SubdivideRules,
+    GridContext,
     EDGE_CODE_WEST,
     EDGE_CODE_EAST,
     EDGE_CODE_NORTH,
@@ -583,18 +583,18 @@ export type GridInfo = {
 export default class GridManager {
     private _center: [number, number]
     private _levelInfos: GridLevelInfo[];
-    private _subdivideRules: SubdivideRules;
+    private _context: GridContext;
     private _projConverter: proj4.Converter;
 
-    constructor(subdivideRules: SubdivideRules) {
+    constructor(context: GridContext) {
         this._projConverter = proj4(
-            subdivideRules.srcCS,
-            subdivideRules.targetCS
+            context.srcCS,
+            context.targetCS
         );
         this._levelInfos = [{ width: 1, height: 1 }];
 
-        this._subdivideRules = subdivideRules;
-        this._subdivideRules.rules.forEach((_, level, rules) => {
+        this._context = context;
+        this._context.rules.forEach((_, level, rules) => {
             let width: number, height: number;
             if (level == 0) {
                 width = 1;
@@ -608,21 +608,21 @@ export default class GridManager {
         });
 
         this._center = [
-            (this._subdivideRules.bBox.xMin + this._subdivideRules.bBox.xMax) / 2.0,
-            (this._subdivideRules.bBox.yMin + this._subdivideRules.bBox.yMax) / 2.0,
+            (this._context.bBox.xMin + this._context.bBox.xMax) / 2.0,
+            (this._context.bBox.yMin + this._context.bBox.yMax) / 2.0,
         ]
     }
 
-    set subdivideRules(rules: SubdivideRules) {
+    set context(context: GridContext) {
         // Update projection converter
-        this._projConverter = proj4(rules.srcCS, rules.targetCS);
+        this._projConverter = proj4(context.srcCS, context.targetCS);
 
         // Update subdivide rules first
-        this._subdivideRules = rules;
+        this._context = context;
 
         // Update level infos then
         this._levelInfos = [{ width: 1, height: 1 }];
-        this._subdivideRules.rules.forEach((_, level, rules) => {
+        this._context.rules.forEach((_, level, rules) => {
             let width: number, height: number;
             if (level == 0) {
                 width = 1;
@@ -640,7 +640,7 @@ export default class GridManager {
         if (level === 0) return 0;
 
         const { width } = this._levelInfos[level];
-        const [subWidth, subHeight] = this._subdivideRules.rules[level - 1];
+        const [subWidth, subHeight] = this._context.rules[level - 1];
 
         const u = globalId % width;
         const v = Math.floor(globalId / width);
@@ -652,7 +652,7 @@ export default class GridManager {
         if (level === 0) return 0;
 
         const { width } = this._levelInfos[level];
-        const [subWidth, subHeight] = this._subdivideRules.rules[level - 1];
+        const [subWidth, subHeight] = this._context.rules[level - 1];
 
         const u = globalId % width;
         const v = Math.floor(globalId / width);
@@ -670,7 +670,7 @@ export default class GridManager {
         const globalU = globalId % levelWidth;
         const globalV = Math.floor(globalId / levelWidth);
 
-        const [subWidth, subHeight] = this._subdivideRules.rules[level];
+        const [subWidth, subHeight] = this._context.rules[level];
         const subCount = subWidth * subHeight;
 
         const children = new Array<number>(subCount);
@@ -694,7 +694,7 @@ export default class GridManager {
         renderInfoPack: GridNodeRenderInfoPack | null = null,
         gridOffset: number = 0
     ): GridNodeRenderInfoPack {
-        const [subWidth, subHeight] = this._subdivideRules.rules[level];
+        const [subWidth, subHeight] = this._context.rules[level];
         const subCount = subWidth * subHeight;
 
         // Create render information pack if not provided
@@ -745,7 +745,7 @@ export default class GridManager {
             (_, index) => {
                 const parentLevel = subdivideInfos[index][0];
                 const [subWidth, subHeight] =
-                    this._subdivideRules.rules[parentLevel];
+                    this._context.rules[parentLevel];
                 const subCount = subWidth * subHeight;
                 childrenCount += subCount;
                 return subCount;
@@ -973,7 +973,7 @@ export default class GridManager {
                     if (!children) continue;
 
                     const [subWidth, subHeight] =
-                        this._subdivideRules.rules[_level];
+                        this._context.rules[_level];
                     children.forEach((childGlobalId, childLocalId) => {
                         const isAdjacent = adjacentCheckFunc(
                             childLocalId,
@@ -1059,7 +1059,7 @@ export default class GridManager {
         const max = +position[2] / +position[3];
         const shared = +position[4] / +position[5];
 
-        const bBox = this._subdivideRules.bBox;
+        const bBox = this._context.bBox;
         const center = this._projConverter.forward([
             (bBox.xMin + bBox.xMax) / 2.0,
             (bBox.yMin + bBox.yMax) / 2.0,
@@ -1131,7 +1131,7 @@ export default class GridManager {
         gridOffset: number
     ) {
         const [width, height] = globalRange;
-        const bBox = this._subdivideRules.bBox;
+        const bBox = this._context.bBox;
 
         const globalU = globalId % width;
         const globalV = Math.floor(globalId / width);
@@ -1193,7 +1193,7 @@ export default class GridManager {
         vertices?: Float32Array,
         verticesLow?: Float32Array
     ): [Float32Array, Float32Array] {
-        const bBox = this._subdivideRules.bBox;
+        const bBox = this._context.bBox;
         const { width, height } = this._levelInfos[level];
 
         const globalU = globalId % width;

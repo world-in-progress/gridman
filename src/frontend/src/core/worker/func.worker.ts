@@ -1,5 +1,5 @@
 import GridManager from "../grid/NHGridManager";
-import { SubdivideRules } from "../grid/NHGrid";
+import { GridContext } from "../grid/NHGrid";
 import { Callback, WorkerSelf } from "../types";
 import ProjectUtils from "../../components/projectPanel/utils/util.worker";
 import SchemaUtils from "../../components/schemaPanel/utils/util.worker";
@@ -15,19 +15,19 @@ export function checkIfReady(
 
 export function init(
   this: WorkerSelf & Record<"nodeManager", GridManager>,
-  subdivideRules: SubdivideRules,
+  context: GridContext,
   callback: Callback<any>
 ) {
-  this.nodeManager = new GridManager(subdivideRules);
+  this.nodeManager = new GridManager(context);
   callback();
 }
 
-export function updateSubdividerules(
+export function updateGridContext(
   this: WorkerSelf & Record<"nodeManager", GridManager>,
-  subdivideRules: SubdivideRules,
+  context: GridContext,
   callback: Callback<any>
 ) {
-  this.nodeManager.subdivideRules = subdivideRules;
+  this.nodeManager.context = context;
   callback();
 }
 
@@ -302,19 +302,19 @@ export async function setSubproject(
 
 export function setGridManager(
   this: WorkerSelf & Record<"gridManager", GridManager>,
-  subdivideRules: SubdivideRules,
+  context: GridContext,
   callback: Callback<any>
 ) {
-  ProjectUtils.setGridManager(this, subdivideRules);
+  ProjectUtils.setGridManager(this, context);
   callback();
 }
 
-export async function getActivateGridInfo(
+export async function getGridInfo(
   this: WorkerSelf & Record<"gridManager", GridManager>,
   _: any,
   callback: Callback<any>
 ) {
-  const renderInfo = await ProjectUtils.getActivateGridInfo(this);
+  const renderInfo = await ProjectUtils.getGridInfo(this);
   callback(null, renderInfo);
 }
 

@@ -1,14 +1,14 @@
 import proj4 from 'proj4'
-import WorkerPool from '../worker/workerPool'
 import Dispatcher from '../message/dispatcher'
-import { createDB, deleteDB } from '../database/db'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
-import UndoRedoManager, { UndoRedoOperation } from '../util/undoRedoManager'
 import { EdgeRenderInfoPack, GridContext, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
 import BoundingBox2D from '../util/boundingBox2D'
 import { Callback } from '../types'
 
 proj4.defs('EPSG:2326',"+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
+
+const DELETED_FLAG = 1
+const UNDELETED_FLAG = 0
 
 interface GridLevelInfo {
     width: number
@@ -56,6 +56,7 @@ export default class GridCore {
     // Grid cache
     levelInfos: GridLevelInfo[]
     gridLevelCache: Float32Array
+    gridDeletedCache: Uint8Array
     gridGlobalIdCache: Float32Array
     gridKey_storageId_dict: Map<string, number>
     grid_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
@@ -90,6 +91,7 @@ export default class GridCore {
         this.gridKey_storageId_dict = new Map()
         this.gridLevelCache = new Float32Array(this.maxGridNum)
         this.gridGlobalIdCache = new Float32Array(this.maxGridNum)
+        this.gridDeletedCache = new Uint8Array(this.maxGridNum).fill(UNDELETED_FLAG)
         this.grid_attribute_cache = Array.from({ length: this.maxGridNum }, () => { return { height: -9999, type: 0 } })
 
         // Calculate bounding box center in mercator coordinates for high-precision rendering
@@ -104,28 +106,21 @@ export default class GridCore {
         // Brodcast actors to init grid manager and initialize grid cache
         this.dispatcher.broadcast('setGridManager', this.subdivideRules, () => {
             // Get activate grid information
-            this._actor.send('getActivateGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
+            this._actor.send('getGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
                 // Initialize grid cache
                 const gridNum = renderInfo.levels.length
                 this._nextStorageId = gridNum
                 for (let storageId = 0; storageId < gridNum; storageId++) {
                     this.updateDict(storageId, renderInfo.levels[storageId], renderInfo.globalIds[storageId])
                     this.gridLevelCache[storageId] = renderInfo.levels[storageId]
+                    this.gridDeletedCache[storageId] = renderInfo.deleted![storageId]
                     this.gridGlobalIdCache[storageId] = renderInfo.globalIds[storageId]
                 }
-                callback && callback([0, renderInfo.levels, renderInfo.vertices, renderInfo.verticesLow])
+
+                callback && callback([0, renderInfo.levels, renderInfo.vertices, renderInfo.verticesLow, renderInfo.deleted])
+
             })
         })
-    }
-
-    updateGridRenderInfo(renderInfo: MultiGridRenderInfo, start: number = 0) {
-        const gridNum = renderInfo.levels.length
-        this._nextStorageId = start + gridNum
-        for (let i = 0; i < gridNum; i++) {
-            this.updateDict(start + i, renderInfo.levels[i], renderInfo.globalIds[i])
-            this.gridLevelCache[start + i] = renderInfo.levels[i]
-            this.gridGlobalIdCache[start + i] = renderInfo.globalIds[i]
-        }
     }
 
     private get _actor() {
@@ -160,6 +155,7 @@ export default class GridCore {
         const lastStorageId = this._nextStorageId - 1
 
         // Get render info of this removable grid and the grid having the last storageId
+        const lastDeleted = this.gridDeletedCache[lastStorageId]
         const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(lastStorageId)
         this.gridKey_storageId_dict.delete(`${lastLevel}-${lastGlobalId}`)
         this._nextStorageId -= 1
@@ -170,9 +166,10 @@ export default class GridCore {
         // Replace removable render info with the last render info in the cache
         this.updateDict(storageId, lastLevel, lastGlobalId)
         this.gridLevelCache[storageId] = lastLevel
+        this.gridDeletedCache[storageId] = lastDeleted
         this.gridGlobalIdCache[storageId] = lastGlobalId
         const [vertices, verticesLow] = this._createNodeRenderVertices(lastLevel, lastGlobalId)
-        callback && callback([storageId, lastLevel, vertices, verticesLow])
+        callback && callback([storageId, lastLevel, vertices, verticesLow, lastDeleted])
     }
 
     deleteGridsLocally(storageIds: number[], callback?: Function): void {
@@ -198,7 +195,7 @@ export default class GridCore {
         // Note: storageId not pointing to any removable grids is valid
         let replacedStorageId = this._nextStorageId - 1
         const removableIdStack = storageIds.slice()
-        const replacedGridInfo = new Array<[storageId: number, level: number, globalId: number]>()
+        const replacedGridInfo = new Array<[storageId: number, level: number, globalId: number, deleted: number]>()
         while (replacedGridInfo.length !== replacedGridNum) {
 
             // No need to replace removable grids by valid grid infos since they are never be used
@@ -212,7 +209,8 @@ export default class GridCore {
                 // If replacedStorageId is less than removableStorageId, break for replacement not necessary
                 if (replacedStorageId <= storageIds[replacedGridInfo.length]) break
                 const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(replacedStorageId)
-                replacedGridInfo.push([replacedStorageId, lastLevel, lastGlobalId])
+                const lastDeleted = this.gridDeletedCache[replacedStorageId]
+                replacedGridInfo.push([replacedStorageId, lastLevel, lastGlobalId, lastDeleted])
             }
             replacedStorageId--
         }
@@ -220,46 +218,57 @@ export default class GridCore {
         this._nextStorageId -= removableGridNum
 
         const replacedLevels: number[] = []
-        const removableStorageIds: number[] = []
-        const removableVertices: Float32Array[] = []
-        const removableVerticesLow: Float32Array[] = []
+        const replacedDeleteds: number[] = []
+        const replacedStorageIds: number[] = []
+        const replacedVertices: Float32Array[] = []
+        const replacedVerticesLow: Float32Array[] = []
         storageIds.forEach((storageId, index) => {
             if (index > replacedGridInfo.length - 1) return
             
             // Replace removable render info with the last render info in the cache
-            const [_, replacedLevel, replacedGlobalId] = replacedGridInfo[index]
+            const [_, replacedLevel, replacedGlobalId, replacedDeleted] = replacedGridInfo[index]
             this.gridLevelCache[storageId] = replacedLevel
+            this.gridDeletedCache[storageId] = replacedDeleted
             this.gridGlobalIdCache[storageId] = replacedGlobalId
             this.updateDict(storageId, replacedLevel, replacedGlobalId)
 
-            replacedLevels.push(replacedLevel)
-            removableStorageIds.push(storageId)
-
             const [vertices, verticesLow] = this._createNodeRenderVertices(replacedLevel, replacedGlobalId)
 
-            removableVertices.push(vertices)
-            removableVerticesLow.push(verticesLow)
+
+            replacedStorageIds.push(storageId)
+            replacedLevels.push(replacedLevel)
+            replacedVertices.push(vertices)
+            replacedVerticesLow.push(verticesLow)
+            replacedDeleteds.push(replacedDeleted)
         })
         callback && callback([
-            removableStorageIds, 
+            replacedStorageIds,
             replacedLevels, 
-            removableVertices, 
-            removableVerticesLow
+            replacedVertices, 
+            replacedVerticesLow,
+            replacedDeleteds
         ])
     }
 
-    deleteGrids(removableStorageIds: number[], callback?: Function): void {
-
+    /**
+     * Mark the specified grids as deleted
+     * @description: Marks the specified grids as deleted in the grid system.  
+     * Not really deleted, but marked as deleted.  
+     * For merge operation, the deleted grids must still can be picked up.
+     */
+    markAsDeletedGrids(removableStorageIds: number[], callback?: Function): void {
         const levels = new Uint8Array(removableStorageIds.length)
         const globalIds = new Uint32Array(removableStorageIds.length)
         for (let i = 0; i < removableStorageIds.length; i++) {
-            const [level, globalId] = this.getGridInfoByStorageId(removableStorageIds[i])
+            const storageId = removableStorageIds[i]
+            const [level, globalId] = this.getGridInfoByStorageId(storageId)
             levels[i] = level
             globalIds[i] = globalId
+            this.gridDeletedCache[storageId] = DELETED_FLAG
         }
-        // Dispatch a worker to remove the grid
+        // Mark provided grids as deleted
         this._actor.send('removeGrids', { levels, globalIds }, () => {
-            this.deleteGridsLocally(removableStorageIds, callback)
+            callback && callback()
         })
     }
 
@@ -280,11 +289,12 @@ export default class GridCore {
                 const level = renderInfos.levels[index]
                 this.gridLevelCache[storageId] = level
                 this.gridGlobalIdCache[storageId] = globalId
+                this.gridDeletedCache[storageId] = UNDELETED_FLAG
                 this.updateDict(storageId, level, globalId)
             })
 
-            const { levels, vertices, verticesLow } = renderInfos
-            callback && callback([this._nextStorageId, levels, vertices, verticesLow])
+            const { levels, vertices, verticesLow, deleted } = renderInfos
+            callback && callback([this._nextStorageId, levels, vertices, verticesLow, deleted])
             this._nextStorageId += renderInfos.globalIds.length
         })
     }
@@ -309,6 +319,10 @@ export default class GridCore {
             this.gridLevelCache[storageId],
             this.gridGlobalIdCache[storageId]
         ]
+    }
+
+    isGridDeleted(storageId: number): boolean {
+        return this.gridDeletedCache[storageId] === DELETED_FLAG
     }
 
     getEdgeInfoByStorageId(storageId: number) {
@@ -367,13 +381,15 @@ export default class GridCore {
         const globalId = this.gridGlobalIdCache[storageId]
         const localId = this.getGridLocalId(level, globalId)
         const edges = this.storageId_edgeId_set[storageId]
+        const deleted = this.gridDeletedCache[storageId]
 
         return {
             storageId,
             level,
             globalId,
             localId,
-            edges
+            edges,
+            deleted
         }
     }
 
