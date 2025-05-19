@@ -199,8 +199,8 @@ export class SubprojectBoundsManager {
                         'line-width': [
                             'case',
                             ['coalesce', ['get', 'highlighted'], false],
-                            4, 
-                            2
+                            4,
+                            2,
                         ],
                         'line-dasharray': [2, 1],
                     },
@@ -371,14 +371,6 @@ export class SubprojectBoundsManager {
                             duration: 1000,
                         });
 
-                        // 在边界中心创建弹窗显示信息
-                        setTimeout(() => {
-                            this.showSubprojectPopup(
-                                subprojectFeature.properties,
-                                [centerLng, centerLat]
-                            );
-                        }, 300);
-
                         return;
                     }
                 }
@@ -437,17 +429,6 @@ export class SubprojectBoundsManager {
                                 duration: 1000,
                             });
 
-                            // Create popup at center of bounds
-                            setTimeout(() => {
-                                this.showSubprojectPopup(
-                                    {
-                                        name: subproject.name,
-                                        projectName: projectName,
-                                        starred: subproject.starred || false,
-                                    },
-                                    [centerLng, centerLat]
-                                );
-                            }, 1000); // Display after fly animation
 
                             // If subproject bounds are displayed at this time, reapply highlight
                             if (this.map.getSource(sourceId)) {
@@ -467,52 +448,5 @@ export class SubprojectBoundsManager {
         } catch (error) {
             console.error('飞行到子项目边界失败:', error);
         }
-    }
-
-    /**
-     * Display the popup information of the subproject
-     * @param properties Subproject properties
-     * @param center Popup position coordinates
-     */
-    private showSubprojectPopup(
-        properties: any,
-        center: [number, number]
-    ): void {
-        if (!this.map) return;
-
-        // Remove existing popups
-        const existingPopups = document.querySelectorAll('.mapboxgl-popup');
-        existingPopups.forEach((popup) => popup.remove());
-
-        // Create new popup
-        new mapboxgl.Popup({
-            closeOnClick: true,
-            maxWidth: '300px',
-        })
-            .setLngLat(center)
-            .setHTML(
-                `
-                <div style="font-family: Arial, sans-serif; padding: 10px;">
-                    <h3 style="margin: 0 0 8px; font-weight: bold; color: #333;">${
-                        properties.name
-                    }</h3>
-
-                    <div style="display: flex flex-column; align-items: center; margin-top: 8px;">
-                        <span style="font-size: 12px; color: #888;">
-                            ${this.language === 'zh' ? '所属项目' : 'Project'}: 
-                        </span>
-                        <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
-                            ${properties.projectName}
-                        </span>
-                        ${
-                            properties.starred
-                                ? `<span style="margin-left: 8px; color: #f0c14b;">★</span>`
-                                : ''
-                        }
-                    </div>
-                </div>
-            `
-            )
-            .addTo(this.map);
     }
 }

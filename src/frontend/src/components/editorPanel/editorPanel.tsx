@@ -3,12 +3,12 @@ import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
 import { EditorPanelProps } from './types/types';
-import BasicInfo from './components/basicInfo';
-import TopologyPanel from './components/topologyEditor';
+import BasicInfo from './basicInfo';
+import TopologyPanel from './Topology/topologyEditor';
 import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
-import AttributePanel from './components/AttributeEditor';
+import AttributePanel from './Attribute/AttributeEditor';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const { language } = useContext(LanguageContext);
@@ -54,7 +54,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                 </div>
 
                 <div className="p-2">
-                    <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md">
+                    <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md shadow-sm">
                         <button
                             className={` flex-1 py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer ${
                                 activeTab === 'topology'

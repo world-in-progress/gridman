@@ -184,13 +184,24 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         );
     };
 
-    const handleUpdateDescription = async () => {
+    const handleUpdateDescription = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!textareaRef.current) return;
 
         const newDescription = textareaRef.current.value;
 
         if (onSaveSubprojectDescription) {
             await onSaveSubprojectDescription(subproject.name, newDescription);
+            if (window.mapRef && window.mapRef.current) {
+                const { showSubprojectBounds } = window.mapRef.current;
+                if ( showSubprojectBounds && typeof showSubprojectBounds === 'function') {
+                    const updatedSubproject = {
+                        ...subproject,
+                        description: newDescription,
+                    }
+                    showSubprojectBounds(parentProjectTitle, [updatedSubproject], true);
+                }
+            }
         }
 
         setIsEditing(false);
@@ -358,7 +369,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                                 className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleUpdateDescription();
+                                    handleUpdateDescription(e);
                                 }}
                             >
                                 {language === 'zh' ? '完成' : 'Done'}
@@ -372,10 +383,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
     if (isHighlighted) {
         return (
-            <AnimatedCard className="p-3 mb-4" id={cardId}>
+            <AnimatedCard className="p-3 mt-2 mb-4" id={cardId}>
                 <CardBackground />
                 <Blob />
-                <div className="relative z-10">
+                <div className="relative z-10 border border-gray-200 rounded-lg">
                     <SubprojectCardContent />
                 </div>
             </AnimatedCard>
@@ -383,7 +394,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     } else {
         return (
             <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-2 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-2 border border-gray-200 relative transition-all duration-300 cursor-pointer"
                 onClick={onCardClick}
                 id={cardId}
             >
