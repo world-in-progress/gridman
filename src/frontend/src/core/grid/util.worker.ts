@@ -58,7 +58,6 @@ export default class GridUtils {
   static async getGridInfoByFeature(path: string) {
 
     const multiGridInfo = await MultiGridInfo.fromGetUrl(`/api/grid/operation/pick?feature_dir=${path}`);
-    console.log(multiGridInfo)
     return multiGridInfo
   }
 }

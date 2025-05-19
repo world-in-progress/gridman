@@ -1,11 +1,10 @@
 import proj4 from 'proj4'
-
 import WorkerPool from '../worker/workerPool'
 import Dispatcher from '../message/dispatcher'
 import { createDB, deleteDB } from '../database/db'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
 import UndoRedoManager, { UndoRedoOperation } from '../util/undoRedoManager'
-import { EdgeRenderInfoPack, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo, SubdivideRules } from './NHGrid'
+import { EdgeRenderInfoPack, GridContext, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
 import BoundingBox2D from '../util/boundingBox2D'
 import { Callback } from '../types'
 
@@ -42,10 +41,9 @@ export interface GridRecordOptions {
     maxGridNum?: number
     workerCount?: number
     dispatcher?: Dispatcher
-    callbackAfterConstruct?: (info: MultiGridRenderInfo) => void
 }
 
-export default class GridRecorder {
+export default class GridCore {
 
     private _nextStorageId = 0
     bBoxCenterF32: Float32Array
@@ -68,7 +66,7 @@ export default class GridRecorder {
     adjGrids_cache: number[][] = []
     edge_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
 
-    constructor(public subdivideRules: SubdivideRules, options: GridRecordOptions = {}) {
+    constructor(public subdivideRules: GridContext, options: GridRecordOptions = {}) {
 
         this.maxGridNum = options.maxGridNum ?? 4096 * 4096
         this.dispatcher = new Dispatcher(this, Math.min(options.workerCount ?? 4, 4))
@@ -100,9 +98,12 @@ export default class GridRecorder {
         const centerX = encodeFloatToDouble(mercatorCenter[0])
         const centerY = encodeFloatToDouble(mercatorCenter[1])
         this.bBoxCenterF32 = new Float32Array([...centerX, ...centerY])
+    }
 
+    init(callback?: Function): void {
         // Brodcast actors to init grid manager and initialize grid cache
-        this.dispatcher.broadcast('setGridManager', subdivideRules, () => {
+        this.dispatcher.broadcast('setGridManager', this.subdivideRules, () => {
+            // Get activate grid information
             this._actor.send('getActivateGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
                 // Initialize grid cache
                 const gridNum = renderInfo.levels.length
@@ -112,7 +113,7 @@ export default class GridRecorder {
                     this.gridLevelCache[storageId] = renderInfo.levels[storageId]
                     this.gridGlobalIdCache[storageId] = renderInfo.globalIds[storageId]
                 }
-                options.callbackAfterConstruct && options.callbackAfterConstruct(renderInfo)
+                callback && callback([0, renderInfo.levels, renderInfo.vertices, renderInfo.verticesLow])
             })
         })
     }
