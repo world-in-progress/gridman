@@ -58,6 +58,7 @@ export default function TopologyPanel({
                 if (filePath) {
                     console.log('Selected file path:', filePath);
                     store.get<{ on: Function; off: Function }>('isLoading')!.on();
+                    store.get<{ on: Function; off: Function }>('isLoading')!.on();
                     topologyLayer.executePickGridsByFeature(filePath);
                 } else {
                     console.log('No file selected');
@@ -130,6 +131,7 @@ export default function TopologyPanel({
                     setSelectAllDialogOpen(true);
                 }
                 if (event.key === 'C' || event.key === 'c') {
+                if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
                     setDeleteSelectDialogOpen(true);
                 }
@@ -150,12 +152,15 @@ export default function TopologyPanel({
                     store.set('modeSelect', 'feature');
                 }
                 if (event.key === 'S' || event.key === 's') {
+                if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
                     setSubdivideGridDialogOpen(true);
                 }
                 if (event.key === 'M' || event.key === 'm') {
+                if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
                 }
+                if (event.key === 'D' || event.key === 'd') {
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
                     setDeleteGridDialogOpen(true);
@@ -189,6 +194,7 @@ export default function TopologyPanel({
                         <AlertDialogDescription>
                             {language === 'zh'
                                 ? '是否确认框选所有网格？'
+                                ? '是否确认框选所有网格？'
                                 : 'Are you sure you want to select all grids?'}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -211,6 +217,8 @@ export default function TopologyPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 取消全部网格框选 */}
 
             {/* 取消全部网格框选 */}
             <AlertDialog
@@ -251,6 +259,8 @@ export default function TopologyPanel({
             </AlertDialog>
 
             {/* 删除选中网格 */}
+
+            {/* 删除选中网格 */}
             <AlertDialog
                 open={deleteGridDialogOpen}
                 onOpenChange={setDeleteGridDialogOpen}
@@ -281,6 +291,8 @@ export default function TopologyPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 细分选中网格 */}
 
             {/* 细分选中网格 */}
             <AlertDialog
@@ -408,6 +420,7 @@ export default function TopologyPanel({
                             }`}
                         >
                             [ Ctrl+C ]
+                            [ Ctrl+C ]
                         </div>
                     </button>{' '}
                 </div>
@@ -502,11 +515,13 @@ export default function TopologyPanel({
                         {language === 'zh' ? '细分' : 'Subdivide'}
                     </div>
                     <div className="text-xs text-white">[ Ctrl+S ]</div>
+                    <div className="text-xs text-white">[ Ctrl+S ]</div>
                 </button>
                 <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-green-600">
                     <div className="flex flex-row items-center">
                         {language === 'zh' ? '合并' : 'Merge'}
                     </div>
+                    <div className="text-xs text-white">[ Ctrl+M ]</div>
                     <div className="text-xs text-white">[ Ctrl+M ]</div>
                 </button>
                 <button
@@ -520,6 +535,7 @@ export default function TopologyPanel({
                     <div className="flex flex-row items-center">
                         {language === 'zh' ? '删除' : 'Delete'}
                     </div>
+                    <div className="text-xs text-white">[ Ctrl+D ]</div>
                     <div className="text-xs text-white">[ Ctrl+D ]</div>
                 </button>
                 <button className="flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer bg-gray-600 text-white hover:bg-purple-600">
