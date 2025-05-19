@@ -199,8 +199,8 @@ export class SubprojectBoundsManager {
                         'line-width': [
                             'case',
                             ['coalesce', ['get', 'highlighted'], false],
-                            4, 
-                            2
+                            4,
+                            2,
                         ],
                         'line-dasharray': [2, 1],
                     },
@@ -480,6 +480,7 @@ export class SubprojectBoundsManager {
     ): void {
         if (!this.map) return;
 
+        console.log('Popup的传入信息', properties);
         // Remove existing popups
         const existingPopups = document.querySelectorAll('.mapboxgl-popup');
         existingPopups.forEach((popup) => popup.remove());
@@ -492,23 +493,37 @@ export class SubprojectBoundsManager {
             .setLngLat(center)
             .setHTML(
                 `
-                <div style="font-family: Arial, sans-serif; padding: 10px;">
-                    <h3 style="margin: 0 0 8px; font-weight: bold; color: #333;">${
+                <div style="font-family: Arial, sans-serif; padding: 2px;">
+                    <h3 style="margin: 0 0 2px; font-weight: bold; font-size: 16px; color: #333;">${
                         properties.name
                     }</h3>
 
-                    <div style="display: flex flex-column; align-items: center; margin-top: 8px;">
-                        <span style="font-size: 12px; color: #888;">
-                            ${this.language === 'zh' ? '所属项目' : 'Project'}: 
-                        </span>
-                        <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
-                            ${properties.projectName}
-                        </span>
-                        ${
-                            properties.starred
-                                ? `<span style="margin-left: 8px; color: #f0c14b;">★</span>`
+                    <div style="display: flex flex-column; align-items: center; margin-top: 4px; border-top: 1px solid #e0e0e0; padding-top: 4px;">
+                        <div>
+                            <span style="font-size: 12px; color: #888;">
+                                ${this.language === 'zh' ? '所属项目' : 'Project'}: 
+                            </span>
+                            <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
+                                ${properties.projectName}
+                            </span>
+                        </div>
+                        <div>
+                            <span style="font-size: 12px; color: #888;">
+                                ${this.language === 'zh' ? '描述' : 'Description'}: 
+                            </span>
+                            <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
+                                ${properties.description}
+                            </span>
+                        </div>
+                        <div>
+                            ${
+                                properties.starred
+                                ? `<div style="margin-top: 6px;"><span style="color: #f59e0b; font-size: 12px;">★ ${
+                                    this.language === 'zh' ? '已标星' : 'Starred'
+                                    }</span></div>`
                                 : ''
-                        }
+                            }
+                        </div>
                     </div>
                 </div>
             `

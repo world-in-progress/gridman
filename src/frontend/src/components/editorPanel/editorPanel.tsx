@@ -54,7 +54,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                 </div>
 
                 <div className="p-2">
-                    <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md">
+                    <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md shadow-sm">
                         <button
                             className={` flex-1 py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer ${
                                 activeTab === 'topology'
