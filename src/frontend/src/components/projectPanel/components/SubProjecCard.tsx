@@ -177,8 +177,9 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     });
                     window.dispatchEvent(pageEvents);
                 }
-                isLoading.off();
-                updateCapacity.on();
+                // Loading off is triggered when GPU resources are ready
+                // isLoading.off();
+                // updateCapacity.on();
             }
         );
     };

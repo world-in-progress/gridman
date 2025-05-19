@@ -7,46 +7,53 @@ import gll from '../utils/GlLib'
 import NHLayerGroup from '../utils/NHLayerGroup'
 import FileDownloader from '../utils/DownloadHelper'
 import BoundingBox2D from '../../../core/util/boundingBox2D'
-import GridRecorder from '../../../core/grid/NHGridRecorder'
+import GridCore from '../../../core/grid/NHGridCore'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import { MercatorCoordinate } from '../../../core/math/mercatorCoordinate'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
-import store from '../../../store'
-proj4.defs("EPSG:2326", "+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
 const LEVEL_PALETTE_LENGTH = 256 // Grid level range is 0 - 255 (UInt8)
+const DEFAULT_MAX_GRID_NUM = 4096 * 4096 // 16M grids, a size that most GPUs can handle
 
 export interface TopologyLayerOptions {
-
     maxGridNum?: number
     edgeProperties?: string[]
 }
 
 export default class TopologyLayer implements NHCustomLayerInterface {
+    // Layer-related ///////////////////////////////////////////////////////
 
-    // Layer-related //////////////////////////////////////////////////
-    type = 'custom' as const
-    id = 'TopologyLayer'
     visible = true
+    id = 'TopologyLayer'
+    type = 'custom' as const
     layerGroup!: NHLayerGroup
 
-    // Grid properties
-    srcCS!: string
-    bBox!: BoundingBox2D
+    // Grid-related /////////////////////////////////////////////////////////
+
+    private _gridCore: GridCore | null = null
+
+    // Interaction-related //////////////////////////////////////////////////
+
     hitSet = new Set<number>
-    _gridRecorder: GridRecorder | null = null
     hitFlag = new Uint8Array([1])   // 0 is a special value and means no selection
     unhitFlag = new Uint8Array([0])
-    projConverter!: proj4.Converter
 
+    isTransparent = false
     lastPickedId: number = -1
-    _forceUpdate = false
 
-    // GPU-related //////////////////////////////////////////////////
+    executionStartCallback: Function = () => {}
+    executionEndCallback: Function = () => {}
 
-    maxGridNum: number = 0
-    storageTextureSize: number = 0
+    // Box picking context
+    private _ctx: CanvasRenderingContext2D | null = null
+    private _overlayCanvas: HTMLCanvasElement | null = null;
+    private _overlayCtx: CanvasRenderingContext2D | null = null;
 
+    resizeHandler: Function
+
+    // GPU-related ///////////////////////////////////////////////////////
+
+    initialized = false
     paletteColorList: Uint8Array
 
     private _gl: WebGL2RenderingContext
@@ -64,7 +71,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     private _paletteTexture: WebGLTexture = 0
 
     // Buffer resource
-    private _gridSignalBuffer: WebGLBuffer = 0      // [ [isHit], [isSssigned] ]
+    private _gridSignalBuffer: WebGLBuffer = 0  // [ [isHit], [isSssigned] ]
     private _gridTlStorageBuffer: WebGLBuffer = 0
     private _gridTrStorageBuffer: WebGLBuffer = 0
     private _gridBlStorageBuffer: WebGLBuffer = 0
@@ -76,39 +83,20 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     private _gridLevelStorageBuffer: WebGLBuffer = 0
     private _gridStorageVAO: WebGLVertexArrayObject = 0
 
-    // Picking pass resource
+    // Brush picking pass resource
     private _pickingFBO: WebGLFramebuffer = 0
     private _pickingTexture: WebGLTexture = 0
     private _pickingRBO: WebGLRenderbuffer = 0
 
-    // ADDON  //////////////////////////////////////////////////
     // Box picking pass resource
     private _boxPickingFBO: WebGLFramebuffer = 0
     private _boxPickingTexture: WebGLTexture = 0
     private _boxPickingRBO: WebGLRenderbuffer = 0
 
-    // Box picking context
-    private _ctx: CanvasRenderingContext2D | null = null
-    private _overlayCanvas: HTMLCanvasElement | null = null;
-    private _overlayCtx: CanvasRenderingContext2D | null = null;
-
-    resizeHandler: Function
-
-    // Interaction-related //////////////////////////////////////////////////
-
-    isTransparent = false
-
-    _executionStartCallback: Function = () => { }
-    _executionEndCallback: Function = () => { }
-
     constructor(
         public map: Map,
         options: TopologyLayerOptions = {}
     ) {
-
-        // Set basic members
-        this.maxGridNum = options.maxGridNum || 4096 * 4096
-
         // Set WebGL2 context
         this._gl = this.map.painter.context.gl
 
@@ -125,75 +113,72 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Create overlay canvas
         this._overlayCanvas = document.createElement('canvas');
-        this._overlayCanvas.style.position = 'absolute';
+        this._overlayCtx = this._overlayCanvas.getContext('2d');
         this._overlayCanvas.style.top = '0';
         this._overlayCanvas.style.left = '0';
-        this._overlayCanvas.style.pointerEvents = 'none';
         this._overlayCanvas.style.zIndex = '1';
+        this._overlayCanvas.style.position = 'absolute';
+        this._overlayCanvas.style.pointerEvents = 'none';
 
         const mapContainer = this.map.getContainer();
         mapContainer.appendChild(this._overlayCanvas);
 
-        this._overlayCtx = this._overlayCanvas.getContext('2d');
-
         this._resizeOverlayCanvas();
-
         const resizeObserver = new ResizeObserver(() => {
             this._resizeOverlayCanvas();
         });
         resizeObserver.observe(mapContainer);
     }
 
-    set gridRecorder(recorder: GridRecorder) {
-
-        this._gridRecorder = recorder
-
-        this.srcCS = this._gridRecorder.srcCRS
-
-        this.projConverter = proj4(this.srcCS, 'EPSG:4326')
-
-        this.bBox = this._gridRecorder.bBox
-
-        const maxGridNum = this._gridRecorder.maxGridNum
-
-        this.maxGridNum = maxGridNum
-        this.storageTextureSize = Math.ceil(Math.sqrt(maxGridNum))
+    get maxGridNum(): number {
+        return this._gridCore?.maxGridNum || DEFAULT_MAX_GRID_NUM
     }
 
-    get gridRecorder(): GridRecorder {
-        if (!this._gridRecorder) {
-            const err = new Error('GridRecorder is not initialized')
+    set gridCore(recorder: GridCore) {
+        const currentMaxGridNum = this.maxGridNum
+        this._gridCore = recorder // after setting, this.maxGridNum will be updated
+        // Loading
+        this.executionStartCallback()
+
+        // Update GPU resources if maxGridNum changed
+        if (currentMaxGridNum !== this.maxGridNum) {
+            this.initialized = false
+            this.removeGPUResource(this._gl)
+            this.initGPUResource().then(() => {
+                recorder.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array]) => {
+                    this.updateGPUGrids(renderInfo)
+                    this.initialized = true
+                    this.executionEndCallback()
+                })
+            })
+        } else {
+            recorder.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array]) => {
+                this.updateGPUGrids(renderInfo)
+                this.initialized = true
+                this.executionEndCallback()
+            })
+        }
+    }
+
+    get gridCore(): GridCore {
+        if (!this._gridCore) {
+            const err = new Error('GridCore is not initialized')
             console.error(err)
             throw err
         }
-        return this._gridRecorder
+        return this._gridCore
     }
 
-    get initialized() {
-        if (this._gridRecorder && this._gridRecorder!.gridNum) {
-            return true
-        }
-        return false
+    get isReady() {
+        // Check if the grid recorder is initialized
+        if (!this._gridCore || !this._gridCore.gridNum) return false
+        // Check if GPU resources are initialized
+        if (!this.initialized) return false
+        return true
     }
 
     get subdivideRules() {
-        return this._gridRecorder!.subdivideRules.rules
-    }
-
-    get executionStartCallback() {
-        return this._executionStartCallback
-    }
-
-    set executionStartCallback(callback: Function) {
-        this._executionStartCallback = callback
-    }
-
-    get executionEndCallback() {
-        return this._executionEndCallback
-    }
-
-    set executionEndCallback(callback: Function) {
-        this._executionEndCallback = callback
+        return this._gridCore!.subdivideRules.rules
     }
 
     // Fast function to upload one grid rendering info to GPU stograge buffer
@@ -266,7 +251,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.bindBuffer(gl.ARRAY_BUFFER, null)
     }
 
-    async initDOM() {
+    async initialize(_: Map, gl: WebGL2RenderingContext) {
+        this._gl = gl
+        this.initDOM()
+        await this.initGPUResource()
+    }
+
+    initDOM() {
         window.addEventListener('keydown', (e) => {
             if (e.key === 'A') {
                 this.executePickAllGrids()
@@ -305,7 +296,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         // Set static uniform in shaders
         gl.useProgram(this._gridMeshShader)
         gl.uniform1i(gl.getUniformLocation(this._gridMeshShader, 'paletteTexture'), 0)
-
         gl.useProgram(null)
 
         // Create grid storage buffer
@@ -399,7 +389,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, LEVEL_PALETTE_LENGTH, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
     }
 
-    _resetScreenFBO() {
+    private _resetScreenFBO() {
         const gl = this._gl
         if (this._screenWidth === gl.canvas.width && this._screenHeight === gl.canvas.height) return
 
@@ -432,7 +422,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         const ids = Array.isArray(storageIds) ? storageIds : [storageIds]
         if (addMode) {
             // Highlight all grids
-            if (ids.length === this.gridRecorder.gridNum) {
+            if (ids.length === this.gridCore.gridNum) {
 
                 this.hitSet = new Set<number>(ids)
                 gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(this.maxGridNum).fill(this.hitFlag[0]))
@@ -452,11 +442,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 if (this.hitSet.has(storageId)) {
                     this.hitSet.delete(storageId)
                     gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.unhitFlag, 0)
-
-                    // Handle the situation that the hitset's length changes to 0
-                    if (this.hitSet.size === 0) {
-                        this._forceUpdate = true
-                    }
                 }
             })
         }
@@ -471,9 +456,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         if (storageIds.length === 1) {
             // Fast delete for single grid
-            this.gridRecorder.deleteGridLocally(storageIds[0], (info: any) => this.executionEndCallback())
+            this.gridCore.deleteGridLocally(storageIds[0], (info: any) => this.executionEndCallback())
         } else {
-            this.gridRecorder.deleteGridsLocally(storageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[]]) => {
+            this.gridCore.deleteGridsLocally(storageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[]]) => {
                 for (let i = 0; i < infos[0].length; i++) {
                     const info = [infos[0][i], infos[1][i], infos[2][i], infos[3][i]] as [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array]
                     this.updateGPUGrid(info)
@@ -488,7 +473,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         if (storageIds.length === 0) return
         this.executionStartCallback()
 
-        this.gridRecorder.deleteGrids(storageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[]]) => {
+        this.gridCore.deleteGrids(storageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[]]) => {
             for (let i = 0; i < infos[0].length; i++) {
                 const info = [infos[0][i], infos[1][i], infos[2][i], infos[3][i]] as [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array]
                 this.updateGPUGrid(info)
@@ -501,7 +486,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         if (subdivideInfos.levels.length === 0) return
         this.executionStartCallback()
 
-        this.gridRecorder.subdivideGrids(subdivideInfos, (renderInfos: any) => {
+        this.gridCore.subdivideGrids(subdivideInfos, (renderInfos: any) => {
             this.updateGPUGrids(renderInfos)
             const [fromStorageId, levels] = renderInfos
             const storageIds = Array.from(
@@ -510,36 +495,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             )
             this.hit(storageIds)
             this.executionEndCallback()
-            store.get<{ on: Function; off: Function }>('isLoading')!.off();
-            store.get<{ on: Function; off: Function }>('updateCapacity')!.on();
         })
     }
 
-    tickGrids() {
-        if (this.hitSet.size === 0 && !this._forceUpdate) return
-        this._forceUpdate = false
+    async render(gl: WebGL2RenderingContext, matrix: number[]) {
 
-        // Update grid signal buffer
-        // const gl = this._gl
-        // gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
-        // this.hitSet.forEach(hitStorageId => gl.bufferSubData(gl.ARRAY_BUFFER, hitStorageId, this.hitFlag, 0))
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    }
-
-    async initialize(_: Map, gl: WebGL2RenderingContext) {
-        this._gl = gl
-        await this.initDOM()
-        await this.initGPUResource()
-    }
-
-    render(gl: WebGL2RenderingContext, matrix: number[]) {
-
-        // Skip if not ready
-        if (!this.initialized) return // check if topology layer is initialized
-        if (!this.visible) return
-
-        // Tick logic
-        this.tickGrids()
+        // Skip if not ready or not visible
+        if (!this.isReady || !this.visible) return
 
         // Tick render
         if (!this.isTransparent) {
@@ -555,11 +517,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     removeResource() {
 
-        if (!this._gridRecorder) return
+        if (!this._gridCore) return
 
         this.executeClearSelection()
 
-        this._gridRecorder = null
+        this._gridCore = null
         this.map.triggerRepaint()
     }
 
@@ -583,10 +545,10 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniform1f(gl.getUniformLocation(this._gridMeshShader, 'mode'), 0.0)
-        gl.uniform4fv(gl.getUniformLocation(this._gridMeshShader, 'relativeCenter'), this.gridRecorder.bBoxCenterF32)
+        gl.uniform4fv(gl.getUniformLocation(this._gridMeshShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._gridMeshShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridCore.gridNum)
 
         gl.disable(gl.BLEND)
     }
@@ -606,9 +568,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._gridLineShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
-        gl.uniform4fv(gl.getUniformLocation(this._gridLineShader, 'relativeCenter'), this.gridRecorder.bBoxCenterF32)
+        gl.uniform4fv(gl.getUniformLocation(this._gridLineShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
 
-        gl.drawArraysInstanced(gl.LINE_LOOP, 0, 4, this.gridRecorder.gridNum)
+        gl.drawArraysInstanced(gl.LINE_LOOP, 0, 4, this.gridCore.gridNum)
 
         gl.disable(gl.BLEND)
     }
@@ -637,10 +599,10 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'pickingMatrix'), false, pickingMatrix)
-        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridRecorder.bBoxCenterF32)
+        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridCore.gridNum)
 
         gl.flush()
 
@@ -695,10 +657,10 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
         gl.uniform2fv(gl.getUniformLocation(this._pickingShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'pickingMatrix'), false, boxPickingMatrix)
-        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridRecorder.bBoxCenterF32)
+        gl.uniform4fv(gl.getUniformLocation(this._pickingShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
         gl.uniformMatrix4fv(gl.getUniformLocation(this._pickingShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
 
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridRecorder.gridNum)
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridCore.gridNum)
 
         gl.flush()
 
@@ -806,18 +768,17 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     executePickGridsByFeature(path: string) {
         this.executionStartCallback()
-        this.gridRecorder.getGridInfoByFeature(path, (storageIds: number[]) => {
+        this.gridCore.getGridInfoByFeature(path, (storageIds: number[]) => {
 
             this.hit(storageIds)
             this.executionEndCallback()
-            store.get<{ on: Function; off: Function }>('isLoading')!.off();
         })
     }
 
     executePickAllGrids() {
         this.executionStartCallback()
         const storageIds = new Array<number>()
-        for (let i = 0; i < this.gridRecorder.gridNum; i++) {
+        for (let i = 0; i < this.gridCore.gridNum; i++) {
             storageIds.push(i)
         }
         this.hit(storageIds)
@@ -829,11 +790,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         const subdivideGlobalIds: number[] = []
         const subdividableStorageIds = this.executeClearSelection()
             .filter(removableStorageId => {
-                const level = this.gridRecorder.getGridInfoByStorageId(removableStorageId)[0]
-                const isValid = level !== this.gridRecorder.maxLevel
+                const level = this.gridCore.getGridInfoByStorageId(removableStorageId)[0]
+                const isValid = level !== this.gridCore.maxLevel
                 if (isValid) {
                     subdivideLevels.push(level)
-                    const globalId = this.gridRecorder.getGridInfoByStorageId(removableStorageId)[1]
+                    const globalId = this.gridCore.getGridInfoByStorageId(removableStorageId)[1]
                     subdivideGlobalIds.push(globalId)
                 }
                 return isValid
@@ -901,9 +862,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         }
     }
 
-    remove(_: Map, gl: WebGL2RenderingContext) {
-        this.removeResource()
-
+    removeGPUResource(gl: WebGL2RenderingContext) {
         gl.deleteProgram(this._pickingShader);
         gl.deleteProgram(this._gridMeshShader);
         gl.deleteProgram(this._gridLineShader);
@@ -930,6 +889,12 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         gl.deleteRenderbuffer(this._pickingRBO);
         gl.deleteRenderbuffer(this._boxPickingRBO);
+    }
+
+    remove(_: Map, gl: WebGL2RenderingContext) {
+        this.removeResource();
+
+        this.removeGPUResource(gl);
 
         // Remove overlay canvas
         if (this._overlayCanvas && this._overlayCanvas.parentNode) {

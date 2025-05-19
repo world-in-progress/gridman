@@ -2,10 +2,9 @@ import Actor from '../../../core/message/actor';
 import { Project } from '../types/types';
 import Dispatcher from '../../../core/message/dispatcher';
 import { Callback } from '../../../core/types';
-import { GridRecorderContext } from '../../../context';
-import { SubdivideRules } from '@/core/grid/NHGrid';
+import { GridContext } from '@/core/grid/NHGrid';
 import { boundingBox2D } from '@/core/util/boundingBox2D';
-import GridRecorder from '@/core/grid/NHGridRecorder';
+import GridCore from '@/core/grid/NHGridCore';
 import store from '../../../store';
 import { MultiGridRenderInfo } from '@/core/grid/NHGrid';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
@@ -228,12 +227,7 @@ export class ProjectService {
     public setSubproject(
         projectName: string,
         subprojectName: string,
-        callback?: Callback<{
-            fromStorageId: number;
-            levels: Uint8Array;
-            vertices: Float32Array;
-            verticesLow: Float32Array;
-        }>
+        callback?: Callback<any>
     ) {
         this._actor.send(
             'setSubproject',
@@ -250,45 +244,21 @@ export class ProjectService {
                     const clg = store.get<NHLayerGroup>('clg')!;
                     const topologyLayer = clg.getLayerInstance('TopologyLayer') as TopologyLayer;
 
-                    // Create grid recorder
-                    const epsg: number = result.epsg;
-                    const bounds: [number, number, number, number] =
-                        result.bounds;
-                    const subdivideRules: Array<[number, number]> =
-                        result.subdivide_rules;
-                    const initMeta: SubdivideRules = {
-                        bBox: boundingBox2D(...bounds),
-                        rules: subdivideRules,
-                        srcCS: `EPSG:${epsg}`,
+                    // Create grid recorder context
+                    const context: GridContext = {
+                        bBox: boundingBox2D(...result.bounds as [number, number, number, number]),
+                        rules: result.subdivide_rules,
+                        srcCS: `EPSG:${result.epsg}`,
                         targetCS: 'EPSG:4326',
                     };
-                    const recorder: GridRecorder = new GridRecorder(
-                        initMeta,
-                        {
-                            callbackAfterConstruct: (renderInfo) => {
-                                // Synchronize GPU resource of grids
-                                topologyLayer.updateGPUGrids([
-                                    0,
-                                    renderInfo.levels,
-                                    renderInfo.vertices,
-                                    renderInfo.verticesLow,
-                                ])
-                                // Process callback of UI
-                                callback && callback();
-                            }
-                        }
-                    );
-                    store.set('gridRecorder', recorder);
-                    topologyLayer.gridRecorder = recorder;
+
+                    // Create grid recorder
+                    const core: GridCore = new GridCore(context);
+                    store.set('gridCore', core);
+                    topologyLayer.gridCore = core;
+                    callback && callback();
                 }
             }
         );
     }
-
-    // loading(true)
-    // setSubproject(,,, (_, renderInfo: {fromStorageId: number, levels: Uint8Array, vertices: Float32Array}) => {
-    //     Layers.updateGPUGrids(renderInfo)
-    //     Loading(false)
-
-    // })
 }

@@ -1,7 +1,7 @@
 
 import { createContext } from 'react';
 import { SidebarType } from './components/page';
-import GridRecorder from './core/grid/NHGridRecorder';
+import GridCore from './core/grid/NHGridCore';
 
 export const SidebarContext = createContext<{
     activeSidebar: SidebarType;
@@ -26,9 +26,3 @@ export const AIDialogContext = createContext<{
     aiDialogEnabled: false,
     setAIDialogEnabled: () => {},
 });
-
-export const GridRecorderContext : {
-    recorder: GridRecorder | undefined 
-}= {
-    recorder: undefined
-}

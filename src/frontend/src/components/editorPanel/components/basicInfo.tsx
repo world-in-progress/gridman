@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Layers } from 'lucide-react';
 import { LanguageContext } from '../../../context';
 import store from '@/store';
-import GridRecorder from '@/core/grid/NHGridRecorder';
+import GridCore from '@/core/grid/NHGridCore';
 import BoundsCard from '@/components/projectPanel/components/boundsCard';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../../projectPanel/utils/ProjectService';
@@ -12,7 +12,7 @@ export default function BasicInfo() {
 
     const currentProject = store.get<any>('ProjectName');
     const currentSubproject = store.get<any>('SubprojectName');
-    const gridCore = store.get<GridRecorder>('gridRecorder');
+    const gridCore = store.get<GridCore>('gridCore');
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
     const subdivideRules = gridCore?.subdivideRules.rules;
     const bounds = gridCore?.subdivideRules.bBox.data;

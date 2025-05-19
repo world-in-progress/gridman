@@ -4,7 +4,7 @@ import { Database, DatabaseZap, AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState, useContext } from 'react';
 import { LanguageContext } from '../../context';
 import store from '@/store';
-import GridRecorder from '@/core/grid/NHGridRecorder';
+import GridCore from '@/core/grid/NHGridCore';
 import {
     Tooltip,
     TooltipContent,
@@ -32,7 +32,7 @@ export default function CapacityBar({
     // const normalizedValue = Math.max(0, Math.min(value, max));
     // const targetPercentage = Math.round((normalizedValue / max) * 100);
 
-    const gridCore = store.get<GridRecorder>('gridRecorder');
+    const gridCore = store.get<GridCore>('gridCore');
     const { language } = useContext(LanguageContext);
 
     const normalizedValue1 = Math.max(

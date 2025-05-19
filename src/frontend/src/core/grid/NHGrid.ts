@@ -60,7 +60,7 @@ export interface MultiGridRenderInfo {
     verticesLow: Float32Array;
 }
 
-export type SubdivideRules = {
+export type GridContext = {
     srcCS: string;
     targetCS: string;
     bBox: BoundingBox2D;
