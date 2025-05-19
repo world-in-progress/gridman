@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     MoreHorizontal,
     Star,
-    Earth ,
+    Earth,
     MapPin,
     Layers,
     SquarePen,
@@ -176,7 +176,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
             <div className="text-sm space-y-2">
                 {/* EPSG Information */}
                 <div className="flex items-center text-gray-600 dark:text-gray-300">
-                    <Earth  className="h-4 w-4 mr-2" />
+                    <Earth className="h-4 w-4 mr-2" />
                     <span>EPSG: {schema?.epsg}</span>
                 </div>
 
@@ -195,7 +195,11 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
 
                 {/* Grid Level Information */}
                 <div className="flex flex-row items-start text-gray-600 dark:text-gray-300">
-                    <div className={`flex ${language === 'zh' ? 'w-[35%]' : 'w-[40%]'}`}>
+                    <div
+                        className={`flex ${
+                            language === 'zh' ? 'w-[35%]' : 'w-[40%]'
+                        }`}
+                    >
                         <Layers className="h-4 w-4 mr-2" />
                         <span>
                             {language === 'zh' ? '网格层级' : 'Grid Levels'}(m):
@@ -206,7 +210,9 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                             ? schema.grid_info.map(
                                   (levelArray: number[], index: number) => (
                                       <div key={index} className="ml-2">
-                                          {`level ${index + 1}: [${levelArray.join(', ')}]`}
+                                          {`level ${
+                                              index + 1
+                                          }: [${levelArray.join(', ')}]`}
                                       </div>
                                   )
                               )
@@ -247,13 +253,15 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                         )}
                     </div>
                     {/* Display description text when not in editing mode */}
-                    {!isEditing &&  (
+                    {!isEditing && (
                         <div className="text-sm text-gray-600 dark:text-gray-300 mb-2 px-1">
                             {schema.description ? (
                                 schema.description
                             ) : (
                                 <span className="italic">
-                                   {language === 'zh' ? '无描述' : 'No description provided.'}
+                                    {language === 'zh'
+                                        ? '无描述'
+                                        : 'No description provided.'}
                                 </span>
                             )}
                         </div>
@@ -324,13 +332,15 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
         );
     } else {
         return (
-            <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-4 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
-                onClick={onCardClick}
-                id={cardId}
-            >
-                <CardContent />
-            </div>
+            <>
+                <div
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-4 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
+                    onClick={onCardClick}
+                    id={cardId}
+                >
+                    <CardContent />
+                </div>
+            </>
         );
     }
 };

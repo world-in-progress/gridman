@@ -510,6 +510,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             )
             this.hit(storageIds)
             this.executionEndCallback()
+            store.get<{ on: Function; off: Function }>('isLoading')!.off();
+            store.get<{ on: Function; off: Function }>('updateCapacity')!.on();
         })
     }
 
@@ -808,6 +810,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
             this.hit(storageIds)
             this.executionEndCallback()
+            store.get<{ on: Function; off: Function }>('isLoading')!.off();
         })
     }
 

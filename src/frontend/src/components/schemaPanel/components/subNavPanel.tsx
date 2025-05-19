@@ -19,8 +19,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
+import store from '@/store';
+import Loader from '@/components/ui/loader';
 
 Object.keys(epsgDefinitions).forEach((epsg) => {
     proj4.defs(`EPSG:${epsg}`, epsgDefinitions[epsg]);
@@ -38,6 +39,7 @@ export function SubNavPanel({
     const [schemas, setSchemas] = useState<Schema[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [starredItems, setStarredItems] = useState<Record<string, boolean>>(
         {}
     );
@@ -76,6 +78,7 @@ export function SubNavPanel({
                     if (schemasToSearch.length === 0) {
                         schemaService.fetchAllSchemas((err, result) => {
                             setAllSchemas(result);
+                            setLoading(false);
                         });
                     }
 
@@ -101,6 +104,7 @@ export function SubNavPanel({
 
                     setSchemas(pagedFilteredSchemas);
                     updateStarredItems(pagedFilteredSchemas);
+                    setLoading(false);
                 } else {
                     schemaService.fetchSchemas(
                         page,
@@ -112,11 +116,10 @@ export function SubNavPanel({
                             if (result.length > 0) {
                                 markerManager.showAllSchemasOnMap(result);
                             }
+                            setLoading(false);
                         }
                     );
                 }
-
-                setLoading(false);
             } catch (err) {
                 setError(
                     language === 'zh'
@@ -388,6 +391,7 @@ export function SubNavPanel({
                                     ? '正在加载模板信息...'
                                     : 'Loading Schema Information...'
                             );
+                            setIsLoading(true);
 
                             schemaService.getSchemaByName(
                                 schema.name,
@@ -397,6 +401,7 @@ export function SubNavPanel({
                                             '[SubNavPanel] 获取模板详情失败:',
                                             err
                                         );
+                                        setIsLoading(false);
                                         setError(
                                             language === 'zh'
                                                 ? '获取模板详情失败，使用当前信息继续'
@@ -411,10 +416,12 @@ export function SubNavPanel({
 
                                         setTimeout(() => {
                                             setError(null);
+                                            setIsLoading(false);
                                         }, 3000);
                                         return;
                                     }
 
+                                    setIsLoading(false);
                                     setError(null);
                                     onCreateProject(
                                         result.project_schema?.name ||
@@ -439,6 +446,7 @@ export function SubNavPanel({
                                 '[SubNavPanel] 获取模板详情失败:',
                                 err
                             );
+                            setIsLoading(false);
                             setError(
                                 language === 'zh'
                                     ? '获取模板详情失败，使用当前信息继续'
@@ -453,6 +461,7 @@ export function SubNavPanel({
 
                             setTimeout(() => {
                                 setError(null);
+                                setIsLoading(false);
                             }, 3000);
                         }
                     } else {
@@ -477,19 +486,42 @@ export function SubNavPanel({
 
     if (loading) {
         return (
-            <SidebarGroup>
-                <div className="p-4 text-center">
-                    {language === 'zh' ? '加载中...' : 'Loading...'}
-                </div>
-            </SidebarGroup>
+            <>
+                <SidebarGroup>
+                    <div className="p-4 text-center">
+                        {language === 'zh' ? '加载中...' : 'Loading...'}
+                    </div>
+                </SidebarGroup>
+
+                <div
+                    className="fixed inset-0 pointer-events-auto z-80"
+                    style={{
+                        backgroundColor: 'rgba(33, 33, 33, 0.4)',
+                    }}
+                />
+                <Loader />
+            </>
         );
     }
 
     if (error) {
         return (
-            <SidebarGroup>
-                <div className="p-4 text-center text-red-500">{error}</div>
-            </SidebarGroup>
+            <>
+                {isLoading && (
+                    <>
+                        <div
+                            className="fixed inset-0 pointer-events-auto z-80"
+                            style={{
+                                backgroundColor: 'rgba(33, 33, 33, 0.4)',
+                            }}
+                        />
+                        <Loader />
+                    </>
+                )}
+                <SidebarGroup>
+                    <div className="p-4 text-center text-red-500">{error}</div>
+                </SidebarGroup>
+            </>
         );
     }
 
@@ -576,9 +608,7 @@ export function SubNavPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel
-                            className="cursor-pointer"
-                        >
+                        <AlertDialogCancel className="cursor-pointer">
                             {language === 'zh' ? '取消' : 'Cancel'}
                         </AlertDialogCancel>
                         <AlertDialogAction

@@ -48,6 +48,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
+    const updateCapacity = store.get<{ on: Function; off: Function }>('updateCapacity')!;
     const projectService = new ProjectService(language);
     const schemaService = new SchemaService(language);
 
@@ -125,6 +126,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         isLoading.on();
+        updateCapacity.on();
 
         store.set('ProjectName', parentProjectTitle);
         store.set('SubprojectName', subproject.name);

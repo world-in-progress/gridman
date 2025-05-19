@@ -7,6 +7,8 @@ import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/subNavPanel';
 import { Pagination } from './components/Pagination';
 import { createPaginationHandlers } from './utils/utils';
+import store from '@/store';
+import Loader from '../ui/loader';
 
 interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
     onCreateNew?: () => void;
@@ -25,6 +27,19 @@ export default function SchemaPanel({
     const itemsPerPage = 5;
     const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
+    const [isSchemaLoading, setIsSchemaLoading] = useState(false);
+
+    store.set('schemaLoadingMethods', {
+        on: () => {
+            console.log('开启');
+            setIsSchemaLoading(true);
+        },
+        off: () => {
+            console.log('关闭');
+            setIsSchemaLoading(false);
+        },
+    });
+
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
@@ -37,11 +52,16 @@ export default function SchemaPanel({
         setSearchQuery(query);
     };
 
-    const paginationHandlers = createPaginationHandlers(currentPage, totalPages, setCurrentPage);
+    const paginationHandlers = createPaginationHandlers(
+        currentPage,
+        totalPages,
+        setCurrentPage
+    );
 
     return (
         <Sidebar {...props}>
             <SidebarContent>
+
                 <h1 className="text-4xl font-semibold p-3 text-center">
                     {language === 'zh' ? '模板列表' : 'Schema List'}
                 </h1>

@@ -53,7 +53,7 @@ export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-2">
-                {language === 'zh' ? '新子项目名称' : 'New SubProject Name'}
+                {language === 'zh' ? '新子项目名称' : 'New Subproject Name'}
             </h2>
             <div className="space-y-2">
                 <Input
@@ -112,7 +112,7 @@ export const SubProjectDescriptionCard: React.FC<SubProjectDescriptionCardProps>
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 mt-4">
             <h2 className="text-lg font-semibold mb-2">
-                {language === 'zh' ? '子项目描述' : 'SubProject Description'}
+                {language === 'zh' ? '子项目描述' : 'Subproject Description'}
             </h2>
             <div className="space-y-2">
                 <Textarea

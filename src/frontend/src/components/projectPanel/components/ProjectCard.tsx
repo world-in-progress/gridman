@@ -16,6 +16,7 @@ import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../utils/ProjectService';
 import { SubprojectCard } from './SubProjecCard';
+import Loader from '@/components/ui/loader';
 
 declare global {
     interface Window {
@@ -43,6 +44,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const [localStarred, setLocalStarred] = useState<boolean | null>(null);
     const [loadingSchema, setLoadingSchema] = useState(false);
     const [schemaError, setSchemaError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [showSubprojects, setShowSubprojects] = useState(false);
     const [subprojects, setSubprojects] = useState<any[]>([]);
     const [loadingSubprojects, setLoadingSubprojects] = useState(false);
@@ -176,7 +178,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         const newState = !showSubprojects;
         setShowSubprojects(newState);
 
-
         if (!newState && window.mapInstance) {
             const existingPopups = document.querySelectorAll('.mapboxgl-popup');
             existingPopups.forEach((popup) => popup.remove());
@@ -188,7 +189,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             window.mapRef &&
             window.mapRef.current
         ) {
-            const {showSubprojectBounds} = window.mapRef.current;
+            const { showSubprojectBounds } = window.mapRef.current;
             showSubprojectBounds(title, subprojects, newState);
 
             fetchSubprojectsList().then(() => {
@@ -245,6 +246,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     ? '正在加载模板信息...'
                     : 'Loading Schema Information...'
             );
+            setIsLoading(true);
 
             const schemaService = new SchemaService(language);
             schemaService.getSchemaByName(
@@ -265,13 +267,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         );
 
                         setTimeout(() => {
-                            setSchemaError(null);
                             setLoadingSchema(false);
+                            setSchemaError(null);
                         }, 3000);
                         return;
                     }
 
                     setSchemaError(null);
+                    setIsLoading(false);
                     setLoadingSchema(false);
                     onAddSubproject(
                         project,
@@ -286,6 +289,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             );
         } catch (error) {
             console.error('获取模板详情失败:', error);
+            setIsLoading(false);
             setSchemaError(
                 language === 'zh'
                     ? '获取模板详情失败，使用当前信息继续'
@@ -295,6 +299,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             onAddSubproject(project, project.schema_name, '4326', '1');
 
             setTimeout(() => {
+                setIsLoading(false);
                 setSchemaError(null);
                 setLoadingSchema(false);
             }, 3000);
@@ -509,9 +514,23 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 </div>
 
                 {schemaError && (
-                    <div className="text-xs text-amber-600  mt-1 py-1 px-2 bg-amber-50  rounded-md">
-                        {schemaError}
-                    </div>
+                    <>
+                        {isLoading && (
+                            <>
+                                <div
+                                    className="fixed inset-0 pointer-events-auto z-80"
+                                    style={{
+                                        backgroundColor:
+                                            'rgba(33, 33, 33, 0.4)',
+                                    }}
+                                />
+                                <Loader />
+                            </>
+                        )}
+                        <div className="text-xs text-amber-600  mt-1 py-1 px-2 bg-amber-50  rounded-md">
+                            {schemaError}
+                        </div>
+                    </>
                 )}
 
                 {/* Description Information */}
