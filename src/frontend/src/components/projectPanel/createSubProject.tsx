@@ -526,7 +526,7 @@ export default function CreateSubProject({
                         setGeneralError(
                             language === 'zh'
                                 ? '子项目名称已存在，请使用不同的名称'
-                                : 'SubProject already exists. Please use a different name.'
+                                : 'Subproject already exists. Please use a different name.'
                         );
                         setFormErrors((prev) => ({ ...prev, name: true }));
                         return
@@ -535,7 +535,7 @@ export default function CreateSubProject({
                     setGeneralError(
                         language === 'zh'
                             ? '子项目创建成功！'
-                            : 'SubProject created successfully!'
+                            : 'Subproject created successfully!'
                     );
 
                     if (window.mapInstance) {
@@ -647,7 +647,7 @@ export default function CreateSubProject({
                     <h1 className="text-4xl font-semibold text-center flex-1">
                         {language === 'zh'
                             ? '创建新子项目'
-                            : 'Create New SubProject'}
+                            : 'Create New Subproject'}
                     </h1>
                 </div>
                 <form onSubmit={handleSubmit} className="p-1 pt-0 -mt-3">

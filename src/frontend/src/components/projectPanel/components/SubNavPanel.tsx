@@ -16,6 +16,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import Loader from '@/components/ui/loader';
 
 export function SubNavPanel({
     currentPage,
@@ -42,7 +43,9 @@ export function SubNavPanel({
     const [descriptionText, setDescriptionText] = useState<
         Record<string, string>
     >({});
-    const [highlightedSubproject, setHighlightedSubproject] = useState<string | null>(null);
+    const [highlightedSubproject, setHighlightedSubproject] = useState<
+        string | null
+    >(null);
     const [projectService] = useState(() => {
         return new ProjectService(language);
     });
@@ -112,7 +115,10 @@ export function SubNavPanel({
                             if (afterFunction) afterFunction();
                         }
                     });
-                } else {
+                    return;
+                }
+
+                if (allProjects.length > 0) {
                     applyPagingAndSearch(allProjects, page);
                     if (afterFunction) afterFunction();
                 }
@@ -135,7 +141,7 @@ export function SubNavPanel({
             searchQuery,
             allProjects,
             applyPagingAndSearch,
-            hasInitialFetch
+            hasInitialFetch,
         ]
     );
 
@@ -266,6 +272,7 @@ export function SubNavPanel({
                 setAllProjects(sortedAllProjects);
                 applyPagingAndSearch(sortedAllProjects, currentPage);
                 setEditingDescription(null);
+                setLoading(false);
             }
         );
     };
@@ -321,13 +328,19 @@ export function SubNavPanel({
         );
     };
 
-    const handleSubprojectHighlight = (projectName: string, subprojectName: string) => {
+    const handleSubprojectHighlight = (
+        projectName: string,
+        subprojectName: string
+    ) => {
         const highlightKey = `${projectName}:${subprojectName}`;
         setHighlightedSubproject(highlightKey);
-        
+
         if (window.mapRef && window.mapRef.current) {
             const { highlightSubproject } = window.mapRef.current;
-            if (highlightSubproject && typeof highlightSubproject === 'function') {
+            if (
+                highlightSubproject &&
+                typeof highlightSubproject === 'function'
+            ) {
                 highlightSubproject(projectName, subprojectName);
             }
         }
@@ -337,13 +350,24 @@ export function SubNavPanel({
         title: project.name,
         items: [],
     }));
+
     if (loading) {
         return (
-            <SidebarGroup>
-                <div className="p-4 text-center">
-                    {language === 'zh' ? '加载中...' : 'Loading...'}
-                </div>
-            </SidebarGroup>
+            <>
+                <SidebarGroup>
+                    <div className="p-4 text-center">
+                        {language === 'zh' ? '加载中...' : 'Loading...'}
+                    </div>
+                </SidebarGroup>
+
+                <div
+                    className="fixed inset-0 pointer-events-auto z-80"
+                    style={{
+                        backgroundColor: 'rgba(33, 33, 33, 0.4)',
+                    }}
+                />
+                <Loader />
+            </>
         );
     }
 
@@ -408,9 +432,7 @@ export function SubNavPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel
-                            className="cursor-pointer"
-                        >
+                        <AlertDialogCancel className="cursor-pointer">
                             {language === 'zh' ? '取消' : 'Cancel'}
                         </AlertDialogCancel>
                         <AlertDialogAction
