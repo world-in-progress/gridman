@@ -522,9 +522,6 @@ export default function Page() {
                     {activeBreadcrumb === 'editor' && updateCapacity && (
                         <CapacityBar />
                     )}
-                    {activeBreadcrumb === 'editor' && (
-                        <CapacityBar />
-                    )}
                     <MapInit
                         ref={mapRef}
                         onRectangleDrawn={handleRectangleDrawn}
