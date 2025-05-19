@@ -515,17 +515,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         })
     }
 
-    tickGrids() {
-        if (this.hitSet.size === 0 && !this._forceUpdate) return
-        this._forceUpdate = false
-
-        // Update grid signal buffer
-        // const gl = this._gl
-        // gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
-        // this.hitSet.forEach(hitStorageId => gl.bufferSubData(gl.ARRAY_BUFFER, hitStorageId, this.hitFlag, 0))
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    }
-
     async initialize(_: Map, gl: WebGL2RenderingContext) {
         this._gl = gl
         await this.initDOM()
@@ -537,9 +526,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         // Skip if not ready
         if (!this.initialized) return // check if topology layer is initialized
         if (!this.visible) return
-
-        // Tick logic
-        this.tickGrids()
 
         // Tick render
         if (!this.isTransparent) {
