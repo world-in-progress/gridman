@@ -276,6 +276,7 @@ export function SubNavPanel({
             }
         );
     };
+    
     const handleDeleteProject = (project: Project) => {
         setProjectToDelete(project);
         setDeleteDialogOpen(true);

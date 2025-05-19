@@ -58,7 +58,6 @@ export default function TopologyPanel({
                 if (filePath) {
                     console.log('Selected file path:', filePath);
                     store.get<{ on: Function; off: Function }>('isLoading')!.on();
-                    store.get<{ on: Function; off: Function }>('isLoading')!.on();
                     topologyLayer.executePickGridsByFeature(filePath);
                 } else {
                     console.log('No file selected');
@@ -409,7 +408,7 @@ export default function TopologyPanel({
                     >
                         <div className="flex flex-row gap-1 items-center">
                             <CircleOff className="h-4 w-4" />
-                            {language === 'zh' ? '取消选择' : 'Cancel Select'}
+                            {language === 'zh' ? '取消全选' : 'Cancel All'}
                         </div>
                         <div
                             className={`text-xs ${

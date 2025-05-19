@@ -19,7 +19,7 @@ export default function BasicInfo() {
     const schemaGridInfo = store.get<number[][]>('SchemaGridInfo');
 
     return (
-        <div className="bg-blue-50 p-3 rounded-md">
+        <div className="bg-blue-50 p-3 rounded-md shadow-sm">
             <h2 className="text-xl font-bold text-blue-900">
                 {language === 'zh' ? '当前编辑信息' : 'Current Editing Information'}
             </h2>
