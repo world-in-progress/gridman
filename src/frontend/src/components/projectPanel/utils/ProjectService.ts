@@ -246,63 +246,40 @@ export class ProjectService {
                 if (error) {
                     console.error('设置子项目失败:', error);
                 } else {
+                    // Get topology layer
+                    const clg = store.get<NHLayerGroup>('clg')!;
+                    const topologyLayer = clg.getLayerInstance('TopologyLayer') as TopologyLayer;
+
+                    // Create grid recorder
                     const epsg: number = result.epsg;
                     const bounds: [number, number, number, number] =
                         result.bounds;
                     const subdivideRules: Array<[number, number]> =
                         result.subdivide_rules;
-                    const recorderMeta: SubdivideRules = {
+                    const initMeta: SubdivideRules = {
                         bBox: boundingBox2D(...bounds),
                         rules: subdivideRules,
                         srcCS: `EPSG:${epsg}`,
                         targetCS: 'EPSG:4326',
                     };
                     const recorder: GridRecorder = new GridRecorder(
-                        recorderMeta,
-                        4096 * 4096
-                    );
-                    store.set('gridRecorder', recorder);
-                    
-
-                    // Update recorder of TopologyLayer
-                    const clg = store.get<NHLayerGroup>('clg')!;
-                    const topologyLayer = clg.getLayerInstance(
-                        'TopologyLayer'
-                    ) as TopologyLayer;
-                    topologyLayer.gridRecorder = recorder;
-
-                    // Broadcast all workers to create gridManager
-                    this._dispatcher.broadcast(
-                        'setGridManager',
-                        recorderMeta,
-                        () => {
-                            this._actor.send(
-                                'getActivateGridInfo',
-                                null,
-                                (
-                                    err?: Error | null,
-                                    renderInfo?: MultiGridRenderInfo
-                                ) => {
-                                    const recorder =
-                                        store.get<GridRecorder>('gridRecorder');
-                                    recorder?.updateGridRenderInfo(
-                                        renderInfo!,
-                                        0
-                                    );
-
-                                    if (callback) {
-                                        callback(null, {
-                                            fromStorageId: 0,
-                                            levels: renderInfo!.levels,
-                                            vertices: renderInfo!.vertices,
-                                            verticesLow:
-                                                renderInfo!.verticesLow,
-                                        });
-                                    }
-                                }
-                            );
+                        initMeta,
+                        {
+                            callbackAfterConstruct: (renderInfo) => {
+                                // Synchronize GPU resource of grids
+                                topologyLayer.updateGPUGrids([
+                                    0,
+                                    renderInfo.levels,
+                                    renderInfo.vertices,
+                                    renderInfo.verticesLow,
+                                ])
+                                // Process callback of UI
+                                callback && callback();
+                            }
                         }
                     );
+                    store.set('gridRecorder', recorder);
+                    topologyLayer.gridRecorder = recorder;
                 }
             }
         );

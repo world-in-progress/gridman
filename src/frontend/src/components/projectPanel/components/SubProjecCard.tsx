@@ -167,25 +167,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         projectService.setSubproject(
             parentProjectTitle,
             subproject.name,
-            (error, result) => {
-                if (error || !result) {
-                    isLoading.off();
-                    return;
-                }
-
-                const map = store.get<mapboxgl.Map>('map');
-
-                // Update recorder of TopologyLayer
-                const clg = store.get<NHLayerGroup>('clg')!;
-                const topologyLayer = clg.getLayerInstance(
-                    'TopologyLayer'
-                ) as TopologyLayer;
-                topologyLayer.updateGPUGrids([
-                    result.fromStorageId,
-                    result.levels,
-                    result.vertices,
-                    result.verticesLow,
-                ]);
+            () => {
                 if (window.mapRef && window.mapRef.current) {
                     const pageEvents = new CustomEvent('switchToEditorPanel', {
                         detail: {
