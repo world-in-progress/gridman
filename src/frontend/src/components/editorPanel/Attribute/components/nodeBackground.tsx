@@ -29,13 +29,14 @@ export const AnimatedCard = styled.div`
   z-index: 1;
   overflow: hidden;
   border-radius: 14px;
-  box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
-  width: 100%;
+  box-shadow: 5px 5px 10px #bebebe, -2px -2px 5px #ffffff;
+`;
 
-  .dark & {
-    box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.3),
-      -10px -10px 30px rgba(60, 60, 60, 0.2);
-  }
+export const AnimatedCardNoShadow = styled.div`
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px;
 `;
 
 export const CardBackground = styled.div`
@@ -45,15 +46,10 @@ export const CardBackground = styled.div`
   right: 3px;
   bottom: 3px;
   z-index: 2;
-  background: rgba(255, 255, 255, 0);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(50px);
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
-
-  .dark & {
-    background: rgba(40, 40, 40, 0.75);
-    outline: 2px solid #333;
-  }
 `;
 
 export const Blob = styled.div`
@@ -64,13 +60,7 @@ export const Blob = styled.div`
   width: 250px;
   height: 250px;
   border-radius: 50%;
-  background-color: #00EEFF;
-  opacity: 0.6;
+  background-color: #00FF36;
   filter: blur(25px);
   animation: ${blobBounce} 5s infinite ease;
-
-  .dark & {
-    background-color: #ff7700;
-    opacity: 0.4;
-  }
 `; 

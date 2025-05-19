@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Layers } from 'lucide-react';
-import { LanguageContext } from '../../../context';
+import { LanguageContext } from '../../context';
 import store from '@/store';
 import GridCore from '@/core/grid/NHGridCore';
 import BoundsCard from '@/components/projectPanel/components/boundsCard';
-import { SchemaService } from '../../schemaPanel/utils/SchemaService';
-import { ProjectService } from '../../projectPanel/utils/ProjectService';
+import { SchemaService } from '../schemaPanel/utils/SchemaService';
+import { ProjectService } from '../projectPanel/utils/ProjectService';
 
 export default function BasicInfo() {
     const { language } = useContext(LanguageContext);

@@ -204,7 +204,7 @@ const StyledWrapper = styled.div`
     margin-left: -100px;
     top: 55%;
     margin-top: -100px;
-    z-index: 100;
+    z-index: 1000;
   }
 
   .hex-brick {

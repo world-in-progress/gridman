@@ -12,5 +12,19 @@ export interface TopologyPanelProps {
 }
 
 export interface AttributePanelProps {
-    
+}
+
+export interface LUMDataNodeProps {
+    isClicked?: boolean;
+    onNodeClick?: () => void;
+}
+
+export interface TerrainDataNodeProps {
+    isClicked?: boolean;
+    onNodeClick?: () => void;
+}
+
+export interface TopologyValidationProps {
+    isClicked?: boolean;
+    onNodeClick?: () => void;
 }
