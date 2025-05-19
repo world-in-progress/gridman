@@ -4,6 +4,9 @@ import { MultiGridRenderInfo } from "./NHGrid";
 import GridManager from "./NHGridManager";
 import { MultiGridInfo } from "./type";
 
+const DELETED_FLAG = 1
+const UNDELETED_FLAG = 0
+
 export default class GridUtils {
   static async subdivideGrids(
     worker: WorkerSelf & Record<"gridManager", GridManager>,
@@ -19,13 +22,13 @@ export default class GridUtils {
       body
     );
     const { levels, globalIds } = multiGridInfo;
-    const [vertices, verticesLow] =
-      worker.gridManager.createMultiRenderVertices(levels, globalIds);
+    const [vertices, verticesLow] = worker.gridManager.createMultiRenderVertices(levels, globalIds);
     const renderInfo: MultiGridRenderInfo = {
       levels,
       globalIds,
       vertices,
       verticesLow,
+      deleted: new Uint8Array(levels.length).fill(UNDELETED_FLAG)
     };
     return renderInfo;
   }

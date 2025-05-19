@@ -298,10 +298,10 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 });
                 const updateLoading = store.get<{on: () => void; off: () => void}>('isLoading')!
                 const updateCapacity = store.get<{on: () => void; off: () => void}>('updateCapacity')!
-                topologyLayer.executionStartCallback = () => {
+                topologyLayer.startCallback = () => {
                     updateLoading.on();
                 }
-                topologyLayer.executionEndCallback = () => {
+                topologyLayer.endCallback = () => {
                     updateCapacity.on();
                     updateLoading.off();
                 }

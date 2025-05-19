@@ -15,7 +15,7 @@ layout(location = 6) in vec2 blLow;
 layout(location = 7) in vec2 brLow;
 layout(location = 8) in uint level;
 layout(location = 9) in uint hit;
-layout(location = 10) in uint assignment;
+layout(location = 10) in uint deleted;
 
 uniform mat4 uMatrix;
 uniform vec2 centerLow;
@@ -26,7 +26,7 @@ uniform sampler2D paletteTexture;
 out vec2 uv;
 out float u_hit;
 out vec3 v_color;
-out float u_assignment;
+out float u_deleted;
 
 const float PI = 3.141592653;
 
@@ -99,7 +99,7 @@ void main() {
     vec2 xyLow = layerMapLow[gl_VertexID];
 
     u_hit = float(hit);
-    u_assignment = float(assignment);
+    u_deleted = float(deleted);
 
     uv = uvs[gl_VertexID] * 2.0 - 1.0;
     v_color = texelFetch(paletteTexture, ivec2(level, 0), 0).rgb;
@@ -121,7 +121,7 @@ uniform float mode;
 in vec2 uv;
 in float u_hit;
 in vec3 v_color;
-in float u_assignment;
+in float u_deleted;
 
 out vec4 fragColor;
 
@@ -134,9 +134,9 @@ bool isHit() {
     return abs(float(hit) - u_hit) <= tolerence;
 }
 
-bool isAssigned() {
+bool isDeleted() {
     float tolerence = epsilon(1.0);
-    return abs(1.0 - u_assignment) <= tolerence;
+    return abs(1.0 - u_deleted) <= tolerence;
 }
 
 void main() {
@@ -167,8 +167,6 @@ void main() {
 
         float distance = uv.x * uv.x + uv.y * uv.y;
 
-        bool isAssigned = isAssigned();
-
         if(distance <= 0.25 && distance >= 0.2) {
             if(isHit){
                 fillAlpha = 0.2;
@@ -188,9 +186,15 @@ void main() {
                 fillColor = vec3(1.0);
             }
         }
+    }
 
-        if(isAssigned) {
-            fillColor = 1.0 - fillColor;
+    if(isDeleted()) {
+        if (abs(uv.x * uv .x - uv.y * uv.y) < 0.05 && abs(uv.x) < 0.6 && abs(uv.y) < 0.6) {
+            fillColor = vec3(1.0, 0.0, 0.0);
+            fillAlpha = 0.5;
+        } else {
+            fillColor = vec3(1.0);
+            fillAlpha = 0.4;
         }
     }
 

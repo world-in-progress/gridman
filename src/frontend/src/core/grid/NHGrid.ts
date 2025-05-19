@@ -58,6 +58,7 @@ export interface MultiGridRenderInfo {
     globalIds: Uint32Array;
     vertices: Float32Array;
     verticesLow: Float32Array;
+    deleted: Uint8Array;
 }
 
 export type GridContext = {

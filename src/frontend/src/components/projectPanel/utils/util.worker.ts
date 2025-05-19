@@ -1,7 +1,10 @@
 import { MultiGridInfo } from '../../../core/grid/type';
 import { Callback, WorkerSelf } from '../../../core/types'
 import GridManager from '../../../core/grid/NHGridManager';
-import { MultiGridRenderInfo, SubdivideRules } from '../../../core/grid/NHGrid'
+import { MultiGridRenderInfo, GridContext } from '../../../core/grid/NHGrid'
+
+const DELETED_FLAG = 1
+const UNDELETED_FLAG = 0
 
 type ReturnType = {
     err: Error | null;
@@ -444,23 +447,45 @@ export default class ProjectUtils {
 
     static setGridManager(
         worker: WorkerSelf & Record<'gridManager', GridManager>,
-        subdivideRules: SubdivideRules
+        context: GridContext
     ) {
-        worker.gridManager = new GridManager(subdivideRules);
+        worker.gridManager = new GridManager(context);
     }
 
-    static async getActivateGridInfo(
+    static async getGridInfo(
         worker: WorkerSelf & Record<'gridManager', GridManager>
     ): Promise<MultiGridRenderInfo> {
-        const infoAPI = '/api/grid/operation/activate-info'
-        const infoResponse = await MultiGridInfo.fromGetUrl(infoAPI)
+        const activateInfoAPI = '/api/grid/operation/activate-info'
+        const deletedInfoAPI = '/api/grid/operation/deleted-info'
+        const [activateInfoResponse, deletedInfoResponse] = await Promise.all([
+            MultiGridInfo.fromGetUrl(activateInfoAPI),
+            MultiGridInfo.fromGetUrl(deletedInfoAPI)
+        ]);
 
-        const vertices = worker.gridManager.createMultiRenderVertices(infoResponse.levels, infoResponse.globalIds)
+        // Create combined levels for activate and deleted grids
+        const combinedLevels = new Uint8Array(activateInfoResponse.levels.length + deletedInfoResponse.levels.length);
+        combinedLevels.set(activateInfoResponse.levels, 0);
+        combinedLevels.set(deletedInfoResponse.levels, activateInfoResponse.levels.length);
+
+        // Create combined global IDs for activate and deleted grids
+        const combinedGlobalIds = new Uint32Array(activateInfoResponse.globalIds.length + deletedInfoResponse.globalIds.length);
+        combinedGlobalIds.set(activateInfoResponse.globalIds, 0);
+        combinedGlobalIds.set(deletedInfoResponse.globalIds, activateInfoResponse.globalIds.length);
+        
+        // Create combined vertices for activate and deleted grids
+        const combinedVertices = worker.gridManager.createMultiRenderVertices(combinedLevels, combinedGlobalIds);
+
+        // Create a combined deleted flags array
+        const combinedDeleted = new Uint8Array(combinedLevels.length);
+        combinedDeleted.fill(UNDELETED_FLAG, 0, activateInfoResponse.levels.length);
+        combinedDeleted.fill(DELETED_FLAG, activateInfoResponse.levels.length);
+
         return {
-            levels: infoResponse.levels,
-            globalIds: infoResponse.globalIds,
-            vertices: vertices[0],
-            verticesLow: vertices[1]
+            levels: combinedLevels,
+            globalIds: combinedGlobalIds,
+            vertices: combinedVertices[0],
+            verticesLow: combinedVertices[1],
+            deleted: combinedDeleted,
         }
     }
 }
