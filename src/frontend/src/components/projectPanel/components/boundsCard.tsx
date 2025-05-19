@@ -37,7 +37,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <div className="text-[9px]">
+                            <div className="text-[12px]">
                                 <p className="font-bold mb-1">
                                     {language === 'zh' ? '北' : 'North'}
                                 </p>
@@ -64,7 +64,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <div className="text-[9px]">
+                            <div className="text-[12px]">
                                 <p className="font-bold mb-1">
                                     {language === 'zh' ? '西' : 'West'}
                                 </p>
@@ -76,10 +76,10 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
             </div>
             {/* Center */}
             <div className="text-center">
-                <span className="font-bold text-xs">
+                <span className="font-bold text-[14px] text-orange-500">
                     {language === 'zh' ? '中心' : 'Center'}
                 </span>
-                <div className="text-[9px]">
+                <div className="text-[12px]">
                     <div>
                         {(
                             (bounds[0] + bounds[2]) /
@@ -107,7 +107,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <div className="text-[9px]">
+                            <div className="text-[12px]">
                                 <p className="font-bold mb-1">
                                     {language === 'zh' ? '东' : 'East'}
                                 </p>
@@ -134,7 +134,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <div className="text-[9px]">
+                            <div className="text-[12px]">
                                 <p className="font-bold mb-1">
                                     {language === 'zh' ? '南' : 'South'}
                                 </p>
