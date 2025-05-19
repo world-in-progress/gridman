@@ -16,23 +16,6 @@ class Store {
     get<T>(key: string): T | null {
         return this.store.get(key)
     }
-    subscribe<T>(key: string, callback: (value: T) => void): () => void {
-        const listeners = this.store.get('listeners') || new Map<string, Array<(value: any) => void>>()
-        if (!listeners.has(key)) {
-            listeners.set(key, [])
-        }
-        const callbacks = listeners.get(key) as Array<(value: any) => void>
-        callbacks.push(callback)
-        this.store.set('listeners', listeners)
-        return () => {
-            const newCallbacks = callbacks.filter(cb => cb !== callback)
-            listeners.set(key, newCallbacks)
-            if (newCallbacks.length === 0) {
-                listeners.delete(key)
-            }
-            this.store.set('listeners', listeners)
-        }
-    }
 }
 
 export default Store.instance()
