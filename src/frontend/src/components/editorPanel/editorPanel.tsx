@@ -3,12 +3,12 @@ import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
 import { EditorPanelProps } from './types/types';
-import BasicInfo from './components/basicInfo';
-import TopologyPanel from './components/topologyEditor';
+import BasicInfo from './basicInfo';
+import TopologyPanel from './Topology/topologyEditor';
 import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
-import AttributePanel from './components/AttributeEditor';
+import AttributePanel from './Attribute/AttributeEditor';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const { language } = useContext(LanguageContext);

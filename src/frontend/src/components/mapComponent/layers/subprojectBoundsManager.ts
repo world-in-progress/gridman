@@ -371,14 +371,6 @@ export class SubprojectBoundsManager {
                             duration: 1000,
                         });
 
-                        // 在边界中心创建弹窗显示信息
-                        setTimeout(() => {
-                            this.showSubprojectPopup(
-                                subprojectFeature.properties,
-                                [centerLng, centerLat]
-                            );
-                        }, 300);
-
                         return;
                     }
                 }
@@ -437,17 +429,6 @@ export class SubprojectBoundsManager {
                                 duration: 1000,
                             });
 
-                            // Create popup at center of bounds
-                            setTimeout(() => {
-                                this.showSubprojectPopup(
-                                    {
-                                        name: subproject.name,
-                                        projectName: projectName,
-                                        starred: subproject.starred || false,
-                                    },
-                                    [centerLng, centerLat]
-                                );
-                            }, 1000); // Display after fly animation
 
                             // If subproject bounds are displayed at this time, reapply highlight
                             if (this.map.getSource(sourceId)) {
@@ -467,67 +448,5 @@ export class SubprojectBoundsManager {
         } catch (error) {
             console.error('飞行到子项目边界失败:', error);
         }
-    }
-
-    /**
-     * Display the popup information of the subproject
-     * @param properties Subproject properties
-     * @param center Popup position coordinates
-     */
-    private showSubprojectPopup(
-        properties: any,
-        center: [number, number]
-    ): void {
-        if (!this.map) return;
-
-        console.log('Popup的传入信息', properties);
-        // Remove existing popups
-        const existingPopups = document.querySelectorAll('.mapboxgl-popup');
-        existingPopups.forEach((popup) => popup.remove());
-
-        // Create new popup
-        new mapboxgl.Popup({
-            closeOnClick: true,
-            maxWidth: '300px',
-        })
-            .setLngLat(center)
-            .setHTML(
-                `
-                <div style="font-family: Arial, sans-serif; padding: 2px;">
-                    <h3 style="margin: 0 0 2px; font-weight: bold; font-size: 16px; color: #333;">${
-                        properties.name
-                    }</h3>
-
-                    <div style="display: flex flex-column; align-items: center; margin-top: 4px; border-top: 1px solid #e0e0e0; padding-top: 4px;">
-                        <div>
-                            <span style="font-size: 12px; color: #888;">
-                                ${this.language === 'zh' ? '所属项目' : 'Project'}: 
-                            </span>
-                            <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
-                                ${properties.projectName}
-                            </span>
-                        </div>
-                        <div>
-                            <span style="font-size: 12px; color: #888;">
-                                ${this.language === 'zh' ? '描述' : 'Description'}: 
-                            </span>
-                            <span style="font-size: 12px; font-weight: bold; color: #444; margin-left: 4px;">
-                                ${properties.description}
-                            </span>
-                        </div>
-                        <div>
-                            ${
-                                properties.starred
-                                ? `<div style="margin-top: 6px;"><span style="color: #f59e0b; font-size: 12px;">★ ${
-                                    this.language === 'zh' ? '已标星' : 'Starred'
-                                    }</span></div>`
-                                : ''
-                            }
-                        </div>
-                    </div>
-                </div>
-            `
-            )
-            .addTo(this.map);
     }
 }

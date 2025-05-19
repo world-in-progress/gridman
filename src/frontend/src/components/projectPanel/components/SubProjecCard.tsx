@@ -383,10 +383,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
     if (isHighlighted) {
         return (
-            <AnimatedCard className="p-3 mb-4" id={cardId}>
+            <AnimatedCard className="p-3 mt-2 mb-4" id={cardId}>
                 <CardBackground />
                 <Blob />
-                <div className="relative z-10">
+                <div className="relative z-10 border border-gray-200 rounded-lg">
                     <SubprojectCardContent />
                 </div>
             </AnimatedCard>
@@ -394,7 +394,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     } else {
         return (
             <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-2 border border-gray-200 dark:border-gray-700 relative transition-all duration-300 cursor-pointer"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-2 border border-gray-200 relative transition-all duration-300 cursor-pointer"
                 onClick={onCardClick}
                 id={cardId}
             >
