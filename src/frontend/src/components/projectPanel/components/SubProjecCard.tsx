@@ -184,13 +184,24 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         );
     };
 
-    const handleUpdateDescription = async () => {
+    const handleUpdateDescription = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!textareaRef.current) return;
 
         const newDescription = textareaRef.current.value;
 
         if (onSaveSubprojectDescription) {
             await onSaveSubprojectDescription(subproject.name, newDescription);
+            if (window.mapRef && window.mapRef.current) {
+                const { showSubprojectBounds } = window.mapRef.current;
+                if ( showSubprojectBounds && typeof showSubprojectBounds === 'function') {
+                    const updatedSubproject = {
+                        ...subproject,
+                        description: newDescription,
+                    }
+                    showSubprojectBounds(parentProjectTitle, [updatedSubproject], true);
+                }
+            }
         }
 
         setIsEditing(false);
@@ -358,7 +369,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                                 className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleUpdateDescription();
+                                    handleUpdateDescription(e);
                                 }}
                             >
                                 {language === 'zh' ? '完成' : 'Done'}

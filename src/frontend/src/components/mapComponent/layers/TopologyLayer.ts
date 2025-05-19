@@ -479,6 +479,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                 this.updateGPUGrid(info)
             }
             this.executionEndCallback()
+
+            // Delete grids and update capacity
+            store.get<{ on: Function; off: Function }>('updateCapacity')!.on()
         })
     }
 
