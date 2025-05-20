@@ -109,17 +109,13 @@ export default function TopologyPanel({
                 topologyLayer.executeSubdivideGrids();
                 break;
             case 'merge':
-                console.log('执行了合并');
-                // 添加合并操作逻辑
-                // topology.executeMergeGrids()
+                topologyLayer.executeMergeGrids();
                 break;
             case 'delete':
                 topologyLayer.executeDeleteGrids();
                 break;
             case 'recover':
-                console.log('执行了恢复');
-                // 添加恢复操作逻辑
-                // topologyLayer.executeRecoverGrids()
+                topologyLayer.executeRecoverGrids();
                 break;
             default:
                 // Should not happen if dialog is only open when activeTopologyOperation is not null
@@ -134,8 +130,6 @@ export default function TopologyPanel({
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
-                console.log(store.get<boolean>('gridCheckingOn'));
-
                 if (!store.get<boolean>('gridCheckingOn')) {
                     if (event.key === 'P' || event.key === 'p') {
                         event.preventDefault();

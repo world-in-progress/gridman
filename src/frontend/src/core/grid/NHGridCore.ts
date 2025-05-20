@@ -268,7 +268,7 @@ export default class GridCore {
      * Mark the specified grids as deleted
      * @description: Marks the specified grids as deleted in the grid system.  
      * Not really deleted, but marked as deleted.  
-     * For merge operation, the deleted grids must still can be picked up.
+     * For recover operation, the deleted grids must still can be picked up.
      */
     markAsDeletedGrids(removableStorageIds: number[], callback?: Function): void {
         const levels = new Uint8Array(removableStorageIds.length)
@@ -282,6 +282,22 @@ export default class GridCore {
         }
         // Mark provided grids as deleted
         this._actor.send('removeGrids', { levels, globalIds }, () => {
+            callback && callback()
+        })
+    }
+
+    recoverGrids(recoverableStorageIds: number[], callback?: Function): void {
+        const levels = new Uint8Array(recoverableStorageIds.length)
+        const globalIds = new Uint32Array(recoverableStorageIds.length)
+        for (let i = 0; i < recoverableStorageIds.length; i++) {
+            const storageId = recoverableStorageIds[i]
+            const [level, globalId] = this.getGridInfoByStorageId(storageId)
+            levels[i] = level
+            globalIds[i] = globalId
+            this.gridDeletedCache[storageId] = UNDELETED_FLAG
+        }
+        // Recover provided grids
+        this._actor.send('recoverGrids', { levels, globalIds }, () => {
             callback && callback()
         })
     }

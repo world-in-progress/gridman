@@ -614,19 +614,32 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Set grids deleted
         this.gridCore.markAsDeletedGrids(storageIds, () => {
-
             gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
             storageIds.forEach(storageId => {
                 gl.bufferSubData(gl.ARRAY_BUFFER, this.maxGridNum + storageId, this.deletedFlag, 0)
             })
             gl.bindBuffer(gl.ARRAY_BUFFER, null)
+            this._hit(storageIds)
             this.endCallback()
         })
     }
 
-    // TODO
     recoverGrids(storageIds: number[]) {
+        if (storageIds.length === 0) return
+        this.startCallback()
 
+        const gl = this._gl
+
+        // Set grids undeleted
+        this.gridCore.recoverGrids(storageIds, () => {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._gridSignalBuffer)
+            storageIds.forEach(storageId => {
+                gl.bufferSubData(gl.ARRAY_BUFFER, this.maxGridNum + storageId, this.undeletedFlag, 0)
+            })
+            gl.bindBuffer(gl.ARRAY_BUFFER, null)
+            this._hit(storageIds)
+            this.endCallback()
+        })
     }
 
     executeDeleteGrids() {
@@ -638,6 +651,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     executeRecoverGrids() {
         const recoverableStorageIds = this.executeClearSelection()
             .filter(recoverableStorageId => this._gridCore!.isGridDeleted(recoverableStorageId))
+        this.recoverGrids(recoverableStorageIds)
     }
 
     // Subdivide grids  //////////////////////////////////////////////////
