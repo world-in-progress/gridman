@@ -327,6 +327,15 @@ export async function subdivideGrids(
   callback(null, renderInfo);
 }
 
+export async function mergeGrids(
+    this: WorkerSelf & Record<"gridManager", GridManager>,
+    gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+    callback: Callback<any>
+) {
+    const renderInfo = await GridUtils.mergeGrids(this, gridInfo);
+    callback(null, renderInfo);
+}
+
 export async function removeGrids(
   gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
   callback: Callback<any>

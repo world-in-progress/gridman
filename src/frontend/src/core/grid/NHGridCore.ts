@@ -1,7 +1,7 @@
 import proj4 from 'proj4'
 import Dispatcher from '../message/dispatcher'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
-import { EdgeRenderInfoPack, GridContext, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
+import { EdgeRenderInfoPack, GridContext, GridInfo, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
 import BoundingBox2D from '../util/boundingBox2D'
 import { Callback } from '../types'
 
@@ -67,15 +67,15 @@ export default class GridCore {
     adjGrids_cache: number[][] = []
     edge_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
 
-    constructor(public subdivideRules: GridContext, options: GridRecordOptions = {}) {
+    constructor(public context: GridContext, options: GridRecordOptions = {}) {
 
         this.maxGridNum = options.maxGridNum ?? 4096 * 4096
         this.dispatcher = new Dispatcher(this, Math.min(options.workerCount ?? 4, 4))
-        this.projConverter = proj4(this.subdivideRules.srcCS, this.subdivideRules.targetCS)
+        this.projConverter = proj4(this.context.srcCS, this.context.targetCS)
 
         // Init levelInfos
-        this.levelInfos = new Array<GridLevelInfo>(this.subdivideRules.rules.length)
-        this.subdivideRules.rules.forEach((_, level, rules) => {
+        this.levelInfos = new Array<GridLevelInfo>(this.context.rules.length)
+        this.context.rules.forEach((_, level, rules) => {
             let width: number, height: number
             if (level == 0) {
                 width = 1
@@ -95,7 +95,7 @@ export default class GridCore {
         this.grid_attribute_cache = Array.from({ length: this.maxGridNum }, () => { return { height: -9999, type: 0 } })
 
         // Calculate bounding box center in mercator coordinates for high-precision rendering
-        const bBoxCenter: [number, number] = this.projConverter.forward(this.subdivideRules.bBox.center)
+        const bBoxCenter: [number, number] = this.projConverter.forward(this.context.bBox.center)
         const mercatorCenter = MercatorCoordinate.fromLonLat(bBoxCenter)
         const centerX = encodeFloatToDouble(mercatorCenter[0])
         const centerY = encodeFloatToDouble(mercatorCenter[1])
@@ -104,7 +104,7 @@ export default class GridCore {
 
     init(callback?: Function): void {
         // Brodcast actors to init grid manager and initialize grid cache
-        this.dispatcher.broadcast('setGridManager', this.subdivideRules, () => {
+        this.dispatcher.broadcast('setGridManager', this.context, () => {
             // Get activate grid information
             this._actor.send('getGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
                 // Initialize grid cache
@@ -140,15 +140,27 @@ export default class GridCore {
     }
 
     get bBox() {
-        return this.subdivideRules.bBox
+        return this.context.bBox
     }
 
     get srcCRS() {
-        return this.subdivideRules.srcCS
+        return this.context.srcCS
     }
 
     updateDict(storageId: number, level: number, globalId: number) {
         this.gridKey_storageId_dict.set(`${level}-${globalId}`, storageId)
+    }
+
+    addGrids(levels: Uint8Array, globalIds: Uint32Array, deleted: Uint8Array): void {
+        const gridNum = levels.length
+        for (let i = 0; i < gridNum; i++) {
+            const storageId = this._nextStorageId + i
+            this.updateDict(storageId, levels[i], globalIds[i])
+        }
+        this.gridLevelCache.set(levels, this._nextStorageId)
+        this.gridDeletedCache.set(deleted, this._nextStorageId)
+        this.gridGlobalIdCache.set(globalIds, this._nextStorageId)
+        this._nextStorageId += gridNum
     }
 
     deleteGridLocally(storageId: number, callback?: Function): void {
@@ -299,6 +311,37 @@ export default class GridCore {
         })
     }
 
+    mergeGrids(mergeableStorageIds: number[], callback?: Function): void {
+        const levels = new Uint8Array(mergeableStorageIds.length)
+        const globalIds = new Uint32Array(mergeableStorageIds.length)
+        for (let i = 0; i < mergeableStorageIds.length; i++) {
+            const storageId = mergeableStorageIds[i]
+            const [level, globalId] = this.getGridInfoByStorageId(storageId)
+            levels[i] = level
+            globalIds[i] = globalId
+        }
+        // Merge provided grids
+        this._actor.send('mergeGrids', { levels, globalIds }, (_: any, parentRenderInfo: MultiGridRenderInfo) => {
+            // Get storageIds of all child grids
+            const childStorageIds: number[] = []
+            const parentNum = parentRenderInfo.levels.length
+            for (let i = 0; i < parentNum; i++) {
+                const parentLevel = parentRenderInfo.levels[i]
+                const parentGlobalId = parentRenderInfo.globalIds[i]
+                const children = this.getGridChildren(parentLevel, parentGlobalId)
+                if (children) {
+                    children.forEach((childGlobalId) => {
+                        const childStorageId = this.gridKey_storageId_dict.get(`${parentLevel}-${childGlobalId}`)
+                        if (childStorageId !== undefined) {
+                            childStorageIds.push(childStorageId)
+                        }
+                    })
+                }
+            }
+            callback && callback({childStorageIds, parentRenderInfo})
+        })
+    }
+
     getGridInfoByFeature(path: string, callback?: Function) {
         this._actor.send('getGridInfoByFeature', path, (error: any, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
             const { levels, globalIds } = gridInfo
@@ -312,6 +355,31 @@ export default class GridCore {
             }
             callback && callback(storageIds)
         })
+    }
+
+    getGridChildren(level: number, globalId: number): number[] | null {
+        if (level >= this.levelInfos.length || level < 0) return null;
+
+        const { width: levelWidth } = this.levelInfos[level];
+        const globalU = globalId % levelWidth;
+        const globalV = Math.floor(globalId / levelWidth);
+
+        const [subWidth, subHeight] = this.context.rules[level];
+        const subCount = subWidth * subHeight;
+
+        const children = new Array<number>(subCount);
+        const baseGlobalWidth = levelWidth * subWidth;
+        for (let localId = 0; localId < subCount; localId++) {
+            const subU = localId % subWidth;
+            const subV = Math.floor(localId / subWidth);
+
+            const subGlobalU = globalU * subWidth + subU;
+            const subGlobalV = globalV * subHeight + subV;
+            const subGlobalId = subGlobalV * baseGlobalWidth + subGlobalU;
+            children[localId] = subGlobalId;
+        }
+
+        return children;
     }
 
     getGridInfoByStorageId(storageId: number): [level: number, globalId: number] {
@@ -356,7 +424,7 @@ export default class GridCore {
         if (level === 0) return 0
 
         const { width } = this.levelInfos[level]
-        const [subWidth, subHeight] = this.subdivideRules.rules[level - 1]
+        const [subWidth, subHeight] = this.context.rules[level - 1]
 
         const u = globalId % width
         const v = Math.floor(globalId / width)
@@ -368,7 +436,7 @@ export default class GridCore {
         if (level === 0) return 0
 
         const { width } = this.levelInfos[level]
-        const [subWidth, subHeight] = this.subdivideRules.rules[level - 1]
+        const [subWidth, subHeight] = this.context.rules[level - 1]
 
         const u = globalId % width
         const v = Math.floor(globalId / width)
@@ -376,26 +444,24 @@ export default class GridCore {
         return Math.floor(v / subHeight) * this.levelInfos[level - 1].width + Math.floor(u / subWidth)
     }
 
-    checkGrid(storageId: number) {
+    checkGrid(storageId: number): GridInfo {
         const level = this.gridLevelCache[storageId]
         const globalId = this.gridGlobalIdCache[storageId]
         const localId = this.getGridLocalId(level, globalId)
-        const edges = this.storageId_edgeId_set[storageId]
-        const deleted = this.gridDeletedCache[storageId]
+        const deleted = this.gridDeletedCache[storageId] === DELETED_FLAG
 
         return {
             storageId,
             level,
             globalId,
             localId,
-            edges,
             deleted
         }
     }
 
     private _createNodeRenderVertices(level: number, globalId: number, vertices?: Float32Array, verticesLow?: Float32Array): [Float32Array, Float32Array] {
 
-        const bBox = this.subdivideRules.bBox
+        const bBox = this.context.bBox
         const { width, height } = this.levelInfos[level]
 
         const globalU = globalId % width

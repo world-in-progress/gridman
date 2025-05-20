@@ -7,6 +7,7 @@ import NHLayerGroup from '../utils/NHLayerGroup'
 import GridCore from '../../../core/grid/NHGridCore'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
+import { GridInfo, MultiGridRenderInfo } from '@/core/grid/NHGrid'
 
 const LEVEL_PALETTE_LENGTH = 256 // Grid level range is 0 - 255 (UInt8)
 const DEFAULT_MAX_GRID_NUM = 4096 * 4096 // 16M grids, a size that most GPUs can handle
@@ -132,7 +133,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     get subdivideRules() {
-        return this._gridCore!.subdivideRules.rules
+        return this._gridCore!.context.rules
     }
 
     set gridCore(core: GridCore) {
@@ -542,6 +543,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.endCallback()
     }
 
+    executeCheckGrid(startPos: [number, number]): GridInfo | null {
+        this.startCallback()
+        const storageId = this._brushPicking(this._calcPickingMatrix(startPos))
+        if (storageId < 0) return null
+        return this.gridCore.checkGrid(storageId)
+    }
+
     executePickGridsByFeature(path: string) {
         this.startCallback()
         this.gridCore.getGridInfoByFeature(path, (storageIds: number[]) => {
@@ -616,10 +624,20 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         })
     }
 
+    // TODO
+    recoverGrids(storageIds: number[]) {
+
+    }
+
     executeDeleteGrids() {
         const removableStorageIds = this.executeClearSelection()
             .filter(removableStorageId => !this._gridCore!.isGridDeleted(removableStorageId))
         this.deleteGrids(removableStorageIds)
+    }
+
+    executeRecoverGrids() {
+        const recoverableStorageIds = this.executeClearSelection()
+            .filter(recoverableStorageId => this._gridCore!.isGridDeleted(recoverableStorageId))
     }
 
     // Subdivide grids  //////////////////////////////////////////////////
@@ -637,6 +655,34 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             )
             this._hit(storageIds)
             this.endCallback()
+        })
+    }
+
+    private _mergeGrids(mergeableStorageIds: number[]) {
+        if (mergeableStorageIds.length === 0) return
+        this.startCallback()
+
+        // Merge grids
+        this.gridCore.mergeGrids(mergeableStorageIds, (info: { childStorageIds: number[], parentRenderInfo: MultiGridRenderInfo }) => {
+            // Delete child grids
+            this.gridCore.deleteGridsLocally(info.childStorageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[], deleted: number[]]) => {
+                for (let i = 0; i < infos[0].length; i++) {
+                    const info = [infos[0][i], infos[1][i], infos[2][i], infos[3][i], infos[4][i]] as [storageId: number, level: number, vertices: Float32Array, verticesLow: Float32Array, deleted: number]
+                    this.updateGPUGrid(info)
+                }
+                // Update parent grid in grid core and GPU resources
+                this.gridCore.addGrids(info.parentRenderInfo.levels, info.parentRenderInfo.globalIds, info.parentRenderInfo.deleted)
+                this.updateGPUGrids([this.gridCore.gridNum, info.parentRenderInfo.levels, info.parentRenderInfo.vertices, info.parentRenderInfo.verticesLow, info.parentRenderInfo.deleted])
+                
+                // Pick all merged grids
+                const fromStorageId = this.gridCore.gridNum
+                const storageIds = Array.from(
+                    { length: info.parentRenderInfo.levels.length },
+                    (_, i) => fromStorageId + i
+                )
+                this._hit(storageIds)
+                this.endCallback()
+            })
         })
     }
 
@@ -658,9 +704,14 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             levels: new Uint8Array(subdivideLevels),
             globalIds: new Uint32Array(subdivideGlobalIds)
         }
-        console.log(subdivideInfo.levels.length)
         this.deleteGridsLocally(subdividableStorageIds)
         this._subdivideGrids(subdivideInfo)
+    }
+
+    executeMergeGrids() {
+        const mergeableStorageIds = this.executeClearSelection()
+            .filter(mergeableStorageId => !this._gridCore!.isGridDeleted(mergeableStorageId))
+        this._mergeGrids(mergeableStorageIds)
     }
 
     // Rendering ///////////////////////////////////////////////////
