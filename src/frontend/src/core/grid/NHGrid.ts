@@ -76,6 +76,11 @@ export type GridInfo = {
     deleted: boolean;
 }
 
+export type GridSaveInfo = {
+    success: boolean;
+    message: string;
+}
+
 export type GridTopologyInfo = [
     edgeKeys: string[],
     adjGrids: number[][],

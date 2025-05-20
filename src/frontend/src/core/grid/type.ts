@@ -25,7 +25,7 @@ static async fromGetUrl(url: string): Promise<MultiGridInfo> {
     const response = await fetch(url, { method: "GET" });
 
     if (!response.ok) {
-    throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
     const buffer = await response.arrayBuffer();

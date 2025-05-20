@@ -336,7 +336,6 @@ export async function recoverGrids(
     callback();
 }
 
-
 export async function getGridInfoByFeature(
     path: string,
     callback: Callback<any>
@@ -346,4 +345,9 @@ export async function getGridInfoByFeature(
         levels: result.levels,
         globalIds: result.globalIds
     });
+}
+
+export async function saveGrids(_: any, callback: Callback<any>) {
+    const result = await GridUtils.saveGrids();
+    callback(null, result);
 }

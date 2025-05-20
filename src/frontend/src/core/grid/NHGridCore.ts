@@ -1,7 +1,7 @@
 import proj4 from 'proj4'
 import Dispatcher from '../message/dispatcher'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
-import { EdgeRenderInfoPack, GridContext, GridInfo, GridNodeRenderInfoPack, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
+import { EdgeRenderInfoPack, GridContext, GridInfo, GridNodeRenderInfoPack, GridSaveInfo, GridTopologyInfo, MultiGridRenderInfo } from './NHGrid'
 import BoundingBox2D from '../util/boundingBox2D'
 import { Callback } from '../types'
 
@@ -475,6 +475,12 @@ export default class GridCore {
             localId,
             deleted
         }
+    }
+
+    save(callback: Function) {
+        this._actor.send('saveGrids', null, (_: any, gridInfo: GridSaveInfo) => {
+            callback && callback(gridInfo)
+        })
     }
 
     private _createNodeRenderVertices(level: number, globalId: number, vertices?: Float32Array, verticesLow?: Float32Array): [Float32Array, Float32Array] {
