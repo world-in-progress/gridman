@@ -7,7 +7,7 @@ import {
     Ellipsis,
     Grid,
     Mountain,
-    Waypoints,
+    SplinePointer,
 } from 'lucide-react';
 import { SubProjectCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
@@ -69,7 +69,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         },
         {
             title: language === 'zh' ? '管道编辑' : 'Edit Pipeline',
-            icon: <Waypoints className="h-4 w-4 mr-2" />,
+            icon: <SplinePointer className="h-4 w-4 mr-2" />,
             onClick: (e: React.MouseEvent) => {
                 console.log('Pipeline clicked');
             },

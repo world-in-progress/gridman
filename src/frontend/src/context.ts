@@ -1,14 +1,13 @@
 
 import { createContext } from 'react';
 import { SidebarType } from './components/page';
-import GridCore from './core/grid/NHGridCore';
 
 export const SidebarContext = createContext<{
-    activeSidebar: SidebarType;
-    setActiveSidebar: (type: SidebarType) => void;
+    activeNavbar: SidebarType;
+    setActiveNavbar: (type: SidebarType) => void;
 }>({
-    activeSidebar: 'grid',
-    setActiveSidebar: () => {},
+    activeNavbar: 'grid',
+    setActiveNavbar: () => {},
 });
 
 export const LanguageContext = createContext<{

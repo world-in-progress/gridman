@@ -447,7 +447,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                             schemaGridInfo.map(
                                 (level: number[], index: number) => (
                                     <div key={index} className="ml-2 text-sm">
-                                        level {index + 1}: [{level.join(', ')}]
+                                        {language === 'zh' ? '等级' : 'Level'} {index + 1}: [{level.join(', ')}]
                                     </div>
                                 )
                             )

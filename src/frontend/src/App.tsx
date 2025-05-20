@@ -8,6 +8,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { SidebarContext, LanguageContext, AIDialogContext } from './context';
 import store from '@/store';
 import Loader from './components/ui/loader';
+import Home from './components/home';
+import Simulation from './components/simulation';
 
 declare global {
     interface Window {
@@ -18,7 +20,7 @@ declare global {
 }
 
 function App() {
-    const [activeSidebar, setActiveSidebar] = useState<SidebarType>('grid'); // Default to 'grid' for development
+    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('grid'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
 
@@ -33,12 +35,14 @@ function App() {
     });
 
     const handleNavClick = (item: string, type?: string) => {
-        if (type === 'grid' || type === 'terrain') {
-            setActiveSidebar(type);
+        if (type === 'home' || type === 'grid' || type === 'simulation') {
+            setActiveNavbar(type);
+        } else if (item === 'Home' || item === '首页') {
+            setActiveNavbar('home');
         } else if (item === 'Grid' || item === '网格') {
-            setActiveSidebar('grid');
-        } else if (item === 'Terrain' || item === '地形') {
-            setActiveSidebar('terrain');
+            setActiveNavbar('grid');
+        } else if (item === 'Simulation' || item === '模拟') {
+            setActiveNavbar('simulation');
         }
     };
 
@@ -46,7 +50,7 @@ function App() {
         <div className="App">
             <LanguageContext.Provider value={{ language, setLanguage }}>
                 <SidebarContext.Provider
-                    value={{ activeSidebar, setActiveSidebar }}
+                    value={{ activeNavbar, setActiveNavbar }}
                 >
                     <AIDialogContext.Provider
                         value={{ aiDialogEnabled, setAIDialogEnabled }}
@@ -69,7 +73,9 @@ function App() {
                                 onNavItemClick={handleNavClick}
                             ></Navbar>
                             <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
-                                <Page />
+                                {activeNavbar === 'home' && <Home/>}
+                                {activeNavbar === 'grid' && <Page />}
+                                {activeNavbar === 'simulation' && <Simulation/>}
                             </div>
                             <Toaster
                                 position="bottom-right"
