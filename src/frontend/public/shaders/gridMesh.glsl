@@ -203,7 +203,7 @@ void main() {
         float factor = 0.035;
         float range = 0.6;
         float dis = uv.x * uv.x + uv.y * uv.y;
-        float deltaDis = abs(uv.x * uv .x - uv.y * uv.y);˝
+        float deltaDis = abs(uv.x * uv.x - uv.y * uv.y);
         if (awayFromKlkStar(factor, 0.8) < 1.0) {
             fillColor = vec3(1.0, 0.0, 0.0);
             fillAlpha = 0.5;
