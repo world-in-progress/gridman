@@ -15,9 +15,9 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const [activeTab, setActiveTab] = useState<'topology' | 'attribute'>(
         'topology'
     );
-    const [pickingTab, setPickingTab] = useState<
-        'picking' | 'unpicking'
-    >('picking');
+    const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>(
+        'picking'
+    );
     const [activeSelectTab, setActiveSelectTab] = useState<
         'brush' | 'box' | 'feature'
     >('brush');
@@ -35,6 +35,10 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
         if (onBack) {
             onBack();
         }
+    };
+
+    const handleSaveTopologyState = () => {
+        // 在此添加保存拓扑状态功能
     };
 
     return (
@@ -79,6 +83,17 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
 
                     <BasicInfo />
 
+                    <div
+                        className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-sm"
+                        onClick={handleSaveTopologyState}
+                    >
+                        <span>
+                            {language === 'zh'
+                                ? '保存拓扑编辑状态'
+                                : 'Save Topology Edit State'}
+                        </span>
+                    </div>
+
                     {/* 拓扑编辑 */}
                     {activeTab === 'topology' && (
                         <TopologyPanel
@@ -90,9 +105,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                     )}
 
                     {/* 属性编辑面板 */}
-                    {activeTab === 'attribute' && (
-                        <AttributePanel/>
-                    )}
+                    {activeTab === 'attribute' && <AttributePanel />}
                 </div>
             </SidebarContent>
             <SidebarRail />
