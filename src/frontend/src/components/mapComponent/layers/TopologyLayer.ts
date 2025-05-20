@@ -135,9 +135,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         return this._gridCore!.subdivideRules.rules
     }
 
-    set gridCore(recorder: GridCore) {
+    set gridCore(core: GridCore) {
         const currentMaxGridNum = this.maxGridNum
-        this._gridCore = recorder // after setting, this.maxGridNum will be updated
+        this._gridCore = core // after setting, this.maxGridNum will be updated
         this.startCallback()
 
         // Update GPU resources if maxGridNum changed
@@ -145,14 +145,14 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this.initialized = false
             this._removeGPUResource(this._gl)
             this.initGPUResource().then(() => {
-                recorder.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array, Uint8Array]) => {
+                core.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array, Uint8Array]) => {
                     this.updateGPUGrids(renderInfo)
                     this.initialized = true
                     this.endCallback()
                 })
             })
         } else {
-            recorder.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array, Uint8Array]) => {
+            core.init((renderInfo: [number, Uint8Array, Float32Array, Float32Array, Uint8Array]) => {
                 this.updateGPUGrids(renderInfo)
                 this.initialized = true
                 this.endCallback()
@@ -170,7 +170,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     get isReady() {
-        // Check if the grid recorder is initialized
+        // Check if the grid core is initialized
         if (!this._gridCore || !this._gridCore.gridNum) return false
         // Check if GPU resources are initialized
         if (!this.initialized) return false
@@ -338,75 +338,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         }
 
         gll.fillSubTexture2DByArray(gl, this._paletteTexture, 0, 0, 0, LEVEL_PALETTE_LENGTH, 1, gl.RGB, gl.UNSIGNED_BYTE, this.paletteColorList)
-    }
-
-    // Rendering //////////////////////////////////////////////////
-
-    async render(gl: WebGL2RenderingContext, matrix: number[]) {
-
-        // Skip if not ready or not visible
-        if (!this.isReady || !this.visible) return
-
-        // Tick render
-        if (!this.isTransparent) {
-            // Mesh Pass
-            this.drawGridMeshes()
-            // Line Pass
-            this.drawGridLines()
-        }
-
-        // Error check
-        gll.errorCheck(gl)
-    }
-
-    drawGridMeshes() {
-
-        const gl = this._gl
-
-        gl.enable(gl.BLEND)
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-
-        gl.enable(gl.DEPTH_TEST)
-        gl.depthFunc(gl.LESS)
-
-        gl.useProgram(this._gridMeshShader)
-
-        gl.bindVertexArray(this._gridStorageVAO)
-
-        gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this._paletteTexture)
-        gl.uniform1i(gl.getUniformLocation(this._gridMeshShader, 'hit'), this.hitFlag[0])
-        gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
-        gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
-        gl.uniform1f(gl.getUniformLocation(this._gridMeshShader, 'mode'), 0.0)
-        gl.uniform4fv(gl.getUniformLocation(this._gridMeshShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
-        gl.uniformMatrix4fv(gl.getUniformLocation(this._gridMeshShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
-
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridCore.gridNum)
-
-        gl.disable(gl.BLEND)
-    }
-
-    drawGridLines() {
-        const gl = this._gl
-
-        gl.disable(gl.DEPTH_TEST)
-
-        gl.enable(gl.BLEND)
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-
-        gl.useProgram(this._gridLineShader)
-
-        gl.bindVertexArray(this._gridStorageVAO)
-
-        gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
-        gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
-        gl.uniformMatrix4fv(gl.getUniformLocation(this._gridLineShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
-        gl.uniform4fv(gl.getUniformLocation(this._gridLineShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
-
-        gl.drawArraysInstanced(gl.LINE_LOOP, 0, 4, this.gridCore.gridNum)
-
-        gl.disable(gl.BLEND)
     }
 
     // Picking //////////////////////////////////////////////////
@@ -727,8 +658,78 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             levels: new Uint8Array(subdivideLevels),
             globalIds: new Uint32Array(subdivideGlobalIds)
         }
+        console.log(subdivideInfo.levels.length)
         this.deleteGridsLocally(subdividableStorageIds)
         this._subdivideGrids(subdivideInfo)
+    }
+
+    // Rendering ///////////////////////////////////////////////////
+
+    render(gl: WebGL2RenderingContext, matrix: number[]) {
+
+        // Skip if not ready or not visible
+        if (!this.isReady || !this.visible) return
+
+        // Tick render
+        if (!this.isTransparent) {
+            // Mesh Pass
+            this.drawGridMeshes()
+            // Line Pass
+            this.drawGridLines()
+        }
+
+        // Error check
+        gll.errorCheck(gl)
+    }
+
+    drawGridMeshes() {
+
+        const gl = this._gl
+
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+        gl.enable(gl.DEPTH_TEST)
+        gl.depthFunc(gl.LESS)
+
+        gl.useProgram(this._gridMeshShader)
+
+        gl.bindVertexArray(this._gridStorageVAO)
+
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this._paletteTexture)
+        gl.uniform1i(gl.getUniformLocation(this._gridMeshShader, 'hit'), this.hitFlag[0])
+        gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
+        gl.uniform2fv(gl.getUniformLocation(this._gridMeshShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
+        gl.uniform1f(gl.getUniformLocation(this._gridMeshShader, 'mode'), 0.0)
+        gl.uniform4fv(gl.getUniformLocation(this._gridMeshShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
+        gl.uniformMatrix4fv(gl.getUniformLocation(this._gridMeshShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
+
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridCore.gridNum)
+
+        gl.disable(gl.BLEND)
+    }
+
+    drawGridLines() {
+        const gl = this._gl
+
+        gl.disable(gl.DEPTH_TEST)
+
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+        gl.useProgram(this._gridLineShader)
+
+        gl.bindVertexArray(this._gridStorageVAO)
+
+        gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerHigh'), [this.layerGroup.mercatorCenterX[0], this.layerGroup.mercatorCenterY[0]]);
+        gl.uniform2fv(gl.getUniformLocation(this._gridLineShader, 'centerLow'), [this.layerGroup.mercatorCenterX[1], this.layerGroup.mercatorCenterY[1]]);
+        gl.uniformMatrix4fv(gl.getUniformLocation(this._gridLineShader, 'uMatrix'), false, this.layerGroup.relativeEyeMatrix)
+        gl.uniform4fv(gl.getUniformLocation(this._gridLineShader, 'relativeCenter'), this.gridCore.bBoxCenterF32)
+
+        gl.drawArraysInstanced(gl.LINE_LOOP, 0, 4, this.gridCore.gridNum)
+
+        gl.disable(gl.BLEND)
     }
 
     // GPU update //////////////////////////////////////////////////

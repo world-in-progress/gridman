@@ -139,6 +139,17 @@ bool isDeleted() {
     return abs(1.0 - u_deleted) <= tolerence;
 }
 
+float awayFromKlkStar(float factor, float range) {
+    float deltaDis = abs(uv.x * uv .x - uv.y * uv.y);
+    if (deltaDis <= factor && abs(uv.x) <= range && abs(uv.y) <= range) {
+        // return 1.0;
+        return deltaDis / factor;
+    } else {
+        // return deltaDis / factor;
+        return 1.0;
+    }
+}
+
 void main() {
 
     bool isHit = isHit();
@@ -189,9 +200,19 @@ void main() {
     }
 
     if(isDeleted()) {
-        if (abs(uv.x * uv .x - uv.y * uv.y) < 0.05 && abs(uv.x) < 0.6 && abs(uv.y) < 0.6) {
+        float factor = 0.035;
+        float range = 0.6;
+        float dis = uv.x * uv.x + uv.y * uv.y;
+        float deltaDis = abs(uv.x * uv .x - uv.y * uv.y);˝
+        if (awayFromKlkStar(factor, 0.8) < 1.0) {
             fillColor = vec3(1.0, 0.0, 0.0);
             fillAlpha = 0.5;
+            float centerFactor = 0.6;
+            float centerAway = awayFromKlkStar(centerFactor * factor, centerFactor * range);
+            if (centerAway < 1.0) {
+                float mixFactor = clamp(centerAway * 3.0, 0.0, 1.0);
+                fillColor = mix(vec3(1.0), vec3(1.0, 0.0, 0.0), mixFactor);
+            }
         } else {
             fillColor = vec3(1.0);
             fillAlpha = 0.4;

@@ -57,7 +57,7 @@ export default class GridCore {
     levelInfos: GridLevelInfo[]
     gridLevelCache: Float32Array
     gridDeletedCache: Uint8Array
-    gridGlobalIdCache: Float32Array
+    gridGlobalIdCache: Uint32Array
     gridKey_storageId_dict: Map<string, number>
     grid_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
     storageId_edgeId_set: Array<[Set<number>, Set<number>, Set<number>, Set<number>]> = []
@@ -90,7 +90,7 @@ export default class GridCore {
         // Init grid cache
         this.gridKey_storageId_dict = new Map()
         this.gridLevelCache = new Float32Array(this.maxGridNum)
-        this.gridGlobalIdCache = new Float32Array(this.maxGridNum)
+        this.gridGlobalIdCache = new Uint32Array(this.maxGridNum)
         this.gridDeletedCache = new Uint8Array(this.maxGridNum).fill(UNDELETED_FLAG)
         this.grid_attribute_cache = Array.from({ length: this.maxGridNum }, () => { return { height: -9999, type: 0 } })
 
