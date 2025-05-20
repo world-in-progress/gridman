@@ -2,10 +2,11 @@ import './App.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Page, { SidebarType } from './components/page';
 import { Navbar } from './components/navbar';
-import { useState, createContext, RefObject } from 'react';
+import { useState, RefObject, useEffect, useRef } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { Toaster } from '@/components/ui/sonner';
 import { SidebarContext, LanguageContext, AIDialogContext } from './context';
+import { SchemaService } from './components/schemaPanel/utils/SchemaService';
 import store from '@/store';
 import Loader from './components/ui/loader';
 import Home from './components/home';
@@ -19,7 +20,7 @@ declare global {
     }
 }
 
-function App() {
+export default  function App() {
     const [activeNavbar, setActiveNavbar] = useState<SidebarType>('grid'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
@@ -45,6 +46,20 @@ function App() {
             setActiveNavbar('simulation');
         }
     };
+
+    const loadCounter = useRef(0);
+
+    useEffect(() => {
+        if (loadCounter.current === 0) {
+            loadCounter.current = 1;
+            const schemaService = new SchemaService(language)
+            schemaService.fetchAllSchemas((err, result) => {
+                if (result.length === 0) {
+                    setActiveNavbar('home')
+                }
+            })
+        }
+    }, [])
 
     return (
         <div className="App">
@@ -93,5 +108,3 @@ function App() {
         </div>
     );
 }
-
-export default App;

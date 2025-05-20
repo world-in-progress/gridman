@@ -26,6 +26,13 @@ import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import GridChecking from './gridChecking';
 
+type TopologyOperationType =
+    | 'subdivide'
+    | 'merge'
+    | 'delete'
+    | 'recover'
+    | null;
+
 export default function TopologyPanel({
     pickingTab,
     setPickingTab,
@@ -33,16 +40,11 @@ export default function TopologyPanel({
     setActiveSelectTab,
 }: TopologyPanelProps) {
     const { language } = useContext(LanguageContext);
-    
+
     const [selectAllDialogOpen, setSelectAllDialogOpen] = useState(false);
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
-    const [subdivideGridDialogOpen, setSubdivideGridDialogOpen] =
-    useState(false);
-    const [mergeGridDialogOpen, setMergeGridDialogOpen] = useState(false);
-    const [deleteGridDialogOpen, setDeleteGridDialogOpen] = useState(false);
-    const [recoverGridDialogOpen, setRecoverGridDialogOpen] = useState(false)
-    
-
+    const [activeTopologyOperation, setActiveTopologyOperation] =
+        useState<TopologyOperationType>(null);
 
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
 
@@ -91,22 +93,6 @@ export default function TopologyPanel({
         setSelectAllDialogOpen(true);
     };
 
-    const handleSubdivideClick = () => {
-        setSubdivideGridDialogOpen(true);
-    };
-
-    const handleMergeGridClick = () => {
-        setMergeGridDialogOpen(true);
-    };
-
-    const handleDeleteGridClick = () => {
-        setDeleteGridDialogOpen(true);
-    };
-
-    const handleRecoverGridClick = () => {
-        setRecoverGridDialogOpen(true)
-    }
-
     const handleConfirmSelectAll = () => {
         setSelectAllDialogOpen(false);
         topologyLayer.executePickAllGrids();
@@ -117,80 +103,90 @@ export default function TopologyPanel({
         topologyLayer.executeClearSelection();
     };
 
-    const handleConfirmSubdivideGrid = () => {
-        setSubdivideGridDialogOpen(false);
-        topologyLayer.executeSubdivideGrids();
+    const handleConfirmTopologyAction = () => {
+        switch (activeTopologyOperation) {
+            case 'subdivide':
+                topologyLayer.executeSubdivideGrids();
+                break;
+            case 'merge':
+                console.log('执行了合并');
+                // 添加合并操作逻辑
+                // topology.executeMergeGrids()
+                break;
+            case 'delete':
+                topologyLayer.executeDeleteGrids();
+                break;
+            case 'recover':
+                console.log('执行了恢复');
+                // 添加恢复操作逻辑
+                // topologyLayer.executeRecoverGrids()
+                break;
+            default:
+                // Should not happen if dialog is only open when activeTopologyOperation is not null
+                console.warn('No active topology operation to confirm.');
+        }
+        // 关闭对话框
+        setActiveTopologyOperation(null);
     };
 
-    const handleConfirmMergeGrid = () => {
-        setMergeGridDialogOpen(false);
-        topologyLayer.executeMergeGrids();
-    };
-
-    const handleConfirmDeleteGrid = () => {
-        setDeleteGridDialogOpen(false);
-        topologyLayer.executeDeleteGrids();
-    };
-
-    const handleConfirmRecoverGrid = () => {
-        setRecoverGridDialogOpen(false)
-        console.log('执行了合并');
-        // 添加恢复操作逻辑
-        // topology.executeRecoverGrids()
-    }
+    store.set('gridCheckingOn', false);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
-                if (event.key === 'P' || event.key === 'p') {
-                    event.preventDefault();
-                    setPickingTab('picking');
-                    store.set('pickingSelect', true);
-                }
-                if (event.key === 'U' || event.key === 'u') {
-                    event.preventDefault();
-                    setPickingTab('unpicking');
-                    store.set('pickingSelect', false);
-                }
-                if (event.key === 'A' || event.key === 'a') {
-                    event.preventDefault();
-                    setSelectAllDialogOpen(true);
-                }
-                if (event.key === 'C' || event.key === 'c') {
-                    event.preventDefault();
-                    setDeleteSelectDialogOpen(true);
-                }
-                if (event.key === '1') {
-                    event.preventDefault();
-                    setActiveSelectTab('brush');
-                    store.set('modeSelect', 'brush');
-                }
-                if (event.key === '2') {
-                    event.preventDefault();
-                    setActiveSelectTab('box');
-                    store.set('modeSelect', 'box');
-                }
-                if (event.key === '3') {
-                    event.preventDefault();
-                    setActiveSelectTab('feature');
-                    handleFeatureClick();
-                    store.set('modeSelect', 'feature');
-                }
-                if (event.key === 'S' || event.key === 's') {
-                    event.preventDefault();
-                    setSubdivideGridDialogOpen(true);
-                }
-                if (event.key === 'M' || event.key === 'm') {
-                    event.preventDefault();
-                    setMergeGridDialogOpen(true);
-                }
-                if (event.key === 'D' || event.key === 'd') {
-                    event.preventDefault();
-                    setDeleteGridDialogOpen(true);
-                }
-                if (event.key === 'R' || event.key === 'r') {
-                    event.preventDefault();
-                    // Recover logic to be added if necessary
+                console.log(store.get<boolean>('gridCheckingOn'));
+
+                if (!store.get<boolean>('gridCheckingOn')) {
+                    if (event.key === 'P' || event.key === 'p') {
+                        event.preventDefault();
+                        setPickingTab('picking');
+                        store.set('pickingSelect', true);
+                    }
+                    if (event.key === 'U' || event.key === 'u') {
+                        event.preventDefault();
+                        setPickingTab('unpicking');
+                        store.set('pickingSelect', false);
+                    }
+                    if (event.key === 'A' || event.key === 'a') {
+                        event.preventDefault();
+                        setSelectAllDialogOpen(true);
+                    }
+                    if (event.key === 'C' || event.key === 'c') {
+                        event.preventDefault();
+                        setDeleteSelectDialogOpen(true);
+                    }
+                    if (event.key === '1') {
+                        event.preventDefault();
+                        setActiveSelectTab('brush');
+                        store.set('modeSelect', 'brush');
+                    }
+                    if (event.key === '2') {
+                        event.preventDefault();
+                        setActiveSelectTab('box');
+                        store.set('modeSelect', 'box');
+                    }
+                    if (event.key === '3') {
+                        event.preventDefault();
+                        setActiveSelectTab('feature');
+                        handleFeatureClick();
+                        store.set('modeSelect', 'feature');
+                    }
+                    if (event.key === 'S' || event.key === 's') {
+                        event.preventDefault();
+                        setActiveTopologyOperation('subdivide');
+                    }
+                    if (event.key === 'M' || event.key === 'm') {
+                        event.preventDefault();
+                        setActiveTopologyOperation('merge');
+                    }
+                    if (event.key === 'D' || event.key === 'd') {
+                        event.preventDefault();
+                        setActiveTopologyOperation('delete');
+                    }
+                    if (event.key === 'R' || event.key === 'r') {
+                        event.preventDefault();
+                        setActiveTopologyOperation('recover');
+                    }
                 }
             }
         };
@@ -201,6 +197,57 @@ export default function TopologyPanel({
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [setPickingTab]);
+
+    const onTopologyOperationClick = () => {
+        switch (activeTopologyOperation) {
+            case 'subdivide':
+                setActiveTopologyOperation('subdivide');
+                break;
+            case 'merge':
+                setActiveTopologyOperation('merge');
+                break;
+            case 'delete':
+                setActiveTopologyOperation('delete');
+                break;
+            case 'recover':
+                setActiveTopologyOperation('recover');
+                break;
+            default:
+                // Should not happen if dialog is only open when activeTopologyOperation is not null
+                console.warn('No active topology operation to confirm.');
+        }
+    };
+
+    const topologyOperations = [
+        {
+            type: 'subdivide',
+            zh: '细分',
+            en: 'Subdivide',
+            activeColor: 'bg-blue-600',
+            shortcut: '[ Ctrl+S ]',
+        },
+        {
+            type: 'merge',
+            zh: '合并',
+            en: 'Merge',
+            activeColor: 'bg-green-600',
+            shortcut: '[ Ctrl+M ]',
+        },
+        {
+            type: 'delete',
+            zh: '删除',
+            en: 'Delete',
+            activeColor: 'bg-red-600',
+            shortcut: '[ Ctrl+D ]',
+        },
+        {
+            type: 'recover',
+            zh: '恢复',
+            en: 'Recover',
+            activeColor: 'bg-purple-600',
+            shortcut: '[ Ctrl+R ]',
+        },
+    ];
 
     return (
         <>
@@ -281,10 +328,14 @@ export default function TopologyPanel({
                     </AlertDialogContent>
                 </AlertDialog>
 
-                {/* 细分选中网格 */}
+                {/* 通用的拓扑操作确认对话框 */}
                 <AlertDialog
-                    open={subdivideGridDialogOpen}
-                    onOpenChange={setSubdivideGridDialogOpen}
+                    open={activeTopologyOperation !== null}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setActiveTopologyOperation(null);
+                        }
+                    }}
                 >
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -295,8 +346,24 @@ export default function TopologyPanel({
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                                 {language === 'zh'
-                                    ? '是否确认细分选中的网格？'
-                                    : 'Are you sure you want to subdivide the selected grids?'}
+                                    ? activeTopologyOperation === 'subdivide'
+                                        ? '是否确认细分选中的网格？'
+                                        : activeTopologyOperation === 'merge'
+                                        ? '是否确认合并选中的网格？'
+                                        : activeTopologyOperation === 'delete'
+                                        ? '是否确认删除选中的网格？'
+                                        : activeTopologyOperation === 'recover'
+                                        ? '是否确认恢复选中的网格？'
+                                        : '' // Fallback in case activeTopologyOperation is unexpectedly null
+                                    : activeTopologyOperation === 'subdivide'
+                                    ? 'Are you sure you want to subdivide the selected grids?'
+                                    : activeTopologyOperation === 'merge'
+                                    ? 'Are you sure you want to merge the selected grids?'
+                                    : activeTopologyOperation === 'delete'
+                                    ? 'Are you sure you want to delete the selected grids?'
+                                    : activeTopologyOperation === 'recover'
+                                    ? 'Are you sure you want to recover the selected grids?'
+                                    : ''}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -304,106 +371,39 @@ export default function TopologyPanel({
                                 {language === 'zh' ? '取消' : 'Cancel'}
                             </AlertDialogCancel>
                             <AlertDialogAction
-                                onClick={handleConfirmSubdivideGrid}
-                                className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                                onClick={handleConfirmTopologyAction}
+                                className={
+                                    activeTopologyOperation === 'subdivide'
+                                        ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                        : activeTopologyOperation === 'merge'
+                                        ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                                        : activeTopologyOperation === 'delete'
+                                        ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
+                                        : activeTopologyOperation === 'recover'
+                                        ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+                                        : 'bg-gray-600 cursor-not-allowed'
+                                }
+                                disabled={activeTopologyOperation === null}
                             >
-                                {language === 'zh' ? '细分' : 'Subdivide'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* 合并选中网格 */}
-                <AlertDialog
-                    open={mergeGridDialogOpen}
-                    onOpenChange={setMergeGridDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
                                 {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? '是否确认合并选中的网格？'
-                                    : 'Are you sure you want to merge the selected grids?'}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="cursor-pointer">
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmMergeGrid}
-                                className="bg-green-600 hover:bg-green-700 cursor-pointer"
-                            >
-                                {language === 'zh' ? '合并' : 'Merge'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* 删除选中网格 */}
-                <AlertDialog
-                    open={deleteGridDialogOpen}
-                    onOpenChange={setDeleteGridDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? '是否确认删除选中的网格？'
-                                    : 'Are you sure you want to delete the selected grids?'}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="cursor-pointer">
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmDeleteGrid}
-                                className="bg-red-600 hover:bg-red-700 cursor-pointer"
-                            >
-                                {language === 'zh' ? '删除' : 'Delete'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* 恢复选中网格 */}
-                <AlertDialog
-                    open={recoverGridDialogOpen}
-                    onOpenChange={setRecoverGridDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? '是否确认删除选中的网格？'
-                                    : 'Are you sure you want to delete the selected grids?'}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="cursor-pointer">
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmRecoverGrid}
-                                className="bg-purple-600 hover:bg-purple-700 cursor-pointer"
-                            >
-                                {language === 'zh' ? '删除' : 'Delete'}
+                                    ? activeTopologyOperation === 'subdivide'
+                                        ? '细分'
+                                        : activeTopologyOperation === 'merge'
+                                        ? '合并'
+                                        : activeTopologyOperation === 'delete'
+                                        ? '删除'
+                                        : activeTopologyOperation === 'recover'
+                                        ? '恢复'
+                                        : '确认'
+                                    : activeTopologyOperation === 'subdivide'
+                                    ? 'Subdivide'
+                                    : activeTopologyOperation === 'merge'
+                                    ? 'Merge'
+                                    : activeTopologyOperation === 'delete'
+                                    ? 'Delete'
+                                    : activeTopologyOperation === 'recover'
+                                    ? 'Recover'
+                                    : 'Confirm'}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -504,7 +504,7 @@ export default function TopologyPanel({
                             >
                                 [ Ctrl+C ]
                             </div>
-                        </button>{' '}
+                        </button>
                     </div>
                 </div>
                 <div className="mt-2 mb-3 p-2 bg-white rounded-md shadow-sm border border-gray-200">
@@ -586,58 +586,36 @@ export default function TopologyPanel({
                     {language === 'zh' ? '拓扑' : 'Topology'}
                 </h3>
                 <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
-                    <button
-                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white ${
-                            subdivideGridDialogOpen
-                                ? 'bg-blue-600'
-                                : 'bg-gray-600 hover:bg-blue-600 '
-                        }`}
-                        onClick={handleSubdivideClick}
-                    >
-                        <div className="flex flex-row items-center">
-                            {language === 'zh' ? '细分' : 'Subdivide'}
-                        </div>
-                        <div className="text-xs text-white">[ Ctrl+S ]</div>
-                    </button>
-                    <button
-                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white  ${
-                            mergeGridDialogOpen
-                                ? 'bg-green-600'
-                                : 'bg-gray-600 hover:bg-green-600 '
-                        }`}
-                        onClick={handleMergeGridClick}
-                    >
-                        <div className="flex flex-row items-center">
-                            {language === 'zh' ? '合并' : 'Merge'}
-                        </div>
-                        <div className="text-xs text-white">[ Ctrl+M ]</div>
-                    </button>
-                    <button
-                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white ${
-                            deleteGridDialogOpen
-                                ? 'bg-red-600'
-                                : 'bg-gray-600 hover:bg-red-600 '
-                        }`}
-                        onClick={handleDeleteGridClick}
-                    >
-                        <div className="flex flex-row items-center">
-                            {language === 'zh' ? '删除' : 'Delete'}
-                        </div>
-                        <div className="text-xs text-white">[ Ctrl+D ]</div>
-                    </button>
-                    <button
-                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white ${
-                            recoverGridDialogOpen
-                                ? 'bg-purple-600'
-                                : 'bg-gray-600 hover:bg-purple-600 '
-                        }`}
-                        onClick={handleRecoverGridClick}
-                    >
-                        <div className="flex flex-rowitems-center">
-                            {language === 'zh' ? '恢复' : 'Recover'}
-                        </div>
-                        <div className="text-xs text-white">[ Ctrl+R ]</div>
-                    </button>
+                    {topologyOperations.map((operation) => (
+                        <button
+                            key={operation.type}
+                            className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white ${
+                                activeTopologyOperation === operation.type
+                                    ? operation.activeColor
+                                    : 'bg-gray-600 hover:' +
+                                      operation.activeColor.replace(
+                                          'bg-',
+                                          'bg-'
+                                      ) // Keep hover effect consistent
+                            }`}
+                            // onClick={operation.onClick}
+                            onClick={() => {
+                                setActiveTopologyOperation(
+                                    operation.type as TopologyOperationType
+                                );
+                                onTopologyOperationClick();
+                            }}
+                        >
+                            <div className="flex flex-row items-center">
+                                {language === 'zh'
+                                    ? operation.zh
+                                    : operation.en}
+                            </div>
+                            <div className="text-xs text-white">
+                                {operation.shortcut}
+                            </div>
+                        </button>
+                    ))}
                 </div>
             </div>
             <GridChecking />
