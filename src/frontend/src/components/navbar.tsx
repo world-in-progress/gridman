@@ -6,7 +6,7 @@ import {
     CircleHelp,
     UsersRound,
     LandPlot,
-    Grid2x2Plus,
+    Microscope,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ export function Navbar({
     ...props
 }: NavbarProps) {
     const { language, setLanguage } = useContext(LanguageContext);
-    const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
+    const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
     const { aiDialogEnabled } = useContext(AIDialogContext);
     const [languageSwitchDialogOpen, setLanguageSwitchDialogOpen] =
         useState(false);
@@ -49,18 +49,18 @@ export function Navbar({
     };
 
     const navItems = [
-        { labelZh: '首页', labelEn: 'Home', icon: Home },
+        { labelZh: '首页', labelEn: 'Home', type: 'home', icon: Home },
         {
             labelZh: '网格',
             labelEn: 'Grid',
             type: 'grid',
-            icon: Grid2x2Plus,
+            icon: LandPlot,
         },
         {
-            labelZh: '地形',
-            labelEn: 'Terrain',
-            type: 'terrain',
-            icon: LandPlot,
+            labelZh: '模拟',
+            labelEn: 'Simulation',
+            type: 'simulation',
+            icon: Microscope,
         },
         { labelZh: '帮助', labelEn: 'Help', icon: CircleHelp },
         { labelZh: '关于', labelEn: 'About', icon: UsersRound },
@@ -79,12 +79,12 @@ export function Navbar({
 
     const isActive = (type?: string) => {
         if (!type) return false;
-        return type === activeSidebar;
+        return type === activeNavbar;
     };
 
     return (
         <nav
-            className={cn('flex   text-white h-20 z-50 relative', className)}
+            className={cn('flex text-white h-20 z-50 relative', className)}
             {...props}
         >
             <AlertDialog
@@ -136,10 +136,16 @@ export function Navbar({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            {/* <button
+                onClick={() => {
+                    setActiveNavbar('home');
+                }}
+            ></button> */}
             <div
                 className={`flex items-center justify-center gap-4 w-1/5 ${
                     aiDialogEnabled ? 'bg-[#00C0FF]' : 'bg-black'
-                }`}
+                } cursor-pointer`}
+                onClick={() => setActiveNavbar('home')}
             >
                 <div className="flex items-center">
                     <img
@@ -208,15 +214,8 @@ export function Navbar({
                                 onClick={() =>
                                     setLanguageSwitchDialogOpen(true)
                                 }
-                                // onCheckedChange={() => toggleLanguage()}
                                 className="bg-gray-700 data-[state=checked]:bg-[#00C0FF] cursor-pointer"
                             />
-                            {/* <Switch
-                                id="language-switch"
-                                checked={language === 'zh'}
-                                onCheckedChange={() => toggleLanguage()}
-                                className="bg-gray-700 data-[state=checked]:bg-[#00C0FF] cursor-pointer"
-                            /> */}
                             <Label
                                 htmlFor="language-switch"
                                 className="text-md font-bold text-gray-300"
