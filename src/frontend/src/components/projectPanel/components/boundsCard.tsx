@@ -56,7 +56,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="flex flex-row items-center justify-center gap-1">
+                            <div className="flex flex-row items-center justify-center gap-1 mt-2">
                                 <ArrowLeft className="h-4 w-4 text-green-600" />
                                 <span className="font-bold text-green-600 text-sm mr-1 mt-1">
                                     W
@@ -99,7 +99,7 @@ function BoundsCard({ bounds = [], language }: BoundsCardProps) {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="flex flex-row items-center justify-center gap-1">
+                            <div className="flex flex-row items-center justify-center gap-1 mt-2">
                                 <span className="font-bold text-red-600 text-sm mt-1 ml-4">
                                     E
                                 </span>

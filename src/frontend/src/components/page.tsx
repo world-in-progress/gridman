@@ -11,11 +11,7 @@ import SchemaPanel from './schemaPanel/schemaPanel';
 import CreateSchema from './schemaPanel/createSchema';
 import ProjectPanel from './projectPanel/projectPanel';
 import CreateProject from './projectPanel/createProject';
-import {
-    SidebarContext,
-    LanguageContext,
-    AIDialogContext,
-} from '../context';
+import { SidebarContext, LanguageContext, AIDialogContext } from '../context';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -48,7 +44,7 @@ import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
 
-export type SidebarType = 'grid' | 'terrain' | 'project' | null;
+export type SidebarType = 'home' | 'grid' | 'simulation' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
 
 export default function Page() {
@@ -113,7 +109,7 @@ export default function Page() {
         string | undefined
     >(undefined);
 
-    const { activeSidebar, setActiveSidebar } = useContext(SidebarContext);
+    const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
     const { language } = useContext(LanguageContext);
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
 
@@ -122,18 +118,18 @@ export default function Page() {
     };
 
     useEffect(() => {
-        if (activeSidebar === 'grid') {
+        if (activeNavbar === 'grid') {
             setActiveBreadcrumb('schema');
             setActivePanel('schema');
         }
-    }, [activeSidebar]);
+    }, [activeNavbar]);
 
     useEffect(() => {
-        if (activePanel || activeSidebar) {
+        if (activePanel || activeNavbar) {
             const event = new Event('activePanelChange');
             window.dispatchEvent(event);
         }
-    }, [activePanel, activeSidebar]);
+    }, [activePanel, activeNavbar]);
 
     useEffect(() => {
         if (!aiDialogEnabled && isChatOpen) {
@@ -320,89 +316,22 @@ export default function Page() {
     };
 
     const renderActivePanel = () => {
-        if (activeSidebar === 'terrain') {
-            return (
-                <OperateSideBar
-                    className="max-h-full"
-                    onDrawRectangle={handleDrawRectangle}
-                    rectangleCoordinates={rectangleCoordinates}
-                    isDrawing={isDrawing}
-                />
-            );
-        }
+        // if (activeNavbar === 'simulation') {
+        //     return (
+        //         <OperateSideBar
+        //             className="max-h-full"
+        //             onDrawRectangle={handleDrawRectangle}
+        //             rectangleCoordinates={rectangleCoordinates}
+        //             isDrawing={isDrawing}
+        //         />
+        //     );
+        // }
 
-        if (activeSidebar === 'grid') {
-            if (activePanel === 'schema') {
-                if (showCreateSchema) {
-                    return (
-                        <CreateSchema
-                            onBack={() => setShowCreateSchema(false)}
-                        />
-                    );
-                }
+        // if (activeNavbar === 'grid') {
+        if (activePanel === 'schema') {
+            if (showCreateSchema) {
                 return (
-                    <SchemaPanel
-                        onCreateNew={() => setShowCreateSchema(true)}
-                        onCreateProject={handleCreateProjectFromSchema}
-                    />
-                );
-            } else if (activePanel === 'project') {
-                if (showCreateProject) {
-                    return (
-                        <CreateProject
-                            onBack={() => {
-                                setShowCreateProject(false);
-                                setRectangleCoordinates(null);
-                                setIsDrawing(false);
-                            }}
-                            onDrawRectangle={handleDrawRectangle}
-                            rectangleCoordinates={rectangleCoordinates}
-                            isDrawing={isDrawing}
-                            initialSchemaName={selectedSchemaName}
-                            initialEpsg={selectedSchemaEpsg}
-                            initialSchemaLevel={selectedSchemaLevel}
-                        />
-                    );
-                }
-                if (showCreateSubProject) {
-                    return (
-                        <CreateSubProject
-                            onBack={() => {
-                                setShowCreateSubProject(false);
-                                setRectangleCoordinates(null);
-                                setIsDrawing(false);
-                            }}
-                            onDrawRectangle={handleDrawRectangle}
-                            rectangleCoordinates={rectangleCoordinates}
-                            isDrawing={isDrawing}
-                            initialSchemaName={
-                                selectedParentProject?.schema_name
-                            }
-                            initialEpsg={selectedSchemaEpsg}
-                            initialSchemaLevel={selectedSchemaLevel}
-                            parentProject={selectedParentProject}
-                            cornerMarker={cornerMarker}
-                            setCornerMarker={setCornerMarker}
-                            schemaMarker={schemaMarker}
-                            setSchemaMarker={setSchemaMarker}
-                            gridLine={gridLine}
-                            setGridLine={setGridLine}
-                            gridLabel={gridLabel}
-                            setGridLabel={setGridLabel}
-                        />
-                    );
-                }
-                return (
-                    <ProjectPanel onCreateSubProject={handleCreateSubProject} />
-                );
-            } else if (activePanel === 'editor') {
-                return (
-                    <EditorPanel
-                        onBack={() => {
-                            setActivePanel('project');
-                            setActiveBreadcrumb('project');
-                        }}
-                    />
+                    <CreateSchema onBack={() => setShowCreateSchema(false)} />
                 );
             }
             return (
@@ -411,7 +340,68 @@ export default function Page() {
                     onCreateProject={handleCreateProjectFromSchema}
                 />
             );
+        } else if (activePanel === 'project') {
+            if (showCreateProject) {
+                return (
+                    <CreateProject
+                        onBack={() => {
+                            setShowCreateProject(false);
+                            setRectangleCoordinates(null);
+                            setIsDrawing(false);
+                        }}
+                        onDrawRectangle={handleDrawRectangle}
+                        rectangleCoordinates={rectangleCoordinates}
+                        isDrawing={isDrawing}
+                        initialSchemaName={selectedSchemaName}
+                        initialEpsg={selectedSchemaEpsg}
+                        initialSchemaLevel={selectedSchemaLevel}
+                    />
+                );
+            }
+            if (showCreateSubProject) {
+                return (
+                    <CreateSubProject
+                        onBack={() => {
+                            setShowCreateSubProject(false);
+                            setRectangleCoordinates(null);
+                            setIsDrawing(false);
+                        }}
+                        onDrawRectangle={handleDrawRectangle}
+                        rectangleCoordinates={rectangleCoordinates}
+                        isDrawing={isDrawing}
+                        initialSchemaName={selectedParentProject?.schema_name}
+                        initialEpsg={selectedSchemaEpsg}
+                        initialSchemaLevel={selectedSchemaLevel}
+                        parentProject={selectedParentProject}
+                        cornerMarker={cornerMarker}
+                        setCornerMarker={setCornerMarker}
+                        schemaMarker={schemaMarker}
+                        setSchemaMarker={setSchemaMarker}
+                        gridLine={gridLine}
+                        setGridLine={setGridLine}
+                        gridLabel={gridLabel}
+                        setGridLabel={setGridLabel}
+                    />
+                );
+            }
+            return <ProjectPanel onCreateSubProject={handleCreateSubProject} />;
+        } else if (activePanel === 'editor') {
+            return (
+                <EditorPanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
         }
+        return (
+            <SchemaPanel
+                onCreateNew={() => setShowCreateSchema(true)}
+                onCreateProject={handleCreateProjectFromSchema}
+            />
+        );
+        // }
 
         return null;
     };
@@ -486,7 +476,7 @@ export default function Page() {
                             onCheckedChange={setAIDialogEnabled}
                         />
                     </div>
-                    <div className="fixed top-21 right-10 z-10">
+                    <div className="ml-auto mr-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="cursor-pointer">

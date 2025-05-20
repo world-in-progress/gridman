@@ -213,7 +213,7 @@ export default function AttributePanel({}: AttributePanelProps) {
             </div>
             <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
                 <div className="flex flex-row gap-2 items-center">
-                    <h3 className="text-2xl mt-1 font-bold w-[55.5%]">
+                    <h3 className="text-2xl font-bold w-[55.5%]">
                         {language === 'zh' ? '节点功能' : 'Node Function'}:
                     </h3>
                     {activeNodeKey && (
@@ -244,7 +244,7 @@ export default function AttributePanel({}: AttributePanelProps) {
                 </div>
                 <div className="mt-2 p-2 space-y-1 bg-white rounded-md shadow-sm border border-gray-200">
                     <h3 className="text-md font-bold">
-                        {language === 'zh' ? '描述' : 'Description'}
+                        {language === 'zh' ? '描述' : 'Description'}:
                     </h3>
                     <div className="text-gary-600 text-sm">
                         节点功能描述信息
