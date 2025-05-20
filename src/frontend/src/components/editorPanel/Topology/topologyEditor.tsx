@@ -124,9 +124,7 @@ export default function TopologyPanel({
 
     const handleConfirmMergeGrid = () => {
         setMergeGridDialogOpen(false);
-        console.log('执行了合并');
-        // 添加合并操作逻辑
-        // topology.executeMergeGrids()
+        topologyLayer.executeMergeGrids();
     };
 
     const handleConfirmDeleteGrid = () => {
@@ -184,7 +182,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
-                    // Merge logic to be added if necessary
+                    setMergeGridDialogOpen(true);
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
