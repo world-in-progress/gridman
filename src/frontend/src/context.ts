@@ -25,3 +25,41 @@ export const AIDialogContext = createContext<{
     aiDialogEnabled: false,
     setAIDialogEnabled: () => {},
 });
+
+export class CheckingSwitch {
+    isOn = false
+    ons: Function[] = []
+    offs: Function[] = []
+
+    addEventListener(event: 'on' | 'off', callback: Function) {
+        switch (event) {
+            case 'on':
+                this.ons.push(callback)
+                break;
+        
+            case 'off':
+                this.offs.push(callback)
+                break;
+        }
+    }
+
+    removeEventListener(event: 'on' | 'off', callback: Function) {
+        const events = event === 'on' ? this.ons : this.offs
+        for (let i = 0; i < events.length; i++) {
+            if (events[i] === callback) {
+                events.splice(i, 1)
+                console.log('event removed')
+                break
+            }
+        }
+    }
+
+    switch() {
+        this.isOn = !this.isOn 
+        if (this.isOn) {
+            this.ons.forEach(callback => callback())
+        } else {
+            this.offs.forEach(callback => callback())
+        }
+    }
+}

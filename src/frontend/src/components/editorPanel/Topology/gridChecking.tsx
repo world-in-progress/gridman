@@ -1,5 +1,5 @@
-import { useContext, useState } from 'react';
-import { LanguageContext } from '../../../context';
+import { useContext, useState, useEffect } from 'react';
+import { LanguageContext, CheckingSwitch } from '../../../context';
 import store from '@/store';
 import GridCore from '@/core/grid/NHGridCore';
 import { Switch } from '@/components/ui/switch';
@@ -18,6 +18,23 @@ export default function GridChecking() {
         },
     });
 
+    const checkOnEvent = () => setGridChecking(true)
+    const checkOffEvent = () => setGridChecking(false)
+    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
+    checkingSwitch.addEventListener('on', checkOnEvent)
+    checkingSwitch.addEventListener('off', checkOffEvent)
+
+    useEffect(() => {
+        return () => {
+            const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
+            if (checkingSwitch.isOn) {
+                checkingSwitch.switch()
+            }
+            checkingSwitch.removeEventListener('on', checkOnEvent)
+            checkingSwitch.removeEventListener('off', checkOffEvent)
+        }
+    }, [])
+
     return (
         <div className="bg-white p-2 mt-2 rounded-md shadow-sm ">
             <div className="flex mt-1 mb-1 ml-1 items-center">
@@ -27,11 +44,7 @@ export default function GridChecking() {
                 <Label className='text-gray-400 ml-auto mr-2'>{language === 'zh' ? '开启' : 'Enable'}</Label>
                 <Switch
                     onClick={() => {
-                        setGridChecking(!gridChecking);
-                        store.set(
-                            'gridCheckingOn',
-                            !store.get<boolean>('gridCheckingOn')
-                        );
+                        store.get<CheckingSwitch>('checkingSwitch')!.switch()
                     }}
                     className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
                 />

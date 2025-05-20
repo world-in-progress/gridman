@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { LanguageContext } from '../../../context';
+import { LanguageContext, CheckingSwitch } from '../../../context';
 import { Separator } from '@/components/ui/separator';
 import {
     Grip,
@@ -41,10 +41,17 @@ export default function TopologyPanel({
 }: TopologyPanelProps) {
     const { language } = useContext(LanguageContext);
 
+    const [isVisible, setIsVisible] = useState(true);
     const [selectAllDialogOpen, setSelectAllDialogOpen] = useState(false);
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [activeTopologyOperation, setActiveTopologyOperation] =
         useState<TopologyOperationType>(null);
+
+    const checkOnEvent = () => setIsVisible(false)
+    const checkOffEvent = () => setIsVisible(true)
+    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
+    checkingSwitch.addEventListener('on', checkOnEvent);
+    checkingSwitch.addEventListener('off', checkOffEvent);
 
     const clg = store.get<NHLayerGroup>('clg')!;
     const topologyLayer = clg.getLayerInstance(
@@ -123,13 +130,10 @@ export default function TopologyPanel({
         setActiveTopologyOperation(null);
     };
 
-    store.set('gridCheckingOn', false);
-
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
-                console.log(store.get<boolean>('gridCheckingOn'));
-                if (store.get<boolean>('gridCheckingOn') === true) return;
+                if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
                 if (event.key === 'P' || event.key === 'p') {
                     event.preventDefault();
                     setPickingTab('picking');
@@ -190,6 +194,14 @@ export default function TopologyPanel({
         };
     }, [setPickingTab]);
 
+    useEffect(() => {
+        return () => {
+            checkingSwitch.removeEventListener('on', checkOnEvent)
+            checkingSwitch.removeEventListener('off', checkOffEvent)
+        }
+    }, []);
+    
+
     const onTopologyOperationClick = () => {
         switch (activeTopologyOperation) {
             case 'subdivide':
@@ -243,385 +255,394 @@ export default function TopologyPanel({
 
     return (
         <div className="relative">
-            {store.get<boolean>('gridCheckingOn') === true && (
-                <div
-                    className="absolute inset-0 bg-gray-200 opacity-60 z-50 flex items-center justify-center"
-                    style={{ pointerEvents: 'auto' }}
-                >
-                    <span className="text-lg text-gray-700">
-                        {' '}
-                        {language === 'zh'
-                            ? '网格检查中'
-                            : 'Under Grid Checking'}
-                    </span>
+            {isVisible && (
+                <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
+                    {/* 框选全部网格 */}
+                    <AlertDialog
+                        open={selectAllDialogOpen}
+                        onOpenChange={setSelectAllDialogOpen}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    {language === 'zh'
+                                        ? '操作确认'
+                                        : 'Operation Confirm'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {language === 'zh'
+                                        ? '是否确认框选所有网格？'
+                                        : 'Are you sure you want to select all grids?'}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                        setPickingTab('picking');
+                                        store.set('pickingSelect', true);
+                                    }}
+                                >
+                                    {language === 'zh' ? '取消' : 'Cancel'}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleConfirmSelectAll}
+                                    className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                                >
+                                    {language === 'zh' ? '确认' : 'Confirm'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* 取消全部网格框选 */}
+                    <AlertDialog
+                        open={deleteSelectDialogOpen}
+                        onOpenChange={setDeleteSelectDialogOpen}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    {language === 'zh'
+                                        ? '操作确认'
+                                        : 'Operation Confirm'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {language === 'zh'
+                                        ? '是否确认取消全部框选？'
+                                        : 'Are you sure you want to cancel all selections?'}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                        setPickingTab('picking');
+                                        store.set('pickingSelect', true);
+                                    }}
+                                >
+                                    {language === 'zh' ? '取消' : 'Cancel'}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleConfirmDeleteSelect}
+                                    className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                                >
+                                    {language === 'zh' ? '确认' : 'Confirm'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* 通用的拓扑操作确认对话框 */}
+                    <AlertDialog
+                        open={activeTopologyOperation !== null}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setActiveTopologyOperation(null);
+                            }
+                        }}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    {language === 'zh'
+                                        ? '操作确认'
+                                        : 'Operation Confirm'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {language === 'zh'
+                                        ? activeTopologyOperation ===
+                                          'subdivide'
+                                            ? '是否确认细分选中的网格？'
+                                            : activeTopologyOperation ===
+                                              'merge'
+                                            ? '是否确认合并选中的网格？'
+                                            : activeTopologyOperation ===
+                                              'delete'
+                                            ? '是否确认删除选中的网格？'
+                                            : activeTopologyOperation ===
+                                              'recover'
+                                            ? '是否确认恢复选中的网格？'
+                                            : '' // Fallback in case activeTopologyOperation is unexpectedly null
+                                        : activeTopologyOperation ===
+                                          'subdivide'
+                                        ? 'Are you sure you want to subdivide the selected grids?'
+                                        : activeTopologyOperation === 'merge'
+                                        ? 'Are you sure you want to merge the selected grids?'
+                                        : activeTopologyOperation === 'delete'
+                                        ? 'Are you sure you want to delete the selected grids?'
+                                        : activeTopologyOperation === 'recover'
+                                        ? 'Are you sure you want to recover the selected grids?'
+                                        : ''}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="cursor-pointer">
+                                    {language === 'zh' ? '取消' : 'Cancel'}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleConfirmTopologyAction}
+                                    className={
+                                        activeTopologyOperation === 'subdivide'
+                                            ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                            : activeTopologyOperation ===
+                                              'merge'
+                                            ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                                            : activeTopologyOperation ===
+                                              'delete'
+                                            ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
+                                            : activeTopologyOperation ===
+                                              'recover'
+                                            ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+                                            : 'bg-gray-600 cursor-not-allowed'
+                                    }
+                                    disabled={activeTopologyOperation === null}
+                                >
+                                    {language === 'zh'
+                                        ? activeTopologyOperation ===
+                                          'subdivide'
+                                            ? '细分'
+                                            : activeTopologyOperation ===
+                                              'merge'
+                                            ? '合并'
+                                            : activeTopologyOperation ===
+                                              'delete'
+                                            ? '删除'
+                                            : activeTopologyOperation ===
+                                              'recover'
+                                            ? '恢复'
+                                            : '确认'
+                                        : activeTopologyOperation ===
+                                          'subdivide'
+                                        ? 'Subdivide'
+                                        : activeTopologyOperation === 'merge'
+                                        ? 'Merge'
+                                        : activeTopologyOperation === 'delete'
+                                        ? 'Delete'
+                                        : activeTopologyOperation === 'recover'
+                                        ? 'Recover'
+                                        : 'Confirm'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <h3 className="text-2xl mt-1 ml-1 font-bold">
+                        {language === 'zh' ? '模式选择' : 'Picking'}
+                    </h3>
+                    <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                        <h3 className="text-md ml-1 mb-1 font-bold">
+                            {language === 'zh' ? '操作' : 'Operation'}
+                        </h3>
+                        <div className="flex items-center p-1 h-[64px] bg-gray-200 rounded-lg">
+                            <button
+                                className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    pickingTab === 'picking'
+                                        ? 'bg-[#4d4d4d] text-white'
+                                        : 'bg-transparent hover:bg-gray-300'
+                                }`}
+                                onClick={() => {
+                                    setPickingTab('picking');
+                                    store.set('pickingSelect', true);
+                                }}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <SquareMousePointer className="h-4 w-4" />
+                                    {language === 'zh' ? '选择' : 'Picking'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        pickingTab === 'picking' &&
+                                        ' text-white'
+                                    }`}
+                                >
+                                    [ Ctrl+P ]
+                                </div>
+                            </button>
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    pickingTab === 'unpicking'
+                                        ? 'bg-[#4d4d4d] text-white'
+                                        : 'bg-transparent hover:bg-gray-300'
+                                }`}
+                                onClick={() => {
+                                    setPickingTab('unpicking');
+                                    store.set('pickingSelect', false);
+                                }}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <SquareDashedMousePointer className="h-4 w-4" />
+                                    {language === 'zh' ? '撤选' : 'Unpicking'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        pickingTab === 'unpicking' &&
+                                        ' text-white'
+                                    }`}
+                                >
+                                    [Ctrl+U]
+                                </div>
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-1 p-1 mt-2 h-[64px] bg-gray-200 rounded-lg">
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    selectAllDialogOpen
+                                        ? 'bg-green-500 '
+                                        : 'bg-gray-600 hover:bg-green-500'
+                                }`}
+                                onClick={handleSelectAllClick}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <Grip className="h-4 w-4" />
+                                    {language === 'zh' ? '全选' : 'Select All'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        selectAllDialogOpen && ' text-white'
+                                    }`}
+                                >
+                                    [ Ctrl+A ]
+                                </div>
+                            </button>
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    deleteSelectDialogOpen
+                                        ? 'bg-red-500 '
+                                        : 'bg-gray-600 hover:bg-red-500'
+                                }`}
+                                onClick={handleDeleteSelectClick}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <CircleOff className="h-4 w-4" />
+                                    {language === 'zh'
+                                        ? '取消全选'
+                                        : 'Cancel All'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        deleteSelectDialogOpen && ' text-white'
+                                    }`}
+                                >
+                                    [ Ctrl+C ]
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-2 mb-3 p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                        <h3 className="text-md ml-1 mb-1 font-bold">
+                            {language === 'zh' ? '模式' : 'Mode'}
+                        </h3>
+                        <div className="flex items-center h-[64px] mb-1 p-1 bg-gray-200 rounded-lg shadow-md">
+                            <button
+                                className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    activeSelectTab === 'brush'
+                                        ? 'bg-[#FF8F2E] text-white'
+                                        : 'bg-transparent hover:bg-gray-300'
+                                }`}
+                                onClick={() => {
+                                    setActiveSelectTab('brush');
+                                    store.set('modeSelect', 'brush');
+                                }}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <Brush className="h-4 w-4" />
+                                    {language === 'zh' ? '笔刷' : 'Brush'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        activeSelectTab === 'brush' &&
+                                        'text-white'
+                                    } `}
+                                >
+                                    [ Ctrl+1 ]
+                                </div>
+                            </button>
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    activeSelectTab === 'box'
+                                        ? 'bg-[#FF8F2E] text-white'
+                                        : 'bg-transparent hover:bg-gray-300'
+                                }`}
+                                onClick={() => {
+                                    setActiveSelectTab('box');
+                                    store.set('modeSelect', 'box');
+                                }}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <SquareDashed className="h-4 w-4" />
+                                    {language === 'zh' ? '框选' : 'Box'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        activeSelectTab === 'box' &&
+                                        'text-white'
+                                    } `}
+                                >
+                                    [ Ctrl+2 ]
+                                </div>
+                            </button>
+                            <button
+                                className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
+                                    activeSelectTab === 'feature'
+                                        ? 'bg-[#FF8F2E] text-white'
+                                        : 'bg-transparent hover:bg-gray-300'
+                                }`}
+                                onClick={handleFeatureClick}
+                            >
+                                <div className="flex flex-row gap-1 items-center">
+                                    <FolderOpen className="h-4 w-4" />
+                                    {language === 'zh' ? '要素' : 'Feature'}
+                                </div>
+                                <div
+                                    className={`text-xs ${
+                                        activeSelectTab === 'feature' &&
+                                        'text-white'
+                                    } `}
+                                >
+                                    [ Ctrl+3 ]
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <Separator />
+                    <h3 className="text-2xl ml-1 mb-1 mt-0 font-bold">
+                        {language === 'zh' ? '拓扑' : 'Topology'}
+                    </h3>
+                    <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
+                        {topologyOperations.map((operation) => (
+                            <button
+                                key={operation.type}
+                                className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white ${
+                                    activeTopologyOperation === operation.type
+                                        ? operation.activeColor
+                                        : 'bg-gray-600 hover:' +
+                                          operation.activeColor.replace(
+                                              'bg-',
+                                              'bg-'
+                                          ) // Keep hover effect consistent
+                                }`}
+                                // onClick={operation.onClick}
+                                onClick={() => {
+                                    setActiveTopologyOperation(
+                                        operation.type as TopologyOperationType
+                                    );
+                                    onTopologyOperationClick();
+                                }}
+                            >
+                                <div className="flex flex-row items-center">
+                                    {language === 'zh'
+                                        ? operation.zh
+                                        : operation.en}
+                                </div>
+                                <div className="text-xs text-white">
+                                    {operation.shortcut}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
-            <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
-                {/* 框选全部网格 */}
-                <AlertDialog
-                    open={selectAllDialogOpen}
-                    onOpenChange={setSelectAllDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? '是否确认框选所有网格？'
-                                    : 'Are you sure you want to select all grids?'}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel
-                                className="cursor-pointer"
-                                onClick={() => {
-                                    setPickingTab('picking');
-                                    store.set('pickingSelect', true);
-                                }}
-                            >
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmSelectAll}
-                                className="bg-green-600 hover:bg-green-700 cursor-pointer"
-                            >
-                                {language === 'zh' ? '确认' : 'Confirm'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
 
-                {/* 取消全部网格框选 */}
-                <AlertDialog
-                    open={deleteSelectDialogOpen}
-                    onOpenChange={setDeleteSelectDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? '是否确认取消全部框选？'
-                                    : 'Are you sure you want to cancel all selections?'}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel
-                                className="cursor-pointer"
-                                onClick={() => {
-                                    setPickingTab('picking');
-                                    store.set('pickingSelect', true);
-                                }}
-                            >
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmDeleteSelect}
-                                className="bg-red-600 hover:bg-red-700 cursor-pointer"
-                            >
-                                {language === 'zh' ? '确认' : 'Confirm'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* 通用的拓扑操作确认对话框 */}
-                <AlertDialog
-                    open={activeTopologyOperation !== null}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setActiveTopologyOperation(null);
-                        }
-                    }}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {language === 'zh'
-                                    ? '操作确认'
-                                    : 'Operation Confirm'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {language === 'zh'
-                                    ? activeTopologyOperation === 'subdivide'
-                                        ? '是否确认细分选中的网格？'
-                                        : activeTopologyOperation === 'merge'
-                                        ? '是否确认合并选中的网格？'
-                                        : activeTopologyOperation === 'delete'
-                                        ? '是否确认删除选中的网格？'
-                                        : activeTopologyOperation === 'recover'
-                                        ? '是否确认恢复选中的网格？'
-                                        : '' // Fallback in case activeTopologyOperation is unexpectedly null
-                                    : activeTopologyOperation === 'subdivide'
-                                    ? 'Are you sure you want to subdivide the selected grids?'
-                                    : activeTopologyOperation === 'merge'
-                                    ? 'Are you sure you want to merge the selected grids?'
-                                    : activeTopologyOperation === 'delete'
-                                    ? 'Are you sure you want to delete the selected grids?'
-                                    : activeTopologyOperation === 'recover'
-                                    ? 'Are you sure you want to recover the selected grids?'
-                                    : ''}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="cursor-pointer">
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleConfirmTopologyAction}
-                                className={
-                                    activeTopologyOperation === 'subdivide'
-                                        ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                                        : activeTopologyOperation === 'merge'
-                                        ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
-                                        : activeTopologyOperation === 'delete'
-                                        ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
-                                        : activeTopologyOperation === 'recover'
-                                        ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
-                                        : 'bg-gray-600 cursor-not-allowed'
-                                }
-                                disabled={activeTopologyOperation === null}
-                            >
-                                {language === 'zh'
-                                    ? activeTopologyOperation === 'subdivide'
-                                        ? '细分'
-                                        : activeTopologyOperation === 'merge'
-                                        ? '合并'
-                                        : activeTopologyOperation === 'delete'
-                                        ? '删除'
-                                        : activeTopologyOperation === 'recover'
-                                        ? '恢复'
-                                        : '确认'
-                                    : activeTopologyOperation === 'subdivide'
-                                    ? 'Subdivide'
-                                    : activeTopologyOperation === 'merge'
-                                    ? 'Merge'
-                                    : activeTopologyOperation === 'delete'
-                                    ? 'Delete'
-                                    : activeTopologyOperation === 'recover'
-                                    ? 'Recover'
-                                    : 'Confirm'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <h3 className="text-2xl mt-1 ml-1 font-bold">
-                    {language === 'zh' ? '模式选择' : 'Picking'}
-                </h3>
-                <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                    <h3 className="text-md ml-1 mb-1 font-bold">
-                        {language === 'zh' ? '操作' : 'Operation'}
-                    </h3>
-                    <div className="flex items-center p-1 h-[64px] bg-gray-200 rounded-lg">
-                        <button
-                            className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                pickingTab === 'picking'
-                                    ? 'bg-[#4d4d4d] text-white'
-                                    : 'bg-transparent hover:bg-gray-300'
-                            }`}
-                            onClick={() => {
-                                setPickingTab('picking');
-                                store.set('pickingSelect', true);
-                            }}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <SquareMousePointer className="h-4 w-4" />
-                                {language === 'zh' ? '选择' : 'Picking'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    pickingTab === 'picking' && ' text-white'
-                                }`}
-                            >
-                                [ Ctrl+P ]
-                            </div>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                pickingTab === 'unpicking'
-                                    ? 'bg-[#4d4d4d] text-white'
-                                    : 'bg-transparent hover:bg-gray-300'
-                            }`}
-                            onClick={() => {
-                                setPickingTab('unpicking');
-                                store.set('pickingSelect', false);
-                            }}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <SquareDashedMousePointer className="h-4 w-4" />
-                                {language === 'zh' ? '撤选' : 'Unpicking'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    pickingTab === 'unpicking' && ' text-white'
-                                }`}
-                            >
-                                [Ctrl+U]
-                            </div>
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-1 p-1 mt-2 h-[64px] bg-gray-200 rounded-lg">
-                        <button
-                            className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                selectAllDialogOpen
-                                    ? 'bg-green-500 '
-                                    : 'bg-gray-600 hover:bg-green-500'
-                            }`}
-                            onClick={handleSelectAllClick}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <Grip className="h-4 w-4" />
-                                {language === 'zh' ? '全选' : 'Select All'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    selectAllDialogOpen && ' text-white'
-                                }`}
-                            >
-                                [ Ctrl+A ]
-                            </div>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                deleteSelectDialogOpen
-                                    ? 'bg-red-500 '
-                                    : 'bg-gray-600 hover:bg-red-500'
-                            }`}
-                            onClick={handleDeleteSelectClick}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <CircleOff className="h-4 w-4" />
-                                {language === 'zh' ? '取消全选' : 'Cancel All'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    deleteSelectDialogOpen && ' text-white'
-                                }`}
-                            >
-                                [ Ctrl+C ]
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <div className="mt-2 mb-3 p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                    <h3 className="text-md ml-1 mb-1 font-bold">
-                        {language === 'zh' ? '模式' : 'Mode'}
-                    </h3>
-                    <div className="flex items-center h-[64px] mb-1 p-1 bg-gray-200 rounded-lg shadow-md">
-                        <button
-                            className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                activeSelectTab === 'brush'
-                                    ? 'bg-[#FF8F2E] text-white'
-                                    : 'bg-transparent hover:bg-gray-300'
-                            }`}
-                            onClick={() => {
-                                setActiveSelectTab('brush');
-                                store.set('modeSelect', 'brush');
-                            }}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <Brush className="h-4 w-4" />
-                                {language === 'zh' ? '笔刷' : 'Brush'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    activeSelectTab === 'brush' && 'text-white'
-                                } `}
-                            >
-                                [ Ctrl+1 ]
-                            </div>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                activeSelectTab === 'box'
-                                    ? 'bg-[#FF8F2E] text-white'
-                                    : 'bg-transparent hover:bg-gray-300'
-                            }`}
-                            onClick={() => {
-                                setActiveSelectTab('box');
-                                store.set('modeSelect', 'box');
-                            }}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <SquareDashed className="h-4 w-4" />
-                                {language === 'zh' ? '框选' : 'Box'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    activeSelectTab === 'box' && 'text-white'
-                                } `}
-                            >
-                                [ Ctrl+2 ]
-                            </div>
-                        </button>
-                        <button
-                            className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer ${
-                                activeSelectTab === 'feature'
-                                    ? 'bg-[#FF8F2E] text-white'
-                                    : 'bg-transparent hover:bg-gray-300'
-                            }`}
-                            onClick={handleFeatureClick}
-                        >
-                            <div className="flex flex-row gap-1 items-center">
-                                <FolderOpen className="h-4 w-4" />
-                                {language === 'zh' ? '要素' : 'Feature'}
-                            </div>
-                            <div
-                                className={`text-xs ${
-                                    activeSelectTab === 'feature' &&
-                                    'text-white'
-                                } `}
-                            >
-                                [ Ctrl+3 ]
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <Separator />
-                <h3 className="text-2xl ml-1 mb-1 mt-0 font-bold">
-                    {language === 'zh' ? '拓扑' : 'Topology'}
-                </h3>
-                <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
-                    {topologyOperations.map((operation) => (
-                        <button
-                            key={operation.type}
-                            className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white ${
-                                activeTopologyOperation === operation.type
-                                    ? operation.activeColor
-                                    : 'bg-gray-600 hover:' +
-                                      operation.activeColor.replace(
-                                          'bg-',
-                                          'bg-'
-                                      ) // Keep hover effect consistent
-                            }`}
-                            // onClick={operation.onClick}
-                            onClick={() => {
-                                setActiveTopologyOperation(
-                                    operation.type as TopologyOperationType
-                                );
-                                onTopologyOperationClick();
-                            }}
-                        >
-                            <div className="flex flex-row items-center">
-                                {language === 'zh'
-                                    ? operation.zh
-                                    : operation.en}
-                            </div>
-                            <div className="text-xs text-white">
-                                {operation.shortcut}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
             <GridChecking />
         </div>
     );
