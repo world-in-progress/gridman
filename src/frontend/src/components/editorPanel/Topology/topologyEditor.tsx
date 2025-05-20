@@ -128,57 +128,57 @@ export default function TopologyPanel({
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
-                if (!store.get<boolean>('gridCheckingOn')) {
-                    if (event.key === 'P' || event.key === 'p') {
-                        event.preventDefault();
-                        setPickingTab('picking');
-                        store.set('pickingSelect', true);
-                    }
-                    if (event.key === 'U' || event.key === 'u') {
-                        event.preventDefault();
-                        setPickingTab('unpicking');
-                        store.set('pickingSelect', false);
-                    }
-                    if (event.key === 'A' || event.key === 'a') {
-                        event.preventDefault();
-                        setSelectAllDialogOpen(true);
-                    }
-                    if (event.key === 'C' || event.key === 'c') {
-                        event.preventDefault();
-                        setDeleteSelectDialogOpen(true);
-                    }
-                    if (event.key === '1') {
-                        event.preventDefault();
-                        setActiveSelectTab('brush');
-                        store.set('modeSelect', 'brush');
-                    }
-                    if (event.key === '2') {
-                        event.preventDefault();
-                        setActiveSelectTab('box');
-                        store.set('modeSelect', 'box');
-                    }
-                    if (event.key === '3') {
-                        event.preventDefault();
-                        setActiveSelectTab('feature');
-                        handleFeatureClick();
-                        store.set('modeSelect', 'feature');
-                    }
-                    if (event.key === 'S' || event.key === 's') {
-                        event.preventDefault();
-                        setActiveTopologyOperation('subdivide');
-                    }
-                    if (event.key === 'M' || event.key === 'm') {
-                        event.preventDefault();
-                        setActiveTopologyOperation('merge');
-                    }
-                    if (event.key === 'D' || event.key === 'd') {
-                        event.preventDefault();
-                        setActiveTopologyOperation('delete');
-                    }
-                    if (event.key === 'R' || event.key === 'r') {
-                        event.preventDefault();
-                        setActiveTopologyOperation('recover');
-                    }
+                console.log(store.get<boolean>('gridCheckingOn'));
+                if (store.get<boolean>('gridCheckingOn') === true) return;
+                if (event.key === 'P' || event.key === 'p') {
+                    event.preventDefault();
+                    setPickingTab('picking');
+                    store.set('pickingSelect', true);
+                }
+                if (event.key === 'U' || event.key === 'u') {
+                    event.preventDefault();
+                    setPickingTab('unpicking');
+                    store.set('pickingSelect', false);
+                }
+                if (event.key === 'A' || event.key === 'a') {
+                    event.preventDefault();
+                    setSelectAllDialogOpen(true);
+                }
+                if (event.key === 'C' || event.key === 'c') {
+                    event.preventDefault();
+                    setDeleteSelectDialogOpen(true);
+                }
+                if (event.key === '1') {
+                    event.preventDefault();
+                    setActiveSelectTab('brush');
+                    store.set('modeSelect', 'brush');
+                }
+                if (event.key === '2') {
+                    event.preventDefault();
+                    setActiveSelectTab('box');
+                    store.set('modeSelect', 'box');
+                }
+                if (event.key === '3') {
+                    event.preventDefault();
+                    setActiveSelectTab('feature');
+                    handleFeatureClick();
+                    store.set('modeSelect', 'feature');
+                }
+                if (event.key === 'S' || event.key === 's') {
+                    event.preventDefault();
+                    setActiveTopologyOperation('subdivide');
+                }
+                if (event.key === 'M' || event.key === 'm') {
+                    event.preventDefault();
+                    setActiveTopologyOperation('merge');
+                }
+                if (event.key === 'D' || event.key === 'd') {
+                    event.preventDefault();
+                    setActiveTopologyOperation('delete');
+                }
+                if (event.key === 'R' || event.key === 'r') {
+                    event.preventDefault();
+                    setActiveTopologyOperation('recover');
                 }
             }
         };
@@ -242,7 +242,20 @@ export default function TopologyPanel({
     ];
 
     return (
-        <>
+        <div className="relative">
+            {store.get<boolean>('gridCheckingOn') === true && (
+                <div
+                    className="absolute inset-0 bg-gray-200 opacity-60 z-50 flex items-center justify-center"
+                    style={{ pointerEvents: 'auto' }}
+                >
+                    <span className="text-lg text-gray-700">
+                        {' '}
+                        {language === 'zh'
+                            ? '网格检查中'
+                            : 'Under Grid Checking'}
+                    </span>
+                </div>
+            )}
             <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
                 {/* 框选全部网格 */}
                 <AlertDialog
@@ -610,6 +623,6 @@ export default function TopologyPanel({
                 </div>
             </div>
             <GridChecking />
-        </>
+        </div>
     );
 }

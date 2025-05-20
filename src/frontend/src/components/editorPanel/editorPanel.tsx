@@ -39,6 +39,7 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
 
     const handleSaveTopologyState = () => {
         // 在此添加保存拓扑状态功能
+        console.log('保存拓扑编辑')
     };
 
     return (
