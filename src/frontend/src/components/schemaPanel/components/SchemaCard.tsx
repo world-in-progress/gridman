@@ -210,7 +210,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                             ? schema.grid_info.map(
                                   (levelArray: number[], index: number) => (
                                       <div key={index} className="ml-2">
-                                          {`level ${
+                                          {`${language === 'zh' ? '等级' : 'Level'} ${
                                               index + 1
                                           }: [${levelArray.join(', ')}]`}
                                       </div>
