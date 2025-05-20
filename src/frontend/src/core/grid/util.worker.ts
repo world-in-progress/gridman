@@ -62,10 +62,9 @@ export default class GridUtils {
     levels: Uint8Array;
     globalIds: Uint32Array;
   }) {
-    const global_ids = Array.from(gridInfo.globalIds);
     const body = {
       levels: Array.from(gridInfo.levels),
-      global_ids,
+      global_ids: Array.from(gridInfo.globalIds),
     };
 
     const response = await fetch("/api/grid/operation/delete", {
@@ -79,8 +78,28 @@ export default class GridUtils {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
+  }
 
-    return global_ids;
+  static async recoverGrids(gridInfo: {
+    levels: Uint8Array;
+    globalIds: Uint32Array;
+  }) {
+    const body = {
+        levels: Array.from(gridInfo.levels),
+        global_ids: Array.from(gridInfo.globalIds),
+    }
+
+    const response = await fetch('/api/grid/operation/recover', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
   }
 
   static async getGridInfoByFeature(path: string) {

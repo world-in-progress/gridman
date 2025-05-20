@@ -217,6 +217,10 @@ void main() {
             fillColor = vec3(1.0);
             fillAlpha = 0.4;
         }
+
+        if (isHit) {
+            fillColor = 1.0 - fillColor;
+        }
     }
 
     fragColor = vec4(fillColor * fillAlpha, fillAlpha);
