@@ -24,7 +24,7 @@ import ProjectBoundsLayer from './layers/projectBoundsLayer';
 import { convertCoordinate } from '../../core/util/coordinateUtils';
 import { generateRandomHexColor } from '../../utils/colorUtils';
 import { ProjectService } from '../projectPanel/utils/ProjectService';
-import { LanguageContext } from '../../context';
+import { LanguageContext, CheckingSwitch } from '../../context';
 import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
 import store from '../../store';
 import TopologyLayer from './layers/TopologyLayer';
@@ -330,7 +330,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     const y = e.clientY - rect.top;
                     localMouseDownPos.current = [x, y];
 
-                    if (store.get<boolean>('gridCheckingOn') === true) {
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) {
                         store.set('GridInfo', topologyLayer.executeCheckGrid([x, y])),
                         store.get<{ on: Function}>('changeGridInfo')!.on()
                         
@@ -339,7 +339,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
                 const onMouseMove = (e: MouseEvent) => {
                     if (!e.shiftKey || !localIsMouseDown.current) return;
-                    if (store.get<boolean>('gridCheckingOn') === true) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
@@ -386,7 +386,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         }
                     }
                     if (!e.shiftKey) return;
-                    if (store.get<boolean>('gridCheckingOn') === true) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
 
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
@@ -405,7 +405,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 };
 
                 const onMouseOut = (e: MouseEvent) => {
-                    if (store.get<boolean>('gridCheckingOn') === true) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
                     if (mapInstance) {
                         mapInstance.dragPan.enable();
                         mapInstance.scrollZoom.enable();

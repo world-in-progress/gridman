@@ -11,6 +11,7 @@ import TopologyLayer from '../mapComponent/layers/TopologyLayer';
 import AttributePanel from './Attribute/AttributeEditor';
 import GridCore from '@/core/grid/NHGridCore';
 import { GridSaveInfo } from '@/core/grid/NHGrid';
+import { toast } from 'sonner';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const { language } = useContext(LanguageContext);
@@ -43,6 +44,19 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
         const core: GridCore = store.get('gridCore')!;
         core.save((saveInfo: GridSaveInfo) => {
             console.log(saveInfo);
+            toast.success(
+                language === 'zh'
+                    ? '拓扑编辑状态保存成功'
+                    : 'Topology edit state saved successfully',
+                {
+                    style: {
+                        background: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        bottom: '30px'
+                    },
+                }
+            );
         })
     };
 

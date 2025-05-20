@@ -1,3 +1,5 @@
+import { CheckingSwitch } from "./context"
+
 class Store {
     store: Map<string, any>
     static _ins: Store | null
@@ -19,3 +21,5 @@ class Store {
 }
 
 export default Store.instance()
+
+Store.instance().set('checkingSwitch', new CheckingSwitch());
