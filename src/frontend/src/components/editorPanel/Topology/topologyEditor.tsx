@@ -402,7 +402,7 @@ export default function TopologyPanel({
                                 {language === 'zh' ? '取消' : 'Cancel'}
                             </AlertDialogCancel>
                             <AlertDialogAction
-                                onClick={handleConfirmDeleteGrid}
+                                onClick={handleConfirmRecoverGrid}
                                 className="bg-purple-600 hover:bg-purple-700 cursor-pointer"
                             >
                                 {language === 'zh' ? '删除' : 'Delete'}
