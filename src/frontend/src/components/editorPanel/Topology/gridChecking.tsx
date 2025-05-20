@@ -4,11 +4,18 @@ import store from '@/store';
 import GridCore from '@/core/grid/NHGridCore';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { GridInfo } from '@/core/grid/NHGrid';
 
 export default function GridChecking() {
     const { language } = useContext(LanguageContext);
     const [gridChecking, setGridChecking] = useState(false);
-    
+    const [gridInfo, setGridInfo] = useState<GridInfo | null>(null);
+
+    store.set('changeGridInfo', {
+        on: () => {
+            setGridInfo(store.get<GridInfo>('GridInfo'))
+        }
+    })
 
     return (
         <div className="bg-white p-2 mt-2 rounded-md shadow-sm ">
@@ -20,10 +27,11 @@ export default function GridChecking() {
                 </h2>
                 <Switch
                     onClick={() => {
-                        console.log('点击前的开关状态', store.get<boolean>('gridCheckingOn'));
                         setGridChecking(!gridChecking);
-                        store.set('gridCheckingOn', !store.get<boolean>('gridCheckingOn'));
-                        console.log('点击后的开关状态', store.get<boolean>('gridCheckingOn'));
+                        store.set(
+                            'gridCheckingOn',
+                            !store.get<boolean>('gridCheckingOn')
+                        );
                     }}
                     className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer"
                 />
@@ -34,23 +42,37 @@ export default function GridChecking() {
                     <div className="text-sm p-1 gap-2">
                         <div>
                             <span className="font-bold">
-                                {language === 'zh' ? '项目名称：' : 'Project: '}
+                                globalId:{' '}
                             </span>
-                            项目名称：
+                            {gridInfo?.globalId || '-'}
                         </div>
                         <div>
                             <span className="font-bold">
-                                {language === 'zh'
-                                    ? '子项目：'
-                                    : 'Subproject: '}
+                                storageId:{' '}
                             </span>
-                            子项目：
+                            {gridInfo?.storageId || '-'}
                         </div>
                         <div>
-                            <span className="font-bold">EPSG:</span>
+                            <span className="font-bold">
+                                localId:{' '}
+                            </span>
+                            {gridInfo?.localId || '-'}
                         </div>
-                        <div className="flex items-start flex-row">
-                            {language === 'zh' ? '网格等级' : 'Grid Levels'}(m):
+                        <div>
+                            <span className="font-bold">
+                                level:{' '}
+                            </span>
+                            {gridInfo?.level || '-'}
+                        </div>
+                        <div>
+                            <span className="font-bold">
+                                deleted:{' '}
+                            </span>
+                            {gridInfo?.deleted === true
+                                ? 'true'
+                                : gridInfo?.deleted === false
+                                ? 'false'
+                                : '-'}
                         </div>
                     </div>
                 </>

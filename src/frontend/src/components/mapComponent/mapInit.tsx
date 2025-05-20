@@ -89,7 +89,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     const mouseMovePos = [0, 0];
     let mouseUpPos = [0, 0];
 
-
     // Calculate the four corners and center point of the rectangle (EPSG:4326)
     const calculateRectangleCoordinates = (
         feature: any
@@ -293,18 +292,22 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     projectBoundsLayer.setVisibility('none');
                 }
 
-                const topologyLayer = new TopologyLayer(mapInstance!, {
-                    maxGridNum: 4096 * 4096,
-                });
-                const updateLoading = store.get<{on: () => void; off: () => void}>('isLoading')!
-                const updateCapacity = store.get<{on: () => void; off: () => void}>('updateCapacity')!
+                const topologyLayer = new TopologyLayer(mapInstance!);
+                const updateLoading = store.get<{
+                    on: () => void;
+                    off: () => void;
+                }>('isLoading')!;
+                const updateCapacity = store.get<{
+                    on: () => void;
+                    off: () => void;
+                }>('updateCapacity')!;
                 topologyLayer.startCallback = () => {
                     updateLoading.on();
-                }
+                };
                 topologyLayer.endCallback = () => {
                     updateCapacity.on();
                     updateLoading.off();
-                }
+                };
 
                 const layerGroup = new NHLayerGroup();
                 layerGroup.id = 'gridman-custom-layer-group';
@@ -326,10 +329,17 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
                     localMouseDownPos.current = [x, y];
+
+                    if (store.get<boolean>('gridCheckingOn') === true) {
+                        store.set('GridInfo', topologyLayer.executeCheckGrid([x, y])),
+                        store.get<{ on: Function}>('changeGridInfo')!.on()
+                        
+                    }
                 };
 
                 const onMouseMove = (e: MouseEvent) => {
                     if (!e.shiftKey || !localIsMouseDown.current) return;
+                    if (store.get<boolean>('gridCheckingOn') === true) return;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
@@ -376,6 +386,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         }
                     }
                     if (!e.shiftKey) return;
+                    if (store.get<boolean>('gridCheckingOn') === true) return;
 
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
@@ -394,6 +405,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 };
 
                 const onMouseOut = (e: MouseEvent) => {
+                    if (store.get<boolean>('gridCheckingOn') === true) return;
                     if (mapInstance) {
                         mapInstance.dragPan.enable();
                         mapInstance.scrollZoom.enable();
@@ -403,6 +415,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         }
                     }
                     if (!e.shiftKey) return;
+                    
                     isMouseDown = false;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;

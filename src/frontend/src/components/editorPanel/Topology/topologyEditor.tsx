@@ -46,8 +46,6 @@ export default function TopologyPanel({
     const [activeTopologyOperation, setActiveTopologyOperation] =
         useState<TopologyOperationType>(null);
 
-    const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
-
     const clg = store.get<NHLayerGroup>('clg')!;
     const topologyLayer = clg.getLayerInstance(
         'TopologyLayer'
@@ -402,7 +400,6 @@ export default function TopologyPanel({
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-
                 <h3 className="text-2xl mt-1 ml-1 font-bold">
                     {language === 'zh' ? '模式选择' : 'Picking'}
                 </h3>

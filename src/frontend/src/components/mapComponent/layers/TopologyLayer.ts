@@ -544,7 +544,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     }
 
     executeCheckGrid(startPos: [number, number]): GridInfo | null {
-        this.startCallback()
         const storageId = this._brushPicking(this._calcPickingMatrix(startPos))
         if (storageId < 0) return null
         return this.gridCore.checkGrid(storageId)
