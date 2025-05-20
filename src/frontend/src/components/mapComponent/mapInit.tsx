@@ -293,9 +293,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     projectBoundsLayer.setVisibility('none');
                 }
 
-                const topologyLayer = new TopologyLayer(mapInstance!, {
-                    maxGridNum: 4096 * 4096,
-                });
+                const topologyLayer = new TopologyLayer(mapInstance!);
                 const updateLoading = store.get<{on: () => void; off: () => void}>('isLoading')!
                 const updateCapacity = store.get<{on: () => void; off: () => void}>('updateCapacity')!
                 topologyLayer.startCallback = () => {
