@@ -10,8 +10,8 @@ export default function BasicInfo() {
     const currentSubproject = store.get<any>('SubprojectName');
     const gridCore = store.get<GridCore>('gridCore');
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
-    const subdivideRules = gridCore?.subdivideRules.rules;
-    const bounds = gridCore?.subdivideRules.bBox.data;
+    const subdivideRules = gridCore?.context.rules;
+    const bounds = gridCore?.context.bBox.data;
     const schemaGridInfo = store.get<number[][]>('SchemaGridInfo');
 
     return (

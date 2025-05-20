@@ -68,6 +68,14 @@ export type GridContext = {
     rules: [number, number][];
 };
 
+export type GridInfo = {
+    storageId: number;
+    level: number;
+    globalId: number;
+    localId: number;
+    deleted: boolean;
+}
+
 export type GridTopologyInfo = [
     edgeKeys: string[],
     adjGrids: number[][],
