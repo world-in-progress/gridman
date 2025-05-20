@@ -151,15 +151,17 @@ export default class GridCore {
         this.gridKey_storageId_dict.set(`${level}-${globalId}`, storageId)
     }
 
-    addGrids(levels: Uint8Array, globalIds: Uint32Array, deleted: Uint8Array): void {
+    addGrids(levels: Uint8Array, globalIds: Uint32Array, deleted: Uint8Array, callback?: Function): void {
         const gridNum = levels.length
         for (let i = 0; i < gridNum; i++) {
             const storageId = this._nextStorageId + i
             this.updateDict(storageId, levels[i], globalIds[i])
+            this.gridLevelCache[storageId] = levels[i]
+            this.gridDeletedCache[storageId] = deleted[i]
+            this.gridGlobalIdCache[storageId] = globalIds[i]
         }
-        this.gridLevelCache.set(levels, this._nextStorageId)
-        this.gridDeletedCache.set(deleted, this._nextStorageId)
-        this.gridGlobalIdCache.set(globalIds, this._nextStorageId)
+
+        callback && callback(this._nextStorageId)
         this._nextStorageId += gridNum
     }
 
@@ -331,7 +333,7 @@ export default class GridCore {
                 const children = this.getGridChildren(parentLevel, parentGlobalId)
                 if (children) {
                     children.forEach((childGlobalId) => {
-                        const childStorageId = this.gridKey_storageId_dict.get(`${parentLevel}-${childGlobalId}`)
+                        const childStorageId = this.gridKey_storageId_dict.get(`${parentLevel + 1}-${childGlobalId}`)
                         if (childStorageId !== undefined) {
                             childStorageIds.push(childStorageId)
                         }

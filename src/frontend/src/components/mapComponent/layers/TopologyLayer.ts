@@ -664,6 +664,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Merge grids
         this.gridCore.mergeGrids(mergeableStorageIds, (info: { childStorageIds: number[], parentRenderInfo: MultiGridRenderInfo }) => {
+            // If no parent grid is provided, just hit the mergable grids and do nothing
+            if (info.parentRenderInfo.levels.length === 0) {
+                this._hit(mergeableStorageIds)
+                this.endCallback()
+            }
             // Delete child grids
             this.gridCore.deleteGridsLocally(info.childStorageIds, (infos: [storageIds: number[], levels: number[], vertices: Float32Array[], verticesLow: Float32Array[], deleted: number[]]) => {
                 for (let i = 0; i < infos[0].length; i++) {
@@ -671,17 +676,17 @@ export default class TopologyLayer implements NHCustomLayerInterface {
                     this.updateGPUGrid(info)
                 }
                 // Update parent grid in grid core and GPU resources
-                this.gridCore.addGrids(info.parentRenderInfo.levels, info.parentRenderInfo.globalIds, info.parentRenderInfo.deleted)
-                this.updateGPUGrids([this.gridCore.gridNum, info.parentRenderInfo.levels, info.parentRenderInfo.vertices, info.parentRenderInfo.verticesLow, info.parentRenderInfo.deleted])
+                this.gridCore.addGrids(info.parentRenderInfo.levels, info.parentRenderInfo.globalIds, info.parentRenderInfo.deleted, (fromStorageId: number) => {
+                    this.updateGPUGrids([fromStorageId, info.parentRenderInfo.levels, info.parentRenderInfo.vertices, info.parentRenderInfo.verticesLow, info.parentRenderInfo.deleted])
                 
-                // Pick all merged grids
-                const fromStorageId = this.gridCore.gridNum
-                const storageIds = Array.from(
-                    { length: info.parentRenderInfo.levels.length },
-                    (_, i) => fromStorageId + i
-                )
-                this._hit(storageIds)
-                this.endCallback()
+                    // Pick all merged grids
+                    const storageIds = Array.from(
+                        { length: info.parentRenderInfo.levels.length },
+                        (_, i) => fromStorageId + i
+                    )
+                    this._hit(storageIds)
+                    this.endCallback()
+                })
             })
         })
     }
