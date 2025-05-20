@@ -9,6 +9,8 @@ import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
 import AttributePanel from './Attribute/AttributeEditor';
+import GridCore from '@/core/grid/NHGridCore';
+import { GridSaveInfo } from '@/core/grid/NHGrid';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     const { language } = useContext(LanguageContext);
@@ -38,7 +40,10 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
     };
 
     const handleSaveTopologyState = () => {
-        // 在此添加保存拓扑状态功能
+        const core: GridCore = store.get('gridCore')!;
+        core.save((saveInfo: GridSaveInfo) => {
+            console.log(saveInfo);
+        })
     };
 
     return (

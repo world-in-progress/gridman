@@ -107,4 +107,13 @@ export default class GridUtils {
     const multiGridInfo = await MultiGridInfo.fromGetUrl(`/api/grid/operation/pick?feature_dir=${path}`);
     return multiGridInfo
   }
+
+    static async saveGrids() {
+        const response = await fetch('/api/grid/operation/save', { method: 'GET' })
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const gridInfo = await response.json();
+        return gridInfo;
+    }
 }

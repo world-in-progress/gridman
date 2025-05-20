@@ -206,7 +206,7 @@ void main() {
         float deltaDis = abs(uv.x * uv.x - uv.y * uv.y);
         if (awayFromKlkStar(factor, 0.8) < 1.0) {
             fillColor = vec3(1.0, 0.0, 0.0);
-            fillAlpha = 0.5;
+            fillAlpha = 0.6;
             float centerFactor = 0.6;
             float centerAway = awayFromKlkStar(centerFactor * factor, centerFactor * range);
             if (centerAway < 1.0) {
@@ -214,8 +214,8 @@ void main() {
                 fillColor = mix(vec3(1.0), vec3(1.0, 0.0, 0.0), mixFactor);
             }
         } else {
-            fillColor = vec3(1.0);
-            fillAlpha = 0.4;
+            fillColor = vec3(0.2);
+            fillAlpha = 0.2;
         }
 
         if (isHit) {
