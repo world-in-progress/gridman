@@ -21,6 +21,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import store from '@/store';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
@@ -48,8 +54,10 @@ export default function TopologyPanel({
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [activeTopologyOperation, setActiveTopologyOperation] =
         useState<TopologyOperationType>(null);
-    const [isPickingHighSpeedModeOn, setIsPickingHighSpeedModeOn] = useState(false);
-    const [isTopologyHighSpeedModeOn, setIsTopologyHighSpeedModeOn] = useState(false)
+    const [isPickingHighSpeedModeOn, setIsPickingHighSpeedModeOn] =
+        useState(false);
+    const [isTopologyHighSpeedModeOn, setIsTopologyHighSpeedModeOn] =
+        useState(false);
 
     const checkOnEvent = () => setIsVisible(false);
     const checkOffEvent = () => setIsVisible(true);
@@ -251,7 +259,10 @@ export default function TopologyPanel({
                     topologyLayer.executeRecoverGrids();
                     break;
                 default:
-                    console.warn('Unknown topology operation type:', operationType);
+                    console.warn(
+                        'Unknown topology operation type:',
+                        operationType
+                    );
             }
         } else {
             setActiveTopologyOperation(operationType);
@@ -466,17 +477,49 @@ export default function TopologyPanel({
                         <h3 className="text-2xl font-bold">
                             {language === 'zh' ? '模式选择' : 'Picking'}
                         </h3>
-                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
-                            <Label className="text-gray-400 ml-1">
-                                {language === 'zh'
-                                    ? '高速模式'
-                                    : 'HighSpeed Mode'}
-                            </Label>
-                            <Switch
-                                className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
-                                checked={isPickingHighSpeedModeOn}
-                                onCheckedChange={setIsPickingHighSpeedModeOn}
-                            />
+                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex ml-auto">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="flex items-center gap-2">
+                                            <Label
+                                                className={` ${
+                                                    isPickingHighSpeedModeOn
+                                                        ? 'text-green-500'
+                                                        : 'text-gray-400'
+                                                }  ml-1`}
+                                            >
+                                                {language === 'zh'
+                                                    ? '高速模式'
+                                                    : 'High Speed Mode'}
+                                            </Label>
+                                            <Switch
+                                                className="bg-gray-900 data-[state=checked]:bg-green-500 cursor-pointer mr-2"
+                                                checked={
+                                                    isPickingHighSpeedModeOn
+                                                }
+                                                onCheckedChange={
+                                                    setIsPickingHighSpeedModeOn
+                                                }
+                                            />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-gray-600">
+                                        <div className="p-1">
+                                            <p className="font-bold text-[16px] mb-1">
+                                                {language == 'zh'
+                                                    ? '功能介绍'
+                                                    : 'Introduction'}
+                                            </p>
+                                            <p className="text-[14px]">
+                                                {language == 'zh'
+                                                    ? '开启后无需二次确认'
+                                                    : 'No twice confirmation when enabled'}
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
 
@@ -661,16 +704,48 @@ export default function TopologyPanel({
                             {language === 'zh' ? '拓扑' : 'Topology'}
                         </h3>
                         <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
-                            <Label className="text-gray-400 ml-1">
-                                {language === 'zh'
-                                    ? '高速模式'
-                                    : 'HighSpeed Mode'}
-                            </Label>
-                            <Switch
-                                className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
-                                checked={isTopologyHighSpeedModeOn}
-                                onCheckedChange={setIsTopologyHighSpeedModeOn}
-                            />
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="flex items-center gap-2">
+                                            <Label
+                                                className={` ${
+                                                    isTopologyHighSpeedModeOn
+                                                        ? 'text-green-500'
+                                                        : 'text-gray-400'
+                                                }  ml-1`}
+                                            >
+                                                {language === 'zh'
+                                                    ? '高速模式'
+                                                    : 'High Speed Mode'}
+                                            </Label>
+                                            <Switch
+                                                className="bg-gray-900 data-[state=checked]:bg-green-500 cursor-pointer mr-2"
+                                                checked={
+                                                    isTopologyHighSpeedModeOn
+                                                }
+                                                onCheckedChange={
+                                                    setIsTopologyHighSpeedModeOn
+                                                }
+                                            />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-gray-600">
+                                        <div className="p-1">
+                                            <p className="font-bold text-[16px] mb-1">
+                                                {language == 'zh'
+                                                    ? '功能介绍'
+                                                    : 'Introduction'}
+                                            </p>
+                                            <p className="text-[14px]">
+                                                {language == 'zh'
+                                                    ? '开启后无需二次确认'
+                                                    : 'No twice confirmation when enabled'}
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
                     <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
@@ -684,9 +759,8 @@ export default function TopologyPanel({
                                           operation.activeColor.replace(
                                               'bg-',
                                               'bg-'
-                                          ) // Keep hover effect consistent
+                                          )
                                 }`}
-                                // onClick={operation.onClick}
                                 onClick={() => {
                                     onTopologyOperationClick(operation.type);
                                 }}

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import Loader from '@/components/ui/loader';
+import store from '@/store';
 
 export function SubNavPanel({
     currentPage,
@@ -270,7 +271,7 @@ export function SubNavPanel({
                 );
 
                 setAllProjects(sortedAllProjects);
-                applyPagingAndSearch(sortedAllProjects, currentPage);
+                applyPagingAndSearch(sortedAllProjects, currentPage - 1);
                 setEditingDescription(null);
                 setLoading(false);
             }
@@ -308,6 +309,7 @@ export function SubNavPanel({
                     );
                     setAllProjects(updatedProjects);
 
+                    store.get<{on: Function}>('updateProjectCurrentPage')!.on();
                     applyPagingAndSearch(updatedProjects, currentPage);
 
                     setDeleteDialogOpen(false);

@@ -42,7 +42,11 @@ export default function GridChecking() {
                     {language === 'zh' ? '查看' : 'Checking'}
                 </h2>
                 <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
-                    <Label className="text-gray-400 ml-1">
+                    <Label
+                        className={`${
+                            gridChecking ? 'text-[#FF8F2E]' : 'text-gray-400'
+                        }  ml-1`}
+                    >
                         {language === 'zh' ? '开启' : 'Enable'}
                     </Label>
                     <Switch
