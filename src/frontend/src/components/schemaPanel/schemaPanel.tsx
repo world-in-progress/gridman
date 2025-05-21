@@ -40,6 +40,12 @@ export default function SchemaPanel({
         },
     });
 
+    store.set('updateSchemaCurrentPage', {
+        on: () => {
+            setCurrentPage(1);
+        }
+    })
+
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
