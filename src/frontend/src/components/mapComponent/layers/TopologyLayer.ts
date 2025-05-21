@@ -7,7 +7,7 @@ import NHLayerGroup from '../utils/NHLayerGroup'
 import GridCore from '../../../core/grid/NHGridCore'
 import { NHCustomLayerInterface } from '../utils/interfaces'
 import VibrantColorGenerator from '../../../core/util/vibrantColorGenerator'
-import { GridInfo, MultiGridRenderInfo } from '@/core/grid/NHGrid'
+import { GridCheckingInfo, MultiGridRenderInfo } from '@/core/grid/types'
 import store from '@/store'
 import { CheckingSwitch } from '@/context'
 
@@ -556,7 +556,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.endCallback()
     }
 
-    executeCheckGrid(startPos: [number, number]): GridInfo | null {
+    executeCheckGrid(startPos: [number, number]): GridCheckingInfo | null {
         // Clear hit set
         this.executeClearSelection()
 

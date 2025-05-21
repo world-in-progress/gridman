@@ -4,17 +4,17 @@ import store from '@/store';
 import GridCore from '@/core/grid/NHGridCore';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { GridInfo } from '@/core/grid/NHGrid';
+import { GridCheckingInfo } from '@/core/grid/types';
 import { Label } from '@/components/ui/label';
 
 export default function GridChecking() {
     const { language } = useContext(LanguageContext);
     const [gridChecking, setGridChecking] = useState(false);
-    const [gridInfo, setGridInfo] = useState<GridInfo | null>(null);
+    const [gridInfo, setGridInfo] = useState<GridCheckingInfo | null>(null);
 
     store.set('changeGridInfo', {
         on: () => {
-            setGridInfo(store.get<GridInfo>('GridInfo'));
+            setGridInfo(store.get<GridCheckingInfo>('GridInfo'));
         },
     });
 

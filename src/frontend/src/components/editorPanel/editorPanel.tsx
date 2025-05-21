@@ -10,7 +10,7 @@ import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
 import AttributePanel from './Attribute/AttributeEditor';
 import GridCore from '@/core/grid/NHGridCore';
-import { GridSaveInfo } from '@/core/grid/NHGrid';
+import { GridSaveInfo } from '@/core/grid/types';
 import { toast } from 'sonner';
 
 export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {

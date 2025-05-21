@@ -2,11 +2,11 @@ import Actor from '../../../core/message/actor';
 import { Project } from '../types/types';
 import Dispatcher from '../../../core/message/dispatcher';
 import { Callback } from '../../../core/types';
-import { GridContext } from '@/core/grid/NHGrid';
+import { GridContext } from '@/core/grid/types';
 import { boundingBox2D } from '@/core/util/boundingBox2D';
 import GridCore from '@/core/grid/NHGridCore';
 import store from '../../../store';
-import { MultiGridRenderInfo } from '@/core/grid/NHGrid';
+import { MultiGridRenderInfo } from '@/core/grid/types';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 
@@ -251,7 +251,6 @@ export class ProjectService {
                         srcCS: `EPSG:${result.epsg}`,
                         targetCS: 'EPSG:4326',
                     };
-
                     // Create grid recorder
                     const core: GridCore = new GridCore(context);
                     store.set('gridCore', core);

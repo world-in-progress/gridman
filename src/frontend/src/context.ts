@@ -48,7 +48,6 @@ export class CheckingSwitch {
         for (let i = 0; i < events.length; i++) {
             if (events[i] === callback) {
                 events.splice(i, 1)
-                console.log('event removed')
                 break
             }
         }

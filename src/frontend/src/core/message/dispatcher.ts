@@ -24,16 +24,9 @@ class Dispatcher {
         }
 
         this.workerPool.acquire(this.id).forEach((worker, index) => {
-
-            if (index === WorkerPool.workerCount - 1) {
-                const actor = new Actor(worker, parent)
-                actor.name = `IndexedDB Worker`
-                this.actors.push(actor)
-            } else {
-                const actor = new Actor(worker, parent)
-                actor.name = `Worker ${index}`
-                this.actors.push(actor)
-            }
+            const actor = new Actor(worker, parent)
+            actor.name = `Worker ${index}`
+            this.actors.push(actor)
         })
         this.broadcast('checkIfReady', null, () => { this.ready = true })
     }
@@ -48,13 +41,8 @@ class Dispatcher {
 
     get actor(): Actor {
 
-        this.currentActor = (this.currentActor + 1) % (this.actors.length - 1)
+        this.currentActor = (this.currentActor + 1) % (this.actors.length)
         return this.actors[this.currentActor]
-    }
-
-    get dbActor(): Actor {
-
-        return this.actors[this.actors.length - 1]
     }
 
     remove() {

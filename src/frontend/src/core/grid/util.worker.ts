@@ -1,8 +1,6 @@
-import { Callback } from "../types";
-import { WorkerSelf } from "../types";
-import { MultiGridRenderInfo } from "./NHGrid";
-import GridManager from "./NHGridManager";
-import { MultiGridInfo } from "./type";
+import { WorkerSelf } from '../types';
+import GridManager from './NHGridManager';
+import { MultiGridInfoParser, MultiGridRenderInfo } from "./types";
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -17,12 +15,11 @@ export default class GridUtils {
       global_ids: Array.from(gridInfo.globalIds),
     };
 
-    const multiGridInfo = await MultiGridInfo.fromPostUrl(
+    const { levels, globalIds } = await MultiGridInfoParser.fromPostUrl(
       "/api/grid/operation/subdivide",
       body
     );
-    const { levels, globalIds } = multiGridInfo;
-    const [vertices, verticesLow] = worker.gridManager.createMultiRenderVertices(levels, globalIds);
+    const [vertices, verticesLow] = worker.gridManager.createMultiGridRenderVertices(levels, globalIds);
     const renderInfo: MultiGridRenderInfo = {
       levels,
       globalIds,
@@ -42,12 +39,11 @@ export default class GridUtils {
       global_ids: Array.from(gridInfo.globalIds),
     };
 
-    const multiGridInfo = await MultiGridInfo.fromPostUrl(
+    const { levels, globalIds } = await MultiGridInfoParser.fromPostUrl(
       "/api/grid/operation/merge",
       body
     );
-    const { levels, globalIds } = multiGridInfo;
-    const [vertices, verticesLow] = worker.gridManager.createMultiRenderVertices(levels, globalIds);
+    const [vertices, verticesLow] = worker.gridManager.createMultiGridRenderVertices(levels, globalIds);
     const renderInfo: MultiGridRenderInfo = {
       levels,
       globalIds,
@@ -104,7 +100,7 @@ export default class GridUtils {
 
   static async getGridInfoByFeature(path: string) {
 
-    const multiGridInfo = await MultiGridInfo.fromGetUrl(`/api/grid/operation/pick?feature_dir=${path}`);
+    const multiGridInfo = await MultiGridInfoParser.fromGetUrl(`/api/grid/operation/pick?feature_dir=${path}`);
     return multiGridInfo
   }
 
