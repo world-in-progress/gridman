@@ -9,9 +9,8 @@ import {
     EDGE_CODE_SOUTH,
     EDGE_CODE_INVALID,
     type EDGE_CODE,
-    type GridNodeRenderInfoPack,
     GridTopologyInfo,
-} from './NHGrid';
+} from './types';
 import { MercatorCoordinate } from '../math/mercatorCoordinate';
 
 proj4.defs(
@@ -688,87 +687,6 @@ export default class GridManager {
         return children;
     }
 
-    subdivideGrid(
-        level: number,
-        globalId: number,
-        renderInfoPack: GridNodeRenderInfoPack | null = null,
-        gridOffset: number = 0
-    ): GridNodeRenderInfoPack {
-        const [subWidth, subHeight] = this._context.rules[level];
-        const subCount = subWidth * subHeight;
-
-        // Create render information pack if not provided
-        if (renderInfoPack === null) {
-            renderInfoPack = {
-                uuIds: new Array<string>(subCount),
-                vertexBuffer: new Float32Array(subCount * 8),
-            };
-        }
-
-        const { width: levelWidth } = this._levelInfos[level];
-        const globalU = globalId % levelWidth;
-        const globalV = Math.floor(globalId / levelWidth);
-
-        const nextLevelInfo = this._levelInfos[level + 1];
-        const { width: subGlobalWidth, height: subGlobalHeight } =
-            nextLevelInfo;
-
-        const baseGlobalWidth = levelWidth * subWidth;
-        for (let localId = 0; localId < subCount; localId++) {
-            const subU = localId % subWidth;
-            const subV = Math.floor(localId / subWidth);
-
-            const subGlobalU = globalU * subWidth + subU;
-            const subGlobalV = globalV * subHeight + subV;
-            const subGlobalId = subGlobalV * baseGlobalWidth + subGlobalU;
-
-            this._createNodeRenderInfo(
-                level + 1,
-                localId,
-                subGlobalId,
-                [subGlobalWidth, subGlobalHeight],
-                renderInfoPack,
-                gridOffset
-            );
-        }
-
-        return renderInfoPack;
-    }
-
-    subdivideGrids(
-        subdivideInfos: Array<[level: number, globalId: number]>
-    ): GridNodeRenderInfoPack {
-        // Record children num
-        let childrenCount = 0;
-        const childrenNumList = Array.from(
-            { length: subdivideInfos.length },
-            (_, index) => {
-                const parentLevel = subdivideInfos[index][0];
-                const [subWidth, subHeight] =
-                    this._context.rules[parentLevel];
-                const subCount = subWidth * subHeight;
-                childrenCount += subCount;
-                return subCount;
-            }
-        );
-
-        // Create render information pack
-        const renderInfoPack: GridNodeRenderInfoPack = {
-            uuIds: new Array<string>(childrenCount),
-            vertexBuffer: new Float32Array(childrenCount * 8),
-        };
-
-        // Subdivide all parent grids
-        childrenCount = 0;
-        subdivideInfos.forEach((info, index) => {
-            const [level, globalId] = info;
-            this.subdivideGrid(level, globalId, renderInfoPack, childrenCount);
-            childrenCount += childrenNumList[index];
-        });
-
-        return renderInfoPack;
-    }
-
     parseTopology(gridInfoCache: Array<number>): GridTopologyInfo {
         /* ------------------------------------------------------------------
                                             |
@@ -1122,72 +1040,7 @@ export default class GridManager {
         };
     }
 
-    private _createNodeRenderInfo(
-        level: number,
-        localId: number,
-        globalId: number,
-        globalRange: [width: number, height: number],
-        infoPack: GridNodeRenderInfoPack,
-        gridOffset: number
-    ) {
-        const [width, height] = globalRange;
-        const bBox = this._context.bBox;
-
-        const globalU = globalId % width;
-        const globalV = Math.floor(globalId / width);
-
-        const xMin = lerp(bBox.xMin, bBox.xMax, globalU / width);
-        const yMin = lerp(bBox.yMin, bBox.yMax, globalV / height);
-        const xMax = lerp(bBox.xMin, bBox.xMax, (globalU + 1) / width);
-        const yMax = lerp(bBox.yMin, bBox.yMax, (globalV + 1) / height);
-
-        const targetCoords = [
-            this._projConverter.forward([xMin, yMax]), // srcTL
-            this._projConverter.forward([xMax, yMax]), // srcTR
-            this._projConverter.forward([xMin, yMin]), // srcBL
-            this._projConverter.forward([xMax, yMin]), // srcBR
-        ];
-
-        const center = this._projConverter.forward([
-            (bBox.xMin + bBox.xMax) / 2.0,
-            (bBox.yMin + bBox.yMax) / 2.0,
-        ]);
-        const mercatorCenter = MercatorCoordinate.fromLonLat(
-            center as [number, number]
-        );
-        const renderCoords = targetCoords.map((coord) =>
-            MercatorCoordinate.fromLonLat(coord as [number, number])
-        );
-
-        const relativeCoords = renderCoords.map((renderCoord) => {
-            return [
-                renderCoord[0] - mercatorCenter[0],
-                renderCoord[1] - mercatorCenter[1],
-            ] as [number, number];
-        });
-
-        infoPack.uuIds[gridOffset + localId] = `${level}-${globalId}`;
-        const nodeCount = infoPack.vertexBuffer.length / 8;
-
-        infoPack.vertexBuffer[nodeCount * 0 + (gridOffset + localId) * 2 + 0] =
-            relativeCoords[0][0];
-        infoPack.vertexBuffer[nodeCount * 0 + (gridOffset + localId) * 2 + 1] =
-            relativeCoords[0][1];
-        infoPack.vertexBuffer[nodeCount * 2 + (gridOffset + localId) * 2 + 0] =
-            relativeCoords[1][0];
-        infoPack.vertexBuffer[nodeCount * 2 + (gridOffset + localId) * 2 + 1] =
-            relativeCoords[1][1];
-        infoPack.vertexBuffer[nodeCount * 4 + (gridOffset + localId) * 2 + 0] =
-            relativeCoords[2][0];
-        infoPack.vertexBuffer[nodeCount * 4 + (gridOffset + localId) * 2 + 1] =
-            relativeCoords[2][1];
-        infoPack.vertexBuffer[nodeCount * 6 + (gridOffset + localId) * 2 + 0] =
-            relativeCoords[3][0];
-        infoPack.vertexBuffer[nodeCount * 6 + (gridOffset + localId) * 2 + 1] =
-            relativeCoords[3][1];
-    }
-
-    createNodeRenderVertices(
+    createGridRenderVertices(
         level: number,
         globalId: number,
         vertices?: Float32Array,
@@ -1236,7 +1089,7 @@ export default class GridManager {
         return [vertices, verticesLow];
     }
 
-    createMultiRenderVertices(
+    createMultiGridRenderVertices(
         levels: number[] | Uint8Array,
         globalIds: number[] | Uint32Array
     ): [Float32Array, Float32Array] {
@@ -1250,7 +1103,7 @@ export default class GridManager {
         for (let i = 0; i < gridNum; i++) {
             const level = levels[i]
             const globalId = globalIds[i]
-            this.createNodeRenderVertices(level, globalId, vertices, verticesLow);
+            this.createGridRenderVertices(level, globalId, vertices, verticesLow);
             vertexBuffer[gridNum * 2 * 0 + i * 2 + 0] = vertices[0];
             vertexBuffer[gridNum * 2 * 0 + i * 2 + 1] = vertices[1];
             vertexBuffer[gridNum * 2 * 1 + i * 2 + 0] = vertices[2];

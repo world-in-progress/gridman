@@ -1,5 +1,5 @@
 import GridManager from "../grid/NHGridManager";
-import { GridContext } from "../grid/NHGrid";
+import { GridContext } from "../grid/types";
 import { Callback, WorkerSelf } from "../types";
 import ProjectUtils from "../../components/projectPanel/utils/util.worker";
 import SchemaUtils from "../../components/schemaPanel/utils/util.worker";

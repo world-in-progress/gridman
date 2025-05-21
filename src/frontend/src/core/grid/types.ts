@@ -1,5 +1,4 @@
 import proj4 from 'proj4';
-import { DbAction } from '../database/db';
 import BoundingBox2D from '../util/boundingBox2D';
 import { MercatorCoordinate } from '../math/mercatorCoordinate';
 
@@ -15,38 +14,9 @@ export type EDGE_CODE =
     | typeof EDGE_CODE_SOUTH
     | typeof EDGE_CODE_EAST;
 
-export interface GridNodeRenderInfo {
-    uuId: string;
-    vertices: Float32Array;
-}
-
-export interface EdgeRenderInfoPack {
-    actorIndex: number;
-    vertexBuffer: Float32Array;
-}
-
-export interface GridNodeRenderInfoPack {
-    uuIds: string[];
-    vertexBuffer: Float32Array;
-}
-
-export interface GridEdgeSerializedInfo {
-    edgeCode: number;
-    adjGrids: [string, string];
-    minPercent: [number, number];
-    maxPercent: [number, number];
-}
-
-export interface GridNodeSerializedInfo {
-    xMinPercent: [number, number];
-    yMinPercent: [number, number];
-    xMaxPercent: [number, number];
-    yMaxPercent: [number, number];
-}
 
 export interface GridNodeParams {
     level?: number;
-    // localId: number
     globalId: number;
     parent?: GridNode;
     storageId: number;
@@ -66,19 +36,24 @@ export type GridContext = {
     targetCS: string;
     bBox: BoundingBox2D;
     rules: [number, number][];
-};
+}
 
-export type GridInfo = {
-    storageId: number;
-    level: number;
-    globalId: number;
-    localId: number;
-    deleted: boolean;
+export type MultiGridBaseInfo = {
+    levels: Uint8Array;
+    globalIds: Uint32Array;
 }
 
 export type GridSaveInfo = {
     success: boolean;
     message: string;
+}
+
+export type GridCheckingInfo = {
+    storageId: number;
+    level: number;
+    globalId: number;
+    localId: number;
+    deleted: boolean;
 }
 
 export type GridTopologyInfo = [
@@ -88,146 +63,6 @@ export type GridTopologyInfo = [
         [Set<number>, Set<number>, Set<number>, Set<number>]
     >
 ];
-
-/*
-   ----- 0b00 -----
-  |                |
-  0b01   Grid    0b11
-  |                |
-   ----- 0b10 ----- 
-*/
-export class GridEdge {
-    key: string;
-    properties: { [key: string]: any };
-
-    constructor(key: string, properties: string[] | undefined) {
-        this.key = key;
-        this.properties = {};
-
-        if (properties) {
-            for (const key of properties) this.properties[key] = undefined;
-        }
-    }
-
-    private _getKeyArray(): (number | 'null')[] {
-        return this.key.split('-').map((value) => {
-            return value === 'null' ? 'null' : Number(value);
-        });
-    }
-
-    static createKey(
-        grid1: GridNode | null,
-        grid2: GridNode | null,
-        edgeCode: number,
-        range: [number, number, number, number]
-    ): string {
-        const key1 = grid1 ? `${grid1.level}-${grid1.globalId}` : 'null-null';
-        const key2 = grid2 ? `-${grid2.level}-${grid2.globalId}` : '-null-null';
-        const key3 = `-${range[0]}-${range[1]}-${range[2]}-${range[3]}`;
-        const key4 = `-${edgeCode}`;
-
-        return key1 + key2 + key3 + key4;
-    }
-
-    get opKey(): string {
-        return GridEdge.getOpKey(this.key);
-    }
-
-    get serialization(): GridEdgeSerializedInfo {
-        const keyArray = this._getKeyArray();
-
-        return {
-            adjGrids: [
-                [keyArray[0], keyArray[1]].join('-'), // [ grid1 ] level-globalId
-                [keyArray[2], keyArray[3]].join('-'), // [ grid2 ] level-globalId
-            ],
-            minPercent: [keyArray[4] as number, keyArray[5] as number],
-            maxPercent: [keyArray[6] as number, keyArray[7] as number],
-            edgeCode: keyArray[8] as number,
-        };
-    }
-
-    static getToggleEdgeCode(
-        code: number
-    ): EDGE_CODE | typeof EDGE_CODE_INVALID {
-        switch (code) {
-            case EDGE_CODE_NORTH:
-                return EDGE_CODE_SOUTH;
-
-            case EDGE_CODE_WEST:
-                return EDGE_CODE_EAST;
-
-            case EDGE_CODE_SOUTH:
-                return EDGE_CODE_NORTH;
-
-            case EDGE_CODE_EAST:
-                return EDGE_CODE_WEST;
-            default:
-                console.error('Provided edge code is invalid.');
-                return EDGE_CODE_INVALID;
-        }
-    }
-
-    static getOpKey(key: string): string {
-        const keyArray = key.split('-').map((value, index) => {
-            if (index === 8) {
-                return GridEdge.getToggleEdgeCode(Number(value));
-            }
-            return value === 'null' ? 'null' : Number(value);
-        });
-
-        const opKeyArray = keyArray.slice();
-        opKeyArray[0] = keyArray[2];
-        opKeyArray[1] = keyArray[3];
-        opKeyArray[2] = keyArray[0];
-        opKeyArray[3] = keyArray[1];
-
-        return opKeyArray.join('-');
-    }
-}
-
-export class GridNodeRecord {
-    isActivated = false;
-    children_uuIds: Array<string> = [];
-    edge_uuIds = new Array<Set<string>>(4);
-    neighbour_uuIds = new Array<Set<string>>(4);
-
-    constructor(public uuId: string) {}
-
-    static async createFromIndexedDB(
-        dbManager: (dbName: string, actions: DbAction[]) => Promise<any[]>,
-        key: any
-    ): Promise<GridNodeRecord> {
-        const readNodeAction: DbAction = {
-            storeName: 'GridNode',
-            type: 'R',
-            data: key,
-        };
-
-        const gridRecord = new GridNodeRecord(key) as any;
-        const storedData = (await dbManager('GridDB', [readNodeAction]))[0];
-        for (const _key in storedData) {
-            gridRecord[_key] = storedData[_key];
-        }
-
-        return gridRecord as GridNodeRecord;
-    }
-
-    get level(): number {
-        return +this.uuId.split('-')[0];
-    }
-
-    get globalId(): number {
-        return +this.uuId.split('-')[1];
-    }
-
-    get keys(): [level: number, globalId: number] {
-        return this.uuId.split('-').map((key) => +key) as [
-            level: number,
-            globalId: number
-        ];
-    }
-}
 
 export class GridNode {
     level: number;
@@ -243,7 +78,6 @@ export class GridNode {
     neighbours: [Set<number>, Set<number>, Set<number>, Set<number>];
 
     constructor(options: GridNodeParams) {
-        // this.localId = options.localId
         this.globalId = options.globalId;
         this.storageId = options.storageId;
 
@@ -396,6 +230,63 @@ export class GridNode {
         return true;
     }
 }
+
+export class MultiGridInfoParser {
+
+    static fromBuffer(buffer: ArrayBuffer): MultiGridBaseInfo {
+        if (buffer.byteLength < 4) {
+            return {
+                levels: new Uint8Array(0),
+                globalIds: new Uint32Array(0),
+            }
+        }
+
+        const prefixView = new DataView(buffer, 0, 4);
+        const gridNum = prefixView.getUint32(0, true);
+        const alignedOffset = 4 + gridNum + ((4 - (gridNum % 4 || 4)) % 4);
+
+        const levels = new Uint8Array(buffer, 4, gridNum);
+        const globalIds = new Uint32Array(buffer, alignedOffset);
+
+        return {
+            levels,
+            globalIds,
+        }
+    }
+
+    static async fromGetUrl(url: string): Promise<MultiGridBaseInfo> {
+        const response = await fetch(url, { method: 'GET' });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        return MultiGridInfoParser.fromBuffer(buffer);
+    }
+
+    static async fromPostUrl(url: string, data: any): Promise<MultiGridBaseInfo> {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const buffer = await response.arrayBuffer();
+            return MultiGridInfoParser.fromBuffer(buffer);
+            
+        } catch (error) {
+            console.error('Failed to fetch MultiGridInfo:', error);
+            throw error;
+        }
+    }
+}
+
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
 

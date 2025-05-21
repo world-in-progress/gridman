@@ -1,7 +1,6 @@
-import { MultiGridInfo } from '../../../core/grid/type';
 import { Callback, WorkerSelf } from '../../../core/types'
 import GridManager from '../../../core/grid/NHGridManager';
-import { MultiGridRenderInfo, GridContext } from '../../../core/grid/NHGrid'
+import { MultiGridRenderInfo, GridContext, MultiGridInfoParser } from '../../../core/grid/types'
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -458,8 +457,8 @@ export default class ProjectUtils {
         const activateInfoAPI = '/api/grid/operation/activate-info'
         const deletedInfoAPI = '/api/grid/operation/deleted-info'
         const [activateInfoResponse, deletedInfoResponse] = await Promise.all([
-            MultiGridInfo.fromGetUrl(activateInfoAPI),
-            MultiGridInfo.fromGetUrl(deletedInfoAPI)
+            MultiGridInfoParser.fromGetUrl(activateInfoAPI),
+            MultiGridInfoParser.fromGetUrl(deletedInfoAPI)
         ]);
 
         // Create combined levels for activate and deleted grids
@@ -473,7 +472,7 @@ export default class ProjectUtils {
         combinedGlobalIds.set(deletedInfoResponse.globalIds, activateInfoResponse.globalIds.length);
         
         // Create combined vertices for activate and deleted grids
-        const combinedVertices = worker.gridManager.createMultiRenderVertices(combinedLevels, combinedGlobalIds);
+        const combinedVertices = worker.gridManager.createMultiGridRenderVertices(combinedLevels, combinedGlobalIds);
 
         // Create a combined deleted flags array
         const combinedDeleted = new Uint8Array(combinedLevels.length);
