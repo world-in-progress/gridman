@@ -25,6 +25,8 @@ import store from '@/store';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import GridChecking from './gridChecking';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 type TopologyOperationType =
     | 'subdivide'
@@ -46,9 +48,11 @@ export default function TopologyPanel({
     const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
     const [activeTopologyOperation, setActiveTopologyOperation] =
         useState<TopologyOperationType>(null);
+    const [isPickingHighSpeedModeOn, setIsPickingHighSpeedModeOn] = useState(false);
+    const [isTopologyHighSpeedModeOn, setIsTopologyHighSpeedModeOn] = useState(false)
 
-    const checkOnEvent = () => setIsVisible(false)
-    const checkOffEvent = () => setIsVisible(true)
+    const checkOnEvent = () => setIsVisible(false);
+    const checkOffEvent = () => setIsVisible(true);
     const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
     checkingSwitch.addEventListener('on', checkOnEvent);
     checkingSwitch.addEventListener('off', checkOffEvent);
@@ -91,11 +95,19 @@ export default function TopologyPanel({
     };
 
     const handleDeleteSelectClick = () => {
-        setDeleteSelectDialogOpen(true);
+        if (isPickingHighSpeedModeOn) {
+            handleConfirmDeleteSelect();
+        } else {
+            setDeleteSelectDialogOpen(true);
+        }
     };
 
     const handleSelectAllClick = () => {
-        setSelectAllDialogOpen(true);
+        if (isPickingHighSpeedModeOn) {
+            handleConfirmSelectAll();
+        } else {
+            setSelectAllDialogOpen(true);
+        }
     };
 
     const handleConfirmSelectAll = () => {
@@ -123,10 +135,8 @@ export default function TopologyPanel({
                 topologyLayer.executeRecoverGrids();
                 break;
             default:
-                // Should not happen if dialog is only open when activeTopologyOperation is not null
                 console.warn('No active topology operation to confirm.');
         }
-        // 关闭对话框
         setActiveTopologyOperation(null);
     };
 
@@ -146,11 +156,19 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
-                    setSelectAllDialogOpen(true);
+                    if (isPickingHighSpeedModeOn) {
+                        handleConfirmSelectAll();
+                    } else {
+                        setSelectAllDialogOpen(true);
+                    }
                 }
                 if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
-                    setDeleteSelectDialogOpen(true);
+                    if (isPickingHighSpeedModeOn) {
+                        handleConfirmDeleteSelect();
+                    } else {
+                        setDeleteSelectDialogOpen(true);
+                    }
                 }
                 if (event.key === '1') {
                     event.preventDefault();
@@ -170,19 +188,35 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
-                    setActiveTopologyOperation('subdivide');
+                    if (isTopologyHighSpeedModeOn) {
+                        topologyLayer.executeSubdivideGrids();
+                    } else {
+                        setActiveTopologyOperation('subdivide');
+                    }
                 }
                 if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
-                    setActiveTopologyOperation('merge');
+                    if (isTopologyHighSpeedModeOn) {
+                        topologyLayer.executeMergeGrids();
+                    } else {
+                        setActiveTopologyOperation('merge');
+                    }
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
-                    setActiveTopologyOperation('delete');
+                    if (isTopologyHighSpeedModeOn) {
+                        topologyLayer.executeDeleteGrids();
+                    } else {
+                        setActiveTopologyOperation('delete');
+                    }
                 }
                 if (event.key === 'R' || event.key === 'r') {
                     event.preventDefault();
-                    setActiveTopologyOperation('recover');
+                    if (isTopologyHighSpeedModeOn) {
+                        topologyLayer.executeRecoverGrids();
+                    } else {
+                        setActiveTopologyOperation('recover');
+                    }
                 }
             }
         };
@@ -192,60 +226,62 @@ export default function TopologyPanel({
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [setPickingTab]);
+    }, [setPickingTab, isPickingHighSpeedModeOn, isTopologyHighSpeedModeOn]);
 
     useEffect(() => {
         return () => {
-            checkingSwitch.removeEventListener('on', checkOnEvent)
-            checkingSwitch.removeEventListener('off', checkOffEvent)
-        }
+            checkingSwitch.removeEventListener('on', checkOnEvent);
+            checkingSwitch.removeEventListener('off', checkOffEvent);
+        };
     }, []);
-    
 
-    const onTopologyOperationClick = () => {
-        switch (activeTopologyOperation) {
-            case 'subdivide':
-                setActiveTopologyOperation('subdivide');
-                break;
-            case 'merge':
-                setActiveTopologyOperation('merge');
-                break;
-            case 'delete':
-                setActiveTopologyOperation('delete');
-                break;
-            case 'recover':
-                setActiveTopologyOperation('recover');
-                break;
-            default:
-                // Should not happen if dialog is only open when activeTopologyOperation is not null
-                console.warn('No active topology operation to confirm.');
+    const onTopologyOperationClick = (operationType: TopologyOperationType) => {
+        if (isTopologyHighSpeedModeOn && operationType !== null) {
+            switch (operationType) {
+                case 'subdivide':
+                    topologyLayer.executeSubdivideGrids();
+                    break;
+                case 'merge':
+                    topologyLayer.executeMergeGrids();
+                    break;
+                case 'delete':
+                    topologyLayer.executeDeleteGrids();
+                    break;
+                case 'recover':
+                    topologyLayer.executeRecoverGrids();
+                    break;
+                default:
+                    console.warn('Unknown topology operation type:', operationType);
+            }
+        } else {
+            setActiveTopologyOperation(operationType);
         }
     };
 
     const topologyOperations = [
         {
-            type: 'subdivide',
+            type: 'subdivide' as TopologyOperationType,
             zh: '细分',
             en: 'Subdivide',
             activeColor: 'bg-blue-600',
             shortcut: '[ Ctrl+S ]',
         },
         {
-            type: 'merge',
+            type: 'merge' as TopologyOperationType,
             zh: '合并',
             en: 'Merge',
             activeColor: 'bg-green-600',
             shortcut: '[ Ctrl+M ]',
         },
         {
-            type: 'delete',
+            type: 'delete' as TopologyOperationType,
             zh: '删除',
             en: 'Delete',
             activeColor: 'bg-red-600',
             shortcut: '[ Ctrl+D ]',
         },
         {
-            type: 'recover',
+            type: 'recover' as TopologyOperationType,
             zh: '恢复',
             en: 'Recover',
             activeColor: 'bg-purple-600',
@@ -426,9 +462,24 @@ export default function TopologyPanel({
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <h3 className="text-2xl mt-1 ml-1 font-bold">
-                        {language === 'zh' ? '模式选择' : 'Picking'}
-                    </h3>
+                    <div className="flex mt-1 ml-1 items-center">
+                        <h3 className="text-2xl font-bold">
+                            {language === 'zh' ? '模式选择' : 'Picking'}
+                        </h3>
+                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
+                            <Label className="text-gray-400 ml-1">
+                                {language === 'zh'
+                                    ? '高速模式'
+                                    : 'HighSpeed Mode'}
+                            </Label>
+                            <Switch
+                                className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
+                                checked={isPickingHighSpeedModeOn}
+                                onCheckedChange={setIsPickingHighSpeedModeOn}
+                            />
+                        </div>
+                    </div>
+
                     <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
                         <h3 className="text-md ml-1 mb-1 font-bold">
                             {language === 'zh' ? '操作' : 'Operation'}
@@ -605,9 +656,23 @@ export default function TopologyPanel({
                         </div>
                     </div>
                     <Separator />
-                    <h3 className="text-2xl ml-1 mb-1 mt-0 font-bold">
-                        {language === 'zh' ? '拓扑' : 'Topology'}
-                    </h3>
+                    <div className="ml-1 mb-1 mt-0 flex items-center">
+                        <h3 className="text-2xl font-bold">
+                            {language === 'zh' ? '拓扑' : 'Topology'}
+                        </h3>
+                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
+                            <Label className="text-gray-400 ml-1">
+                                {language === 'zh'
+                                    ? '高速模式'
+                                    : 'HighSpeed Mode'}
+                            </Label>
+                            <Switch
+                                className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
+                                checked={isTopologyHighSpeedModeOn}
+                                onCheckedChange={setIsTopologyHighSpeedModeOn}
+                            />
+                        </div>
+                    </div>
                     <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
                         {topologyOperations.map((operation) => (
                             <button
@@ -623,10 +688,7 @@ export default function TopologyPanel({
                                 }`}
                                 // onClick={operation.onClick}
                                 onClick={() => {
-                                    setActiveTopologyOperation(
-                                        operation.type as TopologyOperationType
-                                    );
-                                    onTopologyOperationClick();
+                                    onTopologyOperationClick(operation.type);
                                 }}
                             >
                                 <div className="flex flex-row items-center">

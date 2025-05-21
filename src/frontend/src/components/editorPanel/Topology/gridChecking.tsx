@@ -18,22 +18,22 @@ export default function GridChecking() {
         },
     });
 
-    const checkOnEvent = () => setGridChecking(true)
-    const checkOffEvent = () => setGridChecking(false)
-    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
-    checkingSwitch.addEventListener('on', checkOnEvent)
-    checkingSwitch.addEventListener('off', checkOffEvent)
+    const checkOnEvent = () => setGridChecking(true);
+    const checkOffEvent = () => setGridChecking(false);
+    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
+    checkingSwitch.addEventListener('on', checkOnEvent);
+    checkingSwitch.addEventListener('off', checkOffEvent);
 
     useEffect(() => {
         return () => {
-            const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
+            const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
             if (checkingSwitch.isOn) {
-                checkingSwitch.switch()
+                checkingSwitch.switch();
             }
-            checkingSwitch.removeEventListener('on', checkOnEvent)
-            checkingSwitch.removeEventListener('off', checkOffEvent)
-        }
-    }, [])
+            checkingSwitch.removeEventListener('on', checkOnEvent);
+            checkingSwitch.removeEventListener('off', checkOffEvent);
+        };
+    }, []);
 
     return (
         <div className="bg-white p-2 mt-2 rounded-md shadow-sm ">
@@ -41,13 +41,19 @@ export default function GridChecking() {
                 <h2 className="text-2xl font-bold ">
                     {language === 'zh' ? '查看' : 'Checking'}
                 </h2>
-                <Label className='text-gray-400 ml-auto mr-2'>{language === 'zh' ? '开启' : 'Enable'}</Label>
-                <Switch
-                    onClick={() => {
-                        store.get<CheckingSwitch>('checkingSwitch')!.switch()
-                    }}
-                    className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
-                />
+                <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
+                    <Label className="text-gray-400 ml-1">
+                        {language === 'zh' ? '开启' : 'Enable'}
+                    </Label>
+                    <Switch
+                        onClick={() => {
+                            store
+                                .get<CheckingSwitch>('checkingSwitch')!
+                                .switch();
+                        }}
+                        className="bg-gray-900 data-[state=checked]:bg-[#FF8F2E] cursor-pointer mr-2"
+                    />
+                </div>
             </div>
             {gridChecking && (
                 <>

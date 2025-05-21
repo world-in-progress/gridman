@@ -238,9 +238,7 @@ export default function Home() {
 
                 {/* Redesigned description with frosted glass effect */}
                 <motion.div
-                    className={`relative mb-12 ${
-                        language === 'zh' ? 'max-w-[62%]' : 'max-w-[62%]'
-                    } mx-auto`}
+                    className="relative mb-12 max-w-[1152px] mx-auto"
                     initial="hidden"
                     animate="visible"
                     variants={descriptionVariants}
