@@ -5,6 +5,7 @@ import { SearchForm } from '../ui/search-form';
 import { SubNavPanel } from './components/SubNavPanel';
 import { Pagination } from '../schemaPanel/components/Pagination';
 import { Project, ProjectPanelProps } from './types/types';
+import store from '@/store';
 
 export default function ProjectPanel({
     onCreateNew,
@@ -17,6 +18,13 @@ export default function ProjectPanel({
     const [searchQuery, setSearchQuery] = useState('');
     const itemsPerPage = 5;
     const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+    
+    store.set('updateProjectCurrentPage', {
+        on: () => {
+            setCurrentPage(1);
+        }
+    })
 
     useEffect(() => {
         setCurrentPage(1);

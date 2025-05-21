@@ -327,6 +327,8 @@ export function SubNavPanel({
                         prev.filter((s) => s.name !== schemaToDelete.name)
                     );
 
+                    store.get<{on: Function}>('updateSchemaCurrentPage')!.on();
+                    console.log('currentPage', currentPage);
                     fetchSchemasCallback(currentPage);
 
                     toast.success(
