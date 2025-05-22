@@ -1,7 +1,7 @@
 import proj4 from 'proj4'
 import Dispatcher from '../message/dispatcher'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
-import { GridContext, GridCheckingInfo, GridSaveInfo, MultiGridRenderInfo } from './types'
+import { GridContext, GridCheckingInfo, GridSaveInfo, MultiGridRenderInfo, MultiGridBaseInfo, StructuredGridRenderVertices } from './types'
 
 proj4.defs('EPSG:2326',"+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
@@ -53,7 +53,7 @@ export default class GridCore {
 
     // Grid cache
     levelInfos: GridLevelInfo[]
-    gridLevelCache: Float32Array
+    gridLevelCache: Uint8Array
     gridDeletedCache: Uint8Array
     gridGlobalIdCache: Uint32Array
     gridKey_storageId_dict: Map<string, number>
@@ -87,7 +87,7 @@ export default class GridCore {
 
         // Init grid cache
         this.gridKey_storageId_dict = new Map()
-        this.gridLevelCache = new Float32Array(this.maxGridNum)
+        this.gridLevelCache = new Uint8Array(this.maxGridNum)
         this.gridGlobalIdCache = new Uint32Array(this.maxGridNum)
         this.gridDeletedCache = new Uint8Array(this.maxGridNum).fill(UNDELETED_FLAG)
         this.grid_attribute_cache = Array.from({ length: this.maxGridNum }, () => { return { height: -9999, type: 0 } })
@@ -104,19 +104,53 @@ export default class GridCore {
         // Brodcast actors to init grid manager and initialize grid cache
         this.dispatcher.broadcast('setGridManager', this.context, () => {
             // Get activate grid information
-            this._actor.send('getGridInfo', null, (error: any, renderInfo: MultiGridRenderInfo) => {
+            this._actor.send('getGridInfo', null, (error: any, baseInfo: MultiGridBaseInfo) => {
                 // Initialize grid cache
-                const gridNum = renderInfo.levels.length
-                this._nextStorageId = gridNum
+                this._nextStorageId = 0
+                const gridNum = baseInfo.levels.length
                 for (let storageId = 0; storageId < gridNum; storageId++) {
-                    this.updateDict(storageId, renderInfo.levels[storageId], renderInfo.globalIds[storageId])
-                    this.gridLevelCache[storageId] = renderInfo.levels[storageId]
-                    this.gridDeletedCache[storageId] = renderInfo.deleted![storageId]
-                    this.gridGlobalIdCache[storageId] = renderInfo.globalIds[storageId]
+                    const level = baseInfo.levels[storageId]
+                    const globalId = baseInfo.globalIds[storageId]
+                    this.updateDict(storageId, level, globalId)
                 }
+                this.gridLevelCache.set(baseInfo.levels, 0)
+                this.gridDeletedCache.set(baseInfo.deleted!, 0)
+                this.gridGlobalIdCache.set(baseInfo.globalIds, 0)
 
-                callback && callback([0, renderInfo.levels, renderInfo.vertices, renderInfo.verticesLow, renderInfo.deleted])
+                // Get render vertices of all grids
+                let completedActorNum = 0
+                const vertices = new Float32Array(gridNum * 8)
+                const verticesLow = new Float32Array(gridNum * 8)
+                const batchSize = Math.ceil(gridNum / this.dispatcher.actorNum)
+                for (let actorIndex = 0; actorIndex < this.dispatcher.actorNum; actorIndex++) {
+                    const fromStorageId = actorIndex * batchSize
+                    const toStorageId = Math.min(gridNum, (actorIndex + 1) * batchSize)
 
+                    // Send grid info batch to actor and get vertices
+                    const info: MultiGridBaseInfo = {
+                        levels: baseInfo.levels.slice(fromStorageId, toStorageId),
+                        globalIds: baseInfo.globalIds.slice(fromStorageId, toStorageId),
+                    }
+                    this._actor.send('getMultiGridRenderVertices', info, (error: any, renderInfo: StructuredGridRenderVertices) => {
+                        completedActorNum += 1
+
+                        vertices.set(renderInfo.tl, gridNum * 2 * 0 + fromStorageId * 2)
+                        vertices.set(renderInfo.tr, gridNum * 2 * 1 + fromStorageId * 2)
+                        vertices.set(renderInfo.bl, gridNum * 2 * 2 + fromStorageId * 2)
+                        vertices.set(renderInfo.br, gridNum * 2 * 3 + fromStorageId * 2)
+
+                        verticesLow.set(renderInfo.tlLow, gridNum * 2 * 0 + fromStorageId * 2)
+                        verticesLow.set(renderInfo.trLow, gridNum * 2 * 1 + fromStorageId * 2)
+                        verticesLow.set(renderInfo.blLow, gridNum * 2 * 2 + fromStorageId * 2)
+                        verticesLow.set(renderInfo.brLow, gridNum * 2 * 3 + fromStorageId * 2)
+
+                        // If all actors have completed, make callback
+                        if (completedActorNum === this.dispatcher.actorNum) {
+                            this._nextStorageId = gridNum
+                            callback && callback([0, baseInfo.levels, vertices, verticesLow, baseInfo.deleted])
+                        }
+                    })
+                }
             })
         })
     }
@@ -310,7 +344,7 @@ export default class GridCore {
 
         // Dispatch a worker to subdivide the grids
         this._actor.send('subdivideGrids', subdivideInfos, (_, renderInfos: MultiGridRenderInfo) => {
-
+            
             renderInfos.globalIds.forEach((globalId, index) => {
                 
                 const storageId = this._nextStorageId + index

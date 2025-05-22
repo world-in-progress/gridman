@@ -10,6 +10,7 @@ import {
     EDGE_CODE_INVALID,
     type EDGE_CODE,
     GridTopologyInfo,
+    StructuredGridRenderVertices,
 } from './types';
 import { MercatorCoordinate } from '../math/mercatorCoordinate';
 
@@ -1093,7 +1094,6 @@ export default class GridManager {
         levels: number[] | Uint8Array,
         globalIds: number[] | Uint32Array
     ): [Float32Array, Float32Array] {
-
         const gridNum = levels.length;
         const vertices = new Float32Array(8);
         const verticesLow = new Float32Array(8);
@@ -1124,6 +1124,57 @@ export default class GridManager {
         };
 
         return [vertexBuffer, vertexBufferLow]
+    }
+
+    createStructuredGridRenderVertices(
+        levels: number[] | Uint8Array,
+        globalIds: number[] | Uint32Array
+    ): StructuredGridRenderVertices {
+        const gridNum = levels.length;
+        const vertices = new Float32Array(8);
+        const verticesLow = new Float32Array(8);
+        const tlBuffer = new Float32Array(gridNum * 2);
+        const trBuffer = new Float32Array(gridNum * 2);
+        const blBuffer = new Float32Array(gridNum * 2);
+        const brBuffer = new Float32Array(gridNum * 2);
+        const tlBufferLow = new Float32Array(gridNum * 2);
+        const trBufferLow = new Float32Array(gridNum * 2);
+        const blBufferLow = new Float32Array(gridNum * 2);
+        const brBufferLow = new Float32Array(gridNum * 2);
+        
+        for (let i = 0; i < gridNum; i++) {
+            const level = levels[i]
+            const globalId = globalIds[i]
+            this.createGridRenderVertices(level, globalId, vertices, verticesLow);
+            tlBuffer[i * 2 + 0] = vertices[0];
+            tlBuffer[i * 2 + 1] = vertices[1];
+            trBuffer[i * 2 + 0] = vertices[2];
+            trBuffer[i * 2 + 1] = vertices[3];
+            blBuffer[i * 2 + 0] = vertices[4];
+            blBuffer[i * 2 + 1] = vertices[5];
+            brBuffer[i * 2 + 0] = vertices[6];
+            brBuffer[i * 2 + 1] = vertices[7];
+
+            tlBufferLow[i * 2 + 0] = verticesLow[0];
+            tlBufferLow[i * 2 + 1] = verticesLow[1];
+            trBufferLow[i * 2 + 0] = verticesLow[2];
+            trBufferLow[i * 2 + 1] = verticesLow[3];
+            blBufferLow[i * 2 + 0] = verticesLow[4];
+            blBufferLow[i * 2 + 1] = verticesLow[5];
+            brBufferLow[i * 2 + 0] = verticesLow[6];
+            brBufferLow[i * 2 + 1] = verticesLow[7];
+        };
+
+        return {
+            tl: tlBuffer,
+            tr: trBuffer,
+            bl: blBuffer,
+            br: brBuffer,
+            tlLow: tlBufferLow,
+            trLow: trBufferLow,
+            blLow: blBufferLow,
+            brLow: brBufferLow
+        }
     }
 }
 

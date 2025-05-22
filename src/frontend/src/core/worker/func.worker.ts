@@ -1,5 +1,5 @@
 import GridManager from "../grid/NHGridManager";
-import { GridContext } from "../grid/types";
+import { GridContext, MultiGridBaseInfo } from "../grid/types";
 import { Callback, WorkerSelf } from "../types";
 import ProjectUtils from "../../components/projectPanel/utils/util.worker";
 import SchemaUtils from "../../components/schemaPanel/utils/util.worker";
@@ -349,5 +349,14 @@ export async function getGridInfoByFeature(
 
 export async function saveGrids(_: any, callback: Callback<any>) {
     const result = await GridUtils.saveGrids();
+    callback(null, result);
+}
+
+export async function getMultiGridRenderVertices(
+    this: WorkerSelf & Record<"gridManager", GridManager>,
+    gridInfo: MultiGridBaseInfo, 
+    callback: Callback<any>
+) {
+    const result = GridUtils.getMultiGridRenderVertices(this, gridInfo.levels, gridInfo.globalIds);
     callback(null, result);
 }
