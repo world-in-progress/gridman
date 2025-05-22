@@ -132,8 +132,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         });
         resizeObserver.observe(mapContainer);
 
-        this.checkOnEvent = (() => this.executeClearSelection()).bind(this)
-        this.checkOffEvent = (() => this.executeClearSelection()).bind(this)
+        this.checkOnEvent = (() => this.executeClearSelection())
+        this.checkOffEvent = (() => this.executeClearSelection())
     }
 
     get maxGridNum(): number {
