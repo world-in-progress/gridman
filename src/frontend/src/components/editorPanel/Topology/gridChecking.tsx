@@ -18,13 +18,13 @@ export default function GridChecking() {
         },
     });
 
-    const checkOnEvent = () => setGridChecking(true);
-    const checkOffEvent = () => setGridChecking(false);
-    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
-    checkingSwitch.addEventListener('on', checkOnEvent);
-    checkingSwitch.addEventListener('off', checkOffEvent);
-
     useEffect(() => {
+        const checkOnEvent = () => setGridChecking(true);
+        const checkOffEvent = () => setGridChecking(false);
+        const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
+        checkingSwitch.addEventListener('on', checkOnEvent);
+        checkingSwitch.addEventListener('off', checkOffEvent);
+        
         return () => {
             const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
             if (checkingSwitch.isOn) {

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { LanguageContext, CheckingSwitch } from '../../../context';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -61,16 +61,13 @@ export default function TopologyPanel({
 
     const checkOnEvent = () => setIsVisible(false);
     const checkOffEvent = () => setIsVisible(true);
-    const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
-    checkingSwitch.addEventListener('on', checkOnEvent);
-    checkingSwitch.addEventListener('off', checkOffEvent);
 
     const clg = store.get<NHLayerGroup>('clg')!;
     const topologyLayer = clg.getLayerInstance(
         'TopologyLayer'
     )! as TopologyLayer;
 
-    const handleFeatureClick = async () => {
+    const handleFeatureClick = useCallback(async () => {
         setActiveSelectTab('feature');
         store.set('modeSelect', 'feature');
         if (
@@ -100,7 +97,7 @@ export default function TopologyPanel({
             setActiveSelectTab('brush');
             store.set('modeSelect', 'brush');
         }
-    };
+    }, [setActiveSelectTab, topologyLayer]);
 
     const handleDeleteSelectClick = () => {
         if (isPickingHighSpeedModeOn) {
@@ -118,17 +115,17 @@ export default function TopologyPanel({
         }
     };
 
-    const handleConfirmSelectAll = () => {
+    const handleConfirmSelectAll = useCallback(() => {
         setSelectAllDialogOpen(false);
         topologyLayer.executePickAllGrids();
-    };
+    }, [topologyLayer]);
 
-    const handleConfirmDeleteSelect = () => {
+    const handleConfirmDeleteSelect = useCallback(() => {
         setDeleteSelectDialogOpen(false);
         topologyLayer.executeClearSelection();
-    };
+    }, [topologyLayer]);
 
-    const handleConfirmTopologyAction = () => {
+    const handleConfirmTopologyAction = useCallback(() => {
         switch (activeTopologyOperation) {
             case 'subdivide':
                 topologyLayer.executeSubdivideGrids();
@@ -146,7 +143,7 @@ export default function TopologyPanel({
                 console.warn('No active topology operation to confirm.');
         }
         setActiveTopologyOperation(null);
-    };
+    }, [activeTopologyOperation, topologyLayer]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -234,14 +231,27 @@ export default function TopologyPanel({
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [setPickingTab, isPickingHighSpeedModeOn, isTopologyHighSpeedModeOn]);
+    }, [
+        setPickingTab, 
+        isPickingHighSpeedModeOn, 
+        isTopologyHighSpeedModeOn, 
+        handleConfirmDeleteSelect, 
+        handleConfirmSelectAll, 
+        handleFeatureClick, 
+        setActiveSelectTab, 
+        topologyLayer
+    ]);
 
     useEffect(() => {
+        const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!;
+        checkingSwitch.addEventListener('on', checkOnEvent);
+        checkingSwitch.addEventListener('off', checkOffEvent);
+
         return () => {
             checkingSwitch.removeEventListener('on', checkOnEvent);
             checkingSwitch.removeEventListener('off', checkOffEvent);
         };
-    }, []);
+    });
 
     const onTopologyOperationClick = (operationType: TopologyOperationType) => {
         if (isTopologyHighSpeedModeOn && operationType !== null) {
@@ -480,7 +490,7 @@ export default function TopologyPanel({
                         <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex ml-auto">
                             <TooltipProvider>
                                 <Tooltip>
-                                    <TooltipTrigger>
+                                    <TooltipTrigger asChild>
                                         <div className="flex items-center gap-2">
                                             <Label
                                                 className={` ${
@@ -706,7 +716,7 @@ export default function TopologyPanel({
                         <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
                             <TooltipProvider>
                                 <Tooltip>
-                                    <TooltipTrigger>
+                                    <TooltipTrigger asChild>
                                         <div className="flex items-center gap-2">
                                             <Label
                                                 className={` ${
