@@ -1,6 +1,6 @@
 import { Callback, WorkerSelf } from '../../../core/types'
 import GridManager from '../../../core/grid/NHGridManager';
-import { MultiGridRenderInfo, GridContext, MultiGridInfoParser } from '../../../core/grid/types'
+import { MultiGridRenderInfo, GridContext, MultiGridInfoParser, MultiGridBaseInfo } from '../../../core/grid/types'
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -453,7 +453,7 @@ export default class ProjectUtils {
 
     static async getGridInfo(
         worker: WorkerSelf & Record<'gridManager', GridManager>
-    ): Promise<MultiGridRenderInfo> {
+    ): Promise<MultiGridBaseInfo> {
         const activateInfoAPI = '/api/grid/operation/activate-info'
         const deletedInfoAPI = '/api/grid/operation/deleted-info'
         const [activateInfoResponse, deletedInfoResponse] = await Promise.all([
@@ -466,15 +466,15 @@ export default class ProjectUtils {
         combinedLevels.set(activateInfoResponse.levels, 0);
         combinedLevels.set(deletedInfoResponse.levels, activateInfoResponse.levels.length);
 
-        // Create combined global IDs for activate and deleted grids
+        // // Create combined global IDs for activate and deleted grids
         const combinedGlobalIds = new Uint32Array(activateInfoResponse.globalIds.length + deletedInfoResponse.globalIds.length);
         combinedGlobalIds.set(activateInfoResponse.globalIds, 0);
         combinedGlobalIds.set(deletedInfoResponse.globalIds, activateInfoResponse.globalIds.length);
         
-        // Create combined vertices for activate and deleted grids
-        const combinedVertices = worker.gridManager.createMultiGridRenderVertices(combinedLevels, combinedGlobalIds);
+        // // Create combined vertices for activate and deleted grids
+        // const combinedVertices = worker.gridManager.createMultiGridRenderVertices(combinedLevels, combinedGlobalIds);
 
-        // Create a combined deleted flags array
+        // // Create a combined deleted flags array
         const combinedDeleted = new Uint8Array(combinedLevels.length);
         combinedDeleted.fill(UNDELETED_FLAG, 0, activateInfoResponse.levels.length);
         combinedDeleted.fill(DELETED_FLAG, activateInfoResponse.levels.length);
@@ -482,10 +482,16 @@ export default class ProjectUtils {
         return {
             levels: combinedLevels,
             globalIds: combinedGlobalIds,
-            vertices: combinedVertices[0],
-            verticesLow: combinedVertices[1],
             deleted: combinedDeleted,
         }
+
+        // return {
+        //     levels: combinedLevels,
+        //     globalIds: combinedGlobalIds,
+        //     vertices: combinedVertices[0],
+        //     verticesLow: combinedVertices[1],
+        //     deleted: combinedDeleted,
+        // }
     }
 }
 

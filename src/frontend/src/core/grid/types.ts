@@ -26,9 +26,9 @@ export interface GridNodeParams {
 export interface MultiGridRenderInfo {
     levels: Uint8Array;
     globalIds: Uint32Array;
+    deleted: Uint8Array;
     vertices: Float32Array;
     verticesLow: Float32Array;
-    deleted: Uint8Array;
 }
 
 export type GridContext = {
@@ -41,6 +41,7 @@ export type GridContext = {
 export type MultiGridBaseInfo = {
     levels: Uint8Array;
     globalIds: Uint32Array;
+    deleted?: Uint8Array;
 }
 
 export type GridSaveInfo = {

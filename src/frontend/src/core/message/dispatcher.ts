@@ -8,7 +8,6 @@ class Dispatcher {
     ready = false
     id = uniqueId()
     currentActor = 0
-    activeActorCount = 0
     actors: Array<Actor> = []
     workerPool = WorkerPool.instance
 
@@ -43,6 +42,10 @@ class Dispatcher {
 
         this.currentActor = (this.currentActor + 1) % (this.actors.length)
         return this.actors[this.currentActor]
+    }
+
+    get actorNum(): number {
+        return this.actors.length
     }
 
     remove() {
