@@ -31,6 +31,18 @@ export interface MultiGridRenderInfo {
     verticesLow: Float32Array;
 }
 
+export interface StructuredGridRenderVertices {
+    tl: Float32Array;
+    tr: Float32Array;
+    bl: Float32Array;
+    br: Float32Array;
+
+    tlLow: Float32Array;
+    trLow: Float32Array;
+    blLow: Float32Array;
+    brLow: Float32Array;
+}
+
 export type GridContext = {
     srcCS: string;
     targetCS: string;

@@ -1,6 +1,6 @@
 import { WorkerSelf } from '../types';
 import GridManager from './NHGridManager';
-import { MultiGridInfoParser, MultiGridRenderInfo } from "./types";
+import { MultiGridInfoParser, MultiGridRenderInfo, StructuredGridRenderVertices } from "./types";
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -116,14 +116,7 @@ export default class GridUtils {
     static getMultiGridRenderVertices(
         worker: WorkerSelf & Record<"gridManager", GridManager>,
         levels: Uint8Array, globalIds: Uint32Array
-    ): MultiGridRenderInfo {
-        const [vertices, verticesLow] = worker.gridManager.createMultiGridRenderVertices(levels, globalIds);
-        return {
-            levels,
-            globalIds,
-            vertices, 
-            verticesLow,
-            deleted: new Uint8Array(0) // placeholder for deleted flag
-         };
+    ): StructuredGridRenderVertices {
+        return worker.gridManager.createStructuredGridRenderVertices(levels, globalIds);
     }
 }
