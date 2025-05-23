@@ -187,3 +187,5 @@ templates
 resource
 
 node_modules
+
+*.pptx
