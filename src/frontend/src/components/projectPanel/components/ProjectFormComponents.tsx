@@ -51,7 +51,7 @@ export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
     onChange,
 }) => {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-2">
                 {language === 'zh' ? '新子项目名称' : 'New Subproject Name'}
             </h2>
@@ -270,7 +270,7 @@ export const ProjectErrorMessage: React.FC<ProjectErrorMessageProps> = ({
 
     return (
         <div
-            className={`mt-2 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
+            className={`mt-4 p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
         >
             {message}
         </div>

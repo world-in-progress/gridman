@@ -139,7 +139,7 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                             side="right"
                             align="start"
                             alignOffset={40}
-                            className="w-40"
+                            className="w-38"
                             sideOffset={-20}
                         >
                             {menuItems.map((subItem) => (
@@ -162,8 +162,10 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                                                 subItem.onClick(e);
                                         }}
                                     >
-                                        {subItem.icon}
-                                        {subItem.title}
+                                        <span className="flex items-center">
+                                            {subItem.icon}
+                                            {subItem.title}
+                                        </span>
                                     </a>
                                 </DropdownMenuItem>
                             ))}
@@ -210,9 +212,13 @@ export const SchemaCard: React.FC<SchemaCardProps> = ({
                             ? schema.grid_info.map(
                                   (levelArray: number[], index: number) => (
                                       <div key={index} className="ml-2">
-                                          {`${language === 'zh' ? '等级' : 'Level'} ${
-                                              index + 1
-                                          }: [${levelArray.join(', ')}]`}
+                                          {`${
+                                              language === 'zh'
+                                                  ? '等级'
+                                                  : 'Level'
+                                          } ${index + 1}: [${levelArray.join(
+                                              ', '
+                                          )}]`}
                                       </div>
                                   )
                               )

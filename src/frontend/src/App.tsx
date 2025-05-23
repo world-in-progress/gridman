@@ -20,8 +20,8 @@ declare global {
     }
 }
 
-export default  function App() {
-    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('grid'); // Default to 'grid' for development
+export default function App() {
+    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('aggregation'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
 
@@ -36,12 +36,12 @@ export default  function App() {
     });
 
     const handleNavClick = (item: string, type?: string) => {
-        if (type === 'home' || type === 'grid' || type === 'simulation') {
+        if (type === 'home' || type === 'aggregation' || type === 'simulation') {
             setActiveNavbar(type);
         } else if (item === 'Home' || item === '首页') {
             setActiveNavbar('home');
-        } else if (item === 'Grid' || item === '网格') {
-            setActiveNavbar('grid');
+        } else if (item === 'Aggregation' || item === '聚合') {
+            setActiveNavbar('aggregation');
         } else if (item === 'Simulation' || item === '模拟') {
             setActiveNavbar('simulation');
         }
@@ -52,14 +52,14 @@ export default  function App() {
     useEffect(() => {
         if (loadCounter.current === 0) {
             loadCounter.current = 1;
-            const schemaService = new SchemaService(language)
+            const schemaService = new SchemaService(language);
             schemaService.fetchAllSchemas((err, result) => {
                 if (result.length === 0) {
-                    setActiveNavbar('home')
+                    setActiveNavbar('home');
                 }
-            })
+            });
         }
-    }, [])
+    }, []);
 
     return (
         <div className="App">
@@ -73,13 +73,7 @@ export default  function App() {
                         <div className="flex flex-col h-screen">
                             {isLoading && (
                                 <>
-                                    <div
-                                        className="fixed inset-0 pointer-events-auto z-80"
-                                        style={{
-                                            backgroundColor:
-                                                'rgba(33, 33, 33, 0.4)',
-                                        }}
-                                    />
+                                    <div className="fixed inset-0 pointer-events-auto z-80 bg-[#212121] opacity-30" />
                                     <Loader />
                                 </>
                             )}
@@ -88,9 +82,11 @@ export default  function App() {
                                 onNavItemClick={handleNavClick}
                             ></Navbar>
                             <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
-                                {activeNavbar === 'home' && <Home/>}
-                                {activeNavbar === 'grid' && <Page />}
-                                {activeNavbar === 'simulation' && <Simulation/>}
+                                {activeNavbar === 'home' && <Home />}
+                                {activeNavbar === 'aggregation' && <Page />}
+                                {activeNavbar === 'simulation' && (
+                                    <Simulation />
+                                )}
                             </div>
                             <Toaster
                                 position="bottom-right"

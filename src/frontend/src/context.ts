@@ -6,7 +6,7 @@ export const SidebarContext = createContext<{
     activeNavbar: SidebarType;
     setActiveNavbar: (type: SidebarType) => void;
 }>({
-    activeNavbar: 'grid',
+    activeNavbar: 'aggregation',
     setActiveNavbar: () => {},
 });
 

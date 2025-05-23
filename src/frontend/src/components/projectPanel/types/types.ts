@@ -31,6 +31,7 @@ export interface CreateProjectProps {
     setGridLine?: (line: string | null) => void;
     gridLabel?: mapboxgl.Marker | null;
     setGridLabel?: (label: mapboxgl.Marker | null) => void;
+    setRectangleCoordinates: React.Dispatch<React.SetStateAction<RectangleCoordinates | null>>;
 }
 
 export interface ProjectValidationResult {
@@ -204,4 +205,17 @@ export interface AdjustAndExpandRectangleParams {
         toEpsg: string
     ) => [number, number];
     expandFactor?: number;
+}
+
+export interface PatchBoundsProps {
+    isDrawing: boolean;
+    rectangleCoordinates: RectangleCoordinates | null;
+    onDrawRectangle: (currentlyDrawing: boolean) => void;
+}
+
+export interface UpdatedPatchBoundsProps extends PatchBoundsProps {
+    convertedRectangle: RectangleCoordinates | null;
+    setConvertedRectangle: (rect: RectangleCoordinates) => void;
+    onAdjustAndDraw: (north: string, south: string, east: string, west: string) => void;
+    drawExpandedRectangleOnMap?: () => void;
 }
