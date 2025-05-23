@@ -1,10 +1,10 @@
 import { Sidebar } from '@/components/ui/sidebar';
 
-export interface EditorPanelProps extends React.ComponentProps<typeof Sidebar> {
+export interface TopologyPanelProps extends React.ComponentProps<typeof Sidebar> {
     onBack?: () => void;
 }
 
-export interface TopologyPanelProps {
+export interface TopologyEditorProps {
     pickingTab: 'picking' | 'unpicking'| undefined;
     setPickingTab: (tab: 'picking' | 'unpicking') => void;
     activeSelectTab: 'brush' | 'box' | 'feature' | undefined;

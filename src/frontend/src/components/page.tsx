@@ -37,12 +37,12 @@ import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
 import CreateSubProject from './projectPanel/createSubProject';
-import EditorPanel from './editorPanel/editorPanel';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
+import TopologyPanel from './topologyPanel/TopologyPanel';
 
 export type SidebarType = 'home' | 'grid' | 'simulation' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
@@ -109,9 +109,19 @@ export default function Page() {
         string | undefined
     >(undefined);
 
+    const [highSpeedModeEnabled, setHighSpeedModeEnabled] = useState(false);
+
     const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
     const { language } = useContext(LanguageContext);
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
+
+    store.set(
+        'activePanelChange',
+        (activePanel: 'schema' | 'project' | 'editor' | null) => {
+            setActivePanel(activePanel);
+            setActiveBreadcrumb(activePanel);
+        }
+    );
 
     const toggleChat = () => {
         setIsChatOpen(!isChatOpen);
@@ -144,22 +154,22 @@ export default function Page() {
         };
     }, []);
 
-    useEffect(() => {
-        const handleSwitchToTopology = (event: any) => {
-            const { projectName, subprojectName } = event.detail;
-            setActivePanel('editor');
-            setActiveBreadcrumb('editor');
-        };
+    // useEffect(() => {
+    //     const handleSwitchToTopology = (event: any) => {
+    //         const { projectName, subprojectName } = event.detail;
+    //         setActivePanel('editor');
+    //         setActiveBreadcrumb('editor');
+    //     };
 
-        window.addEventListener('switchToEditorPanel', handleSwitchToTopology);
+    //     window.addEventListener('switchToEditorPanel', handleSwitchToTopology);
 
-        return () => {
-            window.removeEventListener(
-                'switchToEditorPanel',
-                handleSwitchToTopology
-            );
-        };
-    }, []);
+    //     return () => {
+    //         window.removeEventListener(
+    //             'switchToEditorPanel',
+    //             handleSwitchToTopology
+    //         );
+    //     };
+    // }, []);
 
     const handleDrawRectangle = (currentlyDrawing: boolean) => {
         if (mapRef.current) {
@@ -316,18 +326,6 @@ export default function Page() {
     };
 
     const renderActivePanel = () => {
-        // if (activeNavbar === 'simulation') {
-        //     return (
-        //         <OperateSideBar
-        //             className="max-h-full"
-        //             onDrawRectangle={handleDrawRectangle}
-        //             rectangleCoordinates={rectangleCoordinates}
-        //             isDrawing={isDrawing}
-        //         />
-        //     );
-        // }
-
-        // if (activeNavbar === 'grid') {
         if (activePanel === 'schema') {
             if (showCreateSchema) {
                 return (
@@ -355,6 +353,7 @@ export default function Page() {
                         initialSchemaName={selectedSchemaName}
                         initialEpsg={selectedSchemaEpsg}
                         initialSchemaLevel={selectedSchemaLevel}
+                        setRectangleCoordinates={setRectangleCoordinates}
                     />
                 );
             }
@@ -381,13 +380,14 @@ export default function Page() {
                         setGridLine={setGridLine}
                         gridLabel={gridLabel}
                         setGridLabel={setGridLabel}
+                        setRectangleCoordinates={setRectangleCoordinates}
                     />
                 );
             }
             return <ProjectPanel onCreateSubProject={handleCreateSubProject} />;
         } else if (activePanel === 'editor') {
             return (
-                <EditorPanel
+                <TopologyPanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
@@ -464,17 +464,34 @@ export default function Page() {
                         orientation="vertical"
                         className="mr-2 ml-4 h-4"
                     />
-                    <div className="flex items-center">
-                        <span className="ml-2 text-gray-500 justify-center text-sm">
-                            {language === 'zh'
-                                ? 'AI助手模式'
-                                : 'AI Assistant Mode'}
-                        </span>
-                        <Switch
-                            className="ml-2 cursor-pointer data-[state=checked]:bg-[#00C0FF]"
-                            checked={aiDialogEnabled}
-                            onCheckedChange={setAIDialogEnabled}
-                        />
+                    <div className="ml-2 gap-8 flex">
+                        <div className="flex items-center">
+                            <span className="text-gray-500 justify-center text-sm">
+                                {language === 'zh'
+                                    ? 'AI助手模式'
+                                    : 'AI Assistant Mode'}
+                            </span>
+                            <Switch
+                                className="ml-2 cursor-pointer data-[state=checked]:bg-[#00C0FF]"
+                                checked={aiDialogEnabled}
+                                onCheckedChange={setAIDialogEnabled}
+                            />
+                        </div>
+                        <div className="flex items-center">
+                            <span className="text-gray-500 justify-center text-sm">
+                                {language === 'zh'
+                                    ? '高速模式'
+                                    : 'High Speed Mode'}
+                            </span>
+                            <Switch
+                                className="ml-2 cursor-pointer data-[state=checked]:bg-green-500"
+                                checked={highSpeedModeEnabled}
+                                onCheckedChange={() => {
+                                    store.set('highSpeedModeState', !highSpeedModeEnabled)
+                                    setHighSpeedModeEnabled(!highSpeedModeEnabled)
+                                }}
+                            />
+                        </div>
                     </div>
                     <div className="ml-auto mr-2">
                         <DropdownMenu>
