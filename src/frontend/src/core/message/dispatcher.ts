@@ -18,8 +18,8 @@ class Dispatcher {
         if (actorMaxNum) {
             WorkerPool.workerCount = actorMaxNum
         } else {
-            const hardwareConcurrency = typeof window !== 'undefined' ? (window.navigator.hardwareConcurrency || 2) : 2
-            WorkerPool.workerCount = Math.min(hardwareConcurrency, 2)
+            const hardwareConcurrency = typeof window !== 'undefined' ? (window.navigator.hardwareConcurrency || 4) : 4
+            WorkerPool.workerCount = Math.min(hardwareConcurrency, 4)
         }
 
         this.workerPool.acquire(this.id).forEach((worker, index) => {

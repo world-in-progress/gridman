@@ -77,6 +77,14 @@ export type GridTopologyInfo = [
     >
 ];
 
+export type GPUMultiGridUpdateInfo = [
+    fromStorageId: number,
+    levels: Uint8Array,
+    vertices: Float32Array,
+    verticesLow: Float32Array,
+    deleted: Uint8Array,
+]
+
 export class GridNode {
     level: number;
     globalId: number;
@@ -296,6 +304,103 @@ export class MultiGridInfoParser {
         } catch (error) {
             console.error('Failed to fetch MultiGridInfo:', error);
             throw error;
+        }
+    }
+}
+
+export class GridKeyHashTable {
+    private _gridKeyHashTable: Uint32Array
+    private _gridStorageIdTable: Uint32Array
+    private _hashTableSize: number
+    private _hashTableMask: number
+
+    constructor(size: number) {
+        this._hashTableSize = Math.max(8192, size * 2)
+        this._hashTableSize = Math.pow(2, Math.ceil(Math.log2(this._hashTableSize)))
+        this._hashTableMask = this._hashTableSize - 1
+        
+        this._gridKeyHashTable = new Uint32Array(this._hashTableSize * 2)
+        this._gridStorageIdTable = new Uint32Array(this._hashTableSize)
+        this._gridStorageIdTable.fill(0xFFFFFFFF)
+    }
+    
+    private _hash(level: number, globalId: number): number {
+        // Simplified version of FNV-1a hash algorithm
+        let hash = 2166136261
+        hash ^= level
+        hash *= 16777619
+        hash ^= globalId
+        hash *= 16777619
+        return (hash >>> 0) & this._hashTableMask // ensure positive value and limit within table size
+    }
+    
+    private _findSlot(level: number, globalId: number): number {
+        let hash = this._hash(level, globalId)
+        
+        while (this._gridStorageIdTable[hash] !== 0xFFFFFFFF) {
+            const storedLevel = this._gridKeyHashTable[hash * 2]
+            const storedGlobalId = this._gridKeyHashTable[hash * 2 + 1]
+            
+            if (storedLevel === level && storedGlobalId === globalId) {
+                return hash
+            }
+            
+            hash = (hash + 1) & this._hashTableMask
+        }
+        
+        return hash
+    }
+    
+    get(level: number, globalId: number): number | undefined {
+        let hash = this._hash(level, globalId)
+        
+        while (this._gridStorageIdTable[hash] !== 0xFFFFFFFF) {
+            const storedLevel = this._gridKeyHashTable[hash * 2]
+            const storedGlobalId = this._gridKeyHashTable[hash * 2 + 1]
+            
+            if (storedLevel === level && storedGlobalId === globalId) {
+                return this._gridStorageIdTable[hash]
+            }
+            
+            hash = (hash + 1) & this._hashTableMask
+        }
+        
+        return undefined
+    }
+    
+    update(storageId: number, level: number, globalId: number) {
+        const slot = this._findSlot(level, globalId)
+        this._gridKeyHashTable[slot * 2] = level
+        this._gridKeyHashTable[slot * 2 + 1] = globalId
+        this._gridStorageIdTable[slot] = storageId
+    }
+    
+    delete(level: number, globalId: number) {
+        let hash = this._hash(level, globalId)
+        
+        while (this._gridStorageIdTable[hash] !== 0xFFFFFFFF) {
+            const storedLevel = this._gridKeyHashTable[hash * 2]
+            const storedGlobalId = this._gridKeyHashTable[hash * 2 + 1]
+            
+            if (storedLevel === level && storedGlobalId === globalId) {
+                this._gridStorageIdTable[hash] = 0xFFFFFFFF
+                
+                // 重新哈希后续元素以填补空隙
+                let nextHash = (hash + 1) & this._hashTableMask
+                while (this._gridStorageIdTable[nextHash] !== 0xFFFFFFFF) {
+                    const nextLevel = this._gridKeyHashTable[nextHash * 2]
+                    const nextGlobalId = this._gridKeyHashTable[nextHash * 2 + 1]
+                    const nextStorageId = this._gridStorageIdTable[nextHash]
+                    
+                    this._gridStorageIdTable[nextHash] = 0xFFFFFFFF
+                    this.update(nextStorageId, nextLevel, nextGlobalId)
+                    
+                    nextHash = (nextHash + 1) & this._hashTableMask
+                }
+                break
+            }
+            
+            hash = (hash + 1) & this._hashTableMask
         }
     }
 }

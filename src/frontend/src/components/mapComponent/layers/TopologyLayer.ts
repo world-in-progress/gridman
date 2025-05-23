@@ -3,6 +3,7 @@ import { mat4 } from 'gl-matrix'
 
 import '../../../App.css'
 import gll from '../utils/GlLib'
+import HitBuffer from '../utils/hitBuffer'
 import NHLayerGroup from '../utils/NHLayerGroup'
 import GridCore from '../../../core/grid/NHGridCore'
 import { NHCustomLayerInterface } from '../utils/interfaces'
@@ -32,11 +33,11 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
     // Interaction-related //////////////////////////////////////////////////
 
-    hitSet = new Set<number>
     hitFlag = new Uint8Array([1])   // 0 is a special value and means no selection
     unhitFlag = new Uint8Array([0])
     deletedFlag = new Uint8Array([1])
     undeletedFlag = new Uint8Array([0])
+    hitBuffer = new HitBuffer(DEFAULT_MAX_GRID_NUM)
 
     isTransparent = false
     lastPickedId: number = -1
@@ -151,6 +152,8 @@ export default class TopologyLayer implements NHCustomLayerInterface {
 
         // Update GPU resources if maxGridNum changed
         if (currentMaxGridNum !== this.maxGridNum) {
+            this.hitBuffer = new HitBuffer(this.maxGridNum)
+
             this.initialized = false
             this._removeGPUResource(this._gl)
             this.initGPUResource().then(() => {
@@ -495,13 +498,13 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             // Highlight all grids
             if (ids.length === this.gridCore.gridNum) {
 
-                this.hitSet = new Set<number>(ids)
+                this.hitBuffer.all = ids
                 gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(this.maxGridNum).fill(this.hitFlag[0]))
 
             } else {
                 ids.forEach(storageId => {
                     if (storageId < 0) return
-                    this.hitSet.add(storageId)
+                    this.hitBuffer.add(storageId)
                     gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.hitFlag, 0)
                 })
             }
@@ -509,9 +512,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             // Unhighlight all grids
             ids.forEach(storageId => {
                 if (storageId < 0) return
-
-                if (this.hitSet.has(storageId)) {
-                    this.hitSet.delete(storageId)
+                
+                if (this.hitBuffer.isHit(storageId)) {
+                    this.hitBuffer.remove(storageId)
                     gl.bufferSubData(gl.ARRAY_BUFFER, storageId, this.unhitFlag, 0)
                 }
             })
@@ -595,9 +598,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
      * @description: Clear the current selection and return storageIds of picked grids
      */
     executeClearSelection(): number[] {
-        const pickedStorageIds = Array.from(this.hitSet)
-
-        this.hitSet.clear()
+        const pickedStorageIds = this.hitBuffer.clear()
         this._updateHitFlag()
         this.map.triggerRepaint()
 
