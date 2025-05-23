@@ -183,13 +183,10 @@ export default function Page() {
         setIsDrawing(false);
     };
 
-    const clearMapElements = () => {
+    const clearMapDrawElements = () => {
         if (window.mapboxDrawInstance) {
             window.mapboxDrawInstance.deleteAll();
         }
-
-        setRectangleCoordinates(null);
-
         if (cornerMarker) {
             cornerMarker.remove();
             setCornerMarker(null);
@@ -216,19 +213,49 @@ export default function Page() {
         layer.removeResource();
 
         if (item === 'schema') {
+            if (window.mapInstance) {
+                const sourceId = `subproject-bounds-临时项目`;
+                const layerId = `subproject-fill-临时项目`;
+                const outlineLayerId = `subproject-outline-临时项目`;
+
+                if (window.mapInstance.getLayer(outlineLayerId)) {
+                    window.mapInstance.removeLayer(outlineLayerId);
+                }
+                if (window.mapInstance.getLayer(layerId)) {
+                    window.mapInstance.removeLayer(layerId);
+                }
+                if (window.mapInstance.getSource(sourceId)) {
+                    window.mapInstance.removeSource(sourceId);
+                }
+            }
             setActivePanel('schema');
             setShowCreateSchema(false);
             clearMapMarkers();
             setShowCreateProject(false);
             setShowCreateSubProject(false);
-            clearMapElements();
+            clearMapDrawElements();
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
             }
             layer.removeResource();
         } else if (item === 'project') {
+            if (window.mapInstance) {
+                const sourceId = `subproject-bounds-临时项目`;
+                const layerId = `subproject-fill-临时项目`;
+                const outlineLayerId = `subproject-outline-临时项目`;
+
+                if (window.mapInstance.getLayer(outlineLayerId)) {
+                    window.mapInstance.removeLayer(outlineLayerId);
+                }
+                if (window.mapInstance.getLayer(layerId)) {
+                    window.mapInstance.removeLayer(layerId);
+                }
+                if (window.mapInstance.getSource(sourceId)) {
+                    window.mapInstance.removeSource(sourceId);
+                }
+            }
             clearMapMarkers();
-            clearMapElements();
+            clearMapDrawElements();
             if (window.mapInstance && window.mapInstance.getCanvas()) {
                 window.mapInstance.getCanvas().style.cursor = '';
             }
@@ -381,6 +408,7 @@ export default function Page() {
                         gridLabel={gridLabel}
                         setGridLabel={setGridLabel}
                         setRectangleCoordinates={setRectangleCoordinates}
+                        clearMapDrawElements={clearMapDrawElements}
                     />
                 );
             }
@@ -487,13 +515,20 @@ export default function Page() {
                                 className="ml-2 cursor-pointer data-[state=checked]:bg-green-500"
                                 checked={highSpeedModeEnabled}
                                 onCheckedChange={() => {
-                                    store.set('highSpeedModeState', !highSpeedModeEnabled)
-                                    setHighSpeedModeEnabled(!highSpeedModeEnabled)
+                                    store.set(
+                                        'highSpeedModeState',
+                                        !highSpeedModeEnabled
+                                    );
+                                    setHighSpeedModeEnabled(
+                                        !highSpeedModeEnabled
+                                    );
                                 }}
                             />
                         </div>
                     </div>
-                    <div className="ml-auto mr-2">
+
+                    {/* 用户头像 */}
+                    {/* <div className="ml-auto mr-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="cursor-pointer">
@@ -523,7 +558,7 @@ export default function Page() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    </div>
+                    </div> */}
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
                     {activeBreadcrumb === 'editor' && updateCapacity && (

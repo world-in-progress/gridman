@@ -110,8 +110,9 @@ export default function CreateSubProject({
     gridLabel,
     setGridLabel,
     setRectangleCoordinates,
+    clearMapDrawElements,
     ...props
-}: CreateProjectProps) {
+}: CreateProjectProps & { clearMapDrawElements?: () => void }) {
     const { language } = useContext(LanguageContext);
     const [name, setName] = useState('');
     const [schemaName, setSchemaName] = useState('');
@@ -223,16 +224,12 @@ export default function CreateSubProject({
         },
         coordinates: {
             wgs84: {
-                en: `Converted Coordinates (EPSG:${epsg})`,
-                zh: `转换后的坐标 (EPSG:${epsg})`,
-            },
-            aligned: {
-                en: `Aligned Coordinates (EPSG:${epsg})`,
-                zh: `对齐后的坐标 (EPSG:${epsg})`,
+                en: `Original Bounds (EPSG:${epsg})`,
+                zh: `原始包围盒 (EPSG:${epsg})`,
             },
             expanded: {
-                en: `Expanded Coordinates (EPSG:${epsg})`,
-                zh: `扩展后的坐标 (EPSG:${epsg})`,
+                en: `Adjusted Coordinates (EPSG:${epsg})`,
+                zh: `调整后包围盒 (EPSG:${epsg})`,
             },
         },
     };
@@ -294,48 +291,53 @@ export default function CreateSubProject({
                 return;
             }
 
-            // Calculate missing coordinates and explicitly type center as [number, number]
-            const southEast: [number, number] = [e, s];
-            const northWest: [number, number] = [w, n];
-            const center: [number, number] = [(w + e) / 2, (s + n) / 2];
-
-            // Create the complete RectangleCoordinates object
-            const newRectangleCoordinates: RectangleCoordinates = {
+            // 1. 用输入框的值生成新的 convertedRectangle
+            const newConvertedRectangle: RectangleCoordinates = {
                 northEast: [e, n],
                 southWest: [w, s],
-                southEast: southEast,
-                northWest: northWest,
-                center: center,
+                southEast: [e, s],
+                northWest: [w, n],
+                center: [(w + e) / 2, (s + n) / 2],
             };
+            setConvertedRectangle(newConvertedRectangle);
+            console.log(newConvertedRectangle)
+
+            // 2. 同步更新 rectangleCoordinates
+            // setRectangleCoordinates(newConvertedRectangle)
+
+            // 3. 重新计算 expandedRectangle
+            console.log(epsg, gridLevel, schemaBasePoint)
+            if (epsg && gridLevel && schemaBasePoint) {
+                const { expandedRectangle } = adjustAndExpandRectangle({
+                    rectangleCoordinates: newConvertedRectangle,
+                    epsg,
+                    gridLevel,
+                    schemaBasePoint,
+                    convertSingleCoordinate,
+                });
+                setExpandedRectangle(expandedRectangle);
+            }
+
+            if (clearMapDrawElements) {
+                clearMapDrawElements();
+            }
 
             if (onDrawRectangle) {
-                onDrawRectangle(false);
-                setTimeout(() => {
-                    onDrawRectangle(true);
-                }, 1);
+                onDrawRectangle(false)
+                onDrawRectangle(true)
             }
-
-            // 只清除地图内容，不重置 rectangleCoordinates，不调用 onDrawRectangle
-            if (cornerMarker) {
-                cornerMarker.remove();
-            }
-            if (gridLine && window.mapInstance) {
-                if (window.mapInstance.getSource(gridLine)) {
-                    window.mapInstance.removeLayer(gridLine);
-                    window.mapInstance.removeSource(gridLine);
-                }
-            }
-            if (gridLabel) {
-                gridLabel.remove();
-            }
-            if (window.mapboxDrawInstance) {
-                window.mapboxDrawInstance.deleteAll();
-            }
-
-            // 不要 setRectangleCoordinates(newRectangleCoordinates);
-            // 不要 onDrawRectangle(false/true);
         },
-        [cornerMarker, gridLine, gridLabel, language, setGeneralError]
+        [
+            onDrawRectangle,
+            clearMapDrawElements,
+            language,
+            setGeneralError,
+            epsg,
+            gridLevel,
+            schemaBasePoint,
+            convertSingleCoordinate,
+            setRectangleCoordinates,
+        ]
     );
 
     const showSchemaMarkerOnMap = useCallback(
@@ -688,6 +690,22 @@ export default function CreateSubProject({
     const handleBack = () => {
         clearMapMarkers();
 
+        if (window.mapInstance) {
+            const sourceId = `subproject-bounds-临时项目`;
+            const layerId = `subproject-fill-临时项目`;
+            const outlineLayerId = `subproject-outline-临时项目`;
+
+            if (window.mapInstance.getLayer(outlineLayerId)) {
+                window.mapInstance.removeLayer(outlineLayerId);
+            }
+            if (window.mapInstance.getLayer(layerId)) {
+                window.mapInstance.removeLayer(layerId);
+            }
+            if (window.mapInstance.getSource(sourceId)) {
+                window.mapInstance.removeSource(sourceId);
+            }
+        }
+
         if (cornerMarker) {
             cornerMarker.remove();
             setCornerMarker && setCornerMarker(null);
@@ -752,8 +770,26 @@ export default function CreateSubProject({
 
         const projectName = parentProject?.name || '临时项目';
 
+        // 先手动移除旧的图层和数据源
+        if (window.mapInstance) {
+            const sourceId = `subproject-bounds-临时项目`;
+            const layerId = `subproject-fill-临时项目`;
+            const outlineLayerId = `subproject-outline-临时项目`;
+
+            if (window.mapInstance.getLayer(outlineLayerId)) {
+                window.mapInstance.removeLayer(outlineLayerId);
+            }
+            if (window.mapInstance.getLayer(layerId)) {
+                window.mapInstance.removeLayer(layerId);
+            }
+            if (window.mapInstance.getSource(sourceId)) {
+                window.mapInstance.removeSource(sourceId);
+            }
+        }
+
+        // 再绘制新的
         subprojectBoundsManager.showSubprojectBounds(
-            projectName,
+            '临时项目',
             [subproject],
             true
         );
@@ -812,16 +848,11 @@ export default function CreateSubProject({
                                     onDrawRectangle={handleDrawRectangle}
                                     onAdjustAndDraw={handleAdjustAndDraw}
                                     convertedRectangle={convertedRectangle}
+                                    setConvertedRectangle={setConvertedRectangle}
                                     drawExpandedRectangleOnMap={
                                         drawExpandedRectangleOnMap
                                     }
                                 />
-
-                                {/* <DrawButton
-                                    isDrawing={isDrawing}
-                                    rectangleCoordinates={rectangleCoordinates}
-                                    onClick={handleDrawRectangle}
-                                /> */}
 
                                 {convertedRectangle && (
                                     <CoordinateBox
@@ -837,25 +868,10 @@ export default function CreateSubProject({
                                     />
                                 )}
 
-                                {alignedRectangle &&
-                                    epsg !== '4326' &&
-                                    rectangleCoordinates && (
-                                        <CoordinateBox
-                                            title={
-                                                language === 'zh'
-                                                    ? translations.coordinates
-                                                          .aligned.zh
-                                                    : translations.coordinates
-                                                          .aligned.en
-                                            }
-                                            coordinates={alignedRectangle}
-                                            formatCoordinate={formatCoordinate}
-                                        />
-                                    )}
-
                                 {expandedRectangle &&
                                     epsg !== '4326' &&
-                                    rectangleCoordinates && (
+                                    // rectangleCoordinates && 
+                                    (
                                         <CoordinateBox
                                             title={
                                                 language === 'zh'

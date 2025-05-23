@@ -212,3 +212,10 @@ export interface PatchBoundsProps {
     rectangleCoordinates: RectangleCoordinates | null;
     onDrawRectangle: (currentlyDrawing: boolean) => void;
 }
+
+export interface UpdatedPatchBoundsProps extends PatchBoundsProps {
+    convertedRectangle: RectangleCoordinates | null;
+    setConvertedRectangle: (rect: RectangleCoordinates) => void;
+    onAdjustAndDraw: (north: string, south: string, east: string, west: string) => void;
+    drawExpandedRectangleOnMap?: () => void;
+}

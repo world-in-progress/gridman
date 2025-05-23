@@ -8,6 +8,7 @@ import { RectangleCoordinates } from '@/components/operatePanel/types/types';
 
 interface UpdatedPatchBoundsProps extends PatchBoundsProps {
     convertedRectangle: RectangleCoordinates | null;
+    setConvertedRectangle: (rect: RectangleCoordinates) => void;
     onAdjustAndDraw: (north: string, south: string, east: string, west: string) => void;
     drawExpandedRectangleOnMap?: () => void;
 }
@@ -17,6 +18,7 @@ export default function PatchBounds({
     rectangleCoordinates,
     onDrawRectangle,
     convertedRectangle,
+    setConvertedRectangle,
     onAdjustAndDraw,
     drawExpandedRectangleOnMap,
 }: UpdatedPatchBoundsProps) {
@@ -115,7 +117,23 @@ export default function PatchBounds({
                             <input
                                 type="number"
                                 value={northValue}
-                                onChange={(e) => setNorthValue(e.target.value)}
+                                onChange={(e) => {
+                                    setNorthValue(e.target.value);
+                                    // 只要四个值都合法，实时 setConvertedRectangle
+                                    const n = parseFloat(e.target.value);
+                                    const s = parseFloat(southValue);
+                                    const eVal = parseFloat(eastValue);
+                                    const w = parseFloat(westValue);
+                                    if (!isNaN(n) && !isNaN(s) && !isNaN(eVal) && !isNaN(w)) {
+                                        setConvertedRectangle({
+                                            northEast: [eVal, n],
+                                            southWest: [w, s],
+                                            southEast: [eVal, s],
+                                            northWest: [w, n],
+                                            center: [(w + eVal) / 2, (s + n) / 2],
+                                        });
+                                    }
+                                }}
                                 className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                 placeholder={
                                     language == 'zh' ? '请输入' : 'Enter max Y'
