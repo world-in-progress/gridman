@@ -21,7 +21,7 @@ declare global {
 }
 
 export default function App() {
-    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('grid'); // Default to 'grid' for development
+    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('aggregation'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
 
@@ -36,12 +36,12 @@ export default function App() {
     });
 
     const handleNavClick = (item: string, type?: string) => {
-        if (type === 'home' || type === 'grid' || type === 'simulation') {
+        if (type === 'home' || type === 'aggregation' || type === 'simulation') {
             setActiveNavbar(type);
         } else if (item === 'Home' || item === '首页') {
             setActiveNavbar('home');
-        } else if (item === 'Grid' || item === '网格') {
-            setActiveNavbar('grid');
+        } else if (item === 'Aggregation' || item === '聚合') {
+            setActiveNavbar('aggregation');
         } else if (item === 'Simulation' || item === '模拟') {
             setActiveNavbar('simulation');
         }
@@ -83,7 +83,7 @@ export default function App() {
                             ></Navbar>
                             <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
                                 {activeNavbar === 'home' && <Home />}
-                                {activeNavbar === 'grid' && <Page />}
+                                {activeNavbar === 'aggregation' && <Page />}
                                 {activeNavbar === 'simulation' && (
                                     <Simulation />
                                 )}

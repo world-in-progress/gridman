@@ -44,7 +44,7 @@ import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
 import TopologyPanel from './topologyPanel/TopologyPanel';
 
-export type SidebarType = 'home' | 'grid' | 'simulation' | null;
+export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
 
 export default function Page() {
@@ -128,7 +128,7 @@ export default function Page() {
     };
 
     useEffect(() => {
-        if (activeNavbar === 'grid') {
+        if (activeNavbar === 'aggregation') {
             setActiveBreadcrumb('schema');
             setActivePanel('schema');
         }
