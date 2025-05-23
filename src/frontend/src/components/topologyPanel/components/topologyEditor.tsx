@@ -10,7 +10,7 @@ import {
     SquareMousePointer,
     SquareDashedMousePointer,
 } from 'lucide-react';
-import { TopologyPanelProps } from '../types/types';
+import { TopologyEditorProps } from '../types/types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,12 +41,12 @@ type TopologyOperationType =
     | 'recover'
     | null;
 
-export default function TopologyPanel({
+export default function TopologyEditor({
     pickingTab,
     setPickingTab,
     activeSelectTab,
     setActiveSelectTab,
-}: TopologyPanelProps) {
+}: TopologyEditorProps) {
     const { language } = useContext(LanguageContext);
 
     const [isVisible, setIsVisible] = useState(true);
@@ -100,7 +100,7 @@ export default function TopologyPanel({
     }, [setActiveSelectTab, topologyLayer]);
 
     const handleDeleteSelectClick = () => {
-        if (isPickingHighSpeedModeOn) {
+        if (store.get<boolean>('highSpeedModeState')!) {
             handleConfirmDeleteSelect();
         } else {
             setDeleteSelectDialogOpen(true);
@@ -108,7 +108,7 @@ export default function TopologyPanel({
     };
 
     const handleSelectAllClick = () => {
-        if (isPickingHighSpeedModeOn) {
+        if (store.get<boolean>('highSpeedModeState')!) {
             handleConfirmSelectAll();
         } else {
             setSelectAllDialogOpen(true);
@@ -161,7 +161,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
-                    if (isPickingHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         handleConfirmSelectAll();
                     } else {
                         setSelectAllDialogOpen(true);
@@ -169,7 +169,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
-                    if (isPickingHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         handleConfirmDeleteSelect();
                     } else {
                         setDeleteSelectDialogOpen(true);
@@ -193,7 +193,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
-                    if (isTopologyHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         topologyLayer.executeSubdivideGrids();
                     } else {
                         setActiveTopologyOperation('subdivide');
@@ -201,7 +201,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
-                    if (isTopologyHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         topologyLayer.executeMergeGrids();
                     } else {
                         setActiveTopologyOperation('merge');
@@ -209,7 +209,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
-                    if (isTopologyHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         topologyLayer.executeDeleteGrids();
                     } else {
                         setActiveTopologyOperation('delete');
@@ -217,7 +217,7 @@ export default function TopologyPanel({
                 }
                 if (event.key === 'R' || event.key === 'r') {
                     event.preventDefault();
-                    if (isTopologyHighSpeedModeOn) {
+                    if (store.get<boolean>('highSpeedModeState')!) {
                         topologyLayer.executeRecoverGrids();
                     } else {
                         setActiveTopologyOperation('recover');
@@ -254,7 +254,8 @@ export default function TopologyPanel({
     });
 
     const onTopologyOperationClick = (operationType: TopologyOperationType) => {
-        if (isTopologyHighSpeedModeOn && operationType !== null) {
+        // if (isTopologyHighSpeedModeOn && operationType !== null) {
+        if (store.get<boolean>('highSpeedModeState')! && operationType !== null) {
             switch (operationType) {
                 case 'subdivide':
                     topologyLayer.executeSubdivideGrids();
@@ -487,7 +488,7 @@ export default function TopologyPanel({
                         <h3 className="text-2xl font-bold">
                             {language === 'zh' ? '模式选择' : 'Picking'}
                         </h3>
-                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex ml-auto">
+                        {/* <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex ml-auto">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -530,7 +531,7 @@ export default function TopologyPanel({
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
@@ -713,7 +714,7 @@ export default function TopologyPanel({
                         <h3 className="text-2xl font-bold">
                             {language === 'zh' ? '拓扑' : 'Topology'}
                         </h3>
-                        <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
+                        {/* <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -756,7 +757,7 @@ export default function TopologyPanel({
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
-                        </div>
+                        </div> */}
                     </div>
                     <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
                         {topologyOperations.map((operation) => (

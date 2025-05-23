@@ -18,7 +18,7 @@ import {
     ProjectEpsgCard,
 } from './components/ProjectFormComponents';
 import { clearMapMarkers } from '../schemaPanel/utils/SchemaCoordinateService';
-import DrawButton from '../operatePanel/components/DrawButton';
+// import DrawButton from '../operatePanel/components/DrawButton';
 import {
     CreateProjectProps,
     ExtendedFormErrors,
@@ -33,12 +33,13 @@ import { RectangleCoordinates } from '../operatePanel/types/types';
 import { ProjectService } from './utils/ProjectService';
 import mapboxgl from 'mapbox-gl';
 import { SchemaService } from '../schemaPanel/utils/SchemaService';
-import { Schema } from '../schemaPanel/types/types';
 import { convertToWGS84 } from '../schemaPanel/utils/utils';
 import {
     adjustAndExpandRectangle,
     calculateGridCounts,
 } from './utils/ProjectCoordinateService';
+import PatchBounds from './components/patchBounds';
+import { SubprojectBoundsManager } from '../mapComponent/layers/subprojectBoundsManager';
 
 const validateProjectForm = (
     data: {
@@ -108,6 +109,7 @@ export default function CreateSubProject({
     setGridLine,
     gridLabel,
     setGridLabel,
+    setRectangleCoordinates,
     ...props
 }: CreateProjectProps) {
     const { language } = useContext(LanguageContext);
@@ -129,6 +131,9 @@ export default function CreateSubProject({
     const [convertedRectangle, setConvertedRectangle] =
         useState<RectangleCoordinates | null>(null);
 
+    const [alignedRectangle, setAlignedRectangle] =
+        useState<RectangleCoordinates | null>(null);
+
     const [expandedRectangle, setExpandedRectangle] =
         useState<RectangleCoordinates | null>(null);
 
@@ -142,6 +147,9 @@ export default function CreateSubProject({
     const [schemaBasePointWGS84, setSchemaBasePointWGS84] = useState<
         [number, number] | null
     >(null);
+
+    const [subprojectBoundsManager, setSubprojectBoundsManager] =
+        useState<SubprojectBoundsManager | null>(null);
 
     useEffect(() => {
         if (initialSchemaName) {
@@ -164,7 +172,10 @@ export default function CreateSubProject({
                             result.project_schema.epsg
                         );
                         setSchemaBasePointWGS84(wgs84Point);
-                        showSchemaMarkerOnMap(wgs84Point, result.project_schema.name);
+                        showSchemaMarkerOnMap(
+                            wgs84Point,
+                            result.project_schema.name
+                        );
 
                         if (!initialEpsg) {
                             setEpsg(result.project_schema.epsg.toString());
@@ -191,6 +202,14 @@ export default function CreateSubProject({
         }
     }, [initialSchemaName, initialEpsg, initialSchemaLevel, language]);
 
+    useEffect(() => {
+        if (window.mapInstance && !subprojectBoundsManager) {
+            setSubprojectBoundsManager(
+                new SubprojectBoundsManager(window.mapInstance, language)
+            );
+        }
+    }, [language, subprojectBoundsManager]);
+
     const translations = {
         drawButton: {
             start: {
@@ -204,8 +223,8 @@ export default function CreateSubProject({
         },
         coordinates: {
             wgs84: {
-                en: 'Rectangle Coordinates (EPSG:4326)',
-                zh: '矩形坐标 (EPSG:4326)',
+                en: `Converted Coordinates (EPSG:${epsg})`,
+                zh: `转换后的坐标 (EPSG:${epsg})`,
             },
             aligned: {
                 en: `Aligned Coordinates (EPSG:${epsg})`,
@@ -239,7 +258,85 @@ export default function CreateSubProject({
             }
             onDrawRectangle(isDrawing);
         }
-    }, [isDrawing, onDrawRectangle, rectangleCoordinates, cornerMarker, gridLine, gridLabel]);
+    }, [
+        isDrawing,
+        onDrawRectangle,
+        rectangleCoordinates,
+        cornerMarker,
+        gridLine,
+        gridLabel,
+    ]);
+
+    const handleAdjustAndDraw = useCallback(
+        (north: string, south: string, east: string, west: string) => {
+            setGeneralError(null);
+
+            const n = parseFloat(north);
+            const s = parseFloat(south);
+            const e = parseFloat(east);
+            const w = parseFloat(west);
+
+            if (isNaN(n) || isNaN(s) || isNaN(e) || isNaN(w)) {
+                setGeneralError(
+                    language === 'zh'
+                        ? '请输入有效的东南西北边界数值'
+                        : 'Please enter valid numerical values for North, South, East, and West bounds'
+                );
+                return;
+            }
+
+            if (w > e || s > n) {
+                setGeneralError(
+                    language === 'zh'
+                        ? '边界数值不合理，请确保西经小于东经，南纬小于北纬'
+                        : 'Invalid bounds: ensure West is less than East and South is less than North'
+                );
+                return;
+            }
+
+            // Calculate missing coordinates and explicitly type center as [number, number]
+            const southEast: [number, number] = [e, s];
+            const northWest: [number, number] = [w, n];
+            const center: [number, number] = [(w + e) / 2, (s + n) / 2];
+
+            // Create the complete RectangleCoordinates object
+            const newRectangleCoordinates: RectangleCoordinates = {
+                northEast: [e, n],
+                southWest: [w, s],
+                southEast: southEast,
+                northWest: northWest,
+                center: center,
+            };
+
+            if (onDrawRectangle) {
+                onDrawRectangle(false);
+                setTimeout(() => {
+                    onDrawRectangle(true);
+                }, 1);
+            }
+
+            // 只清除地图内容，不重置 rectangleCoordinates，不调用 onDrawRectangle
+            if (cornerMarker) {
+                cornerMarker.remove();
+            }
+            if (gridLine && window.mapInstance) {
+                if (window.mapInstance.getSource(gridLine)) {
+                    window.mapInstance.removeLayer(gridLine);
+                    window.mapInstance.removeSource(gridLine);
+                }
+            }
+            if (gridLabel) {
+                gridLabel.remove();
+            }
+            if (window.mapboxDrawInstance) {
+                window.mapboxDrawInstance.deleteAll();
+            }
+
+            // 不要 setRectangleCoordinates(newRectangleCoordinates);
+            // 不要 onDrawRectangle(false/true);
+        },
+        [cornerMarker, gridLine, gridLabel, language, setGeneralError]
+    );
 
     const showSchemaMarkerOnMap = useCallback(
         (coordinates: [number, number], schemaName: string) => {
@@ -274,7 +371,7 @@ export default function CreateSubProject({
                 .setPopup(popup)
                 .addTo(window.mapInstance);
 
-                setSchemaMarker && setSchemaMarker(marker);
+            setSchemaMarker && setSchemaMarker(marker);
 
             return marker;
         },
@@ -313,7 +410,7 @@ export default function CreateSubProject({
                 .setPopup(popup)
                 .addTo(window.mapInstance);
 
-                setCornerMarker && setCornerMarker(marker);
+            setCornerMarker && setCornerMarker(marker);
 
             marker.togglePopup();
 
@@ -408,7 +505,7 @@ export default function CreateSubProject({
 
     useEffect(() => {
         if (rectangleCoordinates && epsg && gridLevel && schemaBasePoint) {
-            const { alignedRectangle, expandedRectangle } =
+            const { convertedRectangle, alignedRectangle, expandedRectangle } =
                 adjustAndExpandRectangle({
                     rectangleCoordinates,
                     epsg,
@@ -417,8 +514,8 @@ export default function CreateSubProject({
                     convertSingleCoordinate,
                     expandFactor: 0.2,
                 });
-
-            setConvertedRectangle(alignedRectangle);
+            setConvertedRectangle(convertedRectangle);
+            setAlignedRectangle(alignedRectangle);
             setExpandedRectangle(expandedRectangle);
 
             if (alignedRectangle && schemaBasePointWGS84) {
@@ -445,6 +542,7 @@ export default function CreateSubProject({
             }
         } else {
             setConvertedRectangle(null);
+            setAlignedRectangle(null);
             setExpandedRectangle(null);
         }
     }, [
@@ -520,7 +618,9 @@ export default function CreateSubProject({
             const projectName = parentProject?.name || '';
 
             const projectService = new ProjectService(language);
-            projectService.createSubproject(projectName, subProjectData,
+            projectService.createSubproject(
+                projectName,
+                subProjectData,
                 (err, result) => {
                     if (result.success === false) {
                         setGeneralError(
@@ -529,7 +629,7 @@ export default function CreateSubProject({
                                 : 'Subproject already exists. Please use a different name.'
                         );
                         setFormErrors((prev) => ({ ...prev, name: true }));
-                        return
+                        return;
                     }
 
                     setGeneralError(
@@ -574,8 +674,8 @@ export default function CreateSubProject({
                             onBack();
                         }
                     }, 500);
-                })
-                
+                }
+            );
         } else {
             setGeneralError(
                 language === 'zh'
@@ -633,6 +733,32 @@ export default function CreateSubProject({
         }
     };
 
+    const drawExpandedRectangleOnMap = useCallback(() => {
+        if (!expandedRectangle || !subprojectBoundsManager) return;
+
+        const bounds = [
+            expandedRectangle.southWest[0],
+            expandedRectangle.southWest[1],
+            expandedRectangle.northEast[0],
+            expandedRectangle.northEast[1],
+        ] as [number, number, number, number];
+
+        const subproject = {
+            name: '临时补丁',
+            bounds,
+            starred: false,
+            description: '',
+        };
+
+        const projectName = parentProject?.name || '临时项目';
+
+        subprojectBoundsManager.showSubprojectBounds(
+            projectName,
+            [subproject],
+            true
+        );
+    }, [expandedRectangle, subprojectBoundsManager, parentProject]);
+
     return (
         <Sidebar {...props}>
             <SidebarContent>
@@ -645,9 +771,7 @@ export default function CreateSubProject({
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh'
-                            ? '创建新子项目'
-                            : 'Create New Subproject'}
+                        {language === 'zh' ? '创建新补丁' : 'Create New Patch'}
                     </h1>
                 </div>
                 <form onSubmit={handleSubmit} className="p-1 pt-0 -mt-3">
@@ -682,13 +806,24 @@ export default function CreateSubProject({
                                     formErrors={formErrors}
                                 />
 
-                                <DrawButton
+                                <PatchBounds
+                                    isDrawing={isDrawing}
+                                    rectangleCoordinates={rectangleCoordinates!}
+                                    onDrawRectangle={handleDrawRectangle}
+                                    onAdjustAndDraw={handleAdjustAndDraw}
+                                    convertedRectangle={convertedRectangle}
+                                    drawExpandedRectangleOnMap={
+                                        drawExpandedRectangleOnMap
+                                    }
+                                />
+
+                                {/* <DrawButton
                                     isDrawing={isDrawing}
                                     rectangleCoordinates={rectangleCoordinates}
                                     onClick={handleDrawRectangle}
-                                />
+                                /> */}
 
-                                {rectangleCoordinates && (
+                                {convertedRectangle && (
                                     <CoordinateBox
                                         title={
                                             language === 'zh'
@@ -697,12 +832,12 @@ export default function CreateSubProject({
                                                 : translations.coordinates.wgs84
                                                       .en
                                         }
-                                        coordinates={rectangleCoordinates}
+                                        coordinates={convertedRectangle}
                                         formatCoordinate={formatCoordinate}
                                     />
                                 )}
 
-                                {convertedRectangle &&
+                                {alignedRectangle &&
                                     epsg !== '4326' &&
                                     rectangleCoordinates && (
                                         <CoordinateBox
@@ -713,7 +848,7 @@ export default function CreateSubProject({
                                                     : translations.coordinates
                                                           .aligned.en
                                             }
-                                            coordinates={convertedRectangle}
+                                            coordinates={alignedRectangle}
                                             formatCoordinate={formatCoordinate}
                                         />
                                     )}
@@ -738,9 +873,9 @@ export default function CreateSubProject({
 
                                 <Button
                                     type="submit"
-                                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                                    className="w-full mt-4 bg-green-500 hover:bg-green-600 items-center text-white cursor-pointer"
                                 >
-                                    <Save className="h-4 w-4 mr-2" />
+                                    <Save className="h-4 w-4" />
                                     {language === 'zh'
                                         ? '创建并返回'
                                         : 'Create and Back'}

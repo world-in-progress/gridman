@@ -20,7 +20,7 @@ declare global {
     }
 }
 
-export default  function App() {
+export default function App() {
     const [activeNavbar, setActiveNavbar] = useState<SidebarType>('grid'); // Default to 'grid' for development
     const [language, setLanguage] = useState<'zh' | 'en'>('en');
     const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
@@ -52,14 +52,14 @@ export default  function App() {
     useEffect(() => {
         if (loadCounter.current === 0) {
             loadCounter.current = 1;
-            const schemaService = new SchemaService(language)
+            const schemaService = new SchemaService(language);
             schemaService.fetchAllSchemas((err, result) => {
                 if (result.length === 0) {
-                    setActiveNavbar('home')
+                    setActiveNavbar('home');
                 }
-            })
+            });
         }
-    }, [])
+    }, []);
 
     return (
         <div className="App">
@@ -73,13 +73,7 @@ export default  function App() {
                         <div className="flex flex-col h-screen">
                             {isLoading && (
                                 <>
-                                    <div
-                                        className="fixed inset-0 pointer-events-auto z-80"
-                                        style={{
-                                            backgroundColor:
-                                                'rgba(33, 33, 33, 0.4)',
-                                        }}
-                                    />
+                                    <div className="fixed inset-0 pointer-events-auto z-80 bg-[#212121] opacity-30" />
                                     <Loader />
                                 </>
                             )}
@@ -88,9 +82,11 @@ export default  function App() {
                                 onNavItemClick={handleNavClick}
                             ></Navbar>
                             <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
-                                {activeNavbar === 'home' && <Home/>}
+                                {activeNavbar === 'home' && <Home />}
                                 {activeNavbar === 'grid' && <Page />}
-                                {activeNavbar === 'simulation' && <Simulation/>}
+                                {activeNavbar === 'simulation' && (
+                                    <Simulation />
+                                )}
                             </div>
                             <Toaster
                                 position="bottom-right"

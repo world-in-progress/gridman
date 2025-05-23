@@ -2,22 +2,20 @@ import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
-import { EditorPanelProps } from './types/types';
-import BasicInfo from './basicInfo';
-import TopologyPanel from './Topology/topologyEditor';
+import { TopologyPanelProps } from './types/types';
+import BasicInfo from './components/basicInfo';
+import TopologyEditor from './components/topologyEditor';
 import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import TopologyLayer from '../mapComponent/layers/TopologyLayer';
-import AttributePanel from './Attribute/AttributeEditor';
+// import AttributePanel from '../attributePanel/AttributeEditor';
 import GridCore from '@/core/grid/NHGridCore';
 import { GridSaveInfo } from '@/core/grid/types';
 import { toast } from 'sonner';
 
-export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
+export default function TopologyPanel({ onBack, ...props }: TopologyPanelProps) {
     const { language } = useContext(LanguageContext);
-    const [activeTab, setActiveTab] = useState<'topology' | 'attribute'>(
-        'topology'
-    );
+
     const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>(
         'picking'
     );
@@ -53,11 +51,11 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                         background: '#ecfdf5',
                         color: '#047857',
                         border: '1px solid #a7f3d0',
-                        bottom: '30px'
+                        bottom: '30px',
                     },
                 }
             );
-        })
+        });
     };
 
     return (
@@ -72,12 +70,12 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh' ? '编辑面板' : 'Editor Panel'}
+                        {language === 'zh' ? '拓扑编辑' : 'Topology Editor'}
                     </h1>
                 </div>
 
                 <div className="p-2">
-                    <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md shadow-sm">
+                    {/* <div className="flex items-center p-1 mb-2 -mt-2 bg-white rounded-md shadow-sm">
                         <button
                             className={` flex-1 py-2 px-4 rounded-md transition-colors duration-200 cursor-pointer ${
                                 activeTab === 'topology'
@@ -98,12 +96,14 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                         >
                             {language === 'zh' ? '属性' : 'Attribute'}
                         </button>
+                    </div> */}
+
+                    <div className="-mt-3">
+                        <BasicInfo />
                     </div>
 
-                    <BasicInfo />
-
                     <div
-                        className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-sm"
+                        className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
                         onClick={handleSaveTopologyState}
                     >
                         <span>
@@ -114,17 +114,12 @@ export default function EditorPanel({ onBack, ...props }: EditorPanelProps) {
                     </div>
 
                     {/* 拓扑编辑 */}
-                    {activeTab === 'topology' && (
-                        <TopologyPanel
-                            pickingTab={pickingTab}
-                            setPickingTab={setPickingTab}
-                            activeSelectTab={activeSelectTab}
-                            setActiveSelectTab={setActiveSelectTab}
-                        />
-                    )}
-
-                    {/* 属性编辑面板 */}
-                    {activeTab === 'attribute' && <AttributePanel />}
+                    <TopologyEditor
+                        pickingTab={pickingTab}
+                        setPickingTab={setPickingTab}
+                        activeSelectTab={activeSelectTab}
+                        setActiveSelectTab={setActiveSelectTab}
+                    />
                 </div>
             </SidebarContent>
             <SidebarRail />

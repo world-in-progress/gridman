@@ -10,6 +10,7 @@ export function adjustAndExpandRectangle({
     schemaBasePoint,
     convertSingleCoordinate,
 }: AdjustAndExpandRectangleParams): {
+    convertedRectangle: RectangleCoordinates | null
     alignedRectangle: RectangleCoordinates | null;
     expandedRectangle: RectangleCoordinates | null;
 } {
@@ -20,7 +21,7 @@ export function adjustAndExpandRectangle({
         gridLevel.length < 2 ||
         !schemaBasePoint
     ) {
-        return { alignedRectangle: null, expandedRectangle: null };
+        return { convertedRectangle: null, alignedRectangle: null, expandedRectangle: null };
     }
 
     const convertedNE = convertSingleCoordinate(
@@ -144,7 +145,7 @@ export function adjustAndExpandRectangle({
         northWest: expandedNW,
         center: expandedCenter,
     };
-    return { alignedRectangle: alignedRect, expandedRectangle: expandedRect };
+    return { convertedRectangle: convertedRect, alignedRectangle: alignedRect, expandedRectangle: expandedRect };
 }
 
 /**
