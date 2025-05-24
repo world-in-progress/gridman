@@ -68,8 +68,7 @@ export default function TopologyEditor({
     )! as TopologyLayer;
 
     const handleFeatureClick = useCallback(async () => {
-        setActiveSelectTab('feature');
-        store.set('modeSelect', 'feature');
+        const currentTab: 'brush' | 'box' | 'feature' = setActiveSelectTab('feature');
         if (
             window.electronAPI &&
             typeof window.electronAPI.openFileDialog === 'function'
@@ -82,20 +81,19 @@ export default function TopologyEditor({
                         .get<{ on: Function; off: Function }>('isLoading')!
                         .on();
                     topologyLayer.executePickGridsByFeature(filePath);
+                    setActiveSelectTab(currentTab);
                 } else {
                     console.log('No file selected');
-                    setActiveSelectTab('brush');
+                    setActiveSelectTab(currentTab);
                     store;
                 }
             } catch (error) {
                 console.error('Error opening file dialog:', error);
-                setActiveSelectTab('brush');
-                store.set('modeSelect', 'brush');
+                setActiveSelectTab(currentTab);
             }
         } else {
             console.warn('Electron API not available');
-            setActiveSelectTab('brush');
-            store.set('modeSelect', 'brush');
+            setActiveSelectTab(currentTab);
         }
     }, [setActiveSelectTab, topologyLayer]);
 
@@ -178,18 +176,15 @@ export default function TopologyEditor({
                 if (event.key === '1') {
                     event.preventDefault();
                     setActiveSelectTab('brush');
-                    store.set('modeSelect', 'brush');
                 }
                 if (event.key === '2') {
                     event.preventDefault();
                     setActiveSelectTab('box');
-                    store.set('modeSelect', 'box');
                 }
                 if (event.key === '3') {
                     event.preventDefault();
                     setActiveSelectTab('feature');
                     handleFeatureClick();
-                    store.set('modeSelect', 'feature');
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
@@ -646,7 +641,6 @@ export default function TopologyEditor({
                                 }`}
                                 onClick={() => {
                                     setActiveSelectTab('brush');
-                                    store.set('modeSelect', 'brush');
                                 }}
                             >
                                 <div className="flex flex-row gap-1 items-center">
@@ -670,7 +664,6 @@ export default function TopologyEditor({
                                 }`}
                                 onClick={() => {
                                     setActiveSelectTab('box');
-                                    store.set('modeSelect', 'box');
                                 }}
                             >
                                 <div className="flex flex-row gap-1 items-center">

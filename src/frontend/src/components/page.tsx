@@ -529,7 +529,7 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
-                    {activeBreadcrumb === 'editor' && updateCapacity && (
+                    {activeBreadcrumb === 'topology' && updateCapacity && (
                         <CapacityBar />
                     )}
                     <MapInit

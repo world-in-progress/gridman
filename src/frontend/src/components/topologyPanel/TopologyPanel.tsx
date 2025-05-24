@@ -28,6 +28,13 @@ export default function TopologyPanel({ onBack, ...props }: TopologyPanelProps) 
         store.set('pickingSelect', true);
     }, []);
 
+    const handleActivateSelectTab = (tab: 'brush' | 'box' | 'feature'): 'brush' | 'box' | 'feature' => {
+        const currentTab = activeSelectTab
+        setActiveSelectTab(tab);
+        store.set('modeSelect', tab);
+        return currentTab;
+    }
+
     const handleBack = () => {
         const clg = store.get<NHLayerGroup>('clg')!;
         const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
@@ -117,7 +124,7 @@ export default function TopologyPanel({ onBack, ...props }: TopologyPanelProps) 
                         pickingTab={pickingTab}
                         setPickingTab={setPickingTab}
                         activeSelectTab={activeSelectTab}
-                        setActiveSelectTab={setActiveSelectTab}
+                        setActiveSelectTab={handleActivateSelectTab}
                     />
                 </div>
             </SidebarContent>
