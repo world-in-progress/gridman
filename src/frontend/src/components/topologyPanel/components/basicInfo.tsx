@@ -10,7 +10,6 @@ export default function BasicInfo() {
     const currentSubproject = store.get<any>('SubprojectName');
     const gridCore = store.get<GridCore>('gridCore');
     const epsg = gridCore?.srcCRS.replace('EPSG:', '');
-    const subdivideRules = gridCore?.context.rules;
     const bounds = gridCore?.context.bBox.data;
     const schemaGridInfo = store.get<number[][]>('SchemaGridInfo');
 
@@ -33,7 +32,8 @@ export default function BasicInfo() {
                     {currentSubproject || '-'}
                 </div>
                 <div>
-                    <span className="font-bold">EPSG: {epsg || '-'}</span>
+                    <span className="font-bold">EPSG: </span>
+                    {epsg || '-'}
                 </div>
                 <div className="flex items-start flex-row">
                     <div
