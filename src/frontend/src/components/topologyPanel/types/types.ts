@@ -10,21 +10,3 @@ export interface TopologyEditorProps {
     activeSelectTab: 'brush' | 'box' | 'feature' | undefined;
     setActiveSelectTab: (tab: 'brush' | 'box' | 'feature') => void;
 }
-
-export interface AttributePanelProps {
-}
-
-export interface LUMDataNodeProps {
-    isClicked?: boolean;
-    onNodeClick?: () => void;
-}
-
-export interface TerrainDataNodeProps {
-    isClicked?: boolean;
-    onNodeClick?: () => void;
-}
-
-export interface TopologyValidationProps {
-    isClicked?: boolean;
-    onNodeClick?: () => void;
-}
