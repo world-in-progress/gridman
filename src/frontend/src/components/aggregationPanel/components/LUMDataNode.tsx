@@ -1,6 +1,6 @@
 import React, { useContext, forwardRef } from 'react';
 import { LanguageContext } from '../../../context';
-import { LUMDataNodeProps } from '../types/types';
+import { LUMDataNodeProps } from '..//types/types';
 import { AnimatedCard, CardBackground, Blob } from './nodeBackground';
 
 const LUMDataNode = forwardRef<HTMLDivElement, LUMDataNodeProps>(

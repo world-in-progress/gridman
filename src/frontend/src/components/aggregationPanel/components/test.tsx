@@ -2,12 +2,12 @@
 
 import { useContext, useEffect, useRef, useState } from 'react';
 import { LanguageContext } from '../../../context';
-import type { AttributePanelProps } from '../types/types';
+import type { TestProps } from '../types/types';
 import store from '@/store';
 import type NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import LUMDataNode from './LUMDataNode';
-import TerrainDataNode from './terrainDataNode';
-import TopologyValidation from './topologyValidation';
+import TerrainDataNode from './TerrainDataNode';
+import TopologyValidation from './TopologyValidation';
 import {
     AnimatedCardNoShadow,
     CardBackground,
@@ -27,7 +27,7 @@ interface Line {
 
 type ActiveNode = 'TOPOLOGY' | 'LUM' | 'TERRAIN' | null;
 
-export default function AttributePanel({}: AttributePanelProps) {
+export default function Test({}: TestProps) {
     const { language } = useContext(LanguageContext);
     const [activeNodeKey, setActiveNodeKey] = useState<ActiveNode>(null);
 

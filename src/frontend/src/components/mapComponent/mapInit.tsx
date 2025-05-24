@@ -29,7 +29,7 @@ import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
 import store from '../../store';
 import TopologyLayer from './layers/TopologyLayer';
 import NHLayerGroup from './utils/NHLayerGroup';
-import { useSidebar } from '../ui/sidebar';
+
 // Add mapInstance property to window object
 declare global {
     interface Window {
@@ -38,8 +38,8 @@ declare global {
     }
 }
 
-// GPULayer state
-const GPULayerON = true
+// GPULayer canvas state
+const GPULayerON = false
 
 const scene: ThreejsSceneLayer | null = null;
 let rectangleLayer: GLMapRectangleLayer | null = null;
