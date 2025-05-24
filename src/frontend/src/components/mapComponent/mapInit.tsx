@@ -38,6 +38,9 @@ declare global {
     }
 }
 
+// GPULayer state
+const GPULayerON = true
+
 const scene: ThreejsSceneLayer | null = null;
 let rectangleLayer: GLMapRectangleLayer | null = null;
 let customRectangleDraw: CustomRectangleDraw | null = null;
@@ -331,15 +334,18 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     localMouseDownPos.current = [x, y];
 
                     if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) {
-                        store.set('GridInfo', topologyLayer.executeCheckGrid([x, y])),
-                        store.get<{ on: Function}>('changeGridInfo')!.on()
-                        
+                        store.set(
+                            'GridInfo',
+                            topologyLayer.executeCheckGrid([x, y])
+                        ),
+                            store.get<{ on: Function }>('changeGridInfo')!.on();
                     }
                 };
 
                 const onMouseMove = (e: MouseEvent) => {
                     if (!e.shiftKey || !localIsMouseDown.current) return;
-                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn)
+                        return;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
@@ -386,7 +392,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         }
                     }
                     if (!e.shiftKey) return;
-                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn)
+                        return;
 
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
@@ -405,7 +412,8 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                 };
 
                 const onMouseOut = (e: MouseEvent) => {
-                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
+                    if (store.get<CheckingSwitch>('checkingSwitch')!.isOn)
+                        return;
                     if (mapInstance) {
                         mapInstance.dragPan.enable();
                         mapInstance.scrollZoom.enable();
@@ -415,7 +423,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                         }
                     }
                     if (!e.shiftKey) return;
-                    
+
                     isMouseDown = false;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
@@ -617,6 +625,12 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
     return (
         <div className="relative w-full h-full" ref={mapWrapperRef}>
+            { GPULayerON && (
+                <canvas
+                    id="GPULayer"
+                    className="absolute bg-red-500 opacity-20 inset-0 w-full h-full pointer-events-none z-20"
+                ></canvas>
+            )}
             <div
                 id="control-panel-container"
                 className="absolute top-0 left-0 z-10 flex flex-row items-start"
