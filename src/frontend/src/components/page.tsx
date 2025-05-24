@@ -43,6 +43,7 @@ import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
 import TopologyPanel from './topologyPanel/topologyPanel';
 import AttributePanel from './attributePanel/attributePanel';
+import AggregationPanel from './aggregationPanel/aggregationPanel';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
@@ -55,7 +56,6 @@ export type BreadcrumbType =
     | null;
 
 export default function Page() {
-
     const [isDrawing, setIsDrawing] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [updateCapacity, setUpdateCapacity] = useState(false);
@@ -68,15 +68,36 @@ export default function Page() {
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
     const [gridLine, setGridLine] = useState<string | null>(null);
     const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
-    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(null);
-    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(null);
-    const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
-    const [activeBreadcrumb, setActiveBreadcrumb] = useState<BreadcrumbType>(null);
-    const [activePanel, setActivePanel] = useState<'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' | null >(null);
-    const [selectedSchemaName, setSelectedSchemaName] = useState< string | undefined >(undefined);
-    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState< string | undefined >(undefined);
-    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState< string | undefined >(undefined);
-    const [rectangleCoordinates, setRectangleCoordinates] = useState<RectangleCoordinates | null>(null);
+    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [selectedParentProject, setSelectedParentProject] =
+        useState<any>(null);
+    const [activeBreadcrumb, setActiveBreadcrumb] =
+        useState<BreadcrumbType>(null);
+    const [activePanel, setActivePanel] = useState<
+        | 'schema'
+        | 'project'
+        | 'editor'
+        | 'topology'
+        | 'attribute'
+        | 'aggregation'
+        | null
+    >(null);
+    const [selectedSchemaName, setSelectedSchemaName] = useState<
+        string | undefined
+    >(undefined);
+    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState<
+        string | undefined
+    >(undefined);
+    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState<
+        string | undefined
+    >(undefined);
+    const [rectangleCoordinates, setRectangleCoordinates] =
+        useState<RectangleCoordinates | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -107,7 +128,16 @@ export default function Page() {
 
     store.set(
         'activePanelChange',
-        (activePanel: 'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' |null) => {
+        (
+            activePanel:
+                | 'schema'
+                | 'project'
+                | 'editor'
+                | 'topology'
+                | 'attribute'
+                | 'aggregation'
+                | null
+        ) => {
             setActivePanel(activePanel);
             setActiveBreadcrumb(activePanel);
         }
@@ -136,8 +166,8 @@ export default function Page() {
         },
         aggregation: {
             zh: '聚合',
-            en: 'aggregation'
-        }
+            en: 'aggregation',
+        },
     };
 
     useEffect(() => {
@@ -391,8 +421,22 @@ export default function Page() {
             );
         } else if (activePanel === 'attribute') {
             return (
-                <AttributePanel/>
-            )
+                <AttributePanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
+        } else if (activePanel === 'aggregation') {
+            return (
+                <AggregationPanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
         }
         return (
             <SchemaPanel
@@ -449,12 +493,24 @@ export default function Page() {
                                     <BreadcrumbLink
                                         className={
                                             activePanel === 'topology'
-                                                ? (activeBreadcrumb === 'topology' ? 'text-[#71F6FF] font-bold' : '')
-                                                : (activeBreadcrumb === 'editor' ? 'text-[#71F6FF] font-bold' : '')
+                                                ? activeBreadcrumb ===
+                                                  'topology'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
+                                                : activePanel === 'attribute'
+                                                ? activeBreadcrumb ===
+                                                  'attribute'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
+                                                : activeBreadcrumb === 'editor'
+                                                ? 'text-[#71F6FF] font-bold'
+                                                : ''
                                         }
                                     >
                                         {activePanel === 'topology'
                                             ? breadcrumbText.topology[language]
+                                            : activePanel === 'attribute'
+                                            ? breadcrumbText.attribute[language]
                                             : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>

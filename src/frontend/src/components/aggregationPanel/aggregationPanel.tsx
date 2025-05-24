@@ -2,49 +2,22 @@ import { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import { ArrowLeft } from 'lucide-react';
-import { TopologyPanelProps } from './types/types';
-import BasicInfo from './components/basicInfo';
-import TopologyEditor from './components/topologyEditor';
+import { AggregationPanelProps } from './types/types';
 import store from '@/store';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
-import TopologyLayer from '../mapComponent/layers/TopologyLayer';
-// import AttributePanel from '../attributePanel/AttributeEditor';
 import GridCore from '@/core/grid/NHGridCore';
 import { GridSaveInfo } from '@/core/grid/types';
 import { toast } from 'sonner';
+import BasicInfo from './components/basicInfo';
+import Test from './components/test';
 
-export default function TopologyPanel({
+export default function AggregationPanel({
     onBack,
     ...props
-}: TopologyPanelProps) {
+}: AggregationPanelProps) {
     const { language } = useContext(LanguageContext);
 
-    const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>(
-        'picking'
-    );
-    const [activeSelectTab, setActiveSelectTab] = useState<
-        'brush' | 'box' | 'feature'
-    >('brush');
-
-    useEffect(() => {
-        store.set('modeSelect', 'brush');
-        store.set('pickingSelect', true);
-    }, []);
-
-    const handleActivateSelectTab = (
-        tab: 'brush' | 'box' | 'feature'
-    ): 'brush' | 'box' | 'feature' => {
-        const currentTab = activeSelectTab;
-        setActiveSelectTab(tab);
-        store.set('modeSelect', tab);
-        return currentTab;
-    };
-
     const handleBack = () => {
-        const clg = store.get<NHLayerGroup>('clg')!;
-        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
-        layer.removeResource();
-
         if (onBack) {
             onBack();
         }
@@ -75,18 +48,21 @@ export default function TopologyPanel({
                 <div className="flex items-center p-3 justify-between">
                     <button
                         onClick={handleBack}
-                        className="p-2 rounded-full hover:bg-gray-300 cursor-pointer"
+                        className="p-2 rounded-full hover:bg-gray-200 cursor-pointer"
                         aria-label="返回"
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh' ? '拓扑编辑' : 'Topology Editor'}
+                        {language === 'zh' ? '聚合工作流' : 'Aggregation Workflow'}
                     </h1>
                 </div>
 
-                <div className="p-2 -mt-3">
-                    <BasicInfo />
+                <div className="p-2">
+                    <div className="-mt-3">
+                        <BasicInfo />
+                    </div>
+
                     <div
                         className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
                         onClick={handleSaveTopologyState}
@@ -98,13 +74,8 @@ export default function TopologyPanel({
                         </span>
                     </div>
 
-                    {/* 拓扑编辑 */}
-                    <TopologyEditor
-                        pickingTab={pickingTab}
-                        setPickingTab={setPickingTab}
-                        activeSelectTab={activeSelectTab}
-                        setActiveSelectTab={handleActivateSelectTab}
-                    />
+                    {/* 聚合工作流 */}
+                    <Test/>
                 </div>
             </SidebarContent>
             <SidebarRail />

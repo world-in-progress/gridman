@@ -144,6 +144,28 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         console.log('Aggregation Workflow clicked');
+
+        store.set('ProjectName', parentProjectTitle);
+        store.set('SubprojectName', subproject.name);
+
+        projectService.getProjectByName(parentProjectTitle, (err, result) => {
+            store.set('SchemaName', result.project_meta.schema_name);
+            if (store.get('SchemaName')) {
+                const schemaName = store.get('SchemaName') as string;
+                schemaService.getSchemaByName(schemaName, (err, result) => {
+                    store.set(
+                        'SchemaGridInfo',
+                        result.project_schema.grid_info
+                    );
+                    store.set(
+                        'CurrentSubprojectEPSG',
+                        result.project_schema.epsg
+                    );
+                });
+            }
+        });
+
+        setActivePanelFromStore('aggregation');
     };
 
     const menuItems = [
