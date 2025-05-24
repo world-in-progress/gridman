@@ -5,6 +5,7 @@ import {
 
 export function adjustAndExpandRectangle({
     rectangleCoordinates,
+    isConverted,
     epsg,
     gridLevel,
     schemaBasePoint,
@@ -23,40 +24,49 @@ export function adjustAndExpandRectangle({
     ) {
         return { convertedRectangle: null, alignedRectangle: null, expandedRectangle: null };
     }
-
-    const convertedNE = convertSingleCoordinate(
-        rectangleCoordinates.northEast,
-        '4326',
-        epsg
-    ) as [number, number];
-    const convertedSE = convertSingleCoordinate(
-        rectangleCoordinates.southEast,
-        '4326',
-        epsg
-    ) as [number, number];
-    const convertedSW = convertSingleCoordinate(
-        rectangleCoordinates.southWest,
-        '4326',
-        epsg
-    ) as [number, number];
-    const convertedNW = convertSingleCoordinate(
-        rectangleCoordinates.northWest,
-        '4326',
-        epsg
-    ) as [number, number];
-    const convertedCenter = convertSingleCoordinate(
-        rectangleCoordinates.center,
-        '4326',
-        epsg
-    ) as [number, number];
-
-    let convertedRect = {
-        northEast: convertedNE,
-        southEast: convertedSE,
-        southWest: convertedSW,
-        northWest: convertedNW,
-        center: convertedCenter,
-    };
+    
+    let convertedRect = rectangleCoordinates;
+    let convertedNE = rectangleCoordinates.northEast;
+    let convertedSE = rectangleCoordinates.southEast;
+    let convertedNW = rectangleCoordinates.northWest;
+    let convertedSW = rectangleCoordinates.southWest;
+    let convertedCenter = rectangleCoordinates.center;
+    if (!isConverted) {
+        convertedNE = convertSingleCoordinate(
+            rectangleCoordinates.northEast,
+            '4326',
+            epsg
+        ) as [number, number];
+        convertedSE = convertSingleCoordinate(
+            rectangleCoordinates.southEast,
+            '4326',
+            epsg
+        ) as [number, number];
+        convertedSW = convertSingleCoordinate(
+            rectangleCoordinates.southWest,
+            '4326',
+            epsg
+        ) as [number, number];
+        convertedNW = convertSingleCoordinate(
+            rectangleCoordinates.northWest,
+            '4326',
+            epsg
+        ) as [number, number];
+        convertedCenter = convertSingleCoordinate(
+            rectangleCoordinates.center,
+            '4326',
+            epsg
+        ) as [number, number];
+    
+        convertedRect = {
+            northEast: convertedNE,
+            southEast: convertedSE,
+            southWest: convertedSW,
+            northWest: convertedNW,
+            center: convertedCenter,
+        };
+    
+    }
 
     // Align the rectangle
     const gridWidth = gridLevel[0];

@@ -31,11 +31,9 @@ export default function SchemaPanel({
 
     store.set('schemaLoadingMethods', {
         on: () => {
-            console.log('开启');
             setIsSchemaLoading(true);
         },
         off: () => {
-            console.log('关闭');
             setIsSchemaLoading(false);
         },
     });

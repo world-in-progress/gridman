@@ -1,5 +1,4 @@
 import { useRef, useState, useContext, useEffect, useCallback } from 'react';
-import { OperateSideBar } from './operatePanel/operateSideBar';
 import {
     SidebarInset,
     SidebarProvider,
@@ -45,28 +44,38 @@ import CapacityBar from './ui/capacityBar';
 import TopologyPanel from './topologyPanel/TopologyPanel';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
-export type BreadcrumbType = 'schema' | 'project' | 'editor' | null;
+export type BreadcrumbType =
+    | 'schema'
+    | 'project'
+    | 'editor'
+    | 'topology'
+    | 'attribute'
+    | 'aggregation'
+    | null;
 
 export default function Page() {
+
+    const [isDrawing, setIsDrawing] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
-        null
-    );
+    const [updateCapacity, setUpdateCapacity] = useState(false);
+    const [showCreateSchema, setShowCreateSchema] = useState(false);
+    const [showCreateProject, setShowCreateProject] = useState(false);
+    const [showCreateSubProject, setShowCreateSubProject] = useState(false);
+    const [highSpeedModeEnabled, setHighSpeedModeEnabled] = useState(false);
+    const { language } = useContext(LanguageContext);
+    const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
+    const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
     const [gridLine, setGridLine] = useState<string | null>(null);
     const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
-    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
-        null
-    );
-
-    const [updateCapacity, setUpdateCapacity] = useState(false);
-    store.set('updateCapacity', {
-        on: () => {
-            setUpdateCapacity(true);
-        },
-        off: () => {
-            setUpdateCapacity(false);
-        },
-    });
+    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(null);
+    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(null);
+    const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
+    const [activeBreadcrumb, setActiveBreadcrumb] = useState<BreadcrumbType>(null);
+    const [activePanel, setActivePanel] = useState<'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' | null >(null);
+    const [selectedSchemaName, setSelectedSchemaName] = useState< string | undefined >(undefined);
+    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState< string | undefined >(undefined);
+    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState< string | undefined >(undefined);
+    const [rectangleCoordinates, setRectangleCoordinates] = useState<RectangleCoordinates | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -85,46 +94,49 @@ export default function Page() {
             subprojectName: string
         ) => void;
     }>(null);
-    const [rectangleCoordinates, setRectangleCoordinates] =
-        useState<RectangleCoordinates | null>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [showCreateSchema, setShowCreateSchema] = useState(false);
-    const [showCreateProject, setShowCreateProject] = useState(false);
-    const [showCreateSubProject, setShowCreateSubProject] = useState(false);
-    const [selectedParentProject, setSelectedParentProject] =
-        useState<any>(null);
-    const [activeBreadcrumb, setActiveBreadcrumb] =
-        useState<BreadcrumbType>(null);
-    const [activePanel, setActivePanel] = useState<
-        'schema' | 'project' | 'editor' | null
-    >(null);
 
-    const [selectedSchemaName, setSelectedSchemaName] = useState<
-        string | undefined
-    >(undefined);
-    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState<
-        string | undefined
-    >(undefined);
-    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState<
-        string | undefined
-    >(undefined);
-
-    const [highSpeedModeEnabled, setHighSpeedModeEnabled] = useState(false);
-
-    const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
-    const { language } = useContext(LanguageContext);
-    const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
+    store.set('updateCapacity', {
+        on: () => {
+            setUpdateCapacity(true);
+        },
+        off: () => {
+            setUpdateCapacity(false);
+        },
+    });
 
     store.set(
         'activePanelChange',
-        (activePanel: 'schema' | 'project' | 'editor' | null) => {
+        (activePanel: 'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' |null) => {
             setActivePanel(activePanel);
             setActiveBreadcrumb(activePanel);
         }
     );
 
-    const toggleChat = () => {
-        setIsChatOpen(!isChatOpen);
+    const breadcrumbText = {
+        schema: {
+            zh: '模板',
+            en: 'Schema',
+        },
+        project: {
+            zh: '项目',
+            en: 'Project',
+        },
+        editor: {
+            zh: '编辑',
+            en: 'Editor',
+        },
+        topology: {
+            zh: '拓扑',
+            en: 'Topology',
+        },
+        attribute: {
+            zh: '属性',
+            en: 'Attribute',
+        },
+        aggregation: {
+            zh: '聚合',
+            en: 'aggregation'
+        }
     };
 
     useEffect(() => {
@@ -154,22 +166,9 @@ export default function Page() {
         };
     }, []);
 
-    // useEffect(() => {
-    //     const handleSwitchToTopology = (event: any) => {
-    //         const { projectName, subprojectName } = event.detail;
-    //         setActivePanel('editor');
-    //         setActiveBreadcrumb('editor');
-    //     };
-
-    //     window.addEventListener('switchToEditorPanel', handleSwitchToTopology);
-
-    //     return () => {
-    //         window.removeEventListener(
-    //             'switchToEditorPanel',
-    //             handleSwitchToTopology
-    //         );
-    //     };
-    // }, []);
+    const toggleChat = () => {
+        setIsChatOpen(!isChatOpen);
+    };
 
     const handleDrawRectangle = (currentlyDrawing: boolean) => {
         if (mapRef.current) {
@@ -212,53 +211,43 @@ export default function Page() {
         const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
         layer.removeResource();
 
-        if (item === 'schema') {
-            if (window.mapInstance) {
-                const sourceId = `subproject-bounds-临时项目`;
-                const layerId = `subproject-fill-临时项目`;
-                const outlineLayerId = `subproject-outline-临时项目`;
+        clearMapMarkers();
 
-                if (window.mapInstance.getLayer(outlineLayerId)) {
-                    window.mapInstance.removeLayer(outlineLayerId);
-                }
-                if (window.mapInstance.getLayer(layerId)) {
-                    window.mapInstance.removeLayer(layerId);
-                }
-                if (window.mapInstance.getSource(sourceId)) {
-                    window.mapInstance.removeSource(sourceId);
-                }
+        if (window.mapInstance) {
+            const sourceId = `subproject-bounds-临时项目`;
+            const layerId = `subproject-fill-临时项目`;
+            const outlineLayerId = `subproject-outline-临时项目`;
+
+            if (window.mapInstance.getLayer(outlineLayerId)) {
+                window.mapInstance.removeLayer(outlineLayerId);
             }
+            if (window.mapInstance.getLayer(layerId)) {
+                window.mapInstance.removeLayer(layerId);
+            }
+            if (window.mapInstance.getSource(sourceId)) {
+                window.mapInstance.removeSource(sourceId);
+            }
+        }
+
+        if (window.mapInstance && window.mapInstance.getCanvas()) {
+            window.mapInstance.getCanvas().style.cursor = '';
+        }
+
+        if (showCreateSubProject) {
+            store.get<{ on: Function }>('onDrawRectangle')!.on();
+        }
+
+        if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
             clearMapMarkers();
             setShowCreateProject(false);
             setShowCreateSubProject(false);
             clearMapDrawElements();
-            if (window.mapInstance && window.mapInstance.getCanvas()) {
-                window.mapInstance.getCanvas().style.cursor = '';
-            }
             layer.removeResource();
         } else if (item === 'project') {
-            if (window.mapInstance) {
-                const sourceId = `subproject-bounds-临时项目`;
-                const layerId = `subproject-fill-临时项目`;
-                const outlineLayerId = `subproject-outline-临时项目`;
-
-                if (window.mapInstance.getLayer(outlineLayerId)) {
-                    window.mapInstance.removeLayer(outlineLayerId);
-                }
-                if (window.mapInstance.getLayer(layerId)) {
-                    window.mapInstance.removeLayer(layerId);
-                }
-                if (window.mapInstance.getSource(sourceId)) {
-                    window.mapInstance.removeSource(sourceId);
-                }
-            }
-            clearMapMarkers();
+            // clearMapMarkers();
             clearMapDrawElements();
-            if (window.mapInstance && window.mapInstance.getCanvas()) {
-                window.mapInstance.getCanvas().style.cursor = '';
-            }
             setActivePanel('project');
             setShowCreateProject(false);
             setShowCreateSubProject(false);
@@ -329,29 +318,6 @@ export default function Page() {
         []
     );
 
-    const breadcrumbText = {
-        schema: {
-            zh: '模板',
-            en: 'Schema',
-        },
-        project: {
-            zh: '项目',
-            en: 'Project',
-        },
-        editor: {
-            zh: '编辑',
-            en: 'Editor',
-        },
-        topology: {
-            zh: '拓扑',
-            en: 'Topology',
-        },
-        attribute: {
-            zh: '属性',
-            en: 'Attribute',
-        },
-    };
-
     const renderActivePanel = () => {
         if (activePanel === 'schema') {
             if (showCreateSchema) {
@@ -413,7 +379,7 @@ export default function Page() {
                 );
             }
             return <ProjectPanel onCreateSubProject={handleCreateSubProject} />;
-        } else if (activePanel === 'editor') {
+        } else if (activePanel === 'topology') {
             return (
                 <TopologyPanel
                     onBack={() => {
@@ -477,12 +443,14 @@ export default function Page() {
                                 <BreadcrumbItem>
                                     <BreadcrumbLink
                                         className={
-                                            activeBreadcrumb === 'editor'
-                                                ? 'text-[#71F6FF] font-bold'
-                                                : ''
+                                            activePanel === 'topology'
+                                                ? (activeBreadcrumb === 'topology' ? 'text-[#71F6FF] font-bold' : '')
+                                                : (activeBreadcrumb === 'editor' ? 'text-[#71F6FF] font-bold' : '')
                                         }
                                     >
-                                        {breadcrumbText.editor[language]}
+                                        {activePanel === 'topology'
+                                            ? breadcrumbText.topology[language]
+                                            : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                             </BreadcrumbList>
@@ -528,7 +496,7 @@ export default function Page() {
                     </div>
 
                     {/* 用户头像 */}
-                    {/* <div className="ml-auto mr-2">
+                    <div className="ml-auto mr-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Avatar className="cursor-pointer">
@@ -558,7 +526,7 @@ export default function Page() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                    </div> */}
+                    </div>
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
                     {activeBreadcrumb === 'editor' && updateCapacity && (

@@ -195,7 +195,8 @@ export interface ProjectConvertedCoordCardProps {
 }
 
 export interface AdjustAndExpandRectangleParams {
-    rectangleCoordinates: RectangleCoordinates;
+    rectangleCoordinates: RectangleCoordinates ;
+    isConverted: Boolean;
     epsg: string;
     gridLevel: number[];
     schemaBasePoint: [number, number];

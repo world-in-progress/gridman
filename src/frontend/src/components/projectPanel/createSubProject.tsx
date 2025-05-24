@@ -40,6 +40,7 @@ import {
 } from './utils/ProjectCoordinateService';
 import PatchBounds from './components/patchBounds';
 import { SubprojectBoundsManager } from '../mapComponent/layers/subprojectBoundsManager';
+import store from '@/store';
 
 const validateProjectForm = (
     data: {
@@ -291,31 +292,34 @@ export default function CreateSubProject({
                 return;
             }
 
-            // 1. 用输入框的值生成新的 convertedRectangle
-            const newConvertedRectangle: RectangleCoordinates = {
+            const rectangleCoordinates: RectangleCoordinates = {
                 northEast: [e, n],
                 southWest: [w, s],
                 southEast: [e, s],
                 northWest: [w, n],
                 center: [(w + e) / 2, (s + n) / 2],
             };
-            setConvertedRectangle(newConvertedRectangle);
-            console.log(newConvertedRectangle)
 
-            // 2. 同步更新 rectangleCoordinates
-            // setRectangleCoordinates(newConvertedRectangle)
+            if (setRectangleCoordinates) {
+                setRectangleCoordinates(rectangleCoordinates);
+            }
 
-            // 3. 重新计算 expandedRectangle
-            console.log(epsg, gridLevel, schemaBasePoint)
             if (epsg && gridLevel && schemaBasePoint) {
-                const { expandedRectangle } = adjustAndExpandRectangle({
-                    rectangleCoordinates: newConvertedRectangle,
+                const {
+                    convertedRectangle,
+                    alignedRectangle,
+                    expandedRectangle,
+                } = adjustAndExpandRectangle({
+                    rectangleCoordinates: rectangleCoordinates,
+                    isConverted: true,
                     epsg,
                     gridLevel,
-                    schemaBasePoint,
+                    schemaBasePoint: schemaBasePoint as [number, number],
                     convertSingleCoordinate,
                 });
+                setConvertedRectangle(convertedRectangle);
                 setExpandedRectangle(expandedRectangle);
+                store.set('DrawRectangle', expandedRectangle);
             }
 
             if (clearMapDrawElements) {
@@ -323,8 +327,8 @@ export default function CreateSubProject({
             }
 
             if (onDrawRectangle) {
-                onDrawRectangle(false)
-                onDrawRectangle(true)
+                onDrawRectangle(false);
+                onDrawRectangle(true);
             }
         },
         [
@@ -370,7 +374,7 @@ export default function CreateSubProject({
                 color: '#00FF00',
             })
                 .setLngLat(coordinates)
-                .setPopup(popup)
+                // .setPopup(popup)
                 .addTo(window.mapInstance);
 
             setSchemaMarker && setSchemaMarker(marker);
@@ -510,6 +514,7 @@ export default function CreateSubProject({
             const { convertedRectangle, alignedRectangle, expandedRectangle } =
                 adjustAndExpandRectangle({
                     rectangleCoordinates,
+                    isConverted: false,
                     epsg,
                     gridLevel,
                     schemaBasePoint,
@@ -575,6 +580,19 @@ export default function CreateSubProject({
             }
         };
     }, []);
+
+    useEffect(() => {
+        store.set('onDrawRectangle', {
+            on: () => {
+                if (onDrawRectangle) {
+                    onDrawRectangle(false);
+                    setTimeout(() => {
+                        onDrawRectangle(true);
+                    }, 1);
+                }
+            },
+        });
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -752,7 +770,9 @@ export default function CreateSubProject({
     };
 
     const drawExpandedRectangleOnMap = useCallback(() => {
-        if (!expandedRectangle || !subprojectBoundsManager) return;
+        const expandedRectangle =
+            store.get<RectangleCoordinates>('DrawRectangle');
+        if (!expandedRectangle) return;
 
         const bounds = [
             expandedRectangle.southWest[0],
@@ -788,7 +808,7 @@ export default function CreateSubProject({
         }
 
         // 再绘制新的
-        subprojectBoundsManager.showSubprojectBounds(
+        subprojectBoundsManager!.showSubprojectBounds(
             '临时项目',
             [subproject],
             true
@@ -848,7 +868,9 @@ export default function CreateSubProject({
                                     onDrawRectangle={handleDrawRectangle}
                                     onAdjustAndDraw={handleAdjustAndDraw}
                                     convertedRectangle={convertedRectangle}
-                                    setConvertedRectangle={setConvertedRectangle}
+                                    setConvertedRectangle={
+                                        setConvertedRectangle
+                                    }
                                     drawExpandedRectangleOnMap={
                                         drawExpandedRectangleOnMap
                                     }
@@ -868,22 +890,20 @@ export default function CreateSubProject({
                                     />
                                 )}
 
-                                {expandedRectangle &&
-                                    epsg !== '4326' &&
-                                    // rectangleCoordinates && 
-                                    (
-                                        <CoordinateBox
-                                            title={
-                                                language === 'zh'
-                                                    ? translations.coordinates
-                                                          .expanded.zh
-                                                    : translations.coordinates
-                                                          .expanded.en
-                                            }
-                                            coordinates={expandedRectangle}
-                                            formatCoordinate={formatCoordinate}
-                                        />
-                                    )}
+                                {expandedRectangle && epsg !== '4326' && (
+                                    // rectangleCoordinates &&
+                                    <CoordinateBox
+                                        title={
+                                            language === 'zh'
+                                                ? translations.coordinates
+                                                      .expanded.zh
+                                                : translations.coordinates
+                                                      .expanded.en
+                                        }
+                                        coordinates={expandedRectangle}
+                                        formatCoordinate={formatCoordinate}
+                                    />
+                                )}
 
                                 <ProjectErrorMessage message={generalError} />
 
