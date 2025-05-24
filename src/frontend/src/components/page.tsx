@@ -41,7 +41,8 @@ import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/TopologyPanel';
+import TopologyPanel from './topologyPanel/topologyPanel';
+import AttributePanel from './attributePanel/attributePanel';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
@@ -388,6 +389,10 @@ export default function Page() {
                     }}
                 />
             );
+        } else if (activePanel === 'attribute') {
+            return (
+                <AttributePanel/>
+            )
         }
         return (
             <SchemaPanel

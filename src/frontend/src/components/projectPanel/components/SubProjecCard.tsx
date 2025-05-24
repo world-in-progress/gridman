@@ -48,7 +48,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
-    const setActivePanelFromStore = store.get<Function>('activePanelChange');
+    const setActivePanelFromStore = store.get<Function>('activePanelChange')!;
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
     const updateCapacity = store.get<{ on: Function; off: Function }>(
         'updateCapacity'
@@ -109,17 +109,14 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
             parentProjectTitle,
             subproject.name,
             () => {
-                if (setActivePanelFromStore) {
-                    setActivePanelFromStore('topology');
-                }
+                setActivePanelFromStore('topology');
             }
         );
     };
 
     const handleAttributeEditorClick = (e: React.MouseEvent) => {
-        console.log('Attribute Editor clicked');
         e.stopPropagation();
-        isLoading.on();
+        // isLoading.on();
 
         store.set('ProjectName', parentProjectTitle);
         store.set('SubprojectName', subproject.name);
@@ -133,9 +130,15 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
+                    store.set(
+                        'CurrentSubprojectEPSG',
+                        result.project_schema.epsg
+                    );
                 });
             }
         });
+
+        setActivePanelFromStore('attribute');
     };
 
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {

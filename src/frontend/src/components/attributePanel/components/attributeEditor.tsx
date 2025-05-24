@@ -5,14 +5,14 @@ import { LanguageContext } from '../../../context';
 import type { AttributePanelProps } from '../types/types';
 import store from '@/store';
 import type NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
-import LUMDataNode from './components/LUMDataNode';
-import TerrainDataNode from './components/TerrainDataNode';
-import TopologyValidation from './components/TopologyValidation';
+import LUMDataNode from './LUMDataNode';
+import TerrainDataNode from './terrainDataNode';
+import TopologyValidation from './topologyValidation';
 import {
     AnimatedCardNoShadow,
     CardBackground,
     Blob,
-} from './components/nodeBackground';
+} from './nodeBackground';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, File, AlertTriangle } from 'lucide-react';
