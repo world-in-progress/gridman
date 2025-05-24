@@ -124,27 +124,29 @@ export default function CreateProject({
             setSchemaName(initialSchemaName);
             setSchemaNameFromProps(true);
             const schemaService = new SchemaService(language);
-            schemaService
-                .getSchemaByName(initialSchemaName, (err, result) => {
-                    if (err) {
-                        console.error('获取schema详情失败:', err);
-                        return;
-                    }
-                    if (result.project_schema && result.project_schema.base_point) {
-                        setSchemaBasePoint(
-                            result.project_schema.base_point as [number, number]
-                        );
+            schemaService.getSchemaByName(initialSchemaName, (err, result) => {
+                if (err) {
+                    console.error('获取schema详情失败:', err);
+                    return;
+                }
+                if (result.project_schema && result.project_schema.base_point) {
+                    setSchemaBasePoint(
+                        result.project_schema.base_point as [number, number]
+                    );
 
-                        if (result.project_schema.epsg) {
-                            const wgs84Point = convertToWGS84(
-                                result.project_schema.base_point,
-                                result.project_schema.epsg
-                            );
-                            setSchemaBasePointWGS84(wgs84Point);
-                            showSchemaMarkerOnMap(wgs84Point, result.project_schema.name);
-                        }
+                    if (result.project_schema.epsg) {
+                        const wgs84Point = convertToWGS84(
+                            result.project_schema.base_point,
+                            result.project_schema.epsg
+                        );
+                        setSchemaBasePointWGS84(wgs84Point);
+                        showSchemaMarkerOnMap(
+                            wgs84Point,
+                            result.project_schema.name
+                        );
                     }
-                });
+                }
+            });
         }
 
         if (initialEpsg) {
@@ -193,7 +195,7 @@ export default function CreateProject({
                 color: '#00FF00',
             })
                 .setLngLat(coordinates)
-                .setPopup(popup)
+                // .setPopup(popup)
                 .addTo(window.mapInstance);
 
             setSchemaMarker(marker);
@@ -256,41 +258,38 @@ export default function CreateProject({
         );
 
         const projectService = new ProjectService(language);
-        projectService.createProject(
-            projectData,
-            (err, result) => {
-                if (result.success === false) {
-                    setGeneralError(
-                        language === 'zh'
-                            ? '项目名称已存在，请使用不同的名称'
-                            : 'Project already exists. Please use a different name.'
-                    );
-                    setFormErrors((prev) => ({ ...prev, name: true }));
-                    return;
-                }
+        projectService.createProject(projectData, (err, result) => {
+            if (result.success === false) {
                 setGeneralError(
                     language === 'zh'
-                        ? '项目创建成功！'
-                        : 'Project created successfully!'
+                        ? '项目名称已存在，请使用不同的名称'
+                        : 'Project already exists. Please use a different name.'
                 );
-
-                if (window.mapInstance) {
-                    if (onDrawRectangle) {
-                        onDrawRectangle(false);
-                        setTimeout(() => {
-                            onDrawRectangle(true);
-                        }, 10);
-                    }
-                    clearMapMarkers();
-                }
-
-                setTimeout(() => {
-                    if (onBack) {
-                        onBack();
-                    }
-                }, 1000);
+                setFormErrors((prev) => ({ ...prev, name: true }));
+                return;
             }
-        );
+            setGeneralError(
+                language === 'zh'
+                    ? '项目创建成功！'
+                    : 'Project created successfully!'
+            );
+
+            if (window.mapInstance) {
+                if (onDrawRectangle) {
+                    onDrawRectangle(false);
+                    setTimeout(() => {
+                        onDrawRectangle(true);
+                    }, 10);
+                }
+                clearMapMarkers();
+            }
+
+            setTimeout(() => {
+                if (onBack) {
+                    onBack();
+                }
+            }, 1000);
+        });
     };
 
     const handleBack = () => {

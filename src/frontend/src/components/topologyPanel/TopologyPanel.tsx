@@ -41,7 +41,6 @@ export default function TopologyPanel({ onBack, ...props }: TopologyPanelProps) 
     const handleSaveTopologyState = () => {
         const core: GridCore = store.get('gridCore')!;
         core.save((saveInfo: GridSaveInfo) => {
-            console.log(saveInfo);
             toast.success(
                 language === 'zh'
                     ? '拓扑编辑状态保存成功'

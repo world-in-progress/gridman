@@ -48,6 +48,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
 
+    const setActivePanelFromStore = store.get<Function>('activePanelChange');
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
     const updateCapacity = store.get<{ on: Function; off: Function }>(
         'updateCapacity'
@@ -108,18 +109,8 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
             parentProjectTitle,
             subproject.name,
             () => {
-                // if (window.mapRef && window.mapRef.current) {
-                //     const pageEvents = new CustomEvent('switchToEditorPanel', {
-                //         detail: {
-                //             projectName: parentProjectTitle,
-                //             subprojectName: subproject.name,
-                //         },
-                //     });
-                //     window.dispatchEvent(pageEvents);
-                // }
-                const setActivePanelFromStore = store.get<Function>('activePanelChange');
-                if (setActivePanelFromStore) { // 检查函数是否存在
-                     setActivePanelFromStore('editor'); // 切换到 'editor' 面板
+                if (setActivePanelFromStore) {
+                    setActivePanelFromStore('topology');
                 }
             }
         );
@@ -138,7 +129,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
             if (store.get('SchemaName')) {
                 const schemaName = store.get('SchemaName') as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
-                    store.set('SchemaGridInfo', result.project_schema.grid_info);
+                    store.set(
+                        'SchemaGridInfo',
+                        result.project_schema.grid_info
+                    );
                 });
             }
         });
@@ -162,7 +156,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         },
         {
             title: language === 'zh' ? '聚合工作流' : 'Aggregation Workflow',
-            icon: <Workflow  className="h-4 w-4 mr-2" />,
+            icon: <Workflow className="h-4 w-4 mr-2" />,
             onClick: handleAggregationWorkflowClick,
         },
     ];

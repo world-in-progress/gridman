@@ -200,8 +200,7 @@ export function Navbar({
                             />
                         </div>
                     </div>
-                    {/* <div className="flex items-center mr-4"> */}
-                    <div className="flex items-center mr-20">
+                    <div className="flex items-center mr-4">
                         <div className="flex items-center space-x-2">
                             <Label
                                 htmlFor="language-switch"
@@ -227,7 +226,7 @@ export function Navbar({
                     </div>
 
                     {/* OpenGMS Logo */}
-                    {/* <div className="flex items-center mr-6">
+                    <div className="flex items-center mr-6">
                         <a
                             href="http://geomodeling.njnu.edu.cn/"
                             target="_blank"
@@ -239,7 +238,7 @@ export function Navbar({
                                 alt="OpenGMS"
                             />
                         </a>
-                    </div> */}
+                    </div>
                 </div>
             </div>
         </nav>

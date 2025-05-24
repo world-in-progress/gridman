@@ -233,9 +233,7 @@ export default function PatchBounds({
                         onClick={() => {
                             onAdjustAndDraw(northValue, southValue, eastValue, westValue);
                             if (drawExpandedRectangleOnMap) {
-                                setTimeout(() => {
-                                    drawExpandedRectangleOnMap();
-                                }, 100); // 延迟，确保 expandedRectangle 已更新
+                                drawExpandedRectangleOnMap();
                             }
                         }}
                     >
