@@ -152,54 +152,56 @@ float awayFromKlkStar(float factor, float range) {
 
 void main() {
 
+    // Shading in topology editor
+    // if(mode == 0.0) {
+    //     if(isHit) {
+    //         float distance = uv.x * uv.x + uv.y * uv.y;
+
+    //         if(distance <= 0.25) {
+    //             fillAlpha = 0.8;
+    //             fillColor = v_color;
+    //         } else {
+    //             fillAlpha = 0.1;
+    //             fillColor = vec3(0.1);
+    //         }
+    //     } else {
+    //         fillAlpha = 0.1;
+    //         fillColor = vec3(0.1);
+    //     }
+    // }
+    // // Shading in attribute editor
+    // else {
+
+    //     float distance = uv.x * uv.x + uv.y * uv.y;
+
+    //     if(distance <= 0.25 && distance >= 0.2) {
+    //         if(isHit){
+    //             fillAlpha = 0.2;
+    //             fillColor = vec3(1.0);
+    //         }
+    //         else {
+    //             fillAlpha = 0.8;
+    //             fillColor = vec3(0.64, 0.09, 0.09);
+    //         }
+    //     } else {
+    //         if(isHit) {
+    //             fillAlpha = 0.8;
+    //             fillColor = vec3(0.64, 0.09, 0.09);
+    //         }
+    //         else {
+    //             fillAlpha = 0.2;
+    //             fillColor = vec3(1.0);
+    //         }
+    //     }
+    // }
+
+
     bool isHit = isHit();
+    bool isDeleted = isDeleted();
     float fillAlpha = 1.0;
     vec3 fillColor = vec3(1.0);
-
-    // Shading in topology editor
-    if(mode == 0.0) {
-        if(isHit) {
-            float distance = uv.x * uv.x + uv.y * uv.y;
-
-            if(distance <= 0.25) {
-                fillAlpha = 0.8;
-                fillColor = v_color;
-            } else {
-                fillAlpha = 0.1;
-                fillColor = vec3(0.1);
-            }
-        } else {
-            fillAlpha = 0.1;
-            fillColor = vec3(0.1);
-        }
-    }
-    // Shading in attribute editor
-    else {
-
-        float distance = uv.x * uv.x + uv.y * uv.y;
-
-        if(distance <= 0.25 && distance >= 0.2) {
-            if(isHit){
-                fillAlpha = 0.2;
-                fillColor = vec3(1.0);
-            }
-            else {
-                fillAlpha = 0.8;
-                fillColor = vec3(0.64, 0.09, 0.09);
-            }
-        } else {
-            if(isHit) {
-                fillAlpha = 0.8;
-                fillColor = vec3(0.64, 0.09, 0.09);
-            }
-            else {
-                fillAlpha = 0.2;
-                fillColor = vec3(1.0);
-            }
-        }
-    }
-
-    if(isDeleted()) {
+    
+    if(isDeleted) {
         float factor = 0.035;
         float range = 0.6;
         float dis = uv.x * uv.x + uv.y * uv.y;
@@ -213,17 +215,37 @@ void main() {
                 float mixFactor = clamp(centerAway * 3.0, 0.0, 1.0);
                 fillColor = mix(vec3(1.0), vec3(1.0, 0.0, 0.0), mixFactor);
             }
-        } else {
-            fillColor = vec3(0.2);
-            fillAlpha = 0.2;
-        }
 
-        if (isHit) {
-            fillColor = 1.0 - fillColor;
+            if (isHit) {
+                fillColor = 1.0 - fillColor;
+            }
+        } else {
+            // fillColor = vec3(0.2);
+            // fillAlpha = 0.2;
+            discard;
+        }
+    } else {
+
+        if(isHit) {
+            float distance = uv.x * uv.x + uv.y * uv.y;
+
+            if(distance <= 0.25) {
+                fillAlpha = 0.8;
+                fillColor = v_color;
+                fragColor = vec4(fillColor * fillAlpha, fillAlpha);
+            } else {
+                discard;
+            }
+        } else {
+            discard;
         }
     }
 
-    fragColor = vec4(fillColor * fillAlpha, fillAlpha);
+    if (isHit || isDeleted) {
+        fragColor = vec4(fillColor * fillAlpha, fillAlpha);
+    } else {
+        discard;
+    }
 }
 
 #endif

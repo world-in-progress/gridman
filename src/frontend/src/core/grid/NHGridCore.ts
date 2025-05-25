@@ -42,36 +42,24 @@ export interface GridRecordOptions {
 }
 
 export default class GridCore {
-
-    private _nextStorageId = 0
-    bBoxCenterF32: Float32Array
-
-    dispatcher: Dispatcher
-    projConverter: proj4.Converter
-
+    // Grid metadata
     maxGridNum: number
+    levelInfos: GridLevelInfo[]
+    renderRelativeCenter: Float32Array
+
+    // Worker dispatcher
+    private _dispatcher: Dispatcher
 
     // Grid cache
-    levelInfos: GridLevelInfo[]
-    gridLevelCache: Uint8Array
-    gridDeletedCache: Uint8Array
-    gridGlobalIdCache: Uint32Array
-    gridKey_storageId_dict: GridKeyHashTable
-    grid_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
-    storageId_edgeId_set: Array<[Set<number>, Set<number>, Set<number>, Set<number>]> = []
-
-    // Edge cache
-    edgeKeys_cache: string[] = []
-    adjGrids_cache: number[][] = []
-    edge_attribute_cache: Array<Record<string, any>> = [] // { height: number [-9999], type: number [ 0, 0-10 ] }
+    private _nextStorageId = 0
+    private _gridLevelCache: Uint8Array
+    private _gridDeletedCache: Uint8Array
+    private _gridGlobalIdCache: Uint32Array
+    private _gridKey_storageId_dict: GridKeyHashTable
 
     constructor(public context: GridContext, options: GridRecordOptions = {}) {
-
+        // Init metadata
         this.maxGridNum = options.maxGridNum ?? 4096 * 4096
-        this.dispatcher = new Dispatcher(this, Math.min(options.workerCount ?? 4, 4))
-        this.projConverter = proj4(this.context.srcCS, this.context.targetCS)
-
-        // Init levelInfos
         this.levelInfos = new Array<GridLevelInfo>(this.context.rules.length)
         this.context.rules.forEach((_, level, rules) => {
             let width: number, height: number
@@ -85,63 +73,80 @@ export default class GridCore {
             this.levelInfos[level] = { width, height }
         })
 
-        // Init grid cache
-        this.gridKey_storageId_dict = new GridKeyHashTable(this.maxGridNum)
-        this.gridLevelCache = new Uint8Array(this.maxGridNum)
-        this.gridGlobalIdCache = new Uint32Array(this.maxGridNum)
-        this.gridDeletedCache = new Uint8Array(this.maxGridNum).fill(UNDELETED_FLAG)
-        this.grid_attribute_cache = Array.from({ length: this.maxGridNum }, () => { return { height: -9999, type: 0 } })
-
         // Calculate bounding box center in mercator coordinates for high-precision rendering
-        const bBoxCenter: [number, number] = this.projConverter.forward(this.context.bBox.center)
+        const bBoxCenter: [number, number] = proj4(this.context.srcCS, this.context.targetCS, this.context.bBox.center)
         const mercatorCenter = MercatorCoordinate.fromLonLat(bBoxCenter)
         const centerX = encodeFloatToDouble(mercatorCenter[0])
         const centerY = encodeFloatToDouble(mercatorCenter[1])
-        this.bBoxCenterF32 = new Float32Array([...centerX, ...centerY])
+        this.renderRelativeCenter = new Float32Array([...centerX, ...centerY])
+
+        // Init dispatcher
+        this._dispatcher = new Dispatcher(this, options.workerCount)
+
+        // Init grid cache
+        this._gridLevelCache = new Uint8Array(this.maxGridNum)
+        this._gridGlobalIdCache = new Uint32Array(this.maxGridNum)
+        this._gridDeletedCache = new Uint8Array(this.maxGridNum).fill(UNDELETED_FLAG)
+        this._gridKey_storageId_dict = new GridKeyHashTable(this.maxGridNum)
+    }
+
+    get bBox() {
+        return this.context.bBox
+    }
+
+    get srcCRS() {
+        return this.context.srcCS
+    }
+
+    get gridNum(): number {
+        return this._nextStorageId
+    }
+
+    get maxLevel() {
+        return this.levelInfos.length - 1
     }
 
     init(callback?: Function): void {
         // Clear next storage ID
         this._nextStorageId = 0
         // Brodcast actors to init grid manager and initialize grid cache
-        this.dispatcher.broadcast('setGridManager', this.context, () => {
+        this._dispatcher.broadcast('setGridManager', this.context, () => {
             // Get activate grid information
-            this._actor.send('getGridInfo', null, (error: any, baseInfo: MultiGridBaseInfo) => {
-                // Initialize grid cache
-                const gridNum = baseInfo.levels.length
-                for (let storageId = 0; storageId < gridNum; storageId++) {
-                    const level = baseInfo.levels[storageId]
-                    const globalId = baseInfo.globalIds[storageId]
-                    this.updateDict(storageId, level, globalId)
-                }
-                this.gridLevelCache.set(baseInfo.levels, 0)
-                this.gridDeletedCache.set(baseInfo.deleted!, 0)
-                this.gridGlobalIdCache.set(baseInfo.globalIds, 0)
-
-                // Get render vertices of all grids
+            this._dispatcher.actor.send('getGridInfo', null, (_, baseInfo: MultiGridBaseInfo) => {
                 this.updateMultiGridRenderInfo(baseInfo, callback)
             })
         })
     }
 
     updateMultiGridRenderInfo(baseInfo: MultiGridBaseInfo, callback?: Function): void {
-        let completedActorNum = 0
+        // Initialize grid cache
         const gridNum = baseInfo.levels.length
+        for (let i = 0; i < gridNum; i++) {
+            const storageId = this._nextStorageId + i
+            this._gridKey_storageId_dict.update(storageId, baseInfo.levels[i], baseInfo.globalIds[i])
+        }
+        
+        // Get render vertices of all grids
+        this._gridLevelCache.set(baseInfo.levels, this._nextStorageId)
+        this._gridDeletedCache.set(baseInfo.deleted!, this._nextStorageId)
+        this._gridGlobalIdCache.set(baseInfo.globalIds, this._nextStorageId)
+
+        let completedActorNum = 0
         const vertices = new Float32Array(gridNum * 8)
         const verticesLow = new Float32Array(gridNum * 8)
-        const batchSize = Math.ceil(gridNum / this.dispatcher.actorNum)
-        for (let actorIndex = 0; actorIndex < this.dispatcher.actorNum; actorIndex++) {
+        const actorNum = gridNum < this._dispatcher.actorNum ? 1 : this._dispatcher.actorNum  // avoid abusing too many actors when gridNum is small
+        const batchSize = Math.ceil(gridNum / actorNum)
+        for (let actorIndex = 0; actorIndex < actorNum; actorIndex++) {
             const fromStorageId = actorIndex * batchSize
             const toStorageId = Math.min(gridNum, (actorIndex + 1) * batchSize)
 
-            // Send grid info batch to actor and get vertices
+            // Send grid info batch to actor and get render vertices
             const info: MultiGridBaseInfo = {
                 levels: baseInfo.levels.slice(fromStorageId, toStorageId),
                 globalIds: baseInfo.globalIds.slice(fromStorageId, toStorageId),
             }
-            this._actor.send('getMultiGridRenderVertices', info, (error: any, renderInfo: StructuredGridRenderVertices) => {
+            this._dispatcher.actor.send('getMultiGridRenderVertices', info, (_, renderInfo: StructuredGridRenderVertices) => {
                 completedActorNum += 1
-
                 vertices.set(renderInfo.tl, gridNum * 2 * 0 + fromStorageId * 2)
                 vertices.set(renderInfo.tr, gridNum * 2 * 1 + fromStorageId * 2)
                 vertices.set(renderInfo.bl, gridNum * 2 * 2 + fromStorageId * 2)
@@ -153,7 +158,7 @@ export default class GridCore {
                 verticesLow.set(renderInfo.brLow, gridNum * 2 * 3 + fromStorageId * 2)
 
                 // If all actors have completed, make callback
-                if (completedActorNum === this.dispatcher.actorNum) {
+                if (completedActorNum === actorNum) {
                     callback && callback([this._nextStorageId, baseInfo.levels, vertices, verticesLow, baseInfo.deleted])
                     this._nextStorageId += gridNum
                 }
@@ -161,75 +166,24 @@ export default class GridCore {
         }
     }
 
-    private get _actor() {
-        return this.dispatcher.actor
-    }
-
-    get edgeNum(): number {
-        return this.edgeKeys_cache.length
-    }
-
-    get gridNum(): number {
-        return this._nextStorageId
-    }
-
-    get maxLevel() {
-        return this.levelInfos.length - 1
-    }
-
-    get bBox() {
-        return this.context.bBox
-    }
-
-    get srcCRS() {
-        return this.context.srcCS
-    }
-
-    updateDict(storageId: number, level: number, globalId: number) {
-        this.gridKey_storageId_dict.update(storageId, level, globalId)
-    }
-
-    getStorageIdByLevelAndGlobalId(level: number, globalId: number): number | undefined {
-        return this.gridKey_storageId_dict.get(level, globalId)
-    }
-
-    deleteFromDict(level: number, globalId: number) {
-        this.gridKey_storageId_dict.delete(level, globalId)
-    }
-
-    addGrids(levels: Uint8Array, globalIds: Uint32Array, deleted: Uint8Array, callback?: Function): void {
-        const gridNum = levels.length
-        for (let i = 0; i < gridNum; i++) {
-            const storageId = this._nextStorageId + i
-            this.updateDict(storageId, levels[i], globalIds[i])
-            this.gridLevelCache[storageId] = levels[i]
-            this.gridDeletedCache[storageId] = deleted[i]
-            this.gridGlobalIdCache[storageId] = globalIds[i]
-        }
-
-        callback && callback(this._nextStorageId)
-        this._nextStorageId += gridNum
-    }
-
     deleteGridLocally(storageId: number, callback?: Function): void {
         const lastStorageId = this._nextStorageId - 1
 
         // Get render info of this removable grid and the grid having the last storageId
-        const lastDeleted = this.gridDeletedCache[lastStorageId]
+        const lastDeleted = this._gridDeletedCache[lastStorageId]
         const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(lastStorageId)
-        this.deleteFromDict(lastLevel, lastGlobalId)
+        this._gridKey_storageId_dict.delete(lastLevel, lastGlobalId)
         this._nextStorageId -= 1
 
         // Do nothing if the removable grid is the grid having the last storageId
         if (this._nextStorageId === storageId) return
 
         // Replace removable render info with the last render info in the cache
-        this.updateDict(storageId, lastLevel, lastGlobalId)
-        this.gridLevelCache[storageId] = lastLevel
-        this.gridDeletedCache[storageId] = lastDeleted
-        this.gridGlobalIdCache[storageId] = lastGlobalId
-        const [vertices, verticesLow] = this._createNodeRenderVertices(lastLevel, lastGlobalId)
-        callback && callback([storageId, lastLevel, vertices, verticesLow, lastDeleted])
+        this._gridLevelCache[storageId] = lastLevel
+        this._gridDeletedCache[storageId] = lastDeleted
+        this._gridGlobalIdCache[storageId] = lastGlobalId
+        this._gridKey_storageId_dict.update(storageId, lastLevel, lastGlobalId)
+        callback && callback([lastStorageId, storageId])
     }
 
     deleteGridsLocally(storageIds: number[], callback?: Function): void {
@@ -245,7 +199,7 @@ export default class GridCore {
         })
 
        for (let i = 0; i < removableGridNum; i++) {
-            this.deleteFromDict(removableLevels[i], removableGlobalIds[i])
+            this._gridKey_storageId_dict.delete(removableLevels[i], removableGlobalIds[i])
        } 
 
         const maintainedGridNum = this.gridNum - removableGridNum
@@ -269,7 +223,7 @@ export default class GridCore {
                 // If replacedStorageId is less than removableStorageId, break for replacement not necessary
                 if (replacedStorageId <= storageIds[replacedGridInfo.length]) break
                 const [lastLevel, lastGlobalId] = this.getGridInfoByStorageId(replacedStorageId)
-                const lastDeleted = this.gridDeletedCache[replacedStorageId]
+                const lastDeleted = this._gridDeletedCache[replacedStorageId]
                 replacedGridInfo.push([replacedStorageId, lastLevel, lastGlobalId, lastDeleted])
             }
             replacedStorageId--
@@ -277,36 +231,24 @@ export default class GridCore {
 
         this._nextStorageId -= removableGridNum
 
-        const replacedLevels: number[] = []
-        const replacedDeleteds: number[] = []
-        const replacedStorageIds: number[] = []
-        const replacedVertices: Float32Array[] = []
-        const replacedVerticesLow: Float32Array[] = []
+        const replacedStorageIds: number[] = []     // source storageIds to be replaced
+        const removableStorageIds: number[] = []    // target storageIds to be removed
         storageIds.forEach((storageId, index) => {
             if (index > replacedGridInfo.length - 1) return
             
             // Replace removable render info with the last render info in the cache
-            const [_, replacedLevel, replacedGlobalId, replacedDeleted] = replacedGridInfo[index]
-            this.gridLevelCache[storageId] = replacedLevel
-            this.gridDeletedCache[storageId] = replacedDeleted
-            this.gridGlobalIdCache[storageId] = replacedGlobalId
-            this.updateDict(storageId, replacedLevel, replacedGlobalId)
+            const [replacedStorageId, replacedLevel, replacedGlobalId, replacedDeleted] = replacedGridInfo[index]
+            this._gridLevelCache[storageId] = replacedLevel
+            this._gridDeletedCache[storageId] = replacedDeleted
+            this._gridGlobalIdCache[storageId] = replacedGlobalId
+            this._gridKey_storageId_dict.update(storageId, replacedLevel, replacedGlobalId)
 
-            const [vertices, verticesLow] = this._createNodeRenderVertices(replacedLevel, replacedGlobalId)
-
-
-            replacedStorageIds.push(storageId)
-            replacedLevels.push(replacedLevel)
-            replacedVertices.push(vertices)
-            replacedVerticesLow.push(verticesLow)
-            replacedDeleteds.push(replacedDeleted)
+            replacedStorageIds.push(replacedStorageId)
+            removableStorageIds.push(storageId)
         })
         callback && callback([
-            replacedStorageIds,
-            replacedLevels, 
-            replacedVertices, 
-            replacedVerticesLow,
-            replacedDeleteds
+            replacedStorageIds, 
+            removableStorageIds,
         ])
     }
 
@@ -316,7 +258,7 @@ export default class GridCore {
      * Not really deleted, but marked as deleted.  
      * For recover operation, the deleted grids must still can be picked up.
      */
-    markAsDeletedGrids(removableStorageIds: number[], callback?: Function): void {
+    markGridsAsDeleted(removableStorageIds: number[], callback?: Function): void {
         const levels = new Uint8Array(removableStorageIds.length)
         const globalIds = new Uint32Array(removableStorageIds.length)
         for (let i = 0; i < removableStorageIds.length; i++) {
@@ -324,10 +266,10 @@ export default class GridCore {
             const [level, globalId] = this.getGridInfoByStorageId(storageId)
             levels[i] = level
             globalIds[i] = globalId
-            this.gridDeletedCache[storageId] = DELETED_FLAG
+            this._gridDeletedCache[storageId] = DELETED_FLAG
         }
         // Mark provided grids as deleted
-        this._actor.send('removeGrids', { levels, globalIds }, () => {
+        this._dispatcher.actor.send('removeGrids', { levels, globalIds }, () => {
             callback && callback()
         })
     }
@@ -340,10 +282,10 @@ export default class GridCore {
             const [level, globalId] = this.getGridInfoByStorageId(storageId)
             levels[i] = level
             globalIds[i] = globalId
-            this.gridDeletedCache[storageId] = UNDELETED_FLAG
+            this._gridDeletedCache[storageId] = UNDELETED_FLAG
         }
         // Recover provided grids
-        this._actor.send('recoverGrids', { levels, globalIds }, () => {
+        this._dispatcher.actor.send('recoverGrids', { levels, globalIds }, () => {
             callback && callback()
         })
     }
@@ -357,18 +299,8 @@ export default class GridCore {
     subdivideGrids(subdivideInfos: {levels: Uint8Array, globalIds: Uint32Array}, callback?: Function): void {
 
         // Dispatch a worker to subdivide the grids
-        this._actor.send('subdivideGrids', subdivideInfos, (_, baseInfo: MultiGridBaseInfo) => {
-            const gridNum = baseInfo.levels.length
-            baseInfo.deleted = new Uint8Array(gridNum).fill(UNDELETED_FLAG)
-            for (let subscript = 0; subscript < gridNum; subscript++) {
-                const level = baseInfo.levels[subscript]
-                const globalId = baseInfo.globalIds[subscript]
-                this.updateDict(this._nextStorageId + subscript, level, globalId)
-            }
-            this.gridLevelCache.set(baseInfo.levels, this._nextStorageId)
-            this.gridDeletedCache.set(baseInfo.deleted, this._nextStorageId)
-            this.gridGlobalIdCache.set(baseInfo.globalIds, this._nextStorageId)
-
+        this._dispatcher.actor.send('subdivideGrids', subdivideInfos, (_, baseInfo: MultiGridBaseInfo) => {
+            baseInfo.deleted = new Uint8Array(baseInfo.levels.length).fill(UNDELETED_FLAG)
             this.updateMultiGridRenderInfo(baseInfo, callback)
         })
     }
@@ -383,34 +315,32 @@ export default class GridCore {
             globalIds[i] = globalId
         }
         // Merge provided grids
-        this._actor.send('mergeGrids', { levels, globalIds }, (_: any, parentRenderInfo: MultiGridRenderInfo) => {
+        this._dispatcher.actor.send('mergeGrids', { levels, globalIds }, (_: any, parentInfo: MultiGridBaseInfo) => {
             // Get storageIds of all child grids
             const childStorageIds: number[] = []
-            const parentNum = parentRenderInfo.levels.length
+            const parentNum = parentInfo.levels.length
             for (let i = 0; i < parentNum; i++) {
-                const parentLevel = parentRenderInfo.levels[i]
-                const parentGlobalId = parentRenderInfo.globalIds[i]
+                const parentLevel = parentInfo.levels[i]
+                const parentGlobalId = parentInfo.globalIds[i]
                 const children = this.getGridChildren(parentLevel, parentGlobalId)
                 if (children) {
                     children.forEach((childGlobalId) => {
-                        const childStorageId = this.getStorageIdByLevelAndGlobalId(parentLevel + 1, childGlobalId)
-                        if (childStorageId !== undefined) {
-                            childStorageIds.push(childStorageId)
-                        }
+                        const childStorageId = this._gridKey_storageId_dict.get(parentLevel + 1, childGlobalId)! // ! ensured by backend
+                        childStorageIds.push(childStorageId)
                     })
                 }
             }
-            callback && callback({childStorageIds, parentRenderInfo})
+            callback && callback({childStorageIds, parentInfo})
         })
     }
 
     getGridInfoByFeature(path: string, callback?: Function) {
-        this._actor.send('getGridInfoByFeature', path, (error: any, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
+        this._dispatcher.actor.send('getGridInfoByFeature', path, (_, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
             const { levels, globalIds } = gridInfo
             const gridNum = levels.length
             const storageIds: number[] = new Array(gridNum)
             for (let i = 0; i < gridNum; i++) {
-                const id = this.getStorageIdByLevelAndGlobalId(levels[i], globalIds[i])!
+                const id = this._gridKey_storageId_dict.get(levels[i], globalIds[i])! // ! ensured because all active grids are stored in the cache
                 storageIds[i] = id
             }
             callback && callback(storageIds)
@@ -444,40 +374,13 @@ export default class GridCore {
 
     getGridInfoByStorageId(storageId: number): [level: number, globalId: number] {
         return [
-            this.gridLevelCache[storageId],
-            this.gridGlobalIdCache[storageId]
+            this._gridLevelCache[storageId],
+            this._gridGlobalIdCache[storageId]
         ]
     }
 
     isGridDeleted(storageId: number): boolean {
-        return this.gridDeletedCache[storageId] === DELETED_FLAG
-    }
-
-    getEdgeInfoByStorageId(storageId: number) {
-
-        return this.storageId_edgeId_set[storageId].map(edgeSet => {
-            return Array.from(edgeSet).sort((edgeA, edgeB) => {
-                const keyA = this.edgeKeys_cache[edgeA]
-                const keyB = this.edgeKeys_cache[edgeB]
-                const dir = keyA.slice(0, 1)
-                const posA = keyA.slice(1).split('-')
-                const posB = keyB.slice(1).split('-')
-
-                const minA = (+posA[0]) / (+posA[1])
-                const minB = (+posB[0]) / (+posB[1])
-                return dir === 'h' ? minA - minB : minB - minA
-            })
-        })
-    }
-
-    setGridAttributeByStorageId(storageId: number, attr: { height: number, type: number }) {
-        this.grid_attribute_cache[storageId].height = attr.height
-        this.grid_attribute_cache[storageId].type = attr.type
-    }
-
-    setEdgeAttributeByStorageId(storageId: number, attr: { height: number, type: number }) {
-        this.edge_attribute_cache[storageId].height = attr.height
-        this.edge_attribute_cache[storageId].type = attr.type
+        return this._gridDeletedCache[storageId] === DELETED_FLAG
     }
 
     getGridLocalId(level: number, globalId: number) {
@@ -492,23 +395,11 @@ export default class GridCore {
         return ((v % subHeight) * subWidth) + (u % subWidth)
     }
 
-    getParentGlobalId(level: number, globalId: number): number {
-        if (level === 0) return 0
-
-        const { width } = this.levelInfos[level]
-        const [subWidth, subHeight] = this.context.rules[level - 1]
-
-        const u = globalId % width
-        const v = Math.floor(globalId / width)
-
-        return Math.floor(v / subHeight) * this.levelInfos[level - 1].width + Math.floor(u / subWidth)
-    }
-
     checkGrid(storageId: number): GridCheckingInfo {
-        const level = this.gridLevelCache[storageId]
-        const globalId = this.gridGlobalIdCache[storageId]
+        const level = this._gridLevelCache[storageId]
+        const globalId = this._gridGlobalIdCache[storageId]
         const localId = this.getGridLocalId(level, globalId)
-        const deleted = this.gridDeletedCache[storageId] === DELETED_FLAG
+        const deleted = this._gridDeletedCache[storageId] === DELETED_FLAG
 
         return {
             storageId,
@@ -520,87 +411,13 @@ export default class GridCore {
     }
 
     save(callback: Function) {
-        this._actor.send('saveGrids', null, (_: any, gridInfo: GridSaveInfo) => {
+        this._dispatcher.actor.send('saveGrids', null, (_: any, gridInfo: GridSaveInfo) => {
             callback && callback(gridInfo)
         })
     }
-
-    private _createNodeRenderVertices(level: number, globalId: number, vertices?: Float32Array, verticesLow?: Float32Array): [Float32Array, Float32Array] {
-
-        const bBox = this.context.bBox
-        const { width, height } = this.levelInfos[level]
-
-        const globalU = globalId % width
-        const globalV = Math.floor(globalId / width)
-
-        const xMin = lerp(bBox.xMin, bBox.xMax, globalU / width)
-        const yMin = lerp(bBox.yMin, bBox.yMax, globalV / height)
-        const xMax = lerp(bBox.xMin, bBox.xMax, (globalU + 1) / width)
-        const yMax = lerp(bBox.yMin, bBox.yMax, (globalV + 1) / height)
-
-        const targetCoords = [
-            this.projConverter.forward([xMin, yMax]),  // srcTL
-            this.projConverter.forward([xMax, yMax]),  // srcTR
-            this.projConverter.forward([xMin, yMin]),  // srcBL
-            this.projConverter.forward([xMax, yMin]),  // srcBR
-        ]
-        
-        const centerX = this.bBoxCenterF32.subarray(0, 2)
-        const centerY = this.bBoxCenterF32.subarray(2, 4)
-
-        const renderCoords: number[] = []
-        const renderCoordsLow: number[] = []
-        targetCoords.forEach((coord) => {
-            const mercatorCoord = MercatorCoordinate.fromLonLat(coord as [number, number])
-            const mercatorCoordX = encodeFloatToDouble(mercatorCoord[0])
-            const mercatorCoordY = encodeFloatToDouble(mercatorCoord[1])
-            renderCoords.push(mercatorCoordX[0] - centerX[0])
-            renderCoordsLow.push(mercatorCoordX[1] - centerX[1])
-            renderCoords.push(mercatorCoordY[0] - centerY[0])
-            renderCoordsLow.push(mercatorCoordY[1] - centerY[1])
-        })
-
-        if (!vertices) vertices = new Float32Array(renderCoords.flat());
-        else vertices.set(renderCoords.flat(), 0);
-        if (!verticesLow) verticesLow = new Float32Array(renderCoordsLow.flat());
-        else verticesLow.set(renderCoordsLow.flat(), 0);
-        return [vertices, verticesLow];
-    }
-
-    // parseGridTopology(callback?: (isCompleted: boolean, fromStorageId: number, vertexBuffer: Float32Array) => any): void {
-    //     // Dispatch a worker to parse the topology about all grids
-    //     this._actor.send('parseTopology', this.storageId_gridInfo_cache.slice(0, this._nextStorageId * 2), (_, topologyInfo: GridTopologyInfo) => {
-    //         this.edgeKeys_cache = topologyInfo[0]
-    //         this.adjGrids_cache = topologyInfo[1]
-    //         this.storageId_edgeId_set = topologyInfo[2]
-
-    //         // Init attribute cache 
-    //         this.edge_attribute_cache = Array.from({ length: this.edgeNum }, () => { return { height: -9999, type: 0 } })
-
-    //         let preparedChunkNum = 0
-    //         const actorNum = WorkerPool.workerCount - 1
-    //         const edgeChunk = Math.ceil(this.edgeKeys_cache.length / actorNum)
-    //         for (let actorIndex = 0; actorIndex < actorNum; actorIndex++) {
-    //             this._actor.send(
-    //                 'calcEdgeRenderInfos',
-    //                 { index: actorIndex, keys: this.edgeKeys_cache.slice(actorIndex * edgeChunk, Math.min(this.edgeKeys_cache.length, (actorIndex + 1) * edgeChunk)) },
-    //                 (_, edgeRenderInfos: EdgeRenderInfoPack) => {
-
-    //                     preparedChunkNum += 1
-    //                     const fromStorageId = edgeRenderInfos.actorIndex * edgeChunk
-    //                     callback && callback(preparedChunkNum === actorNum, fromStorageId, edgeRenderInfos.vertexBuffer)
-    //                 }
-    //             )
-    //         }
-    //     })
-    // }
 }
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function lerp(a: number, b: number, t: number): number {
-    return (1.0 - t) * a + t * b
-}
 
 function encodeFloatToDouble(value: number) {
     const result = new Float32Array(2);
