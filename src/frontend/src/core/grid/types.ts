@@ -275,6 +275,18 @@ export class MultiGridInfoParser {
         }
     }
 
+    static toBuffer(gridInfo: MultiGridBaseInfo): ArrayBuffer {
+        const gridNum = gridInfo.levels.length;
+        const buffer = new ArrayBuffer(4 + gridNum + ((4 - (gridNum % 4 || 4)) % 4) + gridNum * 4);
+        const prefixView = new DataView(buffer, 0, 4);
+        prefixView.setUint32(0, gridNum, true);
+        const levelsView = new Uint8Array(buffer, 4, gridNum);
+        levelsView.set(gridInfo.levels);
+        const globalIdsView = new Uint32Array(buffer, 4 + gridNum + ((4 - (gridNum % 4 || 4)) % 4), gridNum);
+        globalIdsView.set(gridInfo.globalIds);
+        return buffer;
+    }
+
     static async fromGetUrl(url: string): Promise<MultiGridBaseInfo> {
         const response = await fetch(url, { method: 'GET' });
 
@@ -303,6 +315,45 @@ export class MultiGridInfoParser {
             
         } catch (error) {
             console.error('Failed to fetch MultiGridInfo:', error);
+            throw error;
+        }
+    }
+
+    static async fromPostUrlByBuffer(url: string, gridInfo: MultiGridBaseInfo): Promise<MultiGridBaseInfo> {
+        const buffer = MultiGridInfoParser.toBuffer(gridInfo);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/octet-stream' },
+                body: buffer,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const resBuffer = await response.arrayBuffer();
+            return MultiGridInfoParser.fromBuffer(resBuffer);
+        } catch (error) {
+            console.error('Failed to post MultiGridInfo:', error);
+            throw error;
+        }
+    }
+
+    static async toPostUrl(url: string, gridInfo: MultiGridBaseInfo): Promise<void> {
+        const buffer = MultiGridInfoParser.toBuffer(gridInfo);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/octet-stream' },
+                body: buffer,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Failed to post MultiGridInfo:', error);
             throw error;
         }
     }
@@ -385,7 +436,6 @@ export class GridKeyHashTable {
             if (storedLevel === level && storedGlobalId === globalId) {
                 this._gridStorageIdTable[hash] = 0xFFFFFFFF
                 
-                // 重新哈希后续元素以填补空隙
                 let nextHash = (hash + 1) & this._hashTableMask
                 while (this._gridStorageIdTable[nextHash] !== 0xFFFFFFFF) {
                     const nextLevel = this._gridKeyHashTable[nextHash * 2]
