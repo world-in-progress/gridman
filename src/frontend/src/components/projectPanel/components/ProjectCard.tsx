@@ -46,8 +46,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const [schemaError, setSchemaError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showSubprojects, setShowSubprojects] = useState(false);
-    const [subprojects, setSubprojects] = useState<any[]>([]);
-    const [loadingSubprojects, setLoadingSubprojects] = useState(false);
+    const [subprojects, setPatches] = useState<any[]>([]);
+    const [loadingSubprojects, setLoadingPatches] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const cardId = `project-card-${title.replace(/\s+/g, '-')}`;
     const [schemaEpsg, setSchemaEpsg] = useState<string>('');
@@ -110,24 +110,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         onStarToggle(title, project);
     };
 
-    const handleSubprojectStarClick = async (
-        subprojectName: string,
+    const handlePatchStarClick = async (
+        patchName: string,
         starred: boolean
     ) => {
         const projectService = new ProjectService(language);
-        projectService.updateSubprojectStarred(
+        projectService.updatePatchStarred(
             title,
-            subprojectName,
+            patchName,
             starred,
             (err, _) => {
                 if (err) {
-                    console.error('更新子项目星标状态失败:', err);
+                    console.error('更新补丁星标状态失败:', err);
                 } else {
-                    setSubprojects((prevSubprojects) =>
-                        prevSubprojects.map((subproject) =>
-                            subproject.name === subprojectName
-                                ? { ...subproject, starred }
-                                : subproject
+                    setPatches((prevPatches) =>
+                        prevPatches.map((patch) =>
+                            patch.name === patchName
+                                ? { ...patch, starred }
+                                : patch
                         )
                     );
                 }
@@ -135,31 +135,31 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         );
     };
 
-    const fetchSubprojectsList = useCallback(async () => {
+    const fetchPatchesList = useCallback(async () => {
         if (!title) return;
 
-        setLoadingSubprojects(true);
+        setLoadingPatches(true);
         const projectService = new ProjectService(language);
-        projectService.fetchSubprojects(title, (err, result) => {
+        projectService.fetchPatches(title, (err, result) => {
             if (err) {
-                console.error('获取子项目列表失败:', err);
-                setSubprojects([]);
+                console.error('获取补丁列表失败:', err);
+                setPatches([]);
             } else {
-                setSubprojects(result.subproject_metas);
+                setPatches(result.subproject_metas);
             }
-            setLoadingSubprojects(false);
+            setLoadingPatches(false);
         });
     }, [title, language]);
 
     useEffect(() => {
-        fetchSubprojectsList();
-    }, [fetchSubprojectsList]);
+        fetchPatchesList();
+    }, [fetchPatchesList]);
 
     useEffect(() => {
         if (showSubprojects) {
-            fetchSubprojectsList();
+            fetchPatchesList();
         }
-    }, [showSubprojects, fetchSubprojectsList]);
+    }, [showSubprojects, fetchPatchesList]);
 
     useEffect(() => {
         const schemaService = new SchemaService(language);
@@ -192,7 +192,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             const { showSubprojectBounds } = window.mapRef.current;
             showSubprojectBounds(title, subprojects, newState);
 
-            fetchSubprojectsList().then(() => {
+            fetchPatchesList().then(() => {
                 if (window.mapRef && window.mapRef.current) {
                     const { showSubprojectBounds } = window.mapRef.current;
                     if (
@@ -310,22 +310,22 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         setIsEditing(false);
     };
 
-    const updateSubprojectDescription = async (
-        subprojectName: string,
+    const updatePatchDescription = async (
+        patchName: string,
         description: string
     ) => {
         const projectService = new ProjectService(language);
-        projectService.updateSubprojectDescription(
+        projectService.updatePatchDescription(
             title,
-            subprojectName,
+            patchName,
             description
         );
 
-        setSubprojects((prevSubprojects) =>
-            prevSubprojects.map((subproject) =>
-                subproject.name === subprojectName
-                    ? { ...subproject, description }
-                    : subproject
+        setPatches((prevPatches) =>
+            prevPatches.map((patch) =>
+                patch.name === patchName
+                    ? { ...patch, description }
+                    : patch
             )
         );
     };
@@ -355,20 +355,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         aria-label={
                             language === 'zh'
                                 ? showSubprojects
-                                    ? '隐藏子项目'
-                                    : '显示子项目'
+                                    ? '隐藏补丁'
+                                    : '显示补丁'
                                 : showSubprojects
-                                ? 'Hide Subprojects'
-                                : 'Show Subprojects'
+                                ? 'Hide Patches'
+                                : 'Show Patches'
                         }
                         title={
                             language === 'zh'
                                 ? showSubprojects
-                                    ? '隐藏子项目'
-                                    : '显示子项目'
+                                    ? '隐藏补丁'
+                                    : '显示补丁'
                                 : showSubprojects
-                                ? 'Hide Subprojects'
-                                : 'Show Subprojects'
+                                ? 'Hide Patches'
+                                : 'Show Patches'
                         }
                         onClick={handleToggleSubprojectsVisibility}
                     >
@@ -383,10 +383,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                             loadingSchema ? 'opacity-50' : ''
                         }`}
                         aria-label={
-                            language === 'zh' ? '添加子项目' : 'Add Subproject'
+                            language === 'zh' ? '添加补丁' : 'Add Patch'
                         }
                         title={
-                            language === 'zh' ? '添加子项目' : 'Add Subproject'
+                            language === 'zh' ? '添加补丁' : 'Add Patch'
                         }
                         onClick={handleAddSubproject}
                         disabled={loadingSchema}
@@ -462,7 +462,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     <div className="flex items-center">
                         <Blocks className="h-4 w-4 mr-2" />
                         <span>
-                            {language === 'zh' ? '子项目' : 'Subprojects'}:{' '}
+                            {language === 'zh' ? '补丁' : 'Patches'}:{' '}
                             {loadingSubprojects
                                 ? language === 'zh'
                                     ? '加载中...'
@@ -503,9 +503,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                                 );
                                             }
                                         }}
-                                        onStarToggle={handleSubprojectStarClick}
+                                        onStarToggle={handlePatchStarClick}
                                         onSaveSubprojectDescription={
-                                            updateSubprojectDescription
+                                            updatePatchDescription
                                         }
                                     />
                                 ))}

@@ -62,7 +62,6 @@ export default function AggregationPanel({
                     <div className="-mt-3">
                         <BasicInfo />
                     </div>
-
                     <div
                         className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
                         onClick={handleSaveTopologyState}
