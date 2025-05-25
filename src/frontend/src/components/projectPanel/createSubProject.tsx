@@ -66,8 +66,8 @@ const validateProjectForm = (
     if (!data.name.trim()) {
         generalError =
             language === 'zh'
-                ? '请输入子项目名称'
-                : 'Please enter subproject name';
+                ? '请输入补丁名称'
+                : 'Please enter patch name';
         errors.name = true;
         return { isValid: false, errors, generalError };
     }
@@ -624,7 +624,7 @@ export default function CreateSubProject({
                 expandedRectangle.northEast[1],
             ] as [number, number, number, number];
 
-            const subProjectData = {
+            const patchData = {
                 name,
                 description,
                 bounds,
@@ -640,13 +640,13 @@ export default function CreateSubProject({
             const projectService = new ProjectService(language);
             projectService.createSubproject(
                 projectName,
-                subProjectData,
+                patchData,
                 (err, result) => {
                     if (result.success === false) {
                         setGeneralError(
                             language === 'zh'
-                                ? '子项目名称已存在，请使用不同的名称'
-                                : 'Subproject already exists. Please use a different name.'
+                                ? '补丁名称已存在，请使用不同的名称'
+                                : 'Patch already exists. Please use a different name.'
                         );
                         setFormErrors((prev) => ({ ...prev, name: true }));
                         return;
@@ -654,8 +654,8 @@ export default function CreateSubProject({
 
                     setGeneralError(
                         language === 'zh'
-                            ? '子项目创建成功！'
-                            : 'Subproject created successfully!'
+                            ? '补丁创建成功！'
+                            : 'Patch created successfully!'
                     );
 
                     if (window.mapInstance) {

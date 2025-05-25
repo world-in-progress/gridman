@@ -27,7 +27,7 @@ export default function BasicInfo() {
                 </div>
                 <div>
                     <span className="font-bold">
-                        {language === 'zh' ? '子项目：' : 'Subproject: '}
+                        {language === 'zh' ? '补丁：' : 'Patch: '}
                     </span>
                     {currentSubproject || '-'}
                 </div>

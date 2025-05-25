@@ -379,7 +379,7 @@ export class SubprojectBoundsManager {
             // If data retrieval from map fails, try to get subproject data again
             const projectService = new ProjectService(this.language);
             // Get all subprojects under the specified project
-            projectService.fetchSubprojects(projectName, (err, result) => {
+            projectService.fetchPatches(projectName, (err, result) => {
                 if (err) {
                     console.error('获取子项目数据失败:', err);
                 } else if (result && Array.isArray(result.subproject_metas)) {

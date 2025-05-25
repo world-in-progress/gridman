@@ -149,9 +149,9 @@ export class ProjectService {
         );
     }
 
-    public fetchSubprojects(projectName: string, callback?: Callback<any>) {
+    public fetchPatches(projectName: string, callback?: Callback<any>) {
         this._actor.send(
-            'fetchSubprojects',
+            'fetchPatches',
             { projectName: projectName },
             (err, result) => {
                 if (callback) callback(err, result);
@@ -186,17 +186,17 @@ export class ProjectService {
         );
     }
 
-    public updateSubprojectStarred(
+    public updatePatchStarred(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         starred: boolean,
         callback?: Callback<any>
     ) {
         this._actor.send(
-            'updateSubprojectStarred',
+            'updatePatchStarred',
             {
                 projectName: projectName,
-                subprojectName: subprojectName,
+                patchName: patchName,
                 starred: starred,
             },
             (err, result) => {
@@ -205,17 +205,17 @@ export class ProjectService {
         );
     }
 
-    public updateSubprojectDescription(
+    public updatePatchDescription(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         description: string,
         callback?: Callback<any>
     ) {
         this._actor.send(
-            'updateSubprojectDescription',
+            'updatePatchDescription',
             {
                 projectName,
-                subprojectName,
+                patchName,
                 description,
             },
             (err, result) => {
@@ -238,7 +238,7 @@ export class ProjectService {
 
             (error, result) => {
                 if (error) {
-                    console.error('设置子项目失败:', error);
+                    console.error('设置补丁失败:', error);
                 } else {
                     // Get topology layer
                     const clg = store.get<NHLayerGroup>('clg')!;
