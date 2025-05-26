@@ -41,7 +41,7 @@ import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/TopologyPanel';
+import TopologyPanel from './topologyPanel/TopologyPanel'
 import AttributePanel from './attributePanel/attributePanel';
 import AggregationPanel from './aggregationPanel/aggregationPanel';
 
