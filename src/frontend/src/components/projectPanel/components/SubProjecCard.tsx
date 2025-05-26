@@ -9,7 +9,7 @@ import {
     Mountain,
     Workflow,
 } from 'lucide-react';
-import { SubProjectCardProps } from '../types/types';
+import { PatchCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
 import { AnimatedCard, CardBackground, Blob } from './cardBackground';
 import store from '@/store';
@@ -33,20 +33,20 @@ declare global {
     }
 }
 
-export const SubprojectCard: React.FC<SubProjectCardProps> = ({
+export const SubprojectCard: React.FC<PatchCardProps> = ({
     isHighlighted,
-    subproject,
+    patch,
     parentProjectTitle,
     language,
-    subprojectDescriptionText,
+    patchDescriptionText,
     onCardClick,
     onStarToggle,
-    onSaveSubprojectDescription,
+    onSavePatchDescription,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
+    const cardId = `subproject-card-${patch.name.replace(/\s+/g, '-')}`;
 
     const setActivePanelFromStore = store.get<Function>('activePanelChange')!;
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
@@ -70,7 +70,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         updateCapacity.on();
 
         store.set('ProjectName', parentProjectTitle);
-        store.set('SubprojectName', subproject.name);
+        store.set('PatchName', patch.name);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -93,12 +93,12 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
             ) {
                 flyToSubprojectBounds(
                     parentProjectTitle,
-                    subproject.name
+                    patch.name
                 ).catch((error: any) => {
                     console.error(
                         language === 'zh'
-                            ? '飞行到子项目边界失败:'
-                            : 'Failed to fly to subproject bounds:',
+                            ? '飞行到补丁边界失败:'
+                            : 'Failed to fly to patch bounds:',
                         error
                     );
                 });
@@ -107,7 +107,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
         projectService.setPatch(
             parentProjectTitle,
-            subproject.name,
+            patch.name,
             () => {
                 setActivePanelFromStore('topology');
             }
@@ -119,7 +119,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         // isLoading.on();
 
         store.set('ProjectName', parentProjectTitle);
-        store.set('SubprojectName', subproject.name);
+        store.set('PatchName', patch.name);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -145,7 +145,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         console.log('Aggregation Workflow clicked');
 
         store.set('ProjectName', parentProjectTitle);
-        store.set('SubprojectName', subproject.name);
+        store.set('PatchName', patch.name);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -194,7 +194,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 flyToSubprojectBounds &&
                 typeof flyToSubprojectBounds === 'function'
             ) {
-                flyToSubprojectBounds(parentProjectTitle, subproject.name);
+                flyToSubprojectBounds(parentProjectTitle, patch.name);
             }
         }
     };
@@ -202,7 +202,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const handleStarClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (onStarToggle) {
-            onStarToggle(subproject.name, !subproject.starred);
+            onStarToggle(patch.name, !patch.starred);
             if (window.mapRef && window.mapRef.current) {
                 const { showSubprojectBounds } = window.mapRef.current;
                 if (
@@ -210,8 +210,8 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     typeof showSubprojectBounds === 'function'
                 ) {
                     const updatedSubproject = {
-                        ...subproject,
-                        starred: !subproject.starred,
+                        ...patch,
+                        starred: !patch.starred,
                     };
                     showSubprojectBounds(
                         parentProjectTitle,
@@ -229,8 +229,8 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
         const newDescription = textareaRef.current.value;
 
-        if (onSaveSubprojectDescription) {
-            await onSaveSubprojectDescription(subproject.name, newDescription);
+        if (onSavePatchDescription) {
+            await onSavePatchDescription(patch.name, newDescription);
             if (window.mapRef && window.mapRef.current) {
                 const { showSubprojectBounds } = window.mapRef.current;
                 if (
@@ -238,7 +238,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     typeof showSubprojectBounds === 'function'
                 ) {
                     const updatedSubproject = {
-                        ...subproject,
+                        ...patch,
                         description: newDescription,
                     };
                     showSubprojectBounds(
@@ -260,7 +260,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         >
             <div className="flex items-center justify-between">
                 <div className="font-bold text-black text-md">
-                    {subproject.name}
+                    {patch.name}
                 </div>
                 <div className="flex items-center justify-end gap-2">
                     {/* <button
@@ -279,7 +279,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     >
                         <Star
                             className={`h-4 w-4 ${
-                                subproject.starred
+                                patch.starred
                                     ? 'fill-yellow-400 text-yellow-400'
                                     : ''
                             } cursor-pointer`}
@@ -333,10 +333,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 </div>
             </div>
 
-            {subproject.bounds && subproject.bounds.length === 4 && (
+            {patch.bounds && patch.bounds.length === 4 && (
                 <div className=" border-gray-200">
                     <BoundsCard
-                        bounds={subproject.bounds}
+                        bounds={patch.bounds}
                         language={language}
                     />
                 </div>
@@ -370,8 +370,8 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
                 {!isEditing && (
                     <div className="text-xs text-gray-600 mb-2 px-1">
-                        {subproject.description ? (
-                            subproject.description
+                        {patch.description ? (
+                            patch.description
                         ) : (
                             <span className="italic">
                                 {language === 'zh'
@@ -390,23 +390,23 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                             className="w-full px-3 py-2 border border-gray-300  rounded-md min-h-[80px]"
                             aria-label={
                                 language === 'zh'
-                                    ? '子项目描述'
-                                    : 'Subproject description'
+                                    ? '补丁描述'
+                                    : 'Patch description'
                             }
                             placeholder={
                                 language === 'zh'
-                                    ? '输入子项目描述'
-                                    : 'Enter subproject description'
+                                    ? '输入补丁描述'
+                                    : 'Enter patch description'
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
                             }}
                             defaultValue={
-                                (subprojectDescriptionText &&
-                                    subprojectDescriptionText[
-                                        subproject.name
+                                (patchDescriptionText &&
+                                    patchDescriptionText[
+                                        patch.name
                                     ]) ||
-                                subproject?.description ||
+                                patch?.description ||
                                 ''
                             }
                         />

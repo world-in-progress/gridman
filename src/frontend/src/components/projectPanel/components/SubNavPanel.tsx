@@ -24,7 +24,7 @@ export function SubNavPanel({
     itemsPerPage,
     onTotalItemsChange,
     searchQuery = '',
-    onCreateSubProject,
+    onCreatePatch,
 }: ProjectSubNavPanelProps) {
     const { language } = useContext(LanguageContext);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -408,10 +408,10 @@ export function SubNavPanel({
                         descriptionText={descriptionText}
                         onEditDescription={toggleEditDescription}
                         onSaveDescription={updateDescription}
-                        onAddSubproject={onCreateSubProject}
+                        onAddPatch={onCreatePatch}
                         onDeleteProject={handleDeleteProject}
-                        highlightedSubproject={highlightedSubproject}
-                        onSubprojectHighlight={handleSubprojectHighlight}
+                        highlightedPatch={highlightedSubproject}
+                        onPatchHighlight={handleSubprojectHighlight}
                     />
                 </div>
             ))}

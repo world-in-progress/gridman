@@ -35,10 +35,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     onStarToggle,
     onEditDescription,
     onSaveDescription,
-    onAddSubproject,
+    onAddPatch,
     onDeleteProject,
-    highlightedSubproject,
-    onSubprojectHighlight,
+    highlightedPatch,
+    onPatchHighlight,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localStarred, setLocalStarred] = useState<boolean | null>(null);
@@ -237,7 +237,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
     const handleAddSubproject = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!onAddSubproject) return;
+        if (!onAddPatch) return;
 
         try {
             setLoadingSchema(true);
@@ -259,7 +259,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                 ? '获取模板详情失败，使用当前信息继续'
                                 : 'Failed to get schema details, continuing with current info'
                         );
-                        onAddSubproject(
+                        onAddPatch(
                             project,
                             project.schema_name,
                             '4326',
@@ -276,7 +276,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     setSchemaError(null);
                     setIsLoading(false);
                     setLoadingSchema(false);
-                    onAddSubproject(
+                    onAddPatch(
                         project,
                         result.project_schema.name,
                         result.project_schema.epsg.toString(),
@@ -296,7 +296,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     : 'Failed to get schema details, continuing with current info'
             );
 
-            onAddSubproject(project, project.schema_name, '4326', '1');
+            onAddPatch(project, project.schema_name, '4326', '1');
 
             setTimeout(() => {
                 setIsLoading(false);
@@ -489,22 +489,22 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                     <SubprojectCard
                                         key={index}
                                         isHighlighted={
-                                            highlightedSubproject ===
+                                            highlightedPatch ===
                                             `${title}:${subproject.name}`
                                         }
-                                        subproject={subproject}
+                                        patch={subproject}
                                         parentProjectTitle={title}
                                         language={language}
                                         onCardClick={() => {
-                                            if (onSubprojectHighlight) {
-                                                onSubprojectHighlight(
+                                            if (onPatchHighlight) {
+                                                onPatchHighlight(
                                                     title,
                                                     subproject.name
                                                 );
                                             }
                                         }}
                                         onStarToggle={handlePatchStarClick}
-                                        onSaveSubprojectDescription={
+                                        onSavePatchDescription={
                                             updatePatchDescription
                                         }
                                     />

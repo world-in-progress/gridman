@@ -8,7 +8,7 @@ import {
     ProjectDescriptionCardProps,
     ProjectSchemaNameCardProps,
     ProjectEpsgCardProps,
-    SubProjectNameCardProps,
+    PatchNameCardProps,
     SubProjectDescriptionCardProps,
     BelongToProjectCardProps,
     ProjectConvertedCoordCardProps,
@@ -44,7 +44,7 @@ export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
         </div>
     );
 };
-export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
+export const SubProjectNameCard: React.FC<PatchNameCardProps> = ({
     name,
     language,
     hasError,

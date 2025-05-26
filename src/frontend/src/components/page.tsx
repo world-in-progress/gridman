@@ -409,7 +409,7 @@ export default function Page() {
                     />
                 );
             }
-            return <ProjectPanel onCreateSubProject={handleCreateSubProject} />;
+            return <ProjectPanel onCreatePatch={handleCreateSubProject} />;
         } else if (activePanel === 'topology') {
             return (
                 <TopologyPanel

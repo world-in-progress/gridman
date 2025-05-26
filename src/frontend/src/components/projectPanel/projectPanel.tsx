@@ -9,7 +9,7 @@ import store from '@/store';
 
 export default function ProjectPanel({
     onCreateNew,
-    onCreateSubProject,
+    onCreatePatch,
     ...props
 }: ProjectPanelProps) {
     const { language } = useContext(LanguageContext);
@@ -76,8 +76,8 @@ export default function ProjectPanel({
         epsg?: string,
         gridInfo?: string
     ) => {
-        if (onCreateSubProject) {
-            onCreateSubProject(project, schemaName, epsg, gridInfo);
+        if (onCreatePatch) {
+            onCreatePatch(project, schemaName, epsg, gridInfo);
         }
     };
 
@@ -100,7 +100,7 @@ export default function ProjectPanel({
                     itemsPerPage={itemsPerPage}
                     onNavigateToPage={handleNavigateToPage}
                     searchQuery={searchQuery}
-                    onCreateSubProject={handleCreateSubProject}
+                    onCreatePatch={handleCreateSubProject}
                 />
 
                 {/* Pagination Component */}
