@@ -157,7 +157,7 @@ export interface ProjectDescriptionCardProps {
     hasError: boolean;
     onChange: (value: string) => void;
 }
-export interface SubProjectDescriptionCardProps {
+export interface PatchDescriptionCardProps {
     description: string;
     language: string;
     hasError: boolean;

@@ -709,9 +709,9 @@ export default function CreateSubProject({
         clearMapMarkers();
 
         if (window.mapInstance) {
-            const sourceId = `subproject-bounds-临时项目`;
-            const layerId = `subproject-fill-临时项目`;
-            const outlineLayerId = `subproject-outline-临时项目`;
+            const sourceId = `patch-bounds-临时项目`;
+            const layerId = `patch-fill-临时项目`;
+            const outlineLayerId = `patch-outline-临时项目`;
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);
@@ -781,7 +781,7 @@ export default function CreateSubProject({
             expandedRectangle.northEast[1],
         ] as [number, number, number, number];
 
-        const subproject = {
+        const patch = {
             name: '临时补丁',
             bounds,
             starred: false,
@@ -792,9 +792,9 @@ export default function CreateSubProject({
 
         // 先手动移除旧的图层和数据源
         if (window.mapInstance) {
-            const sourceId = `subproject-bounds-临时项目`;
-            const layerId = `subproject-fill-临时项目`;
-            const outlineLayerId = `subproject-outline-临时项目`;
+            const sourceId = `patch-bounds-临时项目`;
+            const layerId = `patch-fill-临时项目`;
+            const outlineLayerId = `patch-outline-临时项目`;
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);
@@ -810,7 +810,7 @@ export default function CreateSubProject({
         // 再绘制新的
         subprojectBoundsManager!.showSubprojectBounds(
             '临时项目',
-            [subproject],
+            [patch],
             true
         );
     }, [expandedRectangle, subprojectBoundsManager, parentProject]);

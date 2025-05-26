@@ -46,7 +46,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const cardId = `subproject-card-${patch.name.replace(/\s+/g, '-')}`;
+    const cardId = `patch-card-${patch.name.replace(/\s+/g, '-')}`;
 
     const setActivePanelFromStore = store.get<Function>('activePanelChange')!;
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;

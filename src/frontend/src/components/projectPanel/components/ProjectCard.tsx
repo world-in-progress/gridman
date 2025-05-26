@@ -457,7 +457,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     </div>
                 </div>
 
-                {/* Subproject Information */}
+                {/* Patch Information */}
                 <div className="flex flex-col text-gray-600 ">
                     <div className="flex items-center">
                         <Blocks className="h-4 w-4 mr-2" />
@@ -485,21 +485,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                                     if (!a.starred && b.starred) return 1;
                                     return a.name.localeCompare(b.name);
                                 })
-                                .map((subproject, index) => (
+                                .map((patch, index) => (
                                     <SubprojectCard
                                         key={index}
                                         isHighlighted={
                                             highlightedPatch ===
-                                            `${title}:${subproject.name}`
+                                            `${title}:${patch.name}`
                                         }
-                                        patch={subproject}
+                                        patch={patch}
                                         parentProjectTitle={title}
                                         language={language}
                                         onCardClick={() => {
                                             if (onPatchHighlight) {
                                                 onPatchHighlight(
                                                     title,
-                                                    subproject.name
+                                                    patch.name
                                                 );
                                             }
                                         }}

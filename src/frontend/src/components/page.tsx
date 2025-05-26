@@ -245,9 +245,9 @@ export default function Page() {
         clearMapMarkers();
 
         if (window.mapInstance) {
-            const sourceId = `subproject-bounds-临时项目`;
-            const layerId = `subproject-fill-临时项目`;
-            const outlineLayerId = `subproject-outline-临时项目`;
+            const sourceId = `patch-bounds-临时项目`;
+            const layerId = `patch-fill-临时项目`;
+            const outlineLayerId = `patch-outline-临时项目`;
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);

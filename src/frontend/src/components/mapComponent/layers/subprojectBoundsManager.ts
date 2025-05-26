@@ -3,8 +3,8 @@ import { convertCoordinate } from '../../../core/util/coordinateUtils';
 import { ProjectService } from '../../projectPanel/utils/ProjectService';
 
 /**
- * Subproject Bounds Manager
- * Used to display, hide, and highlight subproject bounds on the map
+ * Patch Bounds Manager
+ * Used to display, hide, and highlight patch bounds on the map
  */
 export class SubprojectBoundsManager {
     private map: mapboxgl.Map;
@@ -20,9 +20,9 @@ export class SubprojectBoundsManager {
     }
 
     /**
-     * Display or hide subproject bounds
+     * Display or hide patch bounds
      * @param projectName Project name
-     * @param subprojects Subproject data array
+     * @param subprojects Patch data array
      * @param show Whether to show
      */
     public showSubprojectBounds(
@@ -33,9 +33,9 @@ export class SubprojectBoundsManager {
         if (!this.map) return;
 
         try {
-            const sourceId = `subproject-bounds-${projectName}`;
-            const layerId = `subproject-fill-${projectName}`;
-            const outlineLayerId = `subproject-outline-${projectName}`;
+            const sourceId = `patch-bounds-${projectName}`;
+            const layerId = `patch-fill-${projectName}`;
+            const outlineLayerId = `patch-outline-${projectName}`;
 
             // 如果是隐藏操作,移除所有图层
             if (!show) {
@@ -87,17 +87,17 @@ export class SubprojectBoundsManager {
             const features: GeoJSON.Feature[] = [];
 
             for (let index = 0; index < subprojects.length; index++) {
-                const subproject = subprojects[index];
-                if (!subproject.bounds || subproject.bounds.length !== 4)
+                const patch = subprojects[index];
+                if (!patch.bounds || patch.bounds.length !== 4)
                     continue;
 
                 const sw = convertCoordinate(
-                    [subproject.bounds[0], subproject.bounds[1]],
+                    [patch.bounds[0], patch.bounds[1]],
                     '2326',
                     '4326'
                 );
                 const ne = convertCoordinate(
-                    [subproject.bounds[2], subproject.bounds[3]],
+                    [patch.bounds[2], patch.bounds[3]],
                     '2326',
                     '4326'
                 );
@@ -117,17 +117,17 @@ export class SubprojectBoundsManager {
                     this.currentHighlightedInfo &&
                     this.currentHighlightedInfo.projectName === projectName &&
                     this.currentHighlightedInfo.subprojectName ===
-                        subproject.name;
+                        patch.name;
 
                 // 添加边界多边形特性
                 features.push({
                     type: 'Feature',
                     properties: {
-                        name: subproject.name,
+                        name: patch.name,
                         color: color,
                         projectName: projectName,
-                        starred: subproject.starred || false,
-                        description: subproject.description || '',
+                        starred: patch.starred || false,
+                        description: patch.description || '',
                         highlighted: isHighlighted, // 设置高亮状态
                     },
                     geometry: {
@@ -228,7 +228,7 @@ export class SubprojectBoundsManager {
         // 记录当前高亮的子项目信息
         this.currentHighlightedInfo = { projectName, subprojectName };
 
-        const sourceId = `subproject-bounds-${projectName}`;
+        const sourceId = `patch-bounds-${projectName}`;
 
         if (!this.map.getSource(sourceId)) return;
 
@@ -277,7 +277,7 @@ export class SubprojectBoundsManager {
         if (!style || !style.sources) return;
 
         for (const sourceId in style.sources) {
-            if (sourceId.startsWith('subproject-bounds-')) {
+            if (sourceId.startsWith('patch-bounds-')) {
                 try {
                     const source = this.map.getSource(
                         sourceId
@@ -324,7 +324,7 @@ export class SubprojectBoundsManager {
         try {
             // 从现有UI状态获取子项目数据
             // 使用已加载的子项目数据，通过名称匹配
-            const sourceId = `subproject-bounds-${projectName}`;
+            const sourceId = `patch-bounds-${projectName}`;
             if (this.map.getSource(sourceId)) {
                 // 高亮子项目
                 this.highlightSubproject(projectName, subprojectName);
@@ -376,7 +376,7 @@ export class SubprojectBoundsManager {
                 }
             }
 
-            // If data retrieval from map fails, try to get subproject data again
+            // If data retrieval from map fails, try to get patch data again
             const projectService = new ProjectService(this.language);
             // Get all subprojects under the specified project
             projectService.fetchPatches(projectName, (err, result) => {
@@ -384,22 +384,22 @@ export class SubprojectBoundsManager {
                     console.error('获取子项目数据失败:', err);
                 } else if (result && Array.isArray(result.subproject_metas)) {
                     const response = result;
-                    const subproject = response.subproject_metas.find(
+                    const patch = response.subproject_metas.find(
                         (sp: any) => sp.name === subprojectName
                     );
                     if (
-                        subproject &&
-                        Array.isArray(subproject.bounds) &&
-                        subproject.bounds.length === 4
+                        patch &&
+                        Array.isArray(patch.bounds) &&
+                        patch.bounds.length === 4
                     ) {
                         // Prepare coordinates
                         const sw: [number, number] = [
-                            subproject.bounds[0],
-                            subproject.bounds[1],
+                            patch.bounds[0],
+                            patch.bounds[1],
                         ];
                         const ne: [number, number] = [
-                            subproject.bounds[2],
-                            subproject.bounds[3],
+                            patch.bounds[2],
+                            patch.bounds[3],
                         ];
 
                         // Convert coordinates
@@ -430,7 +430,7 @@ export class SubprojectBoundsManager {
                             });
 
 
-                            // If subproject bounds are displayed at this time, reapply highlight
+                            // If patch bounds are displayed at this time, reapply highlight
                             if (this.map.getSource(sourceId)) {
                                 this.highlightSubproject(
                                     projectName,

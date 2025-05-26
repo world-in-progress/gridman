@@ -9,7 +9,7 @@ import {
     ProjectSchemaNameCardProps,
     ProjectEpsgCardProps,
     PatchNameCardProps,
-    SubProjectDescriptionCardProps,
+    PatchDescriptionCardProps,
     BelongToProjectCardProps,
     ProjectConvertedCoordCardProps,
     PatchErrorMessageProps,
@@ -103,7 +103,7 @@ export const ProjectDescriptionCard: React.FC<ProjectDescriptionCardProps> = ({
         </div>
     );
 };
-export const SubProjectDescriptionCard: React.FC<SubProjectDescriptionCardProps> = ({
+export const SubProjectDescriptionCard: React.FC<PatchDescriptionCardProps> = ({
     description,
     language,
     hasError,
