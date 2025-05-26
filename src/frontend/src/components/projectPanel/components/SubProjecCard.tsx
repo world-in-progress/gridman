@@ -105,7 +105,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
             }
         }
 
-        projectService.setSubproject(
+        projectService.setPatch(
             parentProjectTitle,
             subproject.name,
             () => {
@@ -134,11 +134,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                         'CurrentSubprojectEPSG',
                         result.project_schema.epsg
                     );
+                    setActivePanelFromStore('attribute');
                 });
             }
         });
-
-        setActivePanelFromStore('attribute');
     };
 
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {

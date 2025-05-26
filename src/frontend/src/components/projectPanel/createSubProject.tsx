@@ -638,7 +638,7 @@ export default function CreateSubProject({
             const projectName = parentProject?.name || '';
 
             const projectService = new ProjectService(language);
-            projectService.createSubproject(
+            projectService.createPatch(
                 projectName,
                 patchData,
                 (err, result) => {

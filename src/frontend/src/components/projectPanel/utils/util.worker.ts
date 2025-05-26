@@ -13,15 +13,15 @@ type ReturnType = {
 type AsyncReturnType = Promise<ReturnType>;
 
 export default class ProjectUtils {
-    static async setSubproject(
+    static async setPatch(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): AsyncReturnType {
-        const setAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const setAPI = `/api/grid/subproject/${projectName}/${patchName}`;
         const pollAPI = `/api/grid/subproject`;
         const metaAPI = `/api/grid/operation/meta`;
 
-        // Step 1: Set current subproject
+        // Step 1: Set current patch
         const response = await fetch(setAPI, { method: 'GET' });
         if (!response.ok) {
             return {
@@ -39,7 +39,7 @@ export default class ProjectUtils {
                 result: null,
             };
 
-        // Step 2: Poll until subproject is ready
+        // Step 2: Poll until patch is ready
         while (true) {
             const response = await fetch(pollAPI, { method: 'GET' });
             const isReady = (await response.json()).is_ready;
@@ -49,7 +49,7 @@ export default class ProjectUtils {
 
 
 
-        // Step 3: Get subproject info
+        // Step 3: Get patch info
         const metaResponse = await fetch(metaAPI, { method: 'GET' });
         if (!metaResponse.ok) {
             return {
@@ -183,15 +183,15 @@ export default class ProjectUtils {
         };
     }
 
-    static async createSubProject(SubprojectData: any): AsyncReturnType {
-        const { projectName, ...subprojectData } = SubprojectData;
+    static async createPatch(PatchData: any): AsyncReturnType {
+        const { projectName, ...patchData } = PatchData;
         const createAPI = `/api/grid/subproject/${projectName}`;
         const response = await fetch(createAPI, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(subprojectData),
+            body: JSON.stringify(patchData),
         });
         if (!response.ok)
             return {
@@ -206,11 +206,11 @@ export default class ProjectUtils {
         };
     }
 
-    static async getSubprojects(
+    static async getPatches(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): AsyncReturnType {
-        const getAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const getAPI = `/api/grid/subproject/${projectName}/${patchName}`;
         const response = await fetch(getAPI);
         if (!response.ok)
             return {

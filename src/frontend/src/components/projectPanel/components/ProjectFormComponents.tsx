@@ -12,7 +12,7 @@ import {
     SubProjectDescriptionCardProps,
     BelongToProjectCardProps,
     ProjectConvertedCoordCardProps,
-    SubProjectErrorMessageProps,
+    PatchErrorMessageProps,
 } from '../types/types';
 
 export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
@@ -277,7 +277,7 @@ export const ProjectErrorMessage: React.FC<ProjectErrorMessageProps> = ({
     );
 };
 
-export const SubProjectErrorMessage: React.FC<SubProjectErrorMessageProps> = ({
+export const SubProjectErrorMessage: React.FC<PatchErrorMessageProps> = ({
     message,
 }) => {
     if (!message) return null;

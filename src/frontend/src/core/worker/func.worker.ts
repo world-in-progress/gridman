@@ -209,14 +209,14 @@ export async function deleteProject(
     callback(err, result);
 }
 
-export async function getSubprojects(
+export async function getPatches(
     this: WorkerSelf,
-    params: { projectName: string; subprojectName: string },
+    params: { projectName: string; patchName: string },
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.getSubprojects(
+    const { err, result } = await ProjectUtils.getPatches(
     params.projectName,
-    params.subprojectName
+    params.patchName
     );
     callback(err, result);
 }
@@ -232,12 +232,12 @@ export async function fetchPatches(
     callback(err, result);
 }
 
-export async function createSubProject(
+export async function createPatch(
     this: WorkerSelf,
-    SubprojectData: any,
+    PatchData: any,
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.createSubProject(SubprojectData);
+    const { err, result } = await ProjectUtils.createPatch(PatchData);
     callback(err, result);
 }
 
@@ -269,17 +269,17 @@ export async function updatePatchDescription(
     callback(err, result);
 }
 
-export async function setSubproject(
+export async function setPatch(
     this: WorkerSelf,
     {
         projectName,
-        subprojectName,
-    }: { projectName: string; subprojectName: string },
+        patchName,
+    }: { projectName: string; patchName: string },
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.setSubproject(
+    const { err, result } = await ProjectUtils.setPatch(
     projectName,
-    subprojectName
+    patchName
     );
     callback(err, result);
 }

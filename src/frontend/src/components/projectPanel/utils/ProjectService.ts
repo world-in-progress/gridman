@@ -135,14 +135,14 @@ export class ProjectService {
         });
     }
 
-    public async getSubprojects(
+    public async getPatches(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         callback?: Callback<any>
     ) {
         this._actor.send(
-            'getSubprojects',
-            { projectName: projectName, subprojectName: subprojectName },
+            'getPatches',
+            { projectName: projectName, patchName: patchName },
             (err, result) => {
                 if (callback) callback(err, result);
             }
@@ -159,9 +159,9 @@ export class ProjectService {
         );
     }
 
-    public createSubproject(
+    public createPatch(
         projectName: string,
-        subprojectData: {
+        patchData: {
             name: string;
             starred: boolean;
             description: string;
@@ -175,10 +175,10 @@ export class ProjectService {
         callback?: Callback<any>
     ) {
         this._actor.send(
-            'createSubProject',
+            'createPatch',
             {
                 projectName: projectName,
-                ...subprojectData,
+                ...patchData,
             },
             (err, result) => {
                 if (callback) callback(err, result);
@@ -224,16 +224,16 @@ export class ProjectService {
         );
     }
 
-    public setSubproject(
+    public setPatch(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         callback?: Callback<any>
     ) {
         this._actor.send(
-            'setSubproject',
+            'setPatch',
             {
                 projectName: projectName,
-                subprojectName: subprojectName,
+                patchName: patchName,
             },
 
             (error, result) => {

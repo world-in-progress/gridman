@@ -47,7 +47,7 @@ export interface ProjectErrorMessageProps {
     message: string | null;
 }
 
-export interface SubProjectErrorMessageProps {
+export interface PatchErrorMessageProps {
     message: string | null;
 }
 
