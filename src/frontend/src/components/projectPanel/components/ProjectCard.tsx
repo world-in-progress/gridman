@@ -15,7 +15,7 @@ import {
 import { ProjectCardProps } from '../types/types';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
 import { ProjectService } from '../utils/ProjectService';
-import { SubprojectCard } from './SubProjecCard';
+import { PatchCard } from './patchCard';
 import Loader from '@/components/ui/loader';
 
 declare global {
@@ -45,9 +45,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     const [loadingSchema, setLoadingSchema] = useState(false);
     const [schemaError, setSchemaError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [showSubprojects, setShowSubprojects] = useState(false);
-    const [subprojects, setPatches] = useState<any[]>([]);
-    const [loadingSubprojects, setLoadingPatches] = useState(false);
+    const [showPatches, setShowPatches] = useState(false);
+    const [patches, setPatches] = useState<any[]>([]);
+    const [loadingPatches, setLoadingPatches] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const cardId = `project-card-${title.replace(/\s+/g, '-')}`;
     const [schemaEpsg, setSchemaEpsg] = useState<string>('');
@@ -59,14 +59,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
     useEffect(() => {
         const handleActivePanelChange = () => {
-            if (showSubprojects && window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+            if (showPatches && window.mapRef && window.mapRef.current) {
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    showSubprojectBounds(title, [], false);
-                    setShowSubprojects(false);
+                    showPatchBounds(title, [], false);
+                    setShowPatches(false);
 
                     if (window.mapInstance) {
                         const existingPopups =
@@ -80,13 +80,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         window.addEventListener('activePanelChange', handleActivePanelChange);
 
         return () => {
-            if (showSubprojects && window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+            if (showPatches && window.mapRef && window.mapRef.current) {
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    showSubprojectBounds(title, [], false);
+                    showPatchBounds(title, [], false);
                 }
             }
 
@@ -101,7 +101,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 handleActivePanelChange
             );
         };
-    }, [showSubprojects, title]);
+    }, [showPatches, title]);
 
     const handleStarClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -156,10 +156,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     }, [fetchPatchesList]);
 
     useEffect(() => {
-        if (showSubprojects) {
+        if (showPatches) {
             fetchPatchesList();
         }
-    }, [showSubprojects, fetchPatchesList]);
+    }, [showPatches, fetchPatchesList]);
 
     useEffect(() => {
         const schemaService = new SchemaService(language);
@@ -173,10 +173,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         });
     }, [project.schema_name, language]);
 
-    const handleToggleSubprojectsVisibility = (e: React.MouseEvent) => {
+    const handleTogglePatchesVisibility = (e: React.MouseEvent) => {
         e.stopPropagation();
-        const newState = !showSubprojects;
-        setShowSubprojects(newState);
+        const newState = !showPatches;
+        setShowPatches(newState);
 
         if (!newState && window.mapInstance) {
             const existingPopups = document.querySelectorAll('.mapboxgl-popup');
@@ -189,17 +189,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             window.mapRef &&
             window.mapRef.current
         ) {
-            const { showSubprojectBounds } = window.mapRef.current;
-            showSubprojectBounds(title, subprojects, newState);
+            const { showPatchBounds } = window.mapRef.current;
+            showPatchBounds(title, patches, newState);
 
             fetchPatchesList().then(() => {
                 if (window.mapRef && window.mapRef.current) {
-                    const { showSubprojectBounds } = window.mapRef.current;
+                    const { showPatchBounds } = window.mapRef.current;
                     if (
-                        showSubprojectBounds &&
-                        typeof showSubprojectBounds === 'function'
+                        showPatchBounds &&
+                        typeof showPatchBounds === 'function'
                     ) {
-                        showSubprojectBounds(title, subprojects, true);
+                        showPatchBounds(title, patches, true);
                     }
                 }
             });
@@ -209,12 +209,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             window.mapRef &&
             window.mapRef.current
         ) {
-            const { showSubprojectBounds } = window.mapRef.current;
+            const { showPatchBounds } = window.mapRef.current;
             if (
-                showSubprojectBounds &&
-                typeof showSubprojectBounds === 'function'
+                showPatchBounds &&
+                typeof showPatchBounds === 'function'
             ) {
-                showSubprojectBounds(title, [], false);
+                showPatchBounds(title, [], false);
             }
         }
     };
@@ -235,7 +235,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         setIsEditing(false);
     };
 
-    const handleAddSubproject = async (e: React.MouseEvent) => {
+    const handleAddPatch = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!onAddPatch) return;
 
@@ -354,25 +354,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center justify-center mr-1 cursor-pointer"
                         aria-label={
                             language === 'zh'
-                                ? showSubprojects
+                                ? showPatches
                                     ? '隐藏补丁'
                                     : '显示补丁'
-                                : showSubprojects
+                                : showPatches
                                 ? 'Hide Patches'
                                 : 'Show Patches'
                         }
                         title={
                             language === 'zh'
-                                ? showSubprojects
+                                ? showPatches
                                     ? '隐藏补丁'
                                     : '显示补丁'
-                                : showSubprojects
+                                : showPatches
                                 ? 'Hide Patches'
                                 : 'Show Patches'
                         }
-                        onClick={handleToggleSubprojectsVisibility}
+                        onClick={handleTogglePatchesVisibility}
                     >
-                        {showSubprojects ? (
+                        {showPatches ? (
                             <EyeOff className="h-5 w-5" />
                         ) : (
                             <Eye className="h-5 w-5" />
@@ -388,7 +388,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         title={
                             language === 'zh' ? '添加补丁' : 'Add Patch'
                         }
-                        onClick={handleAddSubproject}
+                        onClick={handleAddPatch}
                         disabled={loadingSchema}
                     >
                         <FilePlus className="h-5 w-5" />
@@ -463,12 +463,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         <Blocks className="h-4 w-4 mr-2" />
                         <span>
                             {language === 'zh' ? '补丁' : 'Patches'}:{' '}
-                            {loadingSubprojects
+                            {loadingPatches
                                 ? language === 'zh'
                                     ? '加载中...'
                                     : 'Loading...'
-                                : subprojects.length > 0
-                                ? `${subprojects.length} ${
+                                : patches.length > 0
+                                ? `${patches.length} ${
                                       language === 'zh' ? '个' : ''
                                   }`
                                 : language === 'zh'
@@ -477,16 +477,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                         </span>
                     </div>
 
-                    {showSubprojects && subprojects.length > 0 && (
+                    {showPatches && patches.length > 0 && (
                         <div className="ml-6 mt-2 space-y-2">
-                            {[...subprojects]
+                            {[...patches]
                                 .sort((a, b) => {
                                     if (a.starred && !b.starred) return -1;
                                     if (!a.starred && b.starred) return 1;
                                     return a.name.localeCompare(b.name);
                                 })
                                 .map((patch, index) => (
-                                    <SubprojectCard
+                                    <PatchCard
                                         key={index}
                                         isHighlighted={
                                             highlightedPatch ===

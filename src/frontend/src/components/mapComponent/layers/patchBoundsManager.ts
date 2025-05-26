@@ -6,12 +6,12 @@ import { ProjectService } from '../../projectPanel/utils/ProjectService';
  * Patch Bounds Manager
  * Used to display, hide, and highlight patch bounds on the map
  */
-export class SubprojectBoundsManager {
+export class PatchBoundsManager {
     private map: mapboxgl.Map;
     private language: string;
     private currentHighlightedInfo: {
         projectName: string;
-        subprojectName: string;
+        patchName: string;
     } | null = null;
 
     constructor(map: mapboxgl.Map, language: string = 'zh') {
@@ -22,12 +22,12 @@ export class SubprojectBoundsManager {
     /**
      * Display or hide patch bounds
      * @param projectName Project name
-     * @param subprojects Patch data array
+     * @param patches Patch data array
      * @param show Whether to show
      */
-    public showSubprojectBounds(
+    public showPatchBounds(
         projectName: string,
-        subprojects: any[],
+        patches: any[],
         show: boolean
     ): void {
         if (!this.map) return;
@@ -51,24 +51,24 @@ export class SubprojectBoundsManager {
                 return;
             }
 
-            if (subprojects.length === 1 && this.map.getSource(sourceId)) {
+            if (patches.length === 1 && this.map.getSource(sourceId)) {
                 const source = this.map.getSource(
                     sourceId
                 ) as mapboxgl.GeoJSONSource;
                 const currentData = (source as any)._data;
                 if (currentData && currentData.features) {
-                    const updatedSubproject = subprojects[0];
+                    const updatedPatch = patches[0];
                     const updatedFeatures = currentData.features.map(
                         (feature: any) => {
                             if (
                                 feature.properties.name ===
-                                updatedSubproject.name
+                                updatedPatch.name
                             ) {
                                 return {
                                     ...feature,
                                     properties: {
                                         ...feature.properties,
-                                        starred: updatedSubproject.starred,
+                                        starred: updatedPatch.starred,
                                     },
                                 };
                             }
@@ -86,8 +86,8 @@ export class SubprojectBoundsManager {
             // 准备子项目GeoJSON特性
             const features: GeoJSON.Feature[] = [];
 
-            for (let index = 0; index < subprojects.length; index++) {
-                const patch = subprojects[index];
+            for (let index = 0; index < patches.length; index++) {
+                const patch = patches[index];
                 if (!patch.bounds || patch.bounds.length !== 4)
                     continue;
 
@@ -116,7 +116,7 @@ export class SubprojectBoundsManager {
                 const isHighlighted =
                     this.currentHighlightedInfo &&
                     this.currentHighlightedInfo.projectName === projectName &&
-                    this.currentHighlightedInfo.subprojectName ===
+                    this.currentHighlightedInfo.patchName ===
                         patch.name;
 
                 // 添加边界多边形特性
@@ -214,11 +214,11 @@ export class SubprojectBoundsManager {
     /**
      * 高亮特定子项目
      * @param projectName 项目名称
-     * @param subprojectName 子项目名称
+     * @param patchName 子项目名称
      */
-    public highlightSubproject(
+    public highlightPatch(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): void {
         if (!this.map) return;
 
@@ -226,7 +226,7 @@ export class SubprojectBoundsManager {
         this.clearAllHighlights();
 
         // 记录当前高亮的子项目信息
-        this.currentHighlightedInfo = { projectName, subprojectName };
+        this.currentHighlightedInfo = { projectName, patchName };
 
         const sourceId = `patch-bounds-${projectName}`;
 
@@ -242,7 +242,7 @@ export class SubprojectBoundsManager {
             // 更新高亮状态
             if (data && data.features) {
                 const updatedFeatures = data.features.map((feature: any) => {
-                    const isTarget = feature.properties.name === subprojectName;
+                    const isTarget = feature.properties.name === patchName;
                     return {
                         ...feature,
                         properties: {
@@ -313,11 +313,11 @@ export class SubprojectBoundsManager {
     /**
      * 飞行到子项目边界
      * @param projectName 项目名称
-     * @param subprojectName 子项目名称
+     * @param patchName 子项目名称
      */
-    public async flyToSubprojectBounds(
+    public async flyToPatchBounds(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): Promise<void> {
         if (!this.map) return;
 
@@ -327,7 +327,7 @@ export class SubprojectBoundsManager {
             const sourceId = `patch-bounds-${projectName}`;
             if (this.map.getSource(sourceId)) {
                 // 高亮子项目
-                this.highlightSubproject(projectName, subprojectName);
+                this.highlightPatch(projectName, patchName);
 
                 // 尝试从地图数据源获取子项目边界
                 const source = this.map.getSource(
@@ -336,21 +336,21 @@ export class SubprojectBoundsManager {
                 const data = (source as any)._data;
 
                 if (data && data.features) {
-                    const subprojectFeature = data.features.find(
+                    const patchFeature = data.features.find(
                         (feature: any) =>
-                            feature.properties.name === subprojectName
+                            feature.properties.name === patchName
                     );
 
                     if (
-                        subprojectFeature &&
-                        subprojectFeature.geometry &&
-                        subprojectFeature.geometry.coordinates &&
-                        subprojectFeature.geometry.coordinates[0] &&
-                        subprojectFeature.geometry.coordinates[0].length >= 5
+                        patchFeature &&
+                        patchFeature.geometry &&
+                        patchFeature.geometry.coordinates &&
+                        patchFeature.geometry.coordinates[0] &&
+                        patchFeature.geometry.coordinates[0].length >= 5
                     ) {
                         // 从要素坐标中提取边界
                         const coords =
-                            subprojectFeature.geometry.coordinates[0];
+                            patchFeature.geometry.coordinates[0];
                         const sw = coords[0]; // 左下
                         const ne = coords[2]; // 右上
 
@@ -378,14 +378,14 @@ export class SubprojectBoundsManager {
 
             // If data retrieval from map fails, try to get patch data again
             const projectService = new ProjectService(this.language);
-            // Get all subprojects under the specified project
+            // Get all patches under the specified project
             projectService.fetchPatches(projectName, (err, result) => {
                 if (err) {
                     console.error('获取子项目数据失败:', err);
                 } else if (result && Array.isArray(result.subproject_metas)) {
                     const response = result;
-                    const patch = response.subproject_metas.find(
-                        (sp: any) => sp.name === subprojectName
+                    const patch = response.patch_metas.find(
+                        (sp: any) => sp.name === patchName
                     );
                     if (
                         patch &&
@@ -432,9 +432,9 @@ export class SubprojectBoundsManager {
 
                             // If patch bounds are displayed at this time, reapply highlight
                             if (this.map.getSource(sourceId)) {
-                                this.highlightSubproject(
+                                this.highlightPatch(
                                     projectName,
-                                    subprojectName
+                                    patchName
                                 );
                             }
 
@@ -442,7 +442,7 @@ export class SubprojectBoundsManager {
                         }
                     }
 
-                    console.warn('找不到子项目或边界不正确:', subprojectName);
+                    console.warn('找不到子项目或边界不正确:', patchName);
                 }
             });
         } catch (error) {

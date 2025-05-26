@@ -35,7 +35,7 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import CreatePatch from './projectPanel/createSubProject';
+import CreatePatch from './projectPanel/createPatch';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
@@ -102,18 +102,18 @@ export default function Page() {
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
-        flyToSubprojectBounds: (
+        flyToPatchBounds: (
             projectName: string,
-            subprojectName: string
+            patchName: string
         ) => Promise<void>;
-        showSubprojectBounds: (
+        showPatchBounds: (
             projectName: string,
-            subprojects: any[],
+            patches: any[],
             show: boolean
         ) => void;
-        highlightSubproject: (
+        highlightPatch: (
             projectName: string,
-            subprojectName: string
+            patchName: string
         ) => void;
     }>(null);
 
@@ -325,7 +325,7 @@ export default function Page() {
         [language]
     );
 
-    const handleCreateSubProject = useCallback(
+    const handleCreatePatch = useCallback(
         (
             parentProject: any,
             schemaName?: string,
@@ -409,7 +409,7 @@ export default function Page() {
                     />
                 );
             }
-            return <ProjectPanel onCreatePatch={handleCreateSubProject} />;
+            return <ProjectPanel onCreatePatch={handleCreatePatch} />;
         } else if (activePanel === 'topology') {
             return (
                 <TopologyPanel

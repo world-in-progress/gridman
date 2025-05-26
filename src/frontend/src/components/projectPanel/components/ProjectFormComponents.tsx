@@ -44,7 +44,8 @@ export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
         </div>
     );
 };
-export const SubProjectNameCard: React.FC<PatchNameCardProps> = ({
+
+export const PatchNameCard: React.FC<PatchNameCardProps> = ({
     name,
     language,
     hasError,
@@ -103,7 +104,8 @@ export const ProjectDescriptionCard: React.FC<ProjectDescriptionCardProps> = ({
         </div>
     );
 };
-export const SubProjectDescriptionCard: React.FC<PatchDescriptionCardProps> = ({
+
+export const PatchDescriptionCard: React.FC<PatchDescriptionCardProps> = ({
     description,
     language,
     hasError,
@@ -277,7 +279,7 @@ export const ProjectErrorMessage: React.FC<ProjectErrorMessageProps> = ({
     );
 };
 
-export const SubProjectErrorMessage: React.FC<PatchErrorMessageProps> = ({
+export const PatchErrorMessage: React.FC<PatchErrorMessageProps> = ({
     message,
 }) => {
     if (!message) return null;

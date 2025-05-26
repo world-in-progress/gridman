@@ -44,7 +44,7 @@ export function SubNavPanel({
     const [descriptionText, setDescriptionText] = useState<
         Record<string, string>
     >({});
-    const [highlightedSubproject, setHighlightedSubproject] = useState<
+    const [highlightedPatch, setHighlightedPatch] = useState<
         string | null
     >(null);
     const [projectService] = useState(() => {
@@ -331,20 +331,20 @@ export function SubNavPanel({
         );
     };
 
-    const handleSubprojectHighlight = (
+    const handlePatchHighlight = (
         projectName: string,
-        subprojectName: string
+        patchName: string
     ) => {
-        const highlightKey = `${projectName}:${subprojectName}`;
-        setHighlightedSubproject(highlightKey);
+        const highlightKey = `${projectName}:${patchName}`;
+        setHighlightedPatch(highlightKey);
 
         if (window.mapRef && window.mapRef.current) {
-            const { highlightSubproject } = window.mapRef.current;
+            const { highlightPatch } = window.mapRef.current;
             if (
-                highlightSubproject &&
-                typeof highlightSubproject === 'function'
+                highlightPatch &&
+                typeof highlightPatch === 'function'
             ) {
-                highlightSubproject(projectName, subprojectName);
+                highlightPatch(projectName, patchName);
             }
         }
     };
@@ -410,8 +410,8 @@ export function SubNavPanel({
                         onSaveDescription={updateDescription}
                         onAddPatch={onCreatePatch}
                         onDeleteProject={handleDeleteProject}
-                        highlightedPatch={highlightedSubproject}
-                        onPatchHighlight={handleSubprojectHighlight}
+                        highlightedPatch={highlightedPatch}
+                        onPatchHighlight={handlePatchHighlight}
                     />
                 </div>
             ))}

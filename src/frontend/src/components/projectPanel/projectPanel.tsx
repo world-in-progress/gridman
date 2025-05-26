@@ -70,7 +70,7 @@ export default function ProjectPanel({
         setSearchQuery(query);
     };
 
-    const handleCreateSubProject = (
+    const handleCreatePatch = (
         project: Project,
         schemaName?: string,
         epsg?: string,
@@ -100,7 +100,7 @@ export default function ProjectPanel({
                     itemsPerPage={itemsPerPage}
                     onNavigateToPage={handleNavigateToPage}
                     searchQuery={searchQuery}
-                    onCreatePatch={handleCreateSubProject}
+                    onCreatePatch={handleCreatePatch}
                 />
 
                 {/* Pagination Component */}

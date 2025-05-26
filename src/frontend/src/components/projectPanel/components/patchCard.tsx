@@ -33,7 +33,7 @@ declare global {
     }
 }
 
-export const SubprojectCard: React.FC<PatchCardProps> = ({
+export const PatchCard: React.FC<PatchCardProps> = ({
     isHighlighted,
     patch,
     parentProjectTitle,
@@ -86,12 +86,12 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
         });
 
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
-            const { flyToSubprojectBounds } = window.mapRef.current;
+            const { flyToPatchBounds } = window.mapRef.current;
             if (
-                flyToSubprojectBounds &&
-                typeof flyToSubprojectBounds === 'function'
+                flyToPatchBounds &&
+                typeof flyToPatchBounds === 'function'
             ) {
-                flyToSubprojectBounds(parentProjectTitle, patch.name).catch(
+                flyToPatchBounds(parentProjectTitle, patch.name).catch(
                     (error: any) => {
                         console.error(
                             language === 'zh'
@@ -179,12 +179,12 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
         onCardClick();
         e.stopPropagation();
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
-            const { flyToSubprojectBounds } = window.mapRef.current;
+            const { flyToPatchBounds } = window.mapRef.current;
             if (
-                flyToSubprojectBounds &&
-                typeof flyToSubprojectBounds === 'function'
+                flyToPatchBounds &&
+                typeof flyToPatchBounds === 'function'
             ) {
-                flyToSubprojectBounds(parentProjectTitle, patch.name);
+                flyToPatchBounds(parentProjectTitle, patch.name);
             }
         }
     };
@@ -194,18 +194,18 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
         if (onStarToggle) {
             onStarToggle(patch.name, !patch.starred);
             if (window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    const updatedSubproject = {
+                    const updatedPatch = {
                         ...patch,
                         starred: !patch.starred,
                     };
-                    showSubprojectBounds(
+                    showPatchBounds(
                         parentProjectTitle,
-                        [updatedSubproject],
+                        [updatedPatch],
                         true
                     );
                 }
@@ -222,18 +222,18 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
         if (onSavePatchDescription) {
             await onSavePatchDescription(patch.name, newDescription);
             if (window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    const updatedSubproject = {
+                    const updatedPatch = {
                         ...patch,
                         description: newDescription,
                     };
-                    showSubprojectBounds(
+                    showPatchBounds(
                         parentProjectTitle,
-                        [updatedSubproject],
+                        [updatedPatch],
                         true
                     );
                 }
@@ -243,7 +243,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
         setIsEditing(false);
     };
 
-    const SubprojectCardContent = () => (
+    const PatchCardContent = () => (
         <div
             className="p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer"
             onClick={handleCardClick}
@@ -425,7 +425,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                 <CardBackground />
                 <Blob />
                 <div className="relative z-10 border border-gray-200 rounded-lg">
-                    <SubprojectCardContent />
+                    <PatchCardContent />
                 </div>
             </AnimatedCard>
         );
@@ -436,10 +436,10 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                 onClick={onCardClick}
                 id={cardId}
             >
-                <SubprojectCardContent />
+                <PatchCardContent />
             </div>
         );
     }
 };
 
-export default SubprojectCard;
+export default PatchCard;
