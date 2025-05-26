@@ -111,7 +111,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
 
     const handleAttributeEditorClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        // isLoading.on();
+        isLoading.on();
 
         store.set('ProjectName', parentProjectTitle);
         store.set('PatchName', patch.name);
@@ -127,6 +127,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                     );
                     store.set('CurrentPatchEPSG', result.project_schema.epsg);
                     setActivePanelFromStore('attribute');
+                    isLoading.off();
                 });
             }
         });
@@ -134,7 +135,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
 
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        console.log('Aggregation Workflow clicked');
+        isLoading.on();
 
         store.set('ProjectName', parentProjectTitle);
         store.set('PatchName', patch.name);
@@ -150,6 +151,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                     );
                     store.set('CurrentPatchEPSG', result.project_schema.epsg);
                     setActivePanelFromStore('aggregation');
+                    isLoading.off();
                 });
             }
         });
