@@ -93,7 +93,7 @@ const validateProjectForm = (
     return { isValid: true, errors, generalError: null };
 };
 
-export default function CreateSubProject({
+export default function CreatePPatch({
     onDrawRectangle,
     rectangleCoordinates,
     isDrawing = false,

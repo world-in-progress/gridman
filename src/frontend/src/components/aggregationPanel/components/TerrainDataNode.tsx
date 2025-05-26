@@ -1,6 +1,6 @@
 import React, { useContext, forwardRef } from 'react';
 import { LanguageContext } from '../../../context';
-import { TerrainDataNodeProps } from '../../attributePanel/types/types';
+import { TerrainDataNodeProps } from '..//types/types';
 import { AnimatedCard, CardBackground, Blob } from './nodeBackground'; // Import animated components
 
 const TerrainDataNode = forwardRef<HTMLDivElement, TerrainDataNodeProps>(

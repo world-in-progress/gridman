@@ -91,27 +91,22 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                 flyToSubprojectBounds &&
                 typeof flyToSubprojectBounds === 'function'
             ) {
-                flyToSubprojectBounds(
-                    parentProjectTitle,
-                    patch.name
-                ).catch((error: any) => {
-                    console.error(
-                        language === 'zh'
-                            ? '飞行到补丁边界失败:'
-                            : 'Failed to fly to patch bounds:',
-                        error
-                    );
-                });
+                flyToSubprojectBounds(parentProjectTitle, patch.name).catch(
+                    (error: any) => {
+                        console.error(
+                            language === 'zh'
+                                ? '飞行到补丁边界失败:'
+                                : 'Failed to fly to patch bounds:',
+                            error
+                        );
+                    }
+                );
             }
         }
 
-        projectService.setPatch(
-            parentProjectTitle,
-            patch.name,
-            () => {
-                setActivePanelFromStore('topology');
-            }
-        );
+        projectService.setPatch(parentProjectTitle, patch.name, () => {
+            setActivePanelFromStore('topology');
+        });
     };
 
     const handleAttributeEditorClick = (e: React.MouseEvent) => {
@@ -130,10 +125,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
-                    store.set(
-                        'CurrentSubprojectEPSG',
-                        result.project_schema.epsg
-                    );
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
                     setActivePanelFromStore('attribute');
                 });
             }
@@ -156,15 +148,11 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
-                    store.set(
-                        'CurrentSubprojectEPSG',
-                        result.project_schema.epsg
-                    );
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
+                    setActivePanelFromStore('aggregation');
                 });
             }
         });
-
-        setActivePanelFromStore('aggregation');
     };
 
     const menuItems = [
@@ -259,9 +247,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
             onClick={handleCardClick}
         >
             <div className="flex items-center justify-between">
-                <div className="font-bold text-black text-md">
-                    {patch.name}
-                </div>
+                <div className="font-bold text-black text-md">{patch.name}</div>
                 <div className="flex items-center justify-end gap-2">
                     {/* <button
                         className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
@@ -335,10 +321,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
 
             {patch.bounds && patch.bounds.length === 4 && (
                 <div className=" border-gray-200">
-                    <BoundsCard
-                        bounds={patch.bounds}
-                        language={language}
-                    />
+                    <BoundsCard bounds={patch.bounds} language={language} />
                 </div>
             )}
 
@@ -403,9 +386,7 @@ export const SubprojectCard: React.FC<PatchCardProps> = ({
                             }}
                             defaultValue={
                                 (patchDescriptionText &&
-                                    patchDescriptionText[
-                                        patch.name
-                                    ]) ||
+                                    patchDescriptionText[patch.name]) ||
                                 patch?.description ||
                                 ''
                             }

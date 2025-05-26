@@ -35,7 +35,7 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import CreateSubProject from './projectPanel/createSubProject';
+import CreatePatch from './projectPanel/createSubProject';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
@@ -61,7 +61,7 @@ export default function Page() {
     const [updateCapacity, setUpdateCapacity] = useState(false);
     const [showCreateSchema, setShowCreateSchema] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
-    const [showCreateSubProject, setShowCreateSubProject] = useState(false);
+    const [showCreatePatch, setshowCreatePatch] = useState(false);
     const [highSpeedModeEnabled, setHighSpeedModeEnabled] = useState(false);
     const { language } = useContext(LanguageContext);
     const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
@@ -264,7 +264,7 @@ export default function Page() {
             window.mapInstance.getCanvas().style.cursor = '';
         }
 
-        if (showCreateSubProject) {
+        if (showCreatePatch) {
             store.get<{ on: Function }>('onDrawRectangle')!.on();
         }
 
@@ -273,7 +273,7 @@ export default function Page() {
             setShowCreateSchema(false);
             clearMapMarkers();
             setShowCreateProject(false);
-            setShowCreateSubProject(false);
+            setshowCreatePatch(false);
             clearMapDrawElements();
             layer.removeResource();
         } else if (item === 'project') {
@@ -281,7 +281,7 @@ export default function Page() {
             clearMapDrawElements();
             setActivePanel('project');
             setShowCreateProject(false);
-            setShowCreateSubProject(false);
+            setshowCreatePatch(false);
             layer.removeResource();
         }
     };
@@ -343,7 +343,7 @@ export default function Page() {
                 setSelectedSchemaLevel(gridInfo);
             }
             setActivePanel('project');
-            setShowCreateSubProject(true);
+            setshowCreatePatch(true);
             setActiveBreadcrumb('project');
         },
         []
@@ -381,11 +381,11 @@ export default function Page() {
                     />
                 );
             }
-            if (showCreateSubProject) {
+            if (showCreatePatch) {
                 return (
-                    <CreateSubProject
+                    <CreatePatch
                         onBack={() => {
-                            setShowCreateSubProject(false);
+                            setshowCreatePatch(false);
                             setRectangleCoordinates(null);
                             setIsDrawing(false);
                         }}
