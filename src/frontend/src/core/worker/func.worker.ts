@@ -209,77 +209,77 @@ export async function deleteProject(
     callback(err, result);
 }
 
-export async function getSubprojects(
+export async function getPatches(
     this: WorkerSelf,
-    params: { projectName: string; subprojectName: string },
+    params: { projectName: string; patchName: string },
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.getSubprojects(
+    const { err, result } = await ProjectUtils.getPatches(
     params.projectName,
-    params.subprojectName
+    params.patchName
     );
     callback(err, result);
 }
 
-export async function fetchSubprojects(
+export async function fetchPatches(
     this: WorkerSelf,
     params: { projectName: string },
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.fetchSubprojects(
+    const { err, result } = await ProjectUtils.fetchPatches(
     params.projectName
     );
     callback(err, result);
 }
 
-export async function createSubProject(
+export async function createPatch(
     this: WorkerSelf,
-    SubprojectData: any,
+    PatchData: any,
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.createSubProject(SubprojectData);
+    const { err, result } = await ProjectUtils.createPatch(PatchData);
     callback(err, result);
 }
 
-export async function updateSubprojectStarred(
+export async function updatePatchStarred(
     this: WorkerSelf,
-    params: { projectName: string; subprojectName: string; starred: boolean },
+    params: { projectName: string; patchName: string; starred: boolean },
     callback: Callback<any>
 ) {
-    const { projectName, subprojectName, starred } = params;
-    const { err, result } = await ProjectUtils.updateSubprojectStarred(
+    const { projectName, patchName, starred } = params;
+    const { err, result } = await ProjectUtils.updatePatchStarred(
         projectName,
-        subprojectName,
+        patchName,
         starred
     );
     callback(err, result);
 }
 
-export async function updateSubprojectDescription(
+export async function updatePatchDescription(
     this: WorkerSelf,
-    params: { projectName: string; subprojectName: string; description: string },
+    params: { projectName: string; patchName: string; description: string },
     callback: Callback<any>
 ) {
-    const { projectName, subprojectName, description } = params;
-    const { err, result } = await ProjectUtils.updateSubprojectDescription(
+    const { projectName, patchName, description } = params;
+    const { err, result } = await ProjectUtils.updatePatchDescription(
         projectName,
-        subprojectName,
+        patchName,
         description
     );
     callback(err, result);
 }
 
-export async function setSubproject(
+export async function setPatch(
     this: WorkerSelf,
     {
         projectName,
-        subprojectName,
-    }: { projectName: string; subprojectName: string },
+        patchName,
+    }: { projectName: string; patchName: string },
     callback: Callback<any>
 ) {
-    const { err, result } = await ProjectUtils.setSubproject(
+    const { err, result } = await ProjectUtils.setPatch(
     projectName,
-    subprojectName
+    patchName
     );
     callback(err, result);
 }

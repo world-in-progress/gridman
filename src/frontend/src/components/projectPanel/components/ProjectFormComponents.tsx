@@ -8,11 +8,11 @@ import {
     ProjectDescriptionCardProps,
     ProjectSchemaNameCardProps,
     ProjectEpsgCardProps,
-    SubProjectNameCardProps,
-    SubProjectDescriptionCardProps,
+    PatchNameCardProps,
+    PatchDescriptionCardProps,
     BelongToProjectCardProps,
     ProjectConvertedCoordCardProps,
-    SubProjectErrorMessageProps,
+    PatchErrorMessageProps,
 } from '../types/types';
 
 export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
@@ -44,7 +44,8 @@ export const ProjectNameCard: React.FC<ProjectNameCardProps> = ({
         </div>
     );
 };
-export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
+
+export const PatchNameCard: React.FC<PatchNameCardProps> = ({
     name,
     language,
     hasError,
@@ -53,7 +54,7 @@ export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
     return (
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-2">
-                {language === 'zh' ? '新子项目名称' : 'New Subproject Name'}
+                {language === 'zh' ? '新补丁名称' : 'New Patch Name'}
             </h2>
             <div className="space-y-2">
                 <Input
@@ -62,8 +63,8 @@ export const SubProjectNameCard: React.FC<SubProjectNameCardProps> = ({
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={
                         language === 'zh'
-                            ? '输入新子项目名称'
-                            : 'Enter new subproject name'
+                            ? '输入新补丁名称'
+                            : 'Enter new patch name'
                     }
                     className={`w-full ${
                         hasError ? 'border-red-500 focus:ring-red-500' : ''
@@ -103,7 +104,8 @@ export const ProjectDescriptionCard: React.FC<ProjectDescriptionCardProps> = ({
         </div>
     );
 };
-export const SubProjectDescriptionCard: React.FC<SubProjectDescriptionCardProps> = ({
+
+export const PatchDescriptionCard: React.FC<PatchDescriptionCardProps> = ({
     description,
     language,
     hasError,
@@ -112,7 +114,7 @@ export const SubProjectDescriptionCard: React.FC<SubProjectDescriptionCardProps>
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 mt-4">
             <h2 className="text-lg font-semibold mb-2">
-                {language === 'zh' ? '子项目描述' : 'Subproject Description'}
+                {language === 'zh' ? '补丁描述' : 'Patch Description'}
             </h2>
             <div className="space-y-2">
                 <Textarea
@@ -277,7 +279,7 @@ export const ProjectErrorMessage: React.FC<ProjectErrorMessageProps> = ({
     );
 };
 
-export const SubProjectErrorMessage: React.FC<SubProjectErrorMessageProps> = ({
+export const PatchErrorMessage: React.FC<PatchErrorMessageProps> = ({
     message,
 }) => {
     if (!message) return null;

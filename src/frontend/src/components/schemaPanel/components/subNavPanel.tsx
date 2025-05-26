@@ -328,7 +328,6 @@ export function SubNavPanel({
                     );
 
                     store.get<{on: Function}>('updateSchemaCurrentPage')!.on();
-                    console.log('currentPage', currentPage);
                     fetchSchemasCallback(currentPage);
 
                     toast.success(

@@ -13,19 +13,19 @@ type ReturnType = {
 type AsyncReturnType = Promise<ReturnType>;
 
 export default class ProjectUtils {
-    static async setSubproject(
+    static async setPatch(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): AsyncReturnType {
-        const setAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const setAPI = `/api/grid/subproject/${projectName}/${patchName}`;
         const pollAPI = `/api/grid/subproject`;
         const metaAPI = `/api/grid/operation/meta`;
 
-        // Step 1: Set current subproject
+        // Step 1: Set current patch
         const response = await fetch(setAPI, { method: 'GET' });
         if (!response.ok) {
             return {
-                err: new Error(`获取子项目失败! 状态码: ${response.status}`),
+                err: new Error(`获取补丁失败! 状态码: ${response.status}`),
                 result: null,
             };
         }
@@ -34,12 +34,12 @@ export default class ProjectUtils {
         if (!responseData.success)
             return {
                 err: new Error(
-                    `设置子项目失败! 状态码: ${responseData.message}`
+                    `设置补丁失败! 状态码: ${responseData.message}`
                 ),
                 result: null,
             };
 
-        // Step 2: Poll until subproject is ready
+        // Step 2: Poll until patch is ready
         while (true) {
             const response = await fetch(pollAPI, { method: 'GET' });
             const isReady = (await response.json()).is_ready;
@@ -49,11 +49,11 @@ export default class ProjectUtils {
 
 
 
-        // Step 3: Get subproject info
+        // Step 3: Get patch info
         const metaResponse = await fetch(metaAPI, { method: 'GET' });
         if (!metaResponse.ok) {
             return {
-                err: new Error(`获取子项目失败! 状态码: ${response.status}`),
+                err: new Error(`获取补丁失败! 状态码: ${response.status}`),
                 result: null,
             };
         }
@@ -64,50 +64,50 @@ export default class ProjectUtils {
         };
     }
 
-    static async updateSubprojectDescription(
+    static async updatePatchDescription(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         description: string
     ): AsyncReturnType {
         const listAPI = `/api/grid/subprojects/${projectName}`;
-        const updateAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const updateAPI = `/api/grid/subproject/${projectName}/${patchName}`;
 
-        // Step 1: Get subproject list
+        // Step 1: Get patch list
         const listResponse = await fetch(listAPI);
         if (!listResponse.ok)
             return {
                 err: new Error(
-                    `获取子项目列表失败! 状态码: ${listResponse.status}`
+                    `获取补丁列表失败! 状态码: ${listResponse.status}`
                 ),
                 result: null,
             };
 
-        // Update subproject description
+        // Update patch description
         const listData = await listResponse.json();
-        const subprojectToUpdate = listData.subproject_metas.find(
-            (subproject: any) => subproject.name === subprojectName
+        const patchToUpdate = listData.subproject_metas.find(
+            (patch: any) => patch.name === patchName
         );
-        if (!subprojectToUpdate)
+        if (!patchToUpdate)
             return {
-                err: new Error(`找不到名为 ${subprojectName} 的子项目`),
+                err: new Error(`找不到名为 ${patchName} 的补丁`),
                 result: null,
             };
 
-        const updatedSubproject = { ...subprojectToUpdate, description };
+        const updatedPatch = { ...patchToUpdate, description };
 
-        // Step 2: Update subproject description
+        // Step 2: Update patch description
         const putResponse = await fetch(updateAPI, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(updatedSubproject),
+            body: JSON.stringify(updatedPatch),
         });
 
         if (!putResponse.ok)
             return {
                 err: new Error(
-                    `更新子项目描述失败! 状态码: ${putResponse.status}`
+                    `更新补丁描述失败! 状态码: ${putResponse.status}`
                 ),
                 result: null,
             };
@@ -119,47 +119,47 @@ export default class ProjectUtils {
         };
     }
 
-    static async updateSubprojectStarred(
+    static async updatePatchStarred(
         projectName: string,
-        subprojectName: string,
+        patchName: string,
         starred: boolean
     ): AsyncReturnType {
         const listAPI = `/api/grid/subprojects/${projectName}`;
-        const updateAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const updateAPI = `/api/grid/subproject/${projectName}/${patchName}`;
 
-        // Step 1: Get subproject list
+        // Step 1: Get patch list
         const listResponse = await fetch(listAPI);
         if (!listResponse.ok)
             return {
                 err: new Error(
-                    `获取子项目列表失败! 状态码: ${listResponse.status}`
+                    `获取补丁列表失败! 状态码: ${listResponse.status}`
                 ),
                 result: null,
             };
 
-        // Update subproject starred status
+        // Update patch starred status
         const listData = await listResponse.json();
-        const subprojectToUpdate = listData.subproject_metas.find(
-            (subproject: any) => subproject.name === subprojectName
+        const patchToUpdate = listData.subproject_metas.find(
+            (patch: any) => patch.name === patchName
         );
-        if (!subprojectToUpdate)
+        if (!patchToUpdate)
             return {
-                err: new Error(`找不到名为 ${subprojectName} 的子项目`),
+                err: new Error(`找不到名为 ${patchName} 的补丁`),
                 result: null,
             };
-        const updatedSubproject = { ...subprojectToUpdate, starred };
+        const updatedPatch = { ...patchToUpdate, starred };
 
-        // Step 2: Update subproject starred status
+        // Step 2: Update patch starred status
         const putResponse = await fetch(updateAPI, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(updatedSubproject),
+            body: JSON.stringify(updatedPatch),
         });
         if (!putResponse.ok) {
             throw new Error(
-                `更新子项目星标状态失败! 状态码: ${putResponse.status}`
+                `更新补丁星标状态失败! 状态码: ${putResponse.status}`
             );
         }
 
@@ -170,10 +170,10 @@ export default class ProjectUtils {
         };
     }
 
-    static async fetchSubprojects(projectName: string): AsyncReturnType {
+    static async fetchPatches(projectName: string): AsyncReturnType {
         const response = await fetch(`/api/grid/subprojects/${projectName}`);
         if (!response.ok) {
-            throw new Error(`获取子项目列表失败! 状态码: ${response.status}`);
+            throw new Error(`获取补丁列表失败! 状态码: ${response.status}`);
         }
 
         const responseData = await response.json();
@@ -183,15 +183,15 @@ export default class ProjectUtils {
         };
     }
 
-    static async createSubProject(SubprojectData: any): AsyncReturnType {
-        const { projectName, ...subprojectData } = SubprojectData;
+    static async createPatch(PatchData: any): AsyncReturnType {
+        const { projectName, ...patchData } = PatchData;
         const createAPI = `/api/grid/subproject/${projectName}`;
         const response = await fetch(createAPI, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(subprojectData),
+            body: JSON.stringify(patchData),
         });
         if (!response.ok)
             return {
@@ -206,15 +206,15 @@ export default class ProjectUtils {
         };
     }
 
-    static async getSubprojects(
+    static async getPatches(
         projectName: string,
-        subprojectName: string
+        patchName: string
     ): AsyncReturnType {
-        const getAPI = `/api/grid/subproject/${projectName}/${subprojectName}`;
+        const getAPI = `/api/grid/subproject/${projectName}/${patchName}`;
         const response = await fetch(getAPI);
         if (!response.ok)
             return {
-                err: new Error(`获取子项目失败! 状态码: ${response.status}`),
+                err: new Error(`获取补丁失败! 状态码: ${response.status}`),
                 result: null,
             };
 

@@ -24,7 +24,7 @@ export function SubNavPanel({
     itemsPerPage,
     onTotalItemsChange,
     searchQuery = '',
-    onCreateSubProject,
+    onCreatePatch,
 }: ProjectSubNavPanelProps) {
     const { language } = useContext(LanguageContext);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -44,7 +44,7 @@ export function SubNavPanel({
     const [descriptionText, setDescriptionText] = useState<
         Record<string, string>
     >({});
-    const [highlightedSubproject, setHighlightedSubproject] = useState<
+    const [highlightedPatch, setHighlightedPatch] = useState<
         string | null
     >(null);
     const [projectService] = useState(() => {
@@ -331,20 +331,20 @@ export function SubNavPanel({
         );
     };
 
-    const handleSubprojectHighlight = (
+    const handlePatchHighlight = (
         projectName: string,
-        subprojectName: string
+        patchName: string
     ) => {
-        const highlightKey = `${projectName}:${subprojectName}`;
-        setHighlightedSubproject(highlightKey);
+        const highlightKey = `${projectName}:${patchName}`;
+        setHighlightedPatch(highlightKey);
 
         if (window.mapRef && window.mapRef.current) {
-            const { highlightSubproject } = window.mapRef.current;
+            const { highlightPatch } = window.mapRef.current;
             if (
-                highlightSubproject &&
-                typeof highlightSubproject === 'function'
+                highlightPatch &&
+                typeof highlightPatch === 'function'
             ) {
-                highlightSubproject(projectName, subprojectName);
+                highlightPatch(projectName, patchName);
             }
         }
     };
@@ -408,10 +408,10 @@ export function SubNavPanel({
                         descriptionText={descriptionText}
                         onEditDescription={toggleEditDescription}
                         onSaveDescription={updateDescription}
-                        onAddSubproject={onCreateSubProject}
+                        onAddPatch={onCreatePatch}
                         onDeleteProject={handleDeleteProject}
-                        highlightedSubproject={highlightedSubproject}
-                        onSubprojectHighlight={handleSubprojectHighlight}
+                        highlightedPatch={highlightedPatch}
+                        onPatchHighlight={handlePatchHighlight}
                     />
                 </div>
             ))}

@@ -6,8 +6,8 @@ export default function BasicInfo() {
     const { language } = useContext(LanguageContext);
 
     const currentProject = store.get<any>('ProjectName');
-    const currentSubproject = store.get<any>('SubprojectName');
-    const currentEpsg = store.get<any>('CurrentSubprojectEPSG');
+    const currentPatch = store.get<any>('PatchName');
+    const currentEpsg = store.get<any>('CurrentPatchEPSG');
     const gridCore = store.get<GridCore>('gridCore');
 
     return (
@@ -26,9 +26,9 @@ export default function BasicInfo() {
                 </div>
                 <div>
                     <span className="font-bold">
-                        {language === 'zh' ? '子项目：' : 'Subproject: '}
+                        {language === 'zh' ? '补丁：' : 'Patch: '}
                     </span>
-                    {currentSubproject || '-'}
+                    {currentPatch || '-'}
                 </div>
                 <div>
                     <span className="font-bold">EPSG: </span>

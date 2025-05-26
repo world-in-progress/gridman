@@ -47,7 +47,7 @@ export interface ProjectErrorMessageProps {
     message: string | null;
 }
 
-export interface SubProjectErrorMessageProps {
+export interface PatchErrorMessageProps {
     message: string | null;
 }
 
@@ -57,7 +57,7 @@ export interface ProjectNameCardProps {
     hasError: boolean;
     onChange: (value: string) => void;
 }
-export interface SubProjectNameCardProps {
+export interface PatchNameCardProps {
     name: string;
     language: string;
     hasError: boolean;
@@ -82,15 +82,15 @@ export interface ProjectCardProps {
     descriptionText?: Record<string, string>;
     onEditDescription?: (name: string) => void;
     onSaveDescription?: (name: string, project: Project) => Promise<void>;
-    onAddSubproject?: (
+    onAddPatch?: (
         project: Project,
         schemaName?: string,
         epsg?: string,
         gridInfo?: string
     ) => void;
     onDeleteProject?: (project: Project) => void;
-    highlightedSubproject?: string | null;
-    onSubprojectHighlight?: (projectName: string, subprojectName: string) => void;
+    highlightedPatch?: string | null;
+    onPatchHighlight?: (projectName: string, patchName: string) => void;
 }
 
 export interface SubNavItem {
@@ -108,7 +108,7 @@ export interface ProjectSubNavPanelProps {
     onTotalItemsChange: (total: number) => void;
     onNavigateToPage: (page: number) => void;
     searchQuery?: string;
-    onCreateSubProject?: (
+    onCreatePatch?: (
         parentProject: Project,
         schemaName?: string,
         epsg?: string,
@@ -119,7 +119,7 @@ export interface ProjectSubNavPanelProps {
 export interface ProjectPanelProps
     extends React.ComponentProps<typeof Sidebar> {
     onCreateNew?: () => void;
-    onCreateSubProject?: (
+    onCreatePatch?: (
         parentProject: Project,
         schemaName?: string,
         epsg?: string,
@@ -127,7 +127,7 @@ export interface ProjectPanelProps
     ) => void;
 }
 
-export interface SubprojectData {
+export interface PatchData {
     name: string;
     bounds?: number[];
     description?: string;
@@ -135,20 +135,20 @@ export interface SubprojectData {
     [key: string]: any;
 }
 
-export interface SubProjectCardProps {
+export interface PatchCardProps {
     isHighlighted: boolean;
-    subproject: SubprojectData;
+    patch: PatchData;
     parentProjectTitle: string;
     language: string;
-    subprojectDescriptionText?: Record<string, string>;
+    patchDescriptionText?: Record<string, string>;
     onCardClick: () => void;
-    onStarToggle?: (subprojectName: string, starred: boolean) => void;
-    onEditSubprojectDescription?: (subprojectName: string) => void;
-    onSaveSubprojectDescription?: (
-        subprojectName: string,
+    onStarToggle?: (patchName: string, starred: boolean) => void;
+    onEditPatchDescription?: (patchName: string) => void;
+    onSavePatchDescription?: (
+        patchName: string,
         description: string
     ) => Promise<void>;
-    onHighlight?: (projectName: string, subprojectName: string) => void;
+    onHighlight?: (projectName: string, patchName: string) => void;
 }
 
 export interface ProjectDescriptionCardProps {
@@ -157,7 +157,7 @@ export interface ProjectDescriptionCardProps {
     hasError: boolean;
     onChange: (value: string) => void;
 }
-export interface SubProjectDescriptionCardProps {
+export interface PatchDescriptionCardProps {
     description: string;
     language: string;
     hasError: boolean;

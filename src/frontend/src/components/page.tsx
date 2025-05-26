@@ -35,14 +35,15 @@ import { SchemaService } from './schemaPanel/utils/SchemaService';
 import { MapMarkerManager } from './schemaPanel/utils/MapMarkerManager';
 import { Switch } from '@/components/ui/switch';
 import ChatPanel from './chatPanel/chatPanel';
-import CreateSubProject from './projectPanel/createSubProject';
+import CreatePatch from './projectPanel/createPatch';
 import { clearMapMarkers } from './schemaPanel/utils/SchemaCoordinateService';
 import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/topologyPanel';
+import TopologyPanel from './topologyPanel/TopologyPanel'
 import AttributePanel from './attributePanel/attributePanel';
+import AggregationPanel from './aggregationPanel/aggregationPanel';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
@@ -55,44 +56,64 @@ export type BreadcrumbType =
     | null;
 
 export default function Page() {
-
     const [isDrawing, setIsDrawing] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [updateCapacity, setUpdateCapacity] = useState(false);
     const [showCreateSchema, setShowCreateSchema] = useState(false);
     const [showCreateProject, setShowCreateProject] = useState(false);
-    const [showCreateSubProject, setShowCreateSubProject] = useState(false);
+    const [showCreatePatch, setshowCreatePatch] = useState(false);
     const [highSpeedModeEnabled, setHighSpeedModeEnabled] = useState(false);
     const { language } = useContext(LanguageContext);
     const { activeNavbar, setActiveNavbar } = useContext(SidebarContext);
     const { aiDialogEnabled, setAIDialogEnabled } = useContext(AIDialogContext);
     const [gridLine, setGridLine] = useState<string | null>(null);
     const [gridLabel, setGridLabel] = useState<mapboxgl.Marker | null>(null);
-    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(null);
-    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(null);
-    const [selectedParentProject, setSelectedParentProject] = useState<any>(null);
-    const [activeBreadcrumb, setActiveBreadcrumb] = useState<BreadcrumbType>(null);
-    const [activePanel, setActivePanel] = useState<'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' | null >(null);
-    const [selectedSchemaName, setSelectedSchemaName] = useState< string | undefined >(undefined);
-    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState< string | undefined >(undefined);
-    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState< string | undefined >(undefined);
-    const [rectangleCoordinates, setRectangleCoordinates] = useState<RectangleCoordinates | null>(null);
+    const [cornerMarker, setCornerMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [schemaMarker, setSchemaMarker] = useState<mapboxgl.Marker | null>(
+        null
+    );
+    const [selectedParentProject, setSelectedParentProject] =
+        useState<any>(null);
+    const [activeBreadcrumb, setActiveBreadcrumb] =
+        useState<BreadcrumbType>(null);
+    const [activePanel, setActivePanel] = useState<
+        | 'schema'
+        | 'project'
+        | 'editor'
+        | 'topology'
+        | 'attribute'
+        | 'aggregation'
+        | null
+    >(null);
+    const [selectedSchemaName, setSelectedSchemaName] = useState<
+        string | undefined
+    >(undefined);
+    const [selectedSchemaEpsg, setSelectedSchemaEpsg] = useState<
+        string | undefined
+    >(undefined);
+    const [selectedSchemaLevel, setSelectedSchemaLevel] = useState<
+        string | undefined
+    >(undefined);
+    const [rectangleCoordinates, setRectangleCoordinates] =
+        useState<RectangleCoordinates | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
         startPointSelection: (cancel?: boolean) => void;
-        flyToSubprojectBounds: (
+        flyToPatchBounds: (
             projectName: string,
-            subprojectName: string
+            patchName: string
         ) => Promise<void>;
-        showSubprojectBounds: (
+        showPatchBounds: (
             projectName: string,
-            subprojects: any[],
+            patches: any[],
             show: boolean
         ) => void;
-        highlightSubproject: (
+        highlightPatch: (
             projectName: string,
-            subprojectName: string
+            patchName: string
         ) => void;
     }>(null);
 
@@ -107,7 +128,16 @@ export default function Page() {
 
     store.set(
         'activePanelChange',
-        (activePanel: 'schema' | 'project' | 'editor' | 'topology' | 'attribute' | 'aggregation' |null) => {
+        (
+            activePanel:
+                | 'schema'
+                | 'project'
+                | 'editor'
+                | 'topology'
+                | 'attribute'
+                | 'aggregation'
+                | null
+        ) => {
             setActivePanel(activePanel);
             setActiveBreadcrumb(activePanel);
         }
@@ -136,8 +166,8 @@ export default function Page() {
         },
         aggregation: {
             zh: '聚合',
-            en: 'aggregation'
-        }
+            en: 'aggregation',
+        },
     };
 
     useEffect(() => {
@@ -215,9 +245,9 @@ export default function Page() {
         clearMapMarkers();
 
         if (window.mapInstance) {
-            const sourceId = `subproject-bounds-临时项目`;
-            const layerId = `subproject-fill-临时项目`;
-            const outlineLayerId = `subproject-outline-临时项目`;
+            const sourceId = `patch-bounds-临时项目`;
+            const layerId = `patch-fill-临时项目`;
+            const outlineLayerId = `patch-outline-临时项目`;
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);
@@ -234,7 +264,7 @@ export default function Page() {
             window.mapInstance.getCanvas().style.cursor = '';
         }
 
-        if (showCreateSubProject) {
+        if (showCreatePatch) {
             store.get<{ on: Function }>('onDrawRectangle')!.on();
         }
 
@@ -243,7 +273,7 @@ export default function Page() {
             setShowCreateSchema(false);
             clearMapMarkers();
             setShowCreateProject(false);
-            setShowCreateSubProject(false);
+            setshowCreatePatch(false);
             clearMapDrawElements();
             layer.removeResource();
         } else if (item === 'project') {
@@ -251,7 +281,7 @@ export default function Page() {
             clearMapDrawElements();
             setActivePanel('project');
             setShowCreateProject(false);
-            setShowCreateSubProject(false);
+            setshowCreatePatch(false);
             layer.removeResource();
         }
     };
@@ -295,7 +325,7 @@ export default function Page() {
         [language]
     );
 
-    const handleCreateSubProject = useCallback(
+    const handleCreatePatch = useCallback(
         (
             parentProject: any,
             schemaName?: string,
@@ -313,7 +343,7 @@ export default function Page() {
                 setSelectedSchemaLevel(gridInfo);
             }
             setActivePanel('project');
-            setShowCreateSubProject(true);
+            setshowCreatePatch(true);
             setActiveBreadcrumb('project');
         },
         []
@@ -351,11 +381,11 @@ export default function Page() {
                     />
                 );
             }
-            if (showCreateSubProject) {
+            if (showCreatePatch) {
                 return (
-                    <CreateSubProject
+                    <CreatePatch
                         onBack={() => {
-                            setShowCreateSubProject(false);
+                            setshowCreatePatch(false);
                             setRectangleCoordinates(null);
                             setIsDrawing(false);
                         }}
@@ -379,7 +409,7 @@ export default function Page() {
                     />
                 );
             }
-            return <ProjectPanel onCreateSubProject={handleCreateSubProject} />;
+            return <ProjectPanel onCreatePatch={handleCreatePatch} />;
         } else if (activePanel === 'topology') {
             return (
                 <TopologyPanel
@@ -391,8 +421,22 @@ export default function Page() {
             );
         } else if (activePanel === 'attribute') {
             return (
-                <AttributePanel/>
-            )
+                <AttributePanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
+        } else if (activePanel === 'aggregation') {
+            return (
+                <AggregationPanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
         }
         return (
             <SchemaPanel
@@ -449,12 +493,24 @@ export default function Page() {
                                     <BreadcrumbLink
                                         className={
                                             activePanel === 'topology'
-                                                ? (activeBreadcrumb === 'topology' ? 'text-[#71F6FF] font-bold' : '')
-                                                : (activeBreadcrumb === 'editor' ? 'text-[#71F6FF] font-bold' : '')
+                                                ? activeBreadcrumb ===
+                                                  'topology'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
+                                                : activePanel === 'attribute'
+                                                ? activeBreadcrumb ===
+                                                  'attribute'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
+                                                : activeBreadcrumb === 'editor'
+                                                ? 'text-[#71F6FF] font-bold'
+                                                : ''
                                         }
                                     >
                                         {activePanel === 'topology'
                                             ? breadcrumbText.topology[language]
+                                            : activePanel === 'attribute'
+                                            ? breadcrumbText.attribute[language]
                                             : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>

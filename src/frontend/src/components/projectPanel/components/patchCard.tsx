@@ -9,7 +9,7 @@ import {
     Mountain,
     Workflow,
 } from 'lucide-react';
-import { SubProjectCardProps } from '../types/types';
+import { PatchCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
 import { AnimatedCard, CardBackground, Blob } from './cardBackground';
 import store from '@/store';
@@ -33,20 +33,20 @@ declare global {
     }
 }
 
-export const SubprojectCard: React.FC<SubProjectCardProps> = ({
+export const PatchCard: React.FC<PatchCardProps> = ({
     isHighlighted,
-    subproject,
+    patch,
     parentProjectTitle,
     language,
-    subprojectDescriptionText,
+    patchDescriptionText,
     onCardClick,
     onStarToggle,
-    onSaveSubprojectDescription,
+    onSavePatchDescription,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [open, setOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const cardId = `subproject-card-${subproject.name.replace(/\s+/g, '-')}`;
+    const cardId = `patch-card-${patch.name.replace(/\s+/g, '-')}`;
 
     const setActivePanelFromStore = store.get<Function>('activePanelChange')!;
     const isLoading = store.get<{ on: Function; off: Function }>('isLoading')!;
@@ -70,7 +70,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         updateCapacity.on();
 
         store.set('ProjectName', parentProjectTitle);
-        store.set('SubprojectName', subproject.name);
+        store.set('PatchName', patch.name);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -86,40 +86,35 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         });
 
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
-            const { flyToSubprojectBounds } = window.mapRef.current;
+            const { flyToPatchBounds } = window.mapRef.current;
             if (
-                flyToSubprojectBounds &&
-                typeof flyToSubprojectBounds === 'function'
+                flyToPatchBounds &&
+                typeof flyToPatchBounds === 'function'
             ) {
-                flyToSubprojectBounds(
-                    parentProjectTitle,
-                    subproject.name
-                ).catch((error: any) => {
-                    console.error(
-                        language === 'zh'
-                            ? '飞行到子项目边界失败:'
-                            : 'Failed to fly to subproject bounds:',
-                        error
-                    );
-                });
+                flyToPatchBounds(parentProjectTitle, patch.name).catch(
+                    (error: any) => {
+                        console.error(
+                            language === 'zh'
+                                ? '飞行到补丁边界失败:'
+                                : 'Failed to fly to patch bounds:',
+                            error
+                        );
+                    }
+                );
             }
         }
 
-        projectService.setSubproject(
-            parentProjectTitle,
-            subproject.name,
-            () => {
-                setActivePanelFromStore('topology');
-            }
-        );
+        projectService.setPatch(parentProjectTitle, patch.name, () => {
+            setActivePanelFromStore('topology');
+        });
     };
 
     const handleAttributeEditorClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        // isLoading.on();
+        isLoading.on();
 
         store.set('ProjectName', parentProjectTitle);
-        store.set('SubprojectName', subproject.name);
+        store.set('PatchName', patch.name);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -130,20 +125,36 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
-                    store.set(
-                        'CurrentSubprojectEPSG',
-                        result.project_schema.epsg
-                    );
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
+                    setActivePanelFromStore('attribute');
+                    isLoading.off();
                 });
             }
         });
-
-        setActivePanelFromStore('attribute');
     };
 
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        console.log('Aggregation Workflow clicked');
+        isLoading.on();
+
+        store.set('ProjectName', parentProjectTitle);
+        store.set('PatchName', patch.name);
+
+        projectService.getProjectByName(parentProjectTitle, (err, result) => {
+            store.set('SchemaName', result.project_meta.schema_name);
+            if (store.get('SchemaName')) {
+                const schemaName = store.get('SchemaName') as string;
+                schemaService.getSchemaByName(schemaName, (err, result) => {
+                    store.set(
+                        'SchemaGridInfo',
+                        result.project_schema.grid_info
+                    );
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
+                    setActivePanelFromStore('aggregation');
+                    isLoading.off();
+                });
+            }
+        });
     };
 
     const menuItems = [
@@ -168,12 +179,12 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         onCardClick();
         e.stopPropagation();
         if (window.mapInstance && window.mapRef && window.mapRef.current) {
-            const { flyToSubprojectBounds } = window.mapRef.current;
+            const { flyToPatchBounds } = window.mapRef.current;
             if (
-                flyToSubprojectBounds &&
-                typeof flyToSubprojectBounds === 'function'
+                flyToPatchBounds &&
+                typeof flyToPatchBounds === 'function'
             ) {
-                flyToSubprojectBounds(parentProjectTitle, subproject.name);
+                flyToPatchBounds(parentProjectTitle, patch.name);
             }
         }
     };
@@ -181,20 +192,20 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
     const handleStarClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (onStarToggle) {
-            onStarToggle(subproject.name, !subproject.starred);
+            onStarToggle(patch.name, !patch.starred);
             if (window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    const updatedSubproject = {
-                        ...subproject,
-                        starred: !subproject.starred,
+                    const updatedPatch = {
+                        ...patch,
+                        starred: !patch.starred,
                     };
-                    showSubprojectBounds(
+                    showPatchBounds(
                         parentProjectTitle,
-                        [updatedSubproject],
+                        [updatedPatch],
                         true
                     );
                 }
@@ -208,21 +219,21 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
         const newDescription = textareaRef.current.value;
 
-        if (onSaveSubprojectDescription) {
-            await onSaveSubprojectDescription(subproject.name, newDescription);
+        if (onSavePatchDescription) {
+            await onSavePatchDescription(patch.name, newDescription);
             if (window.mapRef && window.mapRef.current) {
-                const { showSubprojectBounds } = window.mapRef.current;
+                const { showPatchBounds } = window.mapRef.current;
                 if (
-                    showSubprojectBounds &&
-                    typeof showSubprojectBounds === 'function'
+                    showPatchBounds &&
+                    typeof showPatchBounds === 'function'
                 ) {
-                    const updatedSubproject = {
-                        ...subproject,
+                    const updatedPatch = {
+                        ...patch,
                         description: newDescription,
                     };
-                    showSubprojectBounds(
+                    showPatchBounds(
                         parentProjectTitle,
-                        [updatedSubproject],
+                        [updatedPatch],
                         true
                     );
                 }
@@ -232,15 +243,13 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
         setIsEditing(false);
     };
 
-    const SubprojectCardContent = () => (
+    const PatchCardContent = () => (
         <div
             className="p-2 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer"
             onClick={handleCardClick}
         >
             <div className="flex items-center justify-between">
-                <div className="font-bold text-black text-md">
-                    {subproject.name}
-                </div>
+                <div className="font-bold text-black text-md">{patch.name}</div>
                 <div className="flex items-center justify-end gap-2">
                     {/* <button
                         className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
@@ -258,7 +267,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                     >
                         <Star
                             className={`h-4 w-4 ${
-                                subproject.starred
+                                patch.starred
                                     ? 'fill-yellow-400 text-yellow-400'
                                     : ''
                             } cursor-pointer`}
@@ -312,12 +321,9 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 </div>
             </div>
 
-            {subproject.bounds && subproject.bounds.length === 4 && (
+            {patch.bounds && patch.bounds.length === 4 && (
                 <div className=" border-gray-200">
-                    <BoundsCard
-                        bounds={subproject.bounds}
-                        language={language}
-                    />
+                    <BoundsCard bounds={patch.bounds} language={language} />
                 </div>
             )}
 
@@ -349,8 +355,8 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
 
                 {!isEditing && (
                     <div className="text-xs text-gray-600 mb-2 px-1">
-                        {subproject.description ? (
-                            subproject.description
+                        {patch.description ? (
+                            patch.description
                         ) : (
                             <span className="italic">
                                 {language === 'zh'
@@ -369,23 +375,21 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                             className="w-full px-3 py-2 border border-gray-300  rounded-md min-h-[80px]"
                             aria-label={
                                 language === 'zh'
-                                    ? '子项目描述'
-                                    : 'Subproject description'
+                                    ? '补丁描述'
+                                    : 'Patch description'
                             }
                             placeholder={
                                 language === 'zh'
-                                    ? '输入子项目描述'
-                                    : 'Enter subproject description'
+                                    ? '输入补丁描述'
+                                    : 'Enter patch description'
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
                             }}
                             defaultValue={
-                                (subprojectDescriptionText &&
-                                    subprojectDescriptionText[
-                                        subproject.name
-                                    ]) ||
-                                subproject?.description ||
+                                (patchDescriptionText &&
+                                    patchDescriptionText[patch.name]) ||
+                                patch?.description ||
                                 ''
                             }
                         />
@@ -421,7 +425,7 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 <CardBackground />
                 <Blob />
                 <div className="relative z-10 border border-gray-200 rounded-lg">
-                    <SubprojectCardContent />
+                    <PatchCardContent />
                 </div>
             </AnimatedCard>
         );
@@ -432,10 +436,10 @@ export const SubprojectCard: React.FC<SubProjectCardProps> = ({
                 onClick={onCardClick}
                 id={cardId}
             >
-                <SubprojectCardContent />
+                <PatchCardContent />
             </div>
         );
     }
 };
 
-export default SubprojectCard;
+export default PatchCard;

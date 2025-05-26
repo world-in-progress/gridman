@@ -25,11 +25,11 @@ import { convertCoordinate } from '../../core/util/coordinateUtils';
 import { generateRandomHexColor } from '../../utils/colorUtils';
 import { ProjectService } from '../projectPanel/utils/ProjectService';
 import { LanguageContext, CheckingSwitch } from '../../context';
-import { SubprojectBoundsManager } from './layers/subprojectBoundsManager';
+import { PatchBoundsManager } from './layers/patchBoundsManager';
 import store from '../../store';
 import TopologyLayer from './layers/TopologyLayer';
 import NHLayerGroup from './utils/NHLayerGroup';
-import { useSidebar } from '../ui/sidebar';
+
 // Add mapInstance property to window object
 declare global {
     interface Window {
@@ -38,14 +38,13 @@ declare global {
     }
 }
 
-// GPULayer state
-const GPULayerON = true
+// GPULayer canvas state
+const GPULayerON = false
 
 const scene: ThreejsSceneLayer | null = null;
 let rectangleLayer: GLMapRectangleLayer | null = null;
 let customRectangleDraw: CustomRectangleDraw | null = null;
 let projectBoundsLayer: ProjectBoundsLayer | null = null;
-// let subprojectBoundsManager: SubprojectBoundsManager | null = null; // Comment out or remove global instance if ref is used exclusively
 
 // Simple debounce function (you can replace this with a library version if preferred)
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -72,7 +71,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     const [map, setMap] = useState<mapboxgl.Map | null>(null);
     const [draw, setDraw] = useState<MapboxDraw | null>(null);
     const mapWrapperRef = useRef<HTMLDivElement>(null);
-    const subprojectBoundsManagerRef = useRef<SubprojectBoundsManager | null>(
+    const patchBoundsManagerRef = useRef<PatchBoundsManager | null>(
         null
     );
     const [isDrawMode, setIsDrawMode] = useState(false);
@@ -256,11 +255,10 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             window.mapboxDrawInstance = drawInstance;
 
             mapInstance.on('load', () => {
-                // Initialize SubprojectBoundsManager via ref, using the language from context
                 if (mapInstance) {
                     // Ensure mapInstance is valid
-                    subprojectBoundsManagerRef.current =
-                        new SubprojectBoundsManager(mapInstance, language);
+                    patchBoundsManagerRef.current =
+                        new PatchBoundsManager(mapInstance, language);
                 }
 
                 const customLayer = CustomLayer({
@@ -503,7 +501,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             window.mapboxDrawInstance = undefined;
             setMap(null);
             setDraw(null);
-            subprojectBoundsManagerRef.current = null; // Clean up the ref
+            patchBoundsManagerRef.current = null; // Clean up the ref
         };
     }, [
         language,
@@ -570,37 +568,37 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         }
     };
 
-    const flyToSubprojectBounds = async (
+    const flyToPatchBounds = async (
         projectName: string,
-        subprojectName: string
+        patchName: string
     ) => {
-        if (!map || !subprojectBoundsManagerRef.current) return;
-        await subprojectBoundsManagerRef.current.flyToSubprojectBounds(
+        if (!map || !patchBoundsManagerRef.current) return;
+        await patchBoundsManagerRef.current.flyToPatchBounds(
             projectName,
-            subprojectName
+            patchName
         );
     };
 
-    const highlightSubproject = (
+    const highlightPatch = (
         projectName: string,
-        subprojectName: string
+        patchName: string
     ) => {
-        if (!map || !subprojectBoundsManagerRef.current) return;
-        subprojectBoundsManagerRef.current.highlightSubproject(
+        if (!map || !patchBoundsManagerRef.current) return;
+        patchBoundsManagerRef.current.highlightPatch(
             projectName,
-            subprojectName
+            patchName
         );
     };
 
-    const showSubprojectBounds = (
+    const showPatchBounds = (
         projectName: string,
-        subprojects: any[],
+        patches: any[],
         show: boolean
     ) => {
-        if (!map || !subprojectBoundsManagerRef.current) return;
-        subprojectBoundsManagerRef.current.showSubprojectBounds(
+        if (!map || !patchBoundsManagerRef.current) return;
+        patchBoundsManagerRef.current.showPatchBounds(
             projectName,
-            subprojects,
+            patches,
             show
         );
     };
@@ -610,16 +608,16 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         () => ({
             startDrawRectangle,
             startPointSelection,
-            flyToSubprojectBounds,
-            highlightSubproject,
-            showSubprojectBounds,
+            flyToPatchBounds,
+            highlightPatch,
+            showPatchBounds,
         }),
         [
             startDrawRectangle,
             startPointSelection,
-            flyToSubprojectBounds,
-            highlightSubproject,
-            showSubprojectBounds,
+            flyToPatchBounds,
+            highlightPatch,
+            showPatchBounds,
         ]
     );
 

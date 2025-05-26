@@ -18,14 +18,14 @@ export interface RectangleOptions {
 export interface MapInitHandle {
   startDrawRectangle: (cancel?: boolean) => void;
   startPointSelection: (cancel?: boolean) => void;
-  flyToSubprojectBounds: (
+  flyToPatchBounds: (
       projectName: string,
-      subprojectName: string
+      patchName: string
   ) => Promise<void>;
-  highlightSubproject: (projectName: string, subprojectName: string) => void;
-  showSubprojectBounds: (
+  highlightPatch: (projectName: string, patchName: string) => void;
+  showPatchBounds: (
       projectName: string,
-      subprojects: any[],
+      patches: any[],
       show: boolean
   ) => void;
 }
