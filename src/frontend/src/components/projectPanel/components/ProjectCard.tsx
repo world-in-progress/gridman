@@ -145,7 +145,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 console.error('获取补丁列表失败:', err);
                 setPatches([]);
             } else {
-                setPatches(result.subproject_metas);
+                setPatches(result.patch_metas);
             }
             setLoadingPatches(false);
         });

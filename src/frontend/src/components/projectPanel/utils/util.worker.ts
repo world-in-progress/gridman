@@ -17,8 +17,8 @@ export default class ProjectUtils {
         projectName: string,
         patchName: string
     ): AsyncReturnType {
-        const setAPI = `/api/grid/subproject/${projectName}/${patchName}`;
-        const pollAPI = `/api/grid/subproject`;
+        const setAPI = `/api/grid/patch/${projectName}/${patchName}`;
+        const pollAPI = `/api/grid/patch`;
         const metaAPI = `/api/grid/operation/meta`;
 
         // Step 1: Set current patch
@@ -69,8 +69,8 @@ export default class ProjectUtils {
         patchName: string,
         description: string
     ): AsyncReturnType {
-        const listAPI = `/api/grid/subprojects/${projectName}`;
-        const updateAPI = `/api/grid/subproject/${projectName}/${patchName}`;
+        const listAPI = `/api/grid/patches/${projectName}`;
+        const updateAPI = `/api/grid/patch/${projectName}/${patchName}`;
 
         // Step 1: Get patch list
         const listResponse = await fetch(listAPI);
@@ -84,7 +84,7 @@ export default class ProjectUtils {
 
         // Update patch description
         const listData = await listResponse.json();
-        const patchToUpdate = listData.subproject_metas.find(
+        const patchToUpdate = listData.patch_metas.find(
             (patch: any) => patch.name === patchName
         );
         if (!patchToUpdate)
@@ -124,8 +124,8 @@ export default class ProjectUtils {
         patchName: string,
         starred: boolean
     ): AsyncReturnType {
-        const listAPI = `/api/grid/subprojects/${projectName}`;
-        const updateAPI = `/api/grid/subproject/${projectName}/${patchName}`;
+        const listAPI = `/api/grid/patches/${projectName}`;
+        const updateAPI = `/api/grid/patch/${projectName}/${patchName}`;
 
         // Step 1: Get patch list
         const listResponse = await fetch(listAPI);
@@ -139,7 +139,7 @@ export default class ProjectUtils {
 
         // Update patch starred status
         const listData = await listResponse.json();
-        const patchToUpdate = listData.subproject_metas.find(
+        const patchToUpdate = listData.patch_metas.find(
             (patch: any) => patch.name === patchName
         );
         if (!patchToUpdate)
@@ -171,7 +171,7 @@ export default class ProjectUtils {
     }
 
     static async fetchPatches(projectName: string): AsyncReturnType {
-        const response = await fetch(`/api/grid/subprojects/${projectName}`);
+        const response = await fetch(`/api/grid/patches/${projectName}`);
         if (!response.ok) {
             throw new Error(`获取补丁列表失败! 状态码: ${response.status}`);
         }
@@ -185,7 +185,7 @@ export default class ProjectUtils {
 
     static async createPatch(PatchData: any): AsyncReturnType {
         const { projectName, ...patchData } = PatchData;
-        const createAPI = `/api/grid/subproject/${projectName}`;
+        const createAPI = `/api/grid/patch/${projectName}`;
         const response = await fetch(createAPI, {
             method: 'POST',
             headers: {
@@ -210,7 +210,7 @@ export default class ProjectUtils {
         projectName: string,
         patchName: string
     ): AsyncReturnType {
-        const getAPI = `/api/grid/subproject/${projectName}/${patchName}`;
+        const getAPI = `/api/grid/patch/${projectName}/${patchName}`;
         const response = await fetch(getAPI);
         if (!response.ok)
             return {

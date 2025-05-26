@@ -382,7 +382,7 @@ export class PatchBoundsManager {
             projectService.fetchPatches(projectName, (err, result) => {
                 if (err) {
                     console.error('获取子项目数据失败:', err);
-                } else if (result && Array.isArray(result.subproject_metas)) {
+                } else if (result && Array.isArray(result.patch_metas)) {
                     const response = result;
                     const patch = response.patch_metas.find(
                         (sp: any) => sp.name === patchName
