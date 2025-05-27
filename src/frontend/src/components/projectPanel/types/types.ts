@@ -5,6 +5,7 @@ import {
 } from '../../schemaPanel/types/types';
 import { LucideIcon } from 'lucide-react';
 import { Sidebar } from '@/components/ui/sidebar';
+import { ProjectMeta, ResponseWithMultiProjectMeta } from '@/core/apis/types';
 
 export interface RectangleCoordinates {
     northEast: [number, number];
@@ -196,7 +197,7 @@ export interface ProjectConvertedCoordCardProps {
 
 export interface AdjustAndExpandRectangleParams {
     rectangleCoordinates: RectangleCoordinates ;
-    isConverted: Boolean;
+    isConverted: boolean;
     epsg: string;
     gridLevel: number[];
     schemaBasePoint: [number, number];
@@ -219,4 +220,9 @@ export interface UpdatedPatchBoundsProps extends PatchBoundsProps {
     setConvertedRectangle: (rect: RectangleCoordinates) => void;
     onAdjustAndDraw: (north: string, south: string, east: string, west: string) => void;
     drawExpandedRectangleOnMap?: () => void;
+}
+
+export interface MultiProjectMeta extends ResponseWithMultiProjectMeta {
+    total_count: number
+    project_metas: ProjectMeta[] | null
 }

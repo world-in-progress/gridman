@@ -51,39 +51,6 @@ export async function calcEdgeRenderInfos(
     });
 }
 
-// Can be deleted
-// nihao
-export async function initializeGrid(
-    this: WorkerSelf,
-    jsonData: any,
-    callback: Callback<any>
-) {
-    if (!jsonData) {
-    callback(new Error("No JSON data provided"), false);
-    return;
-    }
-
-    try {
-    const response = await fetch("/api/grid/grid/init", {
-        method: "POST",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        body: JSON.stringify(jsonData),
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const responseData = await response.json();
-
-    callback(null, responseData);
-    } catch (error) {
-    callback(error instanceof Error ? error : new Error(String(error)), false);
-    }
-}
-
 export async function createSchema(
     this: WorkerSelf,
     schemaData: any,
@@ -209,18 +176,6 @@ export async function deleteProject(
     callback(err, result);
 }
 
-export async function getPatches(
-    this: WorkerSelf,
-    params: { projectName: string; patchName: string },
-    callback: Callback<any>
-) {
-    const { err, result } = await ProjectUtils.getPatches(
-    params.projectName,
-    params.patchName
-    );
-    callback(err, result);
-}
-
 export async function fetchPatches(
     this: WorkerSelf,
     params: { projectName: string },
@@ -289,7 +244,7 @@ export function setGridManager(
     context: GridContext,
     callback: Callback<any>
 ) {
-    ProjectUtils.setGridManager(this, context);
+    GridUtils.setGridManager(this, context);
     callback();
 }
 
@@ -298,7 +253,7 @@ export async function getGridInfo(
     _: any,
     callback: Callback<any>
 ) {
-    const renderInfo = await ProjectUtils.getGridInfo(this);
+    const renderInfo = await GridUtils.getGridInfo(this);
     callback(null, renderInfo);
 }
 
