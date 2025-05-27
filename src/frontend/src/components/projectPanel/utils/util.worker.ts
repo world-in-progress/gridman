@@ -205,7 +205,7 @@ export default class ProjectUtils {
             // Step 1: Get project
             const projectMeta = (await api.grid.project.getProject.fetch(projectName)).project_meta
             if (!projectMeta) {
-                throw new Error(`项目 ${projectName} 不存在或未找到`);
+                throw new Error(`项目 ${projectName} 不存在或未找到`)
             }
 
             // Step 2: Update project description
@@ -237,7 +237,7 @@ export default class ProjectUtils {
             // Step 1: Get project
             const projectMeta = (await api.grid.project.getProject.fetch(projectName)).project_meta
             if (!projectMeta) {
-                throw new Error(`项目 ${projectName} 不存在或未找到`);
+                throw new Error(`项目 ${projectName} 不存在或未找到`)
             }
 
             // Step 2: Update project starred status
