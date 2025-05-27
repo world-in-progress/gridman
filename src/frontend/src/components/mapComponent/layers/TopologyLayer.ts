@@ -106,6 +106,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this.paletteColorList.set(color, i * 3)
         }
 
+        // 将生成的颜色列表存储到 store 中
+        store.set('paletteColorList', this.paletteColorList);
+
         // Bind callbacks and event handlers
         this.resizeHandler = this._resizeHandler.bind(this)
 

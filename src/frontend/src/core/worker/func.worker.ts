@@ -107,10 +107,7 @@ export async function fetchProjects(
     callback: Callback<any>
 ) {
     const { startIndex, endIndex } = params;
-    const { err, result } = await ProjectUtils.fetchProjects(
-    startIndex,
-    endIndex
-    );
+    const { err, result } = await ProjectUtils.fetchProjects( startIndex, endIndex );
     callback(err, result);
 }
 

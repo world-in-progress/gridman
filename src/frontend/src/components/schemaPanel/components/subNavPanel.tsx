@@ -36,37 +36,28 @@ export function SubNavPanel({
     searchQuery = '',
 }: SubNavPanelProps) {
     const { language } = useContext(LanguageContext);
-    const [schemas, setSchemas] = useState<Schema[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [starredItems, setStarredItems] = useState<Record<string, boolean>>(
-        {}
-    );
-    const [allSchemas, setAllSchemas] = useState<Schema[]>([]);
-    const [highlightedSchema, setHighlightedSchema] = useState<string | null>(
-        null
-    );
-    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-    const [editingDescription, setEditingDescription] = useState<string | null>(
-        null
-    );
-    const [descriptionText, setDescriptionText] = useState<
-        Record<string, string>
-    >({});
-    const [schemaService] = useState(() => {
-        return new SchemaService(language);
-    });
-    const [markerManager] = useState(() => {
-        return new MapMarkerManager(language, (schemaName) =>
-            setHighlightedSchema(schemaName)
-        );
-    });
 
+    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
-    const [selectedSchema, setSelectedSchema] = useState<Schema | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    
+    const [schemas, setSchemas] = useState<Schema[]>([]);
+    const [allSchemas, setAllSchemas] = useState<Schema[]>([]);
+    const [selectedSchema, setSelectedSchema] = useState<Schema | null>(null);
     const [schemaToDelete, setSchemaToDelete] = useState<Schema | null>(null);
+    
+    const [error, setError] = useState<string | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [highlightedSchema, setHighlightedSchema] = useState<string | null>(null);
+    const [editingDescription, setEditingDescription] = useState<string | null>(null);
+    
+    const [starredItems, setStarredItems] = useState<Record<string, boolean>>({});
+    const [descriptionText, setDescriptionText] = useState<Record<string, string>>({});
+    
+    const [schemaService] = useState(() => {return new SchemaService(language)});
+    const [markerManager] = useState(() => {return new MapMarkerManager(language, (schemaName) => setHighlightedSchema(schemaName))});
+
 
     const fetchSchemasCallback = useCallback(
         async (page: number) => {
@@ -208,7 +199,6 @@ export function SubNavPanel({
                         : s
                 );
                 setSchemas(updatedSchemas);
-
                 setAllSchemas((prevAllSchemas) => {
                     const updatedAllSchemas = prevAllSchemas.map((s) =>
                         s.name === schema.name
