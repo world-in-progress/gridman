@@ -399,29 +399,39 @@ export default class ProjectUtils {
         }
 
         const responseData = await response.json();
-
-        // Step 2: Get number of projects
-        const numResponse = await fetch(numAPI);
-        if (numResponse.ok) {
-            const countText = await numResponse.text();
-            const countData = JSON.parse(countText);
-            if (typeof countData.count === 'number') {
-                responseData.total_count = countData.count;
-            } else if (typeof countData === 'number') {
-                responseData.total_count = countData;
-            } else if (countData && typeof countData.total === 'number') {
-                responseData.total_count = countData.total;
-            } else {
-                const possibleCountFields = Object.entries(countData).find(
-                    ([key, value]) =>
-                        typeof value === 'number' &&
-                        (key.includes('count') ||
-                            key.includes('total') ||
-                            key.includes('num'))
-                );
-                if (possibleCountFields) {
-                    responseData.total_count = possibleCountFields[1] as number;
-                } else {
+        try {
+            const numResponse = await fetch(numAPI);
+            if (numResponse.ok) {
+                const countText = await numResponse.text();
+                try {
+                    const countData = JSON.parse(countText);
+                    if (typeof countData.count === 'number') {
+                        responseData.total_count = countData.count;
+                    } else if (typeof countData === 'number') {
+                        responseData.total_count = countData;
+                    } else if (countData && typeof countData.total === 'number') {
+                        responseData.total_count = countData.total;
+                    } else {
+                        const possibleCountFields = Object.entries(countData).find(
+                            ([key, value]) =>
+                                typeof value === 'number' &&
+                                (key.includes('count') ||
+                                    key.includes('total') ||
+                                    key.includes('num'))
+                        );
+                        if (possibleCountFields) {
+                            responseData.total_count = possibleCountFields[1] as number;
+                        } else {
+                            const numericValue = parseInt(countText.trim(), 10);
+                            if (!isNaN(numericValue)) {
+                                responseData.total_count = numericValue;
+                            } else {
+                                responseData.total_count =
+                                    responseData.project_metas.length;
+                            }
+                        }
+                    }
+                } catch (parseError) {
                     const numericValue = parseInt(countText.trim(), 10);
                     if (!isNaN(numericValue)) {
                         responseData.total_count = numericValue;
@@ -430,8 +440,10 @@ export default class ProjectUtils {
                             responseData.project_metas.length;
                     }
                 }
-            }
-        } else {
+            } else {
+                responseData.total_count = responseData.project_metas.length;
+            } 
+        } catch (error) {
             responseData.total_count = responseData.project_metas.length;
         }
         if (responseData.total_count < responseData.project_metas.length) {

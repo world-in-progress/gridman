@@ -24,25 +24,19 @@ export class ProjectService {
     }
 
     public fetchAllProjects(
-        startIndex: number,
-        endIndex: number,
         callback?: Callback<any>
     ) {
         this._actor.send(
             'fetchProjects',
-            { startIndex: startIndex, endIndex: endIndex },
+            { startIndex: 0, endIndex: 1000 },
             (err, result) => {
-                if (callback) callback(err, result);
-                const projectMetas =
-                    result && result.project_metas ? result.project_metas : [];
-
-                const sortedProjects = [...projectMetas].sort((a, b) => {
+                const sortedProjects = [...result.project_metas].sort((a, b) => {
                     if (a.starred && !b.starred) return -1;
                     if (!a.starred && b.starred) return 1;
                     return 0;
                 });
-
-                return sortedProjects;
+                
+                if (callback) callback(err, sortedProjects);
             }
         );
     }
@@ -52,25 +46,24 @@ export class ProjectService {
         itemsPerPage: number,
         callback?: Callback<any>
     ) {
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
         this._actor.send(
             'fetchProjects',
-            { startIndex, endIndex },
+            { startIndex: 0, endIndex: 1000 },
             (err, result) => {
-                if (callback) callback(err, result);
-                const projects = result.project_metas || [];
-                const totalCount = result.total_count || projects.length;
-
-                const sortedProjects = [...projects].sort((a, b) => {
+                const allSortedProjects = [...result.project_metas].sort((a, b) => {
                     if (a.starred && !b.starred) return -1;
                     if (!a.starred && b.starred) return 1;
                     return 0;
                 });
 
+                const totalCount = result.total_count || allSortedProjects.length;
+                const startIndex = (page - 1) * itemsPerPage
+                const endIndex = startIndex + itemsPerPage
+                const currentPageSchemas = allSortedProjects.slice(startIndex, endIndex)
+
                 if (callback)
                     callback(err, {
-                        projects: sortedProjects,
+                        projects: currentPageSchemas,
                         totalCount,
                     });
             }
