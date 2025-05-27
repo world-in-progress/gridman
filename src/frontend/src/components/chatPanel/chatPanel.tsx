@@ -66,6 +66,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose }) => {
         abortControllerRef.current = new AbortController();
 
         try {
+            // TODO: refactor this to use a more robust API interface
             const response = await fetch(
                 '/api/bot/chat/stream',
                 {

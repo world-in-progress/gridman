@@ -341,8 +341,8 @@ export class MultiGridInfoParser {
     }
 
     static async toPostUrl(url: string, gridInfo: MultiGridBaseInfo): Promise<void> {
-        const buffer = MultiGridInfoParser.toBuffer(gridInfo);
         try {
+            const buffer = MultiGridInfoParser.toBuffer(gridInfo);
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },

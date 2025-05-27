@@ -9,6 +9,7 @@ import store from '../../../store';
 import { MultiGridRenderInfo } from '@/core/grid/types';
 import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
+import { PatchMeta } from '@/core/apis/types';
 
 export class ProjectService {
     private language: string;
@@ -128,20 +129,6 @@ export class ProjectService {
         });
     }
 
-    public async getPatches(
-        projectName: string,
-        patchName: string,
-        callback?: Callback<any>
-    ) {
-        this._actor.send(
-            'getPatches',
-            { projectName: projectName, patchName: patchName },
-            (err, result) => {
-                if (callback) callback(err, result);
-            }
-        );
-    }
-
     public fetchPatches(projectName: string, callback?: Callback<any>) {
         this._actor.send(
             'fetchPatches',
@@ -154,24 +141,14 @@ export class ProjectService {
 
     public createPatch(
         projectName: string,
-        patchData: {
-            name: string;
-            starred: boolean;
-            description: string;
-            bounds: [
-                number | null,
-                number | null,
-                number | null,
-                number | null
-            ];
-        },
+        patchData: PatchMeta,
         callback?: Callback<any>
     ) {
         this._actor.send(
             'createPatch',
             {
                 projectName: projectName,
-                ...patchData,
+                patchMeta: patchData,
             },
             (err, result) => {
                 if (callback) callback(err, result);
