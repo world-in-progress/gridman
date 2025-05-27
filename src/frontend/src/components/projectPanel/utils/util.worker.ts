@@ -1,11 +1,11 @@
 import * as api from '@/core/apis/apis'
-import { PatchMeta } from '@/core/apis/types';
-import { MultiProjectMeta } from '../types/types';
+import { PatchMeta } from '@/core/apis/types'
+import { MultiProjectMeta } from '../types/types'
 
 type ReturnType = {
-    err: Error | null;
-    result: any;
-};
+    err: Error | null
+    result: any
+}
 
 type AsyncReturnType = Promise<ReturnType>;
 
