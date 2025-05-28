@@ -18,7 +18,6 @@ import {
     ProjectEpsgCard,
 } from './components/ProjectFormComponents';
 import { clearMapMarkers } from '../schemaPanel/utils/SchemaCoordinateService';
-// import DrawButton from '../operatePanel/components/DrawButton';
 import {
     CreateProjectProps,
     ExtendedFormErrors,
@@ -65,9 +64,7 @@ const validateProjectForm = (
 
     if (!data.name.trim()) {
         generalError =
-            language === 'zh'
-                ? '请输入补丁名称'
-                : 'Please enter patch name';
+            language === 'zh' ? '请输入补丁名称' : 'Please enter patch name';
         errors.name = true;
         return { isValid: false, errors, generalError };
     }
@@ -152,10 +149,7 @@ export default function CreatePPatch({
     const [patchBoundsManager, setPatchBoundsManager] =
         useState<PatchBoundsManager | null>(null);
 
-    const {
-        setRectangleCoordinates,
-        ...sidebarProps
-    } = props;
+    const { setRectangleCoordinates, ...sidebarProps } = props;
 
     useEffect(() => {
         if (initialSchemaName) {
@@ -304,9 +298,9 @@ export default function CreatePPatch({
                 center: [(w + e) / 2, (s + n) / 2],
             };
 
-            if (setRectangleCoordinates) {
-                setRectangleCoordinates(rectangleCoordinates);
-            }
+            // if (setRectangleCoordinates) {
+            //     setRectangleCoordinates(rectangleCoordinates);
+            // }
 
             if (epsg && gridLevel && schemaBasePoint) {
                 const {
@@ -663,6 +657,19 @@ export default function CreatePPatch({
                     );
 
                     if (window.mapInstance) {
+                        const sourceId = `patch-bounds-临时项目`;
+                        const layerId = `patch-fill-临时项目`;
+                        const outlineLayerId = `patch-outline-临时项目`;
+
+                        if (window.mapInstance.getLayer(outlineLayerId)) {
+                            window.mapInstance.removeLayer(outlineLayerId);
+                        }
+                        if (window.mapInstance.getLayer(layerId)) {
+                            window.mapInstance.removeLayer(layerId);
+                        }
+                        if (window.mapInstance.getSource(sourceId)) {
+                            window.mapInstance.removeSource(sourceId);
+                        }
                         if (cornerMarker) {
                             cornerMarker.remove();
                             setCornerMarker && setCornerMarker(null);
@@ -812,11 +819,7 @@ export default function CreatePPatch({
         }
 
         // 再绘制新的
-        patchBoundsManager!.showPatchBounds(
-            '临时项目',
-            [patch],
-            true
-        );
+        patchBoundsManager!.showPatchBounds('临时项目', [patch], true);
     }, [expandedRectangle, patchBoundsManager, parentProject]);
 
     return (

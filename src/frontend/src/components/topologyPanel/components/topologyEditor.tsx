@@ -483,50 +483,6 @@ export default function TopologyEditor({
                         <h3 className="text-2xl font-bold">
                             {language === 'zh' ? '模式选择' : 'Picking'}
                         </h3>
-                        {/* <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex ml-auto">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-2">
-                                            <Label
-                                                className={` ${
-                                                    isPickingHighSpeedModeOn
-                                                        ? 'text-green-500'
-                                                        : 'text-gray-400'
-                                                }  ml-1`}
-                                            >
-                                                {language === 'zh'
-                                                    ? '高速模式'
-                                                    : 'High Speed Mode'}
-                                            </Label>
-                                            <Switch
-                                                className="bg-gray-900 data-[state=checked]:bg-green-500 cursor-pointer mr-2"
-                                                checked={
-                                                    isPickingHighSpeedModeOn
-                                                }
-                                                onCheckedChange={
-                                                    setIsPickingHighSpeedModeOn
-                                                }
-                                            />
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="bg-gray-600">
-                                        <div className="p-1">
-                                            <p className="font-bold text-[16px] mb-1">
-                                                {language == 'zh'
-                                                    ? '功能介绍'
-                                                    : 'Introduction'}
-                                            </p>
-                                            <p className="text-[14px]">
-                                                {language == 'zh'
-                                                    ? '开启后无需二次确认'
-                                                    : 'No twice confirmation when enabled'}
-                                            </p>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div> */}
                     </div>
 
                     <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
@@ -707,50 +663,6 @@ export default function TopologyEditor({
                         <h3 className="text-2xl font-bold">
                             {language === 'zh' ? '拓扑' : 'Topology'}
                         </h3>
-                        {/* <div className="p-2 bg-white border border-gray-200 rounded-4xl shadow-sm flex gap-2 ml-auto">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-2">
-                                            <Label
-                                                className={` ${
-                                                    isTopologyHighSpeedModeOn
-                                                        ? 'text-green-500'
-                                                        : 'text-gray-400'
-                                                }  ml-1`}
-                                            >
-                                                {language === 'zh'
-                                                    ? '高速模式'
-                                                    : 'High Speed Mode'}
-                                            </Label>
-                                            <Switch
-                                                className="bg-gray-900 data-[state=checked]:bg-green-500 cursor-pointer mr-2"
-                                                checked={
-                                                    isTopologyHighSpeedModeOn
-                                                }
-                                                onCheckedChange={
-                                                    setIsTopologyHighSpeedModeOn
-                                                }
-                                            />
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="bg-gray-600">
-                                        <div className="p-1">
-                                            <p className="font-bold text-[16px] mb-1">
-                                                {language == 'zh'
-                                                    ? '功能介绍'
-                                                    : 'Introduction'}
-                                            </p>
-                                            <p className="text-[14px]">
-                                                {language == 'zh'
-                                                    ? '开启后无需二次确认'
-                                                    : 'No twice confirmation when enabled'}
-                                            </p>
-                                        </div>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div> */}
                     </div>
                     <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
                         {topologyOperations.map((operation) => (
