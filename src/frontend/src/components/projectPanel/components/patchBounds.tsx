@@ -2,16 +2,9 @@ import React, { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '@/context';
 import DrawButton from '@/components/operatePanel/components/DrawButton';
 import { Separator } from '@radix-ui/react-separator';
-import { PatchBoundsProps } from '../types/types';
-import { Button } from '@/components/ui/button';
-import { RectangleCoordinates } from '@/components/operatePanel/types/types';
+import { UpdatedPatchBoundsProps } from '../types/types';
 
-interface UpdatedPatchBoundsProps extends PatchBoundsProps {
-    convertedRectangle: RectangleCoordinates | null;
-    setConvertedRectangle: (rect: RectangleCoordinates) => void;
-    onAdjustAndDraw: (north: string, south: string, east: string, west: string) => void;
-    drawExpandedRectangleOnMap?: () => void;
-}
+
 
 export default function PatchBounds({
     isDrawing,
@@ -22,63 +15,57 @@ export default function PatchBounds({
     onAdjustAndDraw,
     drawExpandedRectangleOnMap,
 }: UpdatedPatchBoundsProps) {
+
     const { language } = useContext(LanguageContext);
+
     const formatSingleValue = (value: number): string => value.toFixed(6);
+    
+    const [isError, setIsError] = useState<boolean>(false); 
+    const [eastValue, setEastValue] = useState<string>('');
+    const [westValue, setWestValue] = useState<string>('');
+    const [northValue, setNorthValue] = useState<string>('');
+    const [southValue, setSouthValue] = useState<string>('');
+    const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
 
     const handleButtonClick = () => {
         onDrawRectangle(!isDrawing);
     };
 
-    // Add state for input values and center
-    const [northValue, setNorthValue] = useState<string>('');
-    const [southValue, setSouthValue] = useState<string>('');
-    const [eastValue, setEastValue] = useState<string>('');
-    const [westValue, setWestValue] = useState<string>('');
-    const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
-    const [isError, setIsError] = useState<boolean>(false); // Add state for error status
-
-    // Calculate center and check for errors when boundary values change
     useEffect(() => {
         const n = parseFloat(northValue);
         const s = parseFloat(southValue);
         const e = parseFloat(eastValue);
         const w = parseFloat(westValue);
 
-        // Check if all values are valid numbers and if error conditions are met
         if (!isNaN(n) && !isNaN(s) && !isNaN(e) && !isNaN(w)) {
             if (w > e || s > n) {
-                // Check for error conditions: West > East or South > North
                 setIsError(true);
-                setCenter(null); // Clear center if error
+                setCenter(null); 
             } else {
-                // Center calculation should be based on input values
-                const centerX = (e + w) / 2; // Corrected center calculation
-                const centerY = (n + s) / 2; // Corrected center calculation
+                const centerX = (e + w) / 2;
+                const centerY = (n + s) / 2;
                 setCenter({ x: centerX, y: centerY });
-                setIsError(false); // Clear error if valid
+                setIsError(false); 
             }
         } else {
-            setCenter(null); // Clear center if any input is invalid
-            setIsError(false); // Not an error condition based on comparison, but invalid input
+            setCenter(null); 
+            setIsError(false);
         }
     }, [northValue, southValue, eastValue, westValue]);
 
-    // 新增 useEffect 监听 convertedRectangle prop
     useEffect(() => {
         if (convertedRectangle) {
-            // 当 convertedRectangle 存在时，更新输入框的值
             setNorthValue(formatSingleValue(convertedRectangle.northEast[1]));
             setSouthValue(formatSingleValue(convertedRectangle.southWest[1]));
             setEastValue(formatSingleValue(convertedRectangle.northEast[0]));
             setWestValue(formatSingleValue(convertedRectangle.southWest[0]));
         } else {
-             // 当 convertedRectangle 不存在时，清空输入框的值
              setNorthValue('');
              setSouthValue('');
              setEastValue('');
              setWestValue('');
         }
-    }, [convertedRectangle]); // 依赖于 convertedRectangle
+    }, [convertedRectangle]);
 
     return (
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 mt-4">
@@ -88,7 +75,6 @@ export default function PatchBounds({
             <div>
                 <div className="mb-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
                     <div className="font-bold text-md mb-2">
-                        {/* Use the new prop for translation */}
                         {language === 'zh' ? '方法一：绘制生成' : 'Method One: Draw to generate'}
                     </div>
                     <DrawButton
@@ -100,7 +86,6 @@ export default function PatchBounds({
                 <Separator className="h-px mb-2 bg-gray-300" />
                 <div className=" p-2 bg-white rounded-md shadow-sm border border-gray-200">
                     <div className="mb-2 font-bold text-md">
-                        {/* Use the new prop for translation */}
                         {language === 'zh' ? '方法二：输入参数生成' : 'Method Two: Input parameters to generate'}
                     </div>
                     <div className="grid grid-cols-3 mb-2 gap-1 text-xs">
@@ -119,7 +104,6 @@ export default function PatchBounds({
                                 value={northValue}
                                 onChange={(e) => {
                                     setNorthValue(e.target.value);
-                                    // 只要四个值都合法，实时 setConvertedRectangle
                                     const n = parseFloat(e.target.value);
                                     const s = parseFloat(southValue);
                                     const eVal = parseFloat(eastValue);
@@ -138,7 +122,7 @@ export default function PatchBounds({
                                 placeholder={
                                     language == 'zh' ? '请输入' : 'Enter max Y'
                                 }
-                                step="any" // Allow decimal inputs
+                                step="any" 
                             />
                         </div>
                         {/* Top Right Corner */}
@@ -159,7 +143,7 @@ export default function PatchBounds({
                                 placeholder={
                                     language == 'zh' ? '请输入' : 'Enter mix X'
                                 }
-                                step="any" // Allow decimal inputs
+                                step="any"
                             />
                         </div>
                         {/* Center */}
@@ -167,8 +151,6 @@ export default function PatchBounds({
                             <span className="font-bold text-[#FF8F2E] text-xl">
                                 {language === 'zh' ? '中心' : 'Center'}
                             </span>
-                            {/* Display for Center */}
-                            {/* Conditionally apply red text and display Error */}
                             <div
                                 className={`text-[10px] mt-1 ${
                                     isError ? 'text-red-600' : ''
@@ -199,7 +181,7 @@ export default function PatchBounds({
                                 placeholder={
                                     language == 'zh' ? '请输入' : 'Enter max X'
                                 }
-                                step="any" // Allow decimal inputs
+                                step="any"
                             />
                         </div>
                         {/* Bottom Left Corner */}
@@ -220,7 +202,7 @@ export default function PatchBounds({
                                 placeholder={
                                     language == 'zh' ? '请输入' : 'Enter max X'
                                 }
-                                step="any" // Allow decimal inputs
+                                step="any"
                             />
                         </div>
                         {/* Bottom Right Corner */}

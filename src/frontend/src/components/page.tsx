@@ -41,17 +41,19 @@ import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/TopologyPanel'
+import TopologyPanel from './topologyPanel/TopologyPanel';
 import AttributePanel from './attributePanel/attributePanel';
 import AggregationPanel from './aggregationPanel/aggregationPanel';
+import FeaturePanel from './featurePanel/featurePanel';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
     | 'schema'
     | 'project'
     | 'editor'
-    | 'topology'
-    | 'attribute'
+    | 'grid'
+    | 'raster'
+    | 'feature'
     | 'aggregation'
     | null;
 
@@ -82,8 +84,9 @@ export default function Page() {
         | 'schema'
         | 'project'
         | 'editor'
-        | 'topology'
-        | 'attribute'
+        | 'grid'
+        | 'raster'
+        | 'feature'
         | 'aggregation'
         | null
     >(null);
@@ -111,10 +114,7 @@ export default function Page() {
             patches: any[],
             show: boolean
         ) => void;
-        highlightPatch: (
-            projectName: string,
-            patchName: string
-        ) => void;
+        highlightPatch: (projectName: string, patchName: string) => void;
     }>(null);
 
     store.set('updateCapacity', {
@@ -133,8 +133,9 @@ export default function Page() {
                 | 'schema'
                 | 'project'
                 | 'editor'
-                | 'topology'
-                | 'attribute'
+                | 'grid'
+                | 'raster'
+                | 'feature'
                 | 'aggregation'
                 | null
         ) => {
@@ -157,16 +158,20 @@ export default function Page() {
             en: 'Editor',
         },
         topology: {
-            zh: '拓扑',
-            en: 'Topology',
+            zh: '网格',
+            en: 'Grid',
         },
         attribute: {
-            zh: '属性',
-            en: 'Attribute',
+            zh: '栅格',
+            en: 'Raster',
+        },
+        feature: {
+            zh: '要素',
+            en: 'Feature',
         },
         aggregation: {
             zh: '聚合',
-            en: 'aggregation',
+            en: 'Aggregation',
         },
     };
 
@@ -410,7 +415,7 @@ export default function Page() {
                 );
             }
             return <ProjectPanel onCreatePatch={handleCreatePatch} />;
-        } else if (activePanel === 'topology') {
+        } else if (activePanel === 'grid') {
             return (
                 <TopologyPanel
                     onBack={() => {
@@ -419,9 +424,18 @@ export default function Page() {
                     }}
                 />
             );
-        } else if (activePanel === 'attribute') {
+        } else if (activePanel === 'raster') {
             return (
                 <AttributePanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                />
+            );
+        } else if (activePanel === 'feature') {
+            return (
+                <FeaturePanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
@@ -492,14 +506,16 @@ export default function Page() {
                                 <BreadcrumbItem>
                                     <BreadcrumbLink
                                         className={
-                                            activePanel === 'topology'
-                                                ? activeBreadcrumb ===
-                                                  'topology'
+                                            activePanel === 'grid'
+                                                ? activeBreadcrumb === 'grid'
                                                     ? 'text-[#71F6FF] font-bold'
                                                     : ''
-                                                : activePanel === 'attribute'
-                                                ? activeBreadcrumb ===
-                                                  'attribute'
+                                                : activePanel === 'raster'
+                                                ? activeBreadcrumb === 'raster'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
+                                                : activePanel === 'feature'
+                                                ? activeBreadcrumb === 'feature'
                                                     ? 'text-[#71F6FF] font-bold'
                                                     : ''
                                                 : activeBreadcrumb === 'editor'
@@ -507,10 +523,12 @@ export default function Page() {
                                                 : ''
                                         }
                                     >
-                                        {activePanel === 'topology'
+                                        {activePanel === 'grid'
                                             ? breadcrumbText.topology[language]
-                                            : activePanel === 'attribute'
+                                            : activePanel === 'raster'
                                             ? breadcrumbText.attribute[language]
+                                            : activePanel === 'feature'
+                                            ? breadcrumbText.feature[language]
                                             : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
@@ -556,7 +574,7 @@ export default function Page() {
                         </div>
                     </div>
 
-                    {/* 用户头像 */}
+                    {/* User Avatar */}
                     <div className="ml-auto mr-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -590,7 +608,7 @@ export default function Page() {
                     </div>
                 </header>
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
-                    {activeBreadcrumb === 'topology' && updateCapacity && (
+                    {activeBreadcrumb === 'grid' && updateCapacity && (
                         <CapacityBar />
                     )}
                     <MapInit

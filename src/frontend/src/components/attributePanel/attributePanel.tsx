@@ -8,10 +8,20 @@ import store from '@/store';
 import BasicInfo from '../aggregationPanel/components/basicInfo';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/utils/utils';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import LayerList from './components/layerList';
 // import GridCore from '@/core/grid/NHGridCore';
 // import { GridSaveInfo } from '@/core/grid/types';
 // import TopologyLayer from '../mapComponent/layers/TopologyLayer'; // Change to AttributeLayer
@@ -26,6 +36,7 @@ export default function AttributePanel({
 }: AttributePanelProps) {
     const { language } = useContext(LanguageContext);
     const [activeTab, setActiveTab] = useState('Terrain');
+    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
     const handleBack = () => {
         const clg = store.get<NHLayerGroup>('clg')!;
@@ -54,9 +65,104 @@ export default function AttributePanel({
         );
     };
 
+    const handleUploadRasterResource = () => {
+        console.log('你好，这里是栅格资源上传逻辑');
+        // You might want to close the dialog after upload or on success/failure
+        // setUploadDialogOpen(false);
+    };
+
     return (
         <Sidebar {...props}>
             <SidebarContent>
+                <AlertDialog
+                    open={uploadDialogOpen}
+                    onOpenChange={setUploadDialogOpen}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                <span className="text-2xl">
+                                    {language === 'zh'
+                                        ? '操作确认'
+                                        : 'Operation Confirm'}
+                                </span>
+                            </AlertDialogTitle>
+                            {/* <AlertDialogDescription>
+                                {language === 'zh'
+                                    ? '栅格资源上传确认'
+                                    : 'Raster resources upload confirm'}
+                            </AlertDialogDescription> */}
+                        </AlertDialogHeader>
+                        <div className="flex flex-col space-y-2">
+                            <div className="p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                                <div className="flex mt-1 mb-1 ml-1 items-center text-md font-bold">
+                                    {language === 'zh'
+                                        ? '栅格数据上传'
+                                        : 'Raster Data Upload'}
+                                </div>
+                                <div
+                                    className={cn(
+                                        'relative flex items-center justify-center w-full h-[200px] rounded-lg shadow-sm border-2 border-dashed border-gray-300 bg-gray-300/50 hover:border-gray-400 hover:bg-gray-100 transition-all duration-200'
+                                    )}
+                                >
+                                    <Input
+                                        id="tif-upload"
+                                        type="file"
+                                        accept=".tif,.tiff"
+                                        className="absolute inset-0 opacity-0 h-full cursor-pointer"
+                                    />
+                                    <div className="flex flex-col items-center gap-2 text-center">
+                                        <Upload className="h-8 w-8 text-gray-500" />
+                                        <span className="text-xs text-gray-600 font-medium">
+                                            {language === 'zh'
+                                                ? '拖放或点击上传 .tif 文件'
+                                                : 'Drag and drop or click to upload .tif file'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <RadioGroup
+                                defaultValue="option-one"
+                                className="flex flex-row mt-2"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                        value="option-one"
+                                        id="option-one"
+                                    />
+                                    <Label htmlFor="option-one">
+                                        {language === 'zh'
+                                            ? '基础地形数据'
+                                            : 'Basic Terrain Data'}
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                        value="option-two"
+                                        id="option-two"
+                                    />
+                                    <Label htmlFor="option-two">
+                                        {language === 'zh'
+                                            ? '精细地形数据'
+                                            : 'Detailed Terrain Data'}
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="cursor-pointer">
+                                {language === 'zh' ? '取消' : 'Cancel'}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleUploadRasterResource}
+                                className="bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                            >
+                                {language === 'zh' ? '上传' : 'Upload'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
                 <div className="flex items-center p-3 justify-between">
                     <button
                         onClick={handleBack}
@@ -101,101 +207,8 @@ export default function AttributePanel({
                         </button>
                     </div>
 
-                    {/* Attribute Editor */}
-                    <div>
-                        {/* Basic terrain upload */}
-                        <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                            <div className="flex mt-1 mb-1 ml-1 items-center text-2xl font-bold">
-                                {language === 'zh'
-                                    ? '基础地形上传'
-                                    : 'Basic Terrain Upload'}
-                            </div>
-                            <div
-                                className={cn(
-                                    'relative flex items-center justify-center w-full h-[120px] rounded-lg shadow-sm border-2 border-dashed border-gray-300 bg-gray-300/50 hover:border-gray-400 hover:bg-gray-100 transition-all duration-200'
-                                )}
-                            >
-                                <Input
-                                    id="tif-upload"
-                                    type="file"
-                                    accept=".tif,.tiff"
-                                    className="absolute inset-0 opacity-0 h-full cursor-pointer"
-                                />
-                                <div className="flex flex-col items-center gap-2 text-center">
-                                    <Upload className="h-8 w-8 text-gray-500" />
-                                    <span className="text-xs text-gray-600 font-medium">
-                                        {language === 'zh'
-                                            ? '拖放或点击上传 .tif 文件'
-                                            : 'Drag and drop or click to upload .tif file'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Layer list and detailed terrain upload */}
-                        <div className="mt-2 p-2 space-y-2 bg-white rounded-md shadow-sm border border-gray-200">
-                            <div className="border rounded-md p-2 shadow-md">
-                                <div className="flex mb-1 ml-1 items-center text-2xl font-bold">
-                                    {language === 'zh'
-                                        ? '精细地形上传'
-                                        : 'Detailed Terrain Upload'}
-                                </div>
-                                <div
-                                    className={cn(
-                                        'relative flex items-center justify-center w-full h-[120px] rounded-lg shadow-sm border-2 border-dashed border-gray-300 bg-gray-300/50 hover:border-gray-400 hover:bg-gray-100 transition-all duration-200'
-                                    )}
-                                >
-                                    <Input
-                                        id="tif-upload"
-                                        type="file"
-                                        accept=".tif,.tiff"
-                                        className="absolute inset-0 opacity-0 h-full cursor-pointer"
-                                    />
-                                    <div className="flex flex-col items-center gap-2 text-center">
-                                        <Upload className="h-8 w-8 text-gray-500" />
-                                        <span className="text-xs text-gray-600 font-medium">
-                                            {language === 'zh'
-                                                ? '拖放或点击上传 .tif 文件'
-                                                : 'Drag and drop or click to upload .tif file'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="border rounded-md p-2 shadow-md">
-                                <div className="flex mb-1 ml-1 items-center text-2xl font-bold">
-                                    {language === 'zh'
-                                        ? '图层列表'
-                                        : 'Layer List'}
-                                </div>
-                                <ScrollArea className="h-50 w-full rounded-md border-2 border-gray-300">
-                                    <div className="p-4">
-                                        <h4 className="mb-4 text-sm font-medium leading-none">
-                                            Tags
-                                        </h4>
-                                        {tags.map((tag) => (
-                                            <>
-                                                <div
-                                                    key={tag}
-                                                    className="text-sm"
-                                                >
-                                                    {tag}
-                                                </div>
-                                                <Separator className="my-2" />
-                                            </>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </div>
-                            <div className="border rounded-md p-2 shadow-md">
-                                <div className="flex ml-1 items-center text-2xl font-bold">
-                                    {language === 'zh'
-                                        ? '编辑图层'
-                                        : 'Edit Layer'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Layer list */}
+                    <LayerList onUpload={setUploadDialogOpen} />
 
                     {/* Save raster resource button */}
                     <div
