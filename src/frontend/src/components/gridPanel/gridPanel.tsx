@@ -1,11 +1,21 @@
-import { toast } from 'sonner';
-import { ArrowLeft, Mountain, MountainSnow, Upload } from 'lucide-react';
-import { LanguageContext } from '../../context';
-import { FeaturePanelProps } from './types/types';
 import { useContext, useState, useEffect } from 'react';
+import { LanguageContext } from '../../context';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
-import BasicInfo from '../aggregationPanel/components/basicInfo';
-import LayerList from './components/layerList';
+import { ArrowLeft, Upload } from 'lucide-react';
+import { GridPanelProps } from '../gridPanel/types/types';
+import BasicInfo from '../gridPanel/components/basicInfo';
+import GridEditor from '../gridPanel/components/gridEditor';
+import store from '@/store';
+import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
+import TopologyLayer from '../mapComponent/layers/TopologyLayer';
+import GridCore from '@/core/grid/NHGridCore';
+import { GridSaveInfo } from '@/core/grid/types';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/utils/utils';
+import { Label } from '@/components/ui/label';
+
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,51 +26,71 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/utils/utils';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import LayerList from '../rasterPanel/components/layerList';
 
-
-
-export default function FeaturePanel({
-    onBack,
-    ...props
-}: FeaturePanelProps) {
-
+export default function GridPanel({ onBack, ...props }: GridPanelProps) {
     const { language } = useContext(LanguageContext);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+    const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>(
+        'picking'
+    );
+    const [activeSelectTab, setActiveSelectTab] = useState<
+        'brush' | 'box' | 'feature'
+    >('brush');
+
+    useEffect(() => {
+        store.set('modeSelect', 'brush');
+        store.set('pickingSelect', true);
+    }, []);
+
+    const handleActivateSelectTab = (
+        tab: 'brush' | 'box' | 'feature'
+    ): 'brush' | 'box' | 'feature' => {
+        const currentTab = activeSelectTab;
+        setActiveSelectTab(tab);
+        store.set('modeSelect', tab);
+        return currentTab;
+    };
 
     const handleBack = () => {
+        const clg = store.get<NHLayerGroup>('clg')!;
+        const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
+        layer.removeResource();
+
         if (onBack) {
             onBack();
         }
     };
 
-    const handleSaveFeatureState = () => {
-        toast.success(
-            language === 'zh'
-                ? '要素资源保存成功'
-                : 'Feature resource saved successfully',
-            {
-                style: {
-                    background: '#ecfdf5',
-                    color: '#047857',
-                    border: '1px solid #a7f3d0',
-                    bottom: '30px',
-                },
-            }
-        );
+    const handleSaveTopologyState = () => {
+        const core: GridCore = store.get('gridCore')!;
+        core.save((saveInfo: GridSaveInfo) => {
+            toast.success(
+                language === 'zh'
+                    ? '拓扑编辑状态保存成功'
+                    : 'Topology edit state saved successfully',
+                {
+                    style: {
+                        background: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        bottom: '30px',
+                    },
+                }
+            );
+        });
     };
 
-    const handleUploadFeatureResource = () => {
-        console.log('uploadFeatureResource');
-    }
+    const handleUploadRasterResource = () => {
+        console.log('你好，这里是栅格资源上传逻辑');
+        // You might want to close the dialog after upload or on success/failure
+        setUploadDialogOpen(false);
+    };
 
     return (
         <Sidebar {...props}>
             <SidebarContent>
-            <AlertDialog
+                <AlertDialog
                     open={uploadDialogOpen}
                     onOpenChange={setUploadDialogOpen}
                 >
@@ -136,7 +166,7 @@ export default function FeaturePanel({
                                 {language === 'zh' ? '取消' : 'Cancel'}
                             </AlertDialogCancel>
                             <AlertDialogAction
-                                onClick={handleUploadFeatureResource}
+                                onClick={handleUploadRasterResource}
                                 className="bg-blue-500 hover:bg-blue-600 cursor-pointer"
                             >
                                 {language === 'zh' ? '上传' : 'Upload'}
@@ -153,25 +183,30 @@ export default function FeaturePanel({
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh' ? '要素编辑' : 'Feature Editor'}
+                        {language === 'zh' ? '拓扑编辑' : 'Topology Editor'}
                     </h1>
                 </div>
 
                 <div className="p-2 -mt-3 space-y-2">
                     <BasicInfo />
                     <LayerList onUpload={setUploadDialogOpen} />
-
-                    {/* Save raster resource button */}
-                    {/* <div
-                        className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
-                        onClick={handleSaveFeatureState}
+                    <div
+                        className="bg-green-500 hover:bg-green-600 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
+                        onClick={handleSaveTopologyState}
                     >
                         <span>
                             {language === 'zh'
-                                ? '保存要素资源'
-                                : 'Save Feature Resouce'}
+                                ? '保存拓扑编辑状态'
+                                : 'Save Topology Edit State'}
                         </span>
-                    </div> */}
+                    </div>
+
+                    <GridEditor
+                        pickingTab={pickingTab}
+                        setPickingTab={setPickingTab}
+                        activeSelectTab={activeSelectTab}
+                        setActiveSelectTab={handleActivateSelectTab}
+                    />
                 </div>
             </SidebarContent>
             <SidebarRail />

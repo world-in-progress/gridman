@@ -297,7 +297,7 @@ export default function LayerList({ onUpload }: LayerList) {
     };
 
     return (
-        <div className="w-full max-w-sm border rounded-lg bg-white shadow-sm">
+        <div className="w-full border rounded-lg bg-white shadow-sm">
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b rounded-t-md bg-gray-50">
                 <h3 className="font-semibold text-sm">Layers</h3>

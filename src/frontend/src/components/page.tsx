@@ -41,8 +41,8 @@ import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/TopologyPanel';
-import AttributePanel from './attributePanel/attributePanel';
+import GridPanel from './gridPanel/gridPanel';
+import RasterPanel from './rasterPanel/rasterPanel';
 import AggregationPanel from './aggregationPanel/aggregationPanel';
 import FeaturePanel from './featurePanel/featurePanel';
 
@@ -115,6 +115,11 @@ export default function Page() {
             show: boolean
         ) => void;
         highlightPatch: (projectName: string, patchName: string) => void;
+        showEditBounds: (
+            projectName: string,
+            patchBounds: number[],
+            show: boolean
+        ) => void;
     }>(null);
 
     store.set('updateCapacity', {
@@ -157,11 +162,11 @@ export default function Page() {
             zh: '编辑',
             en: 'Editor',
         },
-        topology: {
+        grid: {
             zh: '网格',
             en: 'Grid',
         },
-        attribute: {
+        raster: {
             zh: '栅格',
             en: 'Raster',
         },
@@ -296,9 +301,12 @@ export default function Page() {
             handleBreadcrumbClick('project');
         }
     };
+
     const handlePreviousClick = () => {
         if (!activeBreadcrumb || activeBreadcrumb === 'project') {
             handleBreadcrumbClick('schema');
+        } else {
+            handleBreadcrumbClick('project');
         }
     };
 
@@ -417,7 +425,7 @@ export default function Page() {
             return <ProjectPanel onCreatePatch={handleCreatePatch} />;
         } else if (activePanel === 'grid') {
             return (
-                <TopologyPanel
+                <GridPanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
@@ -426,7 +434,7 @@ export default function Page() {
             );
         } else if (activePanel === 'raster') {
             return (
-                <AttributePanel
+                <RasterPanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
@@ -518,17 +526,26 @@ export default function Page() {
                                                 ? activeBreadcrumb === 'feature'
                                                     ? 'text-[#71F6FF] font-bold'
                                                     : ''
+                                                : activePanel === 'aggregation'
+                                                ? activeBreadcrumb ===
+                                                  'aggregation'
+                                                    ? 'text-[#71F6FF] font-bold'
+                                                    : ''
                                                 : activeBreadcrumb === 'editor'
                                                 ? 'text-[#71F6FF] font-bold'
                                                 : ''
                                         }
                                     >
                                         {activePanel === 'grid'
-                                            ? breadcrumbText.topology[language]
+                                            ? breadcrumbText.grid[language]
                                             : activePanel === 'raster'
-                                            ? breadcrumbText.attribute[language]
+                                            ? breadcrumbText.raster[language]
                                             : activePanel === 'feature'
                                             ? breadcrumbText.feature[language]
+                                            : activePanel === 'aggregation'
+                                            ? breadcrumbText.aggregation[
+                                                  language
+                                              ]
                                             : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
@@ -663,7 +680,11 @@ export default function Page() {
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 )}
-                                {activeBreadcrumb === 'project' && (
+                                {(activeBreadcrumb === 'project' ||
+                                    activeBreadcrumb === 'grid' ||
+                                    activeBreadcrumb === 'raster' ||
+                                    activeBreadcrumb === 'feature' ||
+                                    activeBreadcrumb === 'aggregation') && (
                                     <Button
                                         className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
                                         onClick={handlePreviousClick}

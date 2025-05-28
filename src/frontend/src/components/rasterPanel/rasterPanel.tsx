@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import { ArrowLeft, Mountain, MountainSnow, Upload } from 'lucide-react';
 import { LanguageContext } from '../../context';
-import { AttributePanelProps } from './types/types';
+import { RasterPanelProps } from './types/types';
 import { useContext, useState, useEffect } from 'react';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import store from '@/store';
@@ -22,33 +22,24 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import LayerList from './components/layerList';
-// import GridCore from '@/core/grid/NHGridCore';
-// import { GridSaveInfo } from '@/core/grid/types';
-// import TopologyLayer from '../mapComponent/layers/TopologyLayer'; // Change to AttributeLayer
 
 const tags = Array.from({ length: 50 }).map(
     (_, i, a) => `v1.2.0-beta.${a.length - i}`
 );
 
-export default function AttributePanel({
-    onBack,
-    ...props
-}: AttributePanelProps) {
+export default function RasterPanel({ onBack, ...props }: RasterPanelProps) {
     const { language } = useContext(LanguageContext);
     const [activeTab, setActiveTab] = useState('Terrain');
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
     const handleBack = () => {
         const clg = store.get<NHLayerGroup>('clg')!;
-        // Change to AttributeLayer
-        // const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
-        // layer.removeResource();
         if (onBack) {
             onBack();
         }
     };
 
-    const handleSaveAttributeState = () => {
+    const handleSaveRasterState = () => {
         // Add save raster resource logic here
         toast.success(
             language === 'zh'
@@ -172,7 +163,7 @@ export default function AttributePanel({
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh' ? '属性编辑' : 'Attribute Editor'}
+                        {language === 'zh' ? '栅格编辑' : 'Raster Editor'}
                     </h1>
                 </div>
 
@@ -213,7 +204,7 @@ export default function AttributePanel({
                     {/* Save raster resource button */}
                     <div
                         className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
-                        onClick={handleSaveAttributeState}
+                        onClick={handleSaveRasterState}
                     >
                         <span>
                             {language === 'zh'

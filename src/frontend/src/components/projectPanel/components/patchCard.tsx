@@ -22,6 +22,7 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
+import { PatchBoundsManager } from '@/components/mapComponent/layers/patchBoundsManager';
 
 declare global {
     interface Window {
@@ -135,8 +136,10 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         e.stopPropagation();
         isLoading.on();
 
+        console.log('patch.bounds', patch.bounds);
         store.set('ProjectName', parentProjectTitle);
         store.set('PatchName', patch.name);
+        store.set('PatchBounds', patch.bounds);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
             store.set('SchemaName', result.project_meta.schema_name);
@@ -150,6 +153,7 @@ export const PatchCard: React.FC<PatchCardProps> = ({
                     store.set('CurrentPatchEPSG', result.project_schema.epsg);
                     //need to enlarge setActivePanelFromStore method
                     setActivePanelFromStore('feature'); 
+                    handleDrawEditBounds();
                     isLoading.off();
                 });
             }
@@ -181,6 +185,35 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         });
     };
 
+    const handleDrawEditBounds = () => {
+
+        if (!patch.bounds || patch.bounds.length !== 4) {
+            return;
+        }
+
+        const bounds = [
+            patch.bounds[0],
+            patch.bounds[1],
+            patch.bounds[2],
+            patch.bounds[3],
+        ] as [number, number, number, number];
+
+        const editBounds = {
+            name: 'editBounds',
+            bounds,
+            starred: false,
+            description: '',
+        }
+
+        if (window.mapRef && window.mapRef.current) {
+            console.log(window.mapRef!.current)
+            const { showPatchBounds,showEditBounds, flyToPatchBounds } = window.mapRef.current;
+            flyToPatchBounds(parentProjectTitle, patch.name);
+            showEditBounds(parentProjectTitle, patch.bounds, true);
+            // showPatchBounds('editBounds', [editBounds], true);
+        } 
+    }
+
     const menuItems = [
         {
             title: language === 'zh' ? '网格编辑' : 'Grid Editor',
@@ -188,14 +221,14 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             onClick: handleGridEditorClick,
         },
         {
-            title: language === 'zh' ? '栅格资源编辑' : 'Raster Editor',
-            icon: <Mountain className="h-4 w-4 mr-2" />,
-            onClick: handleRasterEditorClick,
-        },
-        {
-            title: language === 'zh' ? '要素编辑' : 'Feature Editor',
+            title: language === 'zh' ? '要素资源编辑' : 'Feature Resoure Editor',
             icon: <SplinePointer  className="h-4 w-4 mr-2" />,
             onClick: handleFeatureEditorClick,
+        },
+        {
+            title: language === 'zh' ? '栅格资源编辑' : 'Raster Resource Editor',
+            icon: <Mountain className="h-4 w-4 mr-2" />,
+            onClick: handleRasterEditorClick,
         },
         {
             title: language === 'zh' ? '聚合工作流' : 'Aggregation Workflow',
