@@ -214,6 +214,7 @@ export interface PatchBoundsProps {
     onDrawRectangle: (currentlyDrawing: boolean) => void;
 }
 
+
 export interface UpdatedPatchBoundsProps extends PatchBoundsProps {
     convertedRectangle: RectangleCoordinates | null;
     setConvertedRectangle: (rect: RectangleCoordinates) => void;

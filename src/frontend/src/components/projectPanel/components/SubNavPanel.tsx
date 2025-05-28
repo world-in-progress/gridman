@@ -409,10 +409,7 @@ export function SubNavPanel({
                 </SidebarGroup>
 
                 <div
-                    className="fixed inset-0 pointer-events-auto z-80"
-                    style={{
-                        backgroundColor: 'rgba(33, 33, 33, 0.4)',
-                    }}
+                    className="fixed inset-0 pointer-events-auto z-200 bg-[#212121] opacity-30"
                 />
                 <Loader />
             </>

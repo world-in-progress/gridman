@@ -98,6 +98,10 @@ export default function TopologyPanel({
                         </span>
                     </div>
 
+                    <div className="bg-white h-40 mt-2 p-3 flex items-center justify-center text-md font-bold rounded-md border border-gray-400  shadow-md">
+                                这是图层列表
+                    </div>
+
                     {/* 拓扑编辑 */}
                     <TopologyEditor
                         pickingTab={pickingTab}
