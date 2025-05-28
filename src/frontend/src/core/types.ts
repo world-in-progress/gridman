@@ -2,8 +2,6 @@ export type Cancelable = {
     cancel: () => void
 }
 
-export type WorkerSelf = WorkerGlobalScope & Record<string, any>
-
 export type TaskType = 'message'
 
 export type Callback<T> = (error?: Error | null, result?: T | null) => void
@@ -23,3 +21,13 @@ export type SerializedObject = {
 }
 
 export type Serialized = unknown | null | undefined | boolean | number | string | Date | RegExp | ArrayBuffer | ArrayBufferView | ImageData | Array<Serialized> | SerializedObject
+
+export type WorkerSelf = WorkerGlobalScope & Record<string, any>
+
+export function workerContext(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    (self as WorkerSelf)[propertyKey] = descriptor.value.bind(self)
+    return descriptor
+}
+    
+
+
