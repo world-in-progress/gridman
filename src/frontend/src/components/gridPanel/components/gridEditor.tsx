@@ -10,7 +10,7 @@ import {
     SquareMousePointer,
     SquareDashedMousePointer,
 } from 'lucide-react';
-import { TopologyEditorProps } from '../types/types';
+import { GridEditorProps } from '../types/types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,12 +41,12 @@ type TopologyOperationType =
     | 'recover'
     | null;
 
-export default function TopologyEditor({
+export default function GridEditor({
     pickingTab,
     setPickingTab,
     activeSelectTab,
     setActiveSelectTab,
-}: TopologyEditorProps) {
+}: GridEditorProps) {
     const { language } = useContext(LanguageContext);
 
     const [isVisible, setIsVisible] = useState(true);
@@ -309,7 +309,7 @@ export default function TopologyEditor({
     return (
         <div className="relative">
             {isVisible && (
-                <div className="mt-2 space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
+                <div className="space-y-2 p-2 bg-white rounded-md shadow-sm border border-gray-200 relative">
                     {/* 框选全部网格 */}
                     <AlertDialog
                         open={selectAllDialogOpen}

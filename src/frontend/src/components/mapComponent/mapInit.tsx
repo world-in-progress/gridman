@@ -13,24 +13,15 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { RectangleCoordinates } from '../operatePanel/operatePanel';
 import { MapInitProps, MapInitHandle } from './types/types';
-import { CustomLayer } from './layers/customLayer';
-import ThreejsSceneLayer from './threejs/threejs-scene';
 // Import rectangle drawing mode
 // @ts-ignore
 import DrawRectangle from 'mapbox-gl-draw-rectangle-mode';
-import GLMapRectangleLayer from './layers/glMapRectangleLayer';
-import CustomRectangleDraw from './layers/customRectangleDraw';
-import ProjectBoundsLayer from './layers/projectBoundsLayer';
-import { convertCoordinate } from '../../core/util/coordinateUtils';
-import { generateRandomHexColor } from '../../utils/colorUtils';
-import { ProjectService } from '../projectPanel/utils/ProjectService';
 import { LanguageContext, CheckingSwitch } from '../../context';
 import { PatchBoundsManager } from './layers/patchBoundsManager';
 import store from '../../store';
 import TopologyLayer from './layers/TopologyLayer';
 import NHLayerGroup from './utils/NHLayerGroup';
 
-// Add mapInstance property to window object
 declare global {
     interface Window {
         mapInstance?: mapboxgl.Map;
@@ -38,15 +29,8 @@ declare global {
     }
 }
 
-// GPULayer canvas state
 const GPULayerON = false
 
-const scene: ThreejsSceneLayer | null = null;
-let rectangleLayer: GLMapRectangleLayer | null = null;
-let customRectangleDraw: CustomRectangleDraw | null = null;
-let projectBoundsLayer: ProjectBoundsLayer | null = null;
-
-// Simple debounce function (you can replace this with a library version if preferred)
 const debounce = (func: (...args: any[]) => void, delay: number) => {
     let timeoutId: NodeJS.Timeout;
     return (...args: any[]) => {
@@ -68,30 +52,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
     },
     ref
 ) => {
-    const [map, setMap] = useState<mapboxgl.Map | null>(null);
-    const [draw, setDraw] = useState<MapboxDraw | null>(null);
-    const mapWrapperRef = useRef<HTMLDivElement>(null);
-    const patchBoundsManagerRef = useRef<PatchBoundsManager | null>(
-        null
-    );
-    const [isDrawMode, setIsDrawMode] = useState(false);
-    const [isPointSelectionMode, setIsPointSelectionMode] = useState(false);
-    const [hasDrawnRectangle, setHasDrawnRectangle] = useState(false);
-    const [currentRectangleId, setCurrentRectangleId] = useState<string | null>(
-        null
-    );
-    const [currentMarker, setCurrentMarker] = useState<mapboxgl.Marker | null>(
-        null
-    );
-    const [showingProjectBounds, setShowingProjectBounds] = useState(false);
-    const { language } = useContext(LanguageContext);
 
-    let isMouseDown = false;
-    const mouseDownPos = [0, 0];
-    const mouseMovePos = [0, 0];
     let mouseUpPos = [0, 0];
 
-    // Calculate the four corners and center point of the rectangle (EPSG:4326)
+    const { language } = useContext(LanguageContext);
+    const [isDrawMode, setIsDrawMode] = useState(false);
+    const [hasDrawnRectangle, setHasDrawnRectangle] = useState(false);
+    const [isPointSelectionMode, setIsPointSelectionMode] = useState(false);
+    const mapWrapperRef = useRef<HTMLDivElement>(null);
+    const [map, setMap] = useState<mapboxgl.Map | null>(null);
+    const [draw, setDraw] = useState<MapboxDraw | null>(null);
+    const patchBoundsManagerRef = useRef<PatchBoundsManager | null>( null );
+    const [currentMarker, setCurrentMarker] = useState<mapboxgl.Marker | null>(null);
+
     const calculateRectangleCoordinates = (
         feature: any
     ): RectangleCoordinates => {
@@ -127,16 +100,12 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         };
     };
 
-    // Handle click for point selection
     const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
         if (!isPointSelectionMode || !map) return;
-
-        // Remove any existing marker
         if (currentMarker) {
             currentMarker.remove();
         }
 
-        // Create a new marker at the clicked location
         const marker = new mapboxgl.Marker({
             color: '#FFFF00',
         })
@@ -145,15 +114,12 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
         setCurrentMarker(marker);
 
-        // Return coordinates to parent component
         if (onPointSelected) {
             onPointSelected([e.lngLat.lng, e.lngLat.lat]);
         }
 
-        // Exit point selection mode
         setIsPointSelectionMode(false);
 
-        // Make cursor pointer normal again
         if (map.getCanvas()) {
             map.getCanvas().style.cursor = '';
         }
@@ -256,41 +222,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
 
             mapInstance.on('load', () => {
                 if (mapInstance) {
-                    // Ensure mapInstance is valid
-                    patchBoundsManagerRef.current =
-                        new PatchBoundsManager(mapInstance, language);
-                }
-
-                const customLayer = CustomLayer({
-                    center: { lng: initialLongitude, lat: initialLatitude },
-                    width: 0.00002, // Mercator
-                    height: 0.00002, // Mercator
-                });
-                // mapInstance.addLayer(customLayer);
-
-                rectangleLayer = new GLMapRectangleLayer({
-                    id: 'rectangle-layer',
-                    origin: [114.02639476404397, 22.444079016023963],
-                });
-                // mapInstance.addLayer(rectangleLayer);
-
-                customRectangleDraw = new CustomRectangleDraw({
-                    id: 'custom-rectangle-draw',
-                    corners: {
-                        southWest: [114.022006, 22.438286], // LB
-                        southEast: [114.033418, 22.438286], // RB
-                        northEast: [114.033418, 22.449498], // RT
-                        northWest: [114.022006, 22.449498], // LT
-                    },
-                });
-                // mapInstance.addLayer(customRectangleDraw);
-
-                projectBoundsLayer = new ProjectBoundsLayer({
-                    id: 'project-bounds-layer',
-                });
-                // mapInstance.addLayer(projectBoundsLayer);
-                if (projectBoundsLayer) {
-                    projectBoundsLayer.setVisibility('none');
+                    patchBoundsManagerRef.current = new PatchBoundsManager(mapInstance, language);
                 }
 
                 const topologyLayer = new TopologyLayer(mapInstance!);
@@ -422,7 +354,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     }
                     if (!e.shiftKey) return;
 
-                    isMouseDown = false;
                     const rect = canvas.getBoundingClientRect();
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
@@ -450,7 +381,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                     const feature = e.features[0];
                     setIsDrawMode(false);
                     setHasDrawnRectangle(true);
-                    setCurrentRectangleId(feature.id);
 
                     const rectangleCoordinates =
                         calculateRectangleCoordinates(feature);
@@ -463,7 +393,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             // Delete shape event
             mapInstance.on('draw.delete', (e: any) => {
                 setHasDrawnRectangle(false);
-                setCurrentRectangleId(null);
                 if (onRectangleDrawn) {
                     onRectangleDrawn(null as any);
                 }
@@ -529,7 +458,6 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             // If a rectangle already exists, delete it first
             currentDraw.deleteAll();
             setHasDrawnRectangle(false);
-            setCurrentRectangleId(null);
 
             if (onRectangleDrawn) {
                 onRectangleDrawn(null as any);
