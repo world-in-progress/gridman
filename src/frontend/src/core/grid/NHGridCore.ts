@@ -109,6 +109,7 @@ export default class GridCore {
     init(callback?: Function): void {
         // Clear next storage ID
         this._nextStorageId = 0
+
         // Brodcast actors to init grid manager and initialize grid cache
         this._dispatcher.broadcast('setGridManager', this.context, () => {
             // Get activate grid information
