@@ -6,144 +6,36 @@ import { useContext, useState, useEffect } from 'react';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import BasicInfo from '../aggregationPanel/components/basicInfo';
 import LayerList from './components/layerList';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/utils/utils';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
-
 
 export default function FeaturePanel({
     onBack,
+    layers,
+    setLayers,
     ...props
 }: FeaturePanelProps) {
 
     const { language } = useContext(LanguageContext);
-    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
     const handleBack = () => {
+        if (window.mapInstance) {
+            const sourceId = `patch-bounds-edit`;
+            const outlineLayerId = `patch-outline-edit`;
+
+            if (window.mapInstance.getLayer(outlineLayerId)) {
+                window.mapInstance.removeLayer(outlineLayerId);
+            }
+            if (window.mapInstance.getSource(sourceId)) {
+                window.mapInstance.removeSource(sourceId);
+            }
+        }
         if (onBack) {
             onBack();
         }
     };
 
-    const handleSaveFeatureState = () => {
-        toast.success(
-            language === 'zh'
-                ? '要素资源保存成功'
-                : 'Feature resource saved successfully',
-            {
-                style: {
-                    background: '#ecfdf5',
-                    color: '#047857',
-                    border: '1px solid #a7f3d0',
-                    bottom: '30px',
-                },
-            }
-        );
-    };
-
-    const handleUploadFeatureResource = () => {
-        console.log('uploadFeatureResource');
-    }
-
     return (
         <Sidebar {...props}>
             <SidebarContent>
-            <AlertDialog
-                    open={uploadDialogOpen}
-                    onOpenChange={setUploadDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                <span className="text-2xl">
-                                    {language === 'zh'
-                                        ? '操作确认'
-                                        : 'Operation Confirm'}
-                                </span>
-                            </AlertDialogTitle>
-                        </AlertDialogHeader>
-                        <div className="flex flex-col space-y-2">
-                            <div className="p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                                <div className="flex mt-1 mb-1 ml-1 items-center text-md font-bold">
-                                    {language === 'zh'
-                                        ? '栅格数据上传'
-                                        : 'Raster Data Upload'}
-                                </div>
-                                <div
-                                    className={cn(
-                                        'relative flex items-center justify-center w-full h-[200px] rounded-lg shadow-sm border-2 border-dashed border-gray-300 bg-gray-300/50 hover:border-gray-400 hover:bg-gray-100 transition-all duration-200'
-                                    )}
-                                >
-                                    <Input
-                                        id="tif-upload"
-                                        type="file"
-                                        accept=".tif,.tiff"
-                                        className="absolute inset-0 opacity-0 h-full cursor-pointer"
-                                    />
-                                    <div className="flex flex-col items-center gap-2 text-center">
-                                        <Upload className="h-8 w-8 text-gray-500" />
-                                        <span className="text-xs text-gray-600 font-medium">
-                                            {language === 'zh'
-                                                ? '拖放或点击上传 .tif 文件'
-                                                : 'Drag and drop or click to upload .tif file'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <RadioGroup
-                                defaultValue="option-one"
-                                className="flex flex-row mt-2"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="option-one"
-                                        id="option-one"
-                                    />
-                                    <Label htmlFor="option-one">
-                                        {language === 'zh'
-                                            ? '基础地形数据'
-                                            : 'Basic Terrain Data'}
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="option-two"
-                                        id="option-two"
-                                    />
-                                    <Label htmlFor="option-two">
-                                        {language === 'zh'
-                                            ? '精细地形数据'
-                                            : 'Detailed Terrain Data'}
-                                    </Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="cursor-pointer">
-                                {language === 'zh' ? '取消' : 'Cancel'}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleUploadFeatureResource}
-                                className="bg-blue-500 hover:bg-blue-600 cursor-pointer"
-                            >
-                                {language === 'zh' ? '上传' : 'Upload'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
                 <div className="flex items-center p-3 justify-between">
                     <button
                         onClick={handleBack}
@@ -159,19 +51,7 @@ export default function FeaturePanel({
 
                 <div className="p-2 -mt-3 space-y-2">
                     <BasicInfo />
-                    <LayerList onUpload={setUploadDialogOpen} />
-
-                    {/* Save raster resource button */}
-                    {/* <div
-                        className="bg-green-500 hover:bg-green-600 mt-2 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
-                        onClick={handleSaveFeatureState}
-                    >
-                        <span>
-                            {language === 'zh'
-                                ? '保存要素资源'
-                                : 'Save Feature Resouce'}
-                        </span>
-                    </div> */}
+                    <LayerList layers={layers} setLayers={setLayers} />
                 </div>
             </SidebarContent>
             <SidebarRail />

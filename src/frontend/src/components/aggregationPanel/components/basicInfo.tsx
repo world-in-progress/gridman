@@ -37,7 +37,7 @@ export default function BasicInfo() {
                     {currentEpsg || '-'}
                 </div>
                 <div className="font-bold">
-                    {language === 'zh' ? '包围盒：' : 'BoundingBox: '}
+                    {language === 'zh' ? '编辑范围：' : 'Editing Bounds: '}
                     {bounds ? (
                         <BoundsCard bounds={bounds} language={language} />
                     ) : (

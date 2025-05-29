@@ -531,6 +531,19 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
         );
     };
 
+    const showEditBounds = (
+        projectName: string,
+        patchBounds: number[],
+        show: boolean
+    ) => {
+        if (!map || !patchBoundsManagerRef.current) return;
+        patchBoundsManagerRef.current.showEditBounds(
+            projectName,
+            patchBounds,
+            show
+        );
+    }
+
     useImperativeHandle(
         ref,
         () => ({
@@ -539,6 +552,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             flyToPatchBounds,
             highlightPatch,
             showPatchBounds,
+            showEditBounds
         }),
         [
             startDrawRectangle,
@@ -546,6 +560,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             flyToPatchBounds,
             highlightPatch,
             showPatchBounds,
+            showEditBounds
         ]
     );
 

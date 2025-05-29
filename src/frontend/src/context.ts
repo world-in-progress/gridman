@@ -1,30 +1,30 @@
 
-import { createContext } from 'react';
-import { SidebarType } from './components/page';
+import { createContext } from 'react'
+import { SidebarType } from './components/page'
 
 export const SidebarContext = createContext<{
-    activeNavbar: SidebarType;
-    setActiveNavbar: (type: SidebarType) => void;
+    activeNavbar: SidebarType
+    setActiveNavbar: (type: SidebarType) => void
 }>({
     activeNavbar: 'aggregation',
     setActiveNavbar: () => {},
-});
+})
 
 export const LanguageContext = createContext<{
-    language: 'zh' | 'en';
-    setLanguage: (lang: 'zh' | 'en') => void;
+    language: 'zh' | 'en'
+    setLanguage: (lang: 'zh' | 'en') => void
 }>({
     language: 'en',
     setLanguage: () => {},
-});
+})
 
 export const AIDialogContext = createContext<{
-    aiDialogEnabled: boolean;
-    setAIDialogEnabled: (enabled: boolean) => void;
+    aiDialogEnabled: boolean
+    setAIDialogEnabled: (enabled: boolean) => void
 }>({
     aiDialogEnabled: false,
     setAIDialogEnabled: () => {},
-});
+})
 
 export class CheckingSwitch {
     isOn = false
@@ -35,11 +35,11 @@ export class CheckingSwitch {
         switch (event) {
             case 'on':
                 this.ons.push(callback)
-                break;
+                break
         
             case 'off':
                 this.offs.push(callback)
-                break;
+                break
         }
     }
 

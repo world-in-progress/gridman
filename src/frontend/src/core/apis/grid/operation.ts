@@ -5,7 +5,7 @@ const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
 const API_PREFIX = '/api/grid/operation'
 
-export const subdivideGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> =  {
+export const subdivideGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/subdivide`,
     fetch: async (query: MultiGridBaseInfo): Promise<MultiGridBaseInfo> => {
         try {
@@ -109,7 +109,7 @@ export const pickGridsByFeature: IAPI<string, MultiGridBaseInfo> = {
 
             const buffer = await response.arrayBuffer()
             return MultiGridInfoParser.fromBuffer(buffer)
-            
+
         } catch (error) {
             throw new Error(`Failed to pick grids by feature: ${error}`)
         }

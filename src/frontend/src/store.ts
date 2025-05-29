@@ -22,4 +22,4 @@ class Store {
 
 export default Store.instance()
 
-Store.instance().set('checkingSwitch', new CheckingSwitch());
+Store.instance().set('checkingSwitch', new CheckingSwitch())

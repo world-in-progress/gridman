@@ -124,9 +124,10 @@ export const PatchCard: React.FC<PatchCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
-                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
-                    setActivePanelFromStore('raster');
-                    isLoading.off();
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg)
+                    setActivePanelFromStore('raster')
+                    handleDrawEditBounds()
+                    isLoading.off()
                 });
             }
         });
@@ -136,13 +137,12 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         e.stopPropagation();
         isLoading.on();
 
-        console.log('patch.bounds', patch.bounds);
         store.set('ProjectName', parentProjectTitle);
         store.set('PatchName', patch.name);
         store.set('PatchBounds', patch.bounds);
 
         projectService.getProjectByName(parentProjectTitle, (err, result) => {
-            store.set('SchemaName', result.project_meta.schema_name);
+            store.set('SchemaName', result.project_meta.schema_name)
             if (store.get('SchemaName')) {
                 const schemaName = store.get('SchemaName') as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
@@ -151,7 +151,6 @@ export const PatchCard: React.FC<PatchCardProps> = ({
                         result.project_schema.grid_info
                     );
                     store.set('CurrentPatchEPSG', result.project_schema.epsg);
-                    //need to enlarge setActivePanelFromStore method
                     setActivePanelFromStore('feature'); 
                     handleDrawEditBounds();
                     isLoading.off();
@@ -191,26 +190,10 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             return;
         }
 
-        const bounds = [
-            patch.bounds[0],
-            patch.bounds[1],
-            patch.bounds[2],
-            patch.bounds[3],
-        ] as [number, number, number, number];
-
-        const editBounds = {
-            name: 'editBounds',
-            bounds,
-            starred: false,
-            description: '',
-        }
-
         if (window.mapRef && window.mapRef.current) {
-            console.log(window.mapRef!.current)
-            const { showPatchBounds,showEditBounds, flyToPatchBounds } = window.mapRef.current;
+            const { showEditBounds, flyToPatchBounds } = window.mapRef.current;
             flyToPatchBounds(parentProjectTitle, patch.name);
             showEditBounds(parentProjectTitle, patch.bounds, true);
-            // showPatchBounds('editBounds', [editBounds], true);
         } 
     }
 

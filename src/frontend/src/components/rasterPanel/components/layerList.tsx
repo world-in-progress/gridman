@@ -1,4 +1,3 @@
-'use client';
 
 import type React from 'react';
 
@@ -102,32 +101,7 @@ const mockLayerData: LayerItem[] = [
                 symbology: 'blue-fill',
             },
         ],
-    },
-    {
-        id: 'reference-group',
-        name: 'Reference',
-        type: 'group',
-        visible: false,
-        icon: <MapPin className="h-4 w-4" />,
-        children: [
-            {
-                id: 'roads',
-                name: 'Road Network',
-                type: 'vector',
-                visible: false,
-                icon: <Route className="h-4 w-4" />,
-                symbology: 'black-lines',
-            },
-            {
-                id: 'boundaries',
-                name: 'Administrative Boundaries',
-                type: 'vector',
-                visible: false,
-                icon: <Layers className="h-4 w-4" />,
-                symbology: 'red-lines',
-            },
-        ],
-    },
+    }
 ];
 
 function LayerItemComponent({

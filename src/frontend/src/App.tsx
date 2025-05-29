@@ -1,65 +1,65 @@
-import './App.css';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import Page, { SidebarType } from './components/page';
-import { Navbar } from './components/navbar';
-import { useState, RefObject, useEffect, useRef } from 'react';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import { Toaster } from '@/components/ui/sonner';
-import { SidebarContext, LanguageContext, AIDialogContext } from './context';
-import { SchemaService } from './components/schemaPanel/utils/SchemaService';
-import store from '@/store';
-import Loader from './components/ui/loader';
-import Home from './components/home';
-import Simulation from './components/simulation';
+import './App.css'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import Page, { SidebarType } from './components/page'
+import { Navbar } from './components/navbar'
+import { useState, RefObject, useEffect, useRef } from 'react'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import { Toaster } from '@/components/ui/sonner'
+import { SidebarContext, LanguageContext, AIDialogContext } from './context'
+import { SchemaService } from './components/schemaPanel/utils/SchemaService'
+import store from '@/store'
+import Loader from './components/ui/loader'
+import Home from './components/home'
+import Simulation from './components/simulation'
 
 declare global {
     interface Window {
-        mapInstance?: mapboxgl.Map;
-        mapboxDrawInstance?: MapboxDraw;
-        mapRef?: RefObject<any>;
+        mapInstance?: mapboxgl.Map
+        mapboxDrawInstance?: MapboxDraw
+        mapRef?: RefObject<any>
     }
 }
 
 export default function App() {
-    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('aggregation'); // Default to 'grid' for development
-    const [language, setLanguage] = useState<'zh' | 'en'>('en');
-    const [aiDialogEnabled, setAIDialogEnabled] = useState(false);
+    const [activeNavbar, setActiveNavbar] = useState<SidebarType>('aggregation') // Default to 'grid' for development
+    const [language, setLanguage] = useState<'zh' | 'en'>('en')
+    const [aiDialogEnabled, setAIDialogEnabled] = useState(false)
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false)
     store.set('isLoading', {
         on: () => {
-            setIsLoading(true);
+            setIsLoading(true)
         },
         off: () => {
-            setIsLoading(false);
+            setIsLoading(false)
         },
-    });
+    })
 
     const handleNavClick = (item: string, type?: string) => {
         if (type === 'home' || type === 'aggregation' || type === 'simulation') {
-            setActiveNavbar(type);
+            setActiveNavbar(type)
         } else if (item === 'Home' || item === '首页') {
-            setActiveNavbar('home');
+            setActiveNavbar('home')
         } else if (item === 'Aggregation' || item === '聚合') {
-            setActiveNavbar('aggregation');
+            setActiveNavbar('aggregation')
         } else if (item === 'Simulation' || item === '模拟') {
-            setActiveNavbar('simulation');
+            setActiveNavbar('simulation')
         }
-    };
+    }
 
-    const loadCounter = useRef(0);
+    const loadCounter = useRef(0)
 
     useEffect(() => {
         if (loadCounter.current === 0) {
-            loadCounter.current = 1;
-            const schemaService = new SchemaService(language);
+            loadCounter.current = 1
+            const schemaService = new SchemaService(language)
             schemaService.fetchAllSchemas((err, result) => {
                 if (result.length === 0) {
-                    setActiveNavbar('home');
+                    setActiveNavbar('home')
                 }
-            });
+            })
         }
-    }, []);
+    }, [])
 
     return (
         <div className="App">
@@ -102,5 +102,5 @@ export default function App() {
                 </SidebarContext.Provider>
             </LanguageContext.Provider>
         </div>
-    );
+    )
 }

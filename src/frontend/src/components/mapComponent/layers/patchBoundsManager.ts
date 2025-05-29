@@ -471,10 +471,7 @@ export class PatchBoundsManager {
         );
 
         if (!sw || !ne || sw.length !== 2 || ne.length !== 2) return;
-
-
-
-        // 添加边界多边形特性
+        
         editBounds.push({
             type: 'Feature',
             properties: {
@@ -485,17 +482,17 @@ export class PatchBoundsManager {
                 type: 'Polygon',
                 coordinates: [
                     [
-                        [sw[0], sw[1]], // 左下
-                        [sw[0], ne[1]], // 左上
-                        [ne[0], ne[1]], // 右上
-                        [ne[0], sw[1]], // 右下
-                        [sw[0], sw[1]], // 回到左下以闭合多边形
+                        [sw[0], sw[1]], 
+                        [sw[0], ne[1]], 
+                        [ne[0], ne[1]], 
+                        [ne[0], sw[1]], 
+                        [sw[0], sw[1]], 
                     ],
                 ],
             },
         } as GeoJSON.Feature);
 
-        // 添加数据源
+
         if (!this.map.getSource(sourceId)) {
             this.map.addSource(sourceId, {
                 type: 'geojson',
@@ -514,10 +511,6 @@ export class PatchBoundsManager {
             });
         }
 
-        // 确保按正确顺序添加图层
-        // 1. 首先添加填充图层
-
-        // 2. 然后添加轮廓图层
         if (!this.map.getLayer(outlineLayerId)) {
             this.map.addLayer({
                 id: outlineLayerId,
@@ -528,7 +521,7 @@ export class PatchBoundsManager {
                     'line-width': 4,
                     'line-dasharray': [2, 1],
                 },
-            });
+            })
         }
     }
 }
