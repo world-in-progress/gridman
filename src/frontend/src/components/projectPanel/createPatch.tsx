@@ -18,7 +18,6 @@ import {
     ProjectEpsgCard,
 } from './components/ProjectFormComponents';
 import { clearMapMarkers } from '../schemaPanel/utils/SchemaCoordinateService';
-// import DrawButton from '../operatePanel/components/DrawButton';
 import {
     CreateProjectProps,
     ExtendedFormErrors,
@@ -65,9 +64,7 @@ const validateProjectForm = (
 
     if (!data.name.trim()) {
         generalError =
-            language === 'zh'
-                ? '请输入补丁名称'
-                : 'Please enter patch name';
+            language === 'zh' ? '请输入补丁名称' : 'Please enter patch name';
         errors.name = true;
         return { isValid: false, errors, generalError };
     }
@@ -152,10 +149,7 @@ export default function CreatePPatch({
     const [patchBoundsManager, setPatchBoundsManager] =
         useState<PatchBoundsManager | null>(null);
 
-    const {
-        setRectangleCoordinates,
-        ...sidebarProps
-    } = props;
+    const { setRectangleCoordinates, ...sidebarProps } = props;
 
     useEffect(() => {
         if (initialSchemaName) {
@@ -304,9 +298,9 @@ export default function CreatePPatch({
                 center: [(w + e) / 2, (s + n) / 2],
             };
 
-            if (setRectangleCoordinates) {
-                setRectangleCoordinates(rectangleCoordinates);
-            }
+            // if (setRectangleCoordinates) {
+            //     setRectangleCoordinates(rectangleCoordinates);
+            // }
 
             if (epsg && gridLevel && schemaBasePoint) {
                 const {
@@ -358,13 +352,12 @@ export default function CreatePPatch({
 
             const popupHtml = `
       <div style="padding: 12px; font-family: 'Arial', sans-serif; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${
-            language === 'zh' ? '模板基准点' : 'Schema Base Point'
-        }</h4>
+        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${language === 'zh' ? '模板基准点' : 'Schema Base Point'
+                }</h4>
         <p style="margin: 0 0 4px; font-size: 13px; color: #555; font-weight: 500;">${schemaName}</p>
         <p style="margin: 0; font-size: 13px; background-color: #f5f8ff; padding: 4px 6px; border-radius: 4px; color: #FF7700; font-family: monospace;">${coordinates[0].toFixed(
-            6
-        )}, ${coordinates[1].toFixed(6)}</p>
+                    6
+                )}, ${coordinates[1].toFixed(6)}</p>
       </div>
     `;
 
@@ -398,12 +391,11 @@ export default function CreatePPatch({
 
             const popupHtml = `
       <div style="padding: 12px; font-family: 'Arial', sans-serif; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${
-            language === 'zh' ? '对齐后左下角点' : 'Aligned LB Corner'
-        }</h4>
+        <h4 style="margin: 0 0 8px; font-weight: 600; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 6px; text-align: center;">${language === 'zh' ? '对齐后左下角点' : 'Aligned LB Corner'
+                }</h4>
         <p style="margin: 0; font-size: 13px; background-color: #f5f8ff; padding: 4px 6px; border-radius: 4px; color: #FF7700; font-family: monospace;">${coordinates[0].toFixed(
-            6
-        )}, ${coordinates[1].toFixed(6)}</p>
+                    6
+                )}, ${coordinates[1].toFixed(6)}</p>
       </div>
     `;
 
@@ -478,11 +470,9 @@ export default function CreatePPatch({
                 (start[0] + end[0]) / 2,
                 (start[1] + end[1]) / 2,
             ];
-            const labelText = `${
-                language === 'zh' ? '宽: ' : 'W: '
-            }${widthCount} × ${
-                language === 'zh' ? '高: ' : 'H: '
-            }${heightCount}`;
+            const labelText = `${language === 'zh' ? '宽: ' : 'W: '
+                }${widthCount} × ${language === 'zh' ? '高: ' : 'H: '
+                }${heightCount}`;
             const el = document.createElement('div');
             el.className = 'grid-count-label';
             el.style.backgroundColor = 'rgba(0, 136, 255, 0.85)';
@@ -663,6 +653,19 @@ export default function CreatePPatch({
                     );
 
                     if (window.mapInstance) {
+                        const sourceId = `patch-bounds-临时项目`;
+                        const layerId = `patch-fill-临时项目`;
+                        const outlineLayerId = `patch-outline-临时项目`;
+
+                        if (window.mapInstance.getLayer(outlineLayerId)) {
+                            window.mapInstance.removeLayer(outlineLayerId);
+                        }
+                        if (window.mapInstance.getLayer(layerId)) {
+                            window.mapInstance.removeLayer(layerId);
+                        }
+                        if (window.mapInstance.getSource(sourceId)) {
+                            window.mapInstance.removeSource(sourceId);
+                        }
                         if (cornerMarker) {
                             cornerMarker.remove();
                             setCornerMarker && setCornerMarker(null);
@@ -769,7 +772,7 @@ export default function CreatePPatch({
         }
 
         if (onBack) {
-            onBack();
+            onBack()
         }
     };
 
@@ -792,13 +795,10 @@ export default function CreatePPatch({
             description: '',
         };
 
-        const projectName = parentProject?.name || '临时项目';
-
-        // 先手动移除旧的图层和数据源
         if (window.mapInstance) {
-            const sourceId = `patch-bounds-临时项目`;
-            const layerId = `patch-fill-临时项目`;
-            const outlineLayerId = `patch-outline-临时项目`;
+            const sourceId = `patch-bounds-临时项目`
+            const layerId = `patch-fill-临时项目`
+            const outlineLayerId = `patch-outline-临时项目`
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);
@@ -811,13 +811,8 @@ export default function CreatePPatch({
             }
         }
 
-        // 再绘制新的
-        patchBoundsManager!.showPatchBounds(
-            '临时项目',
-            [patch],
-            true
-        );
-    }, [expandedRectangle, patchBoundsManager, parentProject]);
+        patchBoundsManager!.showPatchBounds('临时项目', [patch], true)
+    }, [expandedRectangle, patchBoundsManager, parentProject])
 
     return (
         <Sidebar {...sidebarProps}>
@@ -885,9 +880,9 @@ export default function CreatePPatch({
                                         title={
                                             language === 'zh'
                                                 ? translations.coordinates.wgs84
-                                                      .zh
+                                                    .zh
                                                 : translations.coordinates.wgs84
-                                                      .en
+                                                    .en
                                         }
                                         coordinates={convertedRectangle}
                                         formatCoordinate={formatCoordinate}
@@ -900,9 +895,9 @@ export default function CreatePPatch({
                                         title={
                                             language === 'zh'
                                                 ? translations.coordinates
-                                                      .expanded.zh
+                                                    .expanded.zh
                                                 : translations.coordinates
-                                                      .expanded.en
+                                                    .expanded.en
                                         }
                                         coordinates={expandedRectangle}
                                         formatCoordinate={formatCoordinate}

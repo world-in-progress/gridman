@@ -109,99 +109,6 @@ export function SubNavPanel({
         allProjects
     ]
 );
-    //     (projectList: Project[], page: number) => {
-    //         let filteredProjects = projectList;
-
-    //         if (searchQuery.trim()) {
-    //             const query = searchQuery.toLowerCase().trim();
-    //             filteredProjects = projectList.filter(
-    //                 (project) =>
-    //                     (project.name &&
-    //                         project.name.toLowerCase().includes(query)) ||
-    //                     (project.description &&
-    //                         project.description
-    //                             .toLowerCase()
-    //                             .includes(query)) ||
-    //                     (project.schema_name &&
-    //                         project.schema_name.toLowerCase().includes(query))
-    //             );
-    //         }
-
-    //         onTotalItemsChange(filteredProjects.length);
-
-    //         const startIndex = (page - 1) * itemsPerPage;
-    //         const endIndex = startIndex + itemsPerPage;
-    //         const pagedProjects = filteredProjects.slice(startIndex, endIndex);
-
-    //         setProjects(pagedProjects);
-    //         updateStarredItems(pagedProjects);
-    //         setLoading(false);
-    //     },
-    //     [searchQuery, itemsPerPage, onTotalItemsChange]
-    // );
-
-    // const fetchProjectsCallback = useCallback(
-    //     async (page: number) => {
-    //         try {
-    //             setLoading(true);
-
-    //             if (allProjects.length === 0 && !hasInitialFetch) {
-    //                 setHasInitialFetch(true);
-    //                 console.log('执行');
-    //                 projectService.fetchAllProjects((err, result) => {
-    //                     if (err) {
-    //                         console.error('获取所有项目失败:', err);
-    //                         setError(
-    //                             language === 'zh'
-    //                                 ? '获取项目列表失败'
-    //                                 : 'Failed to fetch projects'
-    //                         );
-    //                         setProjects([]);
-    //                         setLoading(false);
-    //                     } else {
-    //                         const sortedProjects = [
-    //                             ...(result.project_metas || []),
-    //                         ].sort((a, b) => {
-    //                             if (a.starred && !b.starred) return -1;
-    //                             if (!a.starred && b.starred) return 1;
-    //                             return 0;
-    //                         });
-    //                         setAllProjects(sortedProjects);
-    //                         updateStarredItems(sortedProjects);
-    //                         applyPagingAndSearch(sortedProjects, page);
-    //                     }
-    //                 });
-    //                 return;
-    //             }
-
-    //             if (allProjects.length > 0) {
-    //                 applyPagingAndSearch(allProjects, page);
-    //             } else {
-    //                 setProjects([]);
-    //                 onTotalItemsChange(0);
-    //                 setLoading(false);
-    //             }
-    //         } catch (err) {
-    //             setError(
-    //                 language === 'zh'
-    //                     ? '获取项目列表失败'
-    //                     : 'Failed to fetch projects'
-    //             );
-    //             setProjects([]);
-    //             setLoading(false);
-    //         }
-    //     },
-    //     [
-    //         language,
-    //         itemsPerPage,
-    //         onTotalItemsChange,
-    //         projectService,
-    //         searchQuery,
-    //         allProjects,
-    //         applyPagingAndSearch,
-    //         hasInitialFetch,
-    //     ]
-    // );
 
     const fetchAllProjectsCallback = useCallback(async () => {
         projectService.fetchAllProjects((err, result) => {
@@ -409,10 +316,7 @@ export function SubNavPanel({
                 </SidebarGroup>
 
                 <div
-                    className="fixed inset-0 pointer-events-auto z-80"
-                    style={{
-                        backgroundColor: 'rgba(33, 33, 33, 0.4)',
-                    }}
+                    className="fixed inset-0 pointer-events-auto z-200 bg-[#212121] opacity-30"
                 />
                 <Loader />
             </>

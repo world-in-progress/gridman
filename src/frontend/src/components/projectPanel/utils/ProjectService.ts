@@ -1,5 +1,5 @@
 import Actor from '../../../core/message/actor';
-import { Project } from '../types/types';
+import { MultiProjectMeta, Project } from '../types/types';
 import Dispatcher from '../../../core/message/dispatcher';
 import { Callback } from '../../../core/types';
 import { GridContext } from '@/core/grid/types';
@@ -30,8 +30,8 @@ export class ProjectService {
         this._actor.send(
             'fetchProjects',
             { startIndex: 0, endIndex: 1000 },
-            (err, result) => {
-                const sortedProjects = [...result.project_metas].sort((a, b) => {
+            (err, result: MultiProjectMeta) => {
+                const sortedProjects = [...result.project_metas!].sort((a, b) => {
                     if (a.starred && !b.starred) return -1;
                     if (!a.starred && b.starred) return 1;
                     return 0;

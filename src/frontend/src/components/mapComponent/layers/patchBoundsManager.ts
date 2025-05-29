@@ -60,10 +60,7 @@ export class PatchBoundsManager {
                     const updatedPatch = patches[0];
                     const updatedFeatures = currentData.features.map(
                         (feature: any) => {
-                            if (
-                                feature.properties.name ===
-                                updatedPatch.name
-                            ) {
+                            if (feature.properties.name === updatedPatch.name) {
                                 return {
                                     ...feature,
                                     properties: {
@@ -88,8 +85,7 @@ export class PatchBoundsManager {
 
             for (let index = 0; index < patches.length; index++) {
                 const patch = patches[index];
-                if (!patch.bounds || patch.bounds.length !== 4)
-                    continue;
+                if (!patch.bounds || patch.bounds.length !== 4) continue;
 
                 const sw = convertCoordinate(
                     [patch.bounds[0], patch.bounds[1]],
@@ -108,16 +104,11 @@ export class PatchBoundsManager {
                 const hue = (index * 137.5) % 360; // 使用黄金角生成均匀分布的颜色
                 const color = `hsl(${hue}, 70%, 60%)`;
 
-                // 计算中心点
-                const centerLng = (sw[0] + ne[0]) / 2;
-                const centerLat = (sw[1] + ne[1]) / 2;
-
                 // 检查此子项目是否应该被高亮显示
                 const isHighlighted =
                     this.currentHighlightedInfo &&
                     this.currentHighlightedInfo.projectName === projectName &&
-                    this.currentHighlightedInfo.patchName ===
-                        patch.name;
+                    this.currentHighlightedInfo.patchName === patch.name;
 
                 // 添加边界多边形特性
                 features.push({
@@ -216,10 +207,7 @@ export class PatchBoundsManager {
      * @param projectName 项目名称
      * @param patchName 子项目名称
      */
-    public highlightPatch(
-        projectName: string,
-        patchName: string
-    ): void {
+    public highlightPatch(projectName: string, patchName: string): void {
         if (!this.map) return;
 
         // 清除所有高亮状态
@@ -337,8 +325,7 @@ export class PatchBoundsManager {
 
                 if (data && data.features) {
                     const patchFeature = data.features.find(
-                        (feature: any) =>
-                            feature.properties.name === patchName
+                        (feature: any) => feature.properties.name === patchName
                     );
 
                     if (
@@ -349,8 +336,7 @@ export class PatchBoundsManager {
                         patchFeature.geometry.coordinates[0].length >= 5
                     ) {
                         // 从要素坐标中提取边界
-                        const coords =
-                            patchFeature.geometry.coordinates[0];
+                        const coords = patchFeature.geometry.coordinates[0];
                         const sw = coords[0]; // 左下
                         const ne = coords[2]; // 右上
 
@@ -429,13 +415,9 @@ export class PatchBoundsManager {
                                 duration: 1000,
                             });
 
-
                             // If patch bounds are displayed at this time, reapply highlight
                             if (this.map.getSource(sourceId)) {
-                                this.highlightPatch(
-                                    projectName,
-                                    patchName
-                                );
+                                this.highlightPatch(projectName, patchName);
                             }
 
                             return;
@@ -447,6 +429,99 @@ export class PatchBoundsManager {
             });
         } catch (error) {
             console.error('飞行到子项目边界失败:', error);
+        }
+    }
+
+    /**
+     * 显示编辑边界
+     * @param projectName 项目名称
+     * @param patchName 子项目名称
+     */
+    public showEditBounds(
+        projectName: string,
+        patchBounds: number[],
+        show: boolean
+    ): void {
+        if (!this.map) return;
+
+        const sourceId = `patch-bounds-edit`;
+        const outlineLayerId = `patch-outline-edit`;
+
+        if (!show) {
+            if (this.map.getLayer(outlineLayerId)) {
+                this.map.removeLayer(outlineLayerId);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+            return;
+        }
+
+        const editBounds: GeoJSON.Feature[] = [];
+
+        const sw = convertCoordinate(
+            [patchBounds[0], patchBounds[1]],
+            '2326',
+            '4326'
+        );
+        const ne = convertCoordinate(
+            [patchBounds[2], patchBounds[3]],
+            '2326',
+            '4326'
+        );
+
+        if (!sw || !ne || sw.length !== 2 || ne.length !== 2) return;
+        
+        editBounds.push({
+            type: 'Feature',
+            properties: {
+                name: 'editBounds',
+                projectName: projectName,
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [
+                    [
+                        [sw[0], sw[1]], 
+                        [sw[0], ne[1]], 
+                        [ne[0], ne[1]], 
+                        [ne[0], sw[1]], 
+                        [sw[0], sw[1]], 
+                    ],
+                ],
+            },
+        } as GeoJSON.Feature);
+
+
+        if (!this.map.getSource(sourceId)) {
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: editBounds,
+                },
+            });
+        } else {
+            const source = this.map.getSource(
+                sourceId
+            ) as mapboxgl.GeoJSONSource;
+            source.setData({
+                type: 'FeatureCollection',
+                features: editBounds,
+            });
+        }
+
+        if (!this.map.getLayer(outlineLayerId)) {
+            this.map.addLayer({
+                id: outlineLayerId,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#FFFFFF',
+                    'line-width': 4,
+                    'line-dasharray': [2, 1],
+                },
+            })
         }
     }
 }

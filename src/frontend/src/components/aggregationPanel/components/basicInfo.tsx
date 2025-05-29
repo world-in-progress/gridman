@@ -2,13 +2,15 @@ import { useContext } from 'react';
 import { LanguageContext } from '../../../context';
 import store from '@/store';
 import GridCore from '@/core/grid/NHGridCore';
+import BoundsCard from '@/components/projectPanel/components/boundsCard';
+
 export default function BasicInfo() {
     const { language } = useContext(LanguageContext);
 
     const currentProject = store.get<any>('ProjectName');
     const currentPatch = store.get<any>('PatchName');
     const currentEpsg = store.get<any>('CurrentPatchEPSG');
-    const gridCore = store.get<GridCore>('gridCore');
+    const bounds = store.get<number[]>('PatchBounds');
 
     return (
         <div className="bg-blue-50 p-3 rounded-md shadow-sm">
@@ -33,6 +35,14 @@ export default function BasicInfo() {
                 <div>
                     <span className="font-bold">EPSG: </span>
                     {currentEpsg || '-'}
+                </div>
+                <div className="font-bold">
+                    {language === 'zh' ? '编辑范围：' : 'Editing Bounds: '}
+                    {bounds ? (
+                        <BoundsCard bounds={bounds} language={language} />
+                    ) : (
+                        <span>-</span>
+                    )}
                 </div>
             </div>
         </div>

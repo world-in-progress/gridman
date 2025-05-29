@@ -3,7 +3,7 @@ import {
     Star,
     FileType2,
     SquarePen,
-    PencilRuler,
+    SplinePointer, 
     Ellipsis,
     Grid,
     Mountain,
@@ -13,8 +13,6 @@ import { PatchCardProps } from '../types/types';
 import { ProjectService } from '../utils/ProjectService';
 import { AnimatedCard, CardBackground, Blob } from './cardBackground';
 import store from '@/store';
-import TopologyLayer from '@/components/mapComponent/layers/TopologyLayer';
-import NHLayerGroup from '@/components/mapComponent/utils/NHLayerGroup';
 import BoundsCard from './boundsCard';
 import {
     DropdownMenu,
@@ -24,6 +22,7 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { SchemaService } from '../../schemaPanel/utils/SchemaService';
+import { PatchBoundsManager } from '@/components/mapComponent/layers/patchBoundsManager';
 
 declare global {
     interface Window {
@@ -64,7 +63,7 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         setIsEditing(false);
     };
 
-    const handleTopologyEditorClick = (e: React.MouseEvent) => {
+    const handleGridEditorClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         isLoading.on();
         updateCapacity.on();
@@ -105,11 +104,11 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         }
 
         projectService.setPatch(parentProjectTitle, patch.name, () => {
-            setActivePanelFromStore('topology');
+            setActivePanelFromStore('grid');
         });
     };
 
-    const handleAttributeEditorClick = (e: React.MouseEvent) => {
+    const handleRasterEditorClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         isLoading.on();
 
@@ -125,13 +124,41 @@ export const PatchCard: React.FC<PatchCardProps> = ({
                         'SchemaGridInfo',
                         result.project_schema.grid_info
                     );
-                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
-                    setActivePanelFromStore('attribute');
-                    isLoading.off();
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg)
+                    setActivePanelFromStore('raster')
+                    handleDrawEditBounds()
+                    isLoading.off()
                 });
             }
         });
     };
+
+    const handleFeatureEditorClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        isLoading.on();
+
+        store.set('ProjectName', parentProjectTitle);
+        store.set('PatchName', patch.name);
+        store.set('PatchBounds', patch.bounds);
+
+        projectService.getProjectByName(parentProjectTitle, (err, result) => {
+            store.set('SchemaName', result.project_meta.schema_name)
+            if (store.get('SchemaName')) {
+                const schemaName = store.get('SchemaName') as string;
+                schemaService.getSchemaByName(schemaName, (err, result) => {
+                    store.set(
+                        'SchemaGridInfo',
+                        result.project_schema.grid_info
+                    );
+                    store.set('CurrentPatchEPSG', result.project_schema.epsg);
+                    setActivePanelFromStore('feature'); 
+                    handleDrawEditBounds();
+                    isLoading.off();
+                });
+            }
+        });
+
+    }
 
     const handleAggregationWorkflowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -157,16 +184,34 @@ export const PatchCard: React.FC<PatchCardProps> = ({
         });
     };
 
+    const handleDrawEditBounds = () => {
+
+        if (!patch.bounds || patch.bounds.length !== 4) {
+            return;
+        }
+
+        if (window.mapRef && window.mapRef.current) {
+            const { showEditBounds, flyToPatchBounds } = window.mapRef.current;
+            flyToPatchBounds(parentProjectTitle, patch.name);
+            showEditBounds(parentProjectTitle, patch.bounds, true);
+        } 
+    }
+
     const menuItems = [
         {
-            title: language === 'zh' ? '拓扑编辑' : 'Topology Editor',
+            title: language === 'zh' ? '网格编辑' : 'Grid Editor',
             icon: <Grid className="h-4 w-4 mr-2" />,
-            onClick: handleTopologyEditorClick,
+            onClick: handleGridEditorClick,
         },
         {
-            title: language === 'zh' ? '属性编辑' : 'Attribute Editor',
+            title: language === 'zh' ? '要素资源编辑' : 'Feature Resoure Editor',
+            icon: <SplinePointer  className="h-4 w-4 mr-2" />,
+            onClick: handleFeatureEditorClick,
+        },
+        {
+            title: language === 'zh' ? '栅格资源编辑' : 'Raster Resource Editor',
             icon: <Mountain className="h-4 w-4 mr-2" />,
-            onClick: handleAttributeEditorClick,
+            onClick: handleRasterEditorClick,
         },
         {
             title: language === 'zh' ? '聚合工作流' : 'Aggregation Workflow',
@@ -251,14 +296,6 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             <div className="flex items-center justify-between">
                 <div className="font-bold text-black text-md">{patch.name}</div>
                 <div className="flex items-center justify-end gap-2">
-                    {/* <button
-                        className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
-                        aria-label={language === 'zh' ? '编辑' : 'Edit'}
-                        title={language === 'zh' ? '编辑' : 'Edit'}
-                        onClick={handleTopologyEditorClick}
-                    >
-                        <PencilRuler className={`h-4 w-4 cursor-pointer`} />
-                    </button> */}
                     <button
                         className="h-6 w-6 rounded-md hover:bg-gray-200 flex items-center justify-center cursor-pointer"
                         aria-label={language === 'zh' ? '标星' : 'Star'}

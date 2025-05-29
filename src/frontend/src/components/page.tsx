@@ -41,17 +41,22 @@ import store from '@/store';
 import NHLayerGroup from './mapComponent/utils/NHLayerGroup';
 import TopologyLayer from './mapComponent/layers/TopologyLayer';
 import CapacityBar from './ui/capacityBar';
-import TopologyPanel from './topologyPanel/TopologyPanel'
-import AttributePanel from './attributePanel/attributePanel';
+import GridPanel from './gridPanel/gridPanel';
+import RasterPanel from './rasterPanel/rasterPanel';
 import AggregationPanel from './aggregationPanel/aggregationPanel';
+import FeaturePanel from './featurePanel/featurePanel';
+import FeatureToolbar from './featurePanel/components/featureToolbar';
+import { LayerItem } from './featurePanel/types/types';
+import { mockLayerData } from './featurePanel/components/layerList';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
     | 'schema'
     | 'project'
     | 'editor'
-    | 'topology'
-    | 'attribute'
+    | 'grid'
+    | 'raster'
+    | 'feature'
     | 'aggregation'
     | null;
 
@@ -82,8 +87,9 @@ export default function Page() {
         | 'schema'
         | 'project'
         | 'editor'
-        | 'topology'
-        | 'attribute'
+        | 'grid'
+        | 'raster'
+        | 'feature'
         | 'aggregation'
         | null
     >(null);
@@ -98,6 +104,7 @@ export default function Page() {
     >(undefined);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
+    const [layers, setLayers] = useState<LayerItem[]>(mockLayerData);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -111,9 +118,11 @@ export default function Page() {
             patches: any[],
             show: boolean
         ) => void;
-        highlightPatch: (
+        highlightPatch: (projectName: string, patchName: string) => void;
+        showEditBounds: (
             projectName: string,
-            patchName: string
+            patchBounds: number[],
+            show: boolean
         ) => void;
     }>(null);
 
@@ -133,8 +142,9 @@ export default function Page() {
                 | 'schema'
                 | 'project'
                 | 'editor'
-                | 'topology'
-                | 'attribute'
+                | 'grid'
+                | 'raster'
+                | 'feature'
                 | 'aggregation'
                 | null
         ) => {
@@ -156,17 +166,21 @@ export default function Page() {
             zh: '编辑',
             en: 'Editor',
         },
-        topology: {
-            zh: '拓扑',
-            en: 'Topology',
+        grid: {
+            zh: '网格',
+            en: 'Grid',
         },
-        attribute: {
-            zh: '属性',
-            en: 'Attribute',
+        raster: {
+            zh: '栅格',
+            en: 'Raster',
+        },
+        feature: {
+            zh: '要素',
+            en: 'Feature',
         },
         aggregation: {
             zh: '聚合',
-            en: 'aggregation',
+            en: 'Aggregation',
         },
     };
 
@@ -248,6 +262,15 @@ export default function Page() {
             const sourceId = `patch-bounds-临时项目`;
             const layerId = `patch-fill-临时项目`;
             const outlineLayerId = `patch-outline-临时项目`;
+            const editSourceId = `patch-bounds-edit`;
+            const editOutlineLayerId = `patch-outline-edit`;
+
+            if (window.mapInstance.getLayer(editOutlineLayerId)) {
+                window.mapInstance.removeLayer(editOutlineLayerId);
+            }
+            if (window.mapInstance.getSource(editSourceId)) {
+                window.mapInstance.removeSource(editSourceId);
+            }
 
             if (window.mapInstance.getLayer(outlineLayerId)) {
                 window.mapInstance.removeLayer(outlineLayerId);
@@ -258,10 +281,9 @@ export default function Page() {
             if (window.mapInstance.getSource(sourceId)) {
                 window.mapInstance.removeSource(sourceId);
             }
-        }
-
-        if (window.mapInstance && window.mapInstance.getCanvas()) {
-            window.mapInstance.getCanvas().style.cursor = '';
+            if (window.mapInstance.getCanvas()) {
+                window.mapInstance.getCanvas().style.cursor = '';
+            }
         }
 
         if (showCreatePatch) {
@@ -271,18 +293,19 @@ export default function Page() {
         if (item === 'schema') {
             setActivePanel('schema');
             setShowCreateSchema(false);
-            clearMapMarkers();
             setShowCreateProject(false);
             setshowCreatePatch(false);
             clearMapDrawElements();
             layer.removeResource();
         } else if (item === 'project') {
-            // clearMapMarkers();
             clearMapDrawElements();
             setActivePanel('project');
             setShowCreateProject(false);
             setshowCreatePatch(false);
             layer.removeResource();
+        } else if (item === 'feature') {
+            setActivePanel('feature');
+            // 其他可能的初始化或清理
         }
     };
 
@@ -291,9 +314,12 @@ export default function Page() {
             handleBreadcrumbClick('project');
         }
     };
+
     const handlePreviousClick = () => {
         if (!activeBreadcrumb || activeBreadcrumb === 'project') {
             handleBreadcrumbClick('schema');
+        } else {
+            handleBreadcrumbClick('project');
         }
     };
 
@@ -315,7 +341,7 @@ export default function Page() {
                 if (schema) {
                     const markerManager = new MapMarkerManager(
                         language,
-                        () => {}
+                        () => { }
                     );
                     markerManager.clearAllMarkers();
                     markerManager.showAllSchemasOnMap([schema]);
@@ -410,22 +436,33 @@ export default function Page() {
                 );
             }
             return <ProjectPanel onCreatePatch={handleCreatePatch} />;
-        } else if (activePanel === 'topology') {
+        } else if (activePanel === 'grid') {
             return (
-                <TopologyPanel
+                <GridPanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
                     }}
                 />
             );
-        } else if (activePanel === 'attribute') {
+        } else if (activePanel === 'raster') {
             return (
-                <AttributePanel
+                <RasterPanel
                     onBack={() => {
                         setActivePanel('project');
                         setActiveBreadcrumb('project');
                     }}
+                />
+            );
+        } else if (activePanel === 'feature') {
+            return (
+                <FeaturePanel
+                    onBack={() => {
+                        setActivePanel('project');
+                        setActiveBreadcrumb('project');
+                    }}
+                    layers={layers}
+                    setLayers={setLayers}
                 />
             );
         } else if (activePanel === 'aggregation') {
@@ -444,9 +481,6 @@ export default function Page() {
                 onCreateProject={handleCreateProjectFromSchema}
             />
         );
-        // }
-
-        return null;
     };
 
     return (
@@ -492,26 +526,39 @@ export default function Page() {
                                 <BreadcrumbItem>
                                     <BreadcrumbLink
                                         className={
-                                            activePanel === 'topology'
-                                                ? activeBreadcrumb ===
-                                                  'topology'
+                                            activePanel === 'grid'
+                                                ? activeBreadcrumb === 'grid'
                                                     ? 'text-[#71F6FF] font-bold'
                                                     : ''
-                                                : activePanel === 'attribute'
-                                                ? activeBreadcrumb ===
-                                                  'attribute'
-                                                    ? 'text-[#71F6FF] font-bold'
-                                                    : ''
-                                                : activeBreadcrumb === 'editor'
-                                                ? 'text-[#71F6FF] font-bold'
-                                                : ''
+                                                : activePanel === 'raster'
+                                                    ? activeBreadcrumb === 'raster'
+                                                        ? 'text-[#71F6FF] font-bold'
+                                                        : ''
+                                                    : activePanel === 'feature'
+                                                        ? activeBreadcrumb === 'feature'
+                                                            ? 'text-[#71F6FF] font-bold'
+                                                            : ''
+                                                        : activePanel === 'aggregation'
+                                                            ? activeBreadcrumb ===
+                                                                'aggregation'
+                                                                ? 'text-[#71F6FF] font-bold'
+                                                                : ''
+                                                            : activeBreadcrumb === 'editor'
+                                                                ? 'text-[#71F6FF] font-bold'
+                                                                : ''
                                         }
                                     >
-                                        {activePanel === 'topology'
-                                            ? breadcrumbText.topology[language]
-                                            : activePanel === 'attribute'
-                                            ? breadcrumbText.attribute[language]
-                                            : breadcrumbText.editor[language]}
+                                        {activePanel === 'grid'
+                                            ? breadcrumbText.grid[language]
+                                            : activePanel === 'raster'
+                                                ? breadcrumbText.raster[language]
+                                                : activePanel === 'feature'
+                                                    ? breadcrumbText.feature[language]
+                                                    : activePanel === 'aggregation'
+                                                        ? breadcrumbText.aggregation[
+                                                        language
+                                                        ]
+                                                        : breadcrumbText.editor[language]}
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                             </BreadcrumbList>
@@ -522,18 +569,6 @@ export default function Page() {
                         className="mr-2 ml-4 h-4"
                     />
                     <div className="ml-2 gap-8 flex">
-                        <div className="flex items-center">
-                            <span className="text-gray-500 justify-center text-sm">
-                                {language === 'zh'
-                                    ? 'AI助手模式'
-                                    : 'AI Assistant Mode'}
-                            </span>
-                            <Switch
-                                className="ml-2 cursor-pointer data-[state=checked]:bg-[#00C0FF]"
-                                checked={aiDialogEnabled}
-                                onCheckedChange={setAIDialogEnabled}
-                            />
-                        </div>
                         <div className="flex items-center">
                             <span className="text-gray-500 justify-center text-sm">
                                 {language === 'zh'
@@ -554,9 +589,22 @@ export default function Page() {
                                 }}
                             />
                         </div>
+                        <div className="flex items-center">
+                            <span className="text-gray-500 justify-center text-sm">
+                                {language === 'zh'
+                                    ? 'AI助手模式'
+                                    : 'AI Assistant Mode'}
+                            </span>
+                            <Switch
+                                className="ml-2 cursor-pointer data-[state=checked]:bg-[#00C0FF]"
+                                checked={aiDialogEnabled}
+                                onCheckedChange={setAIDialogEnabled}
+                            />
+                        </div>
+
                     </div>
 
-                    {/* 用户头像 */}
+                    {/* User Avatar */}
                     <div className="ml-auto mr-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -589,8 +637,12 @@ export default function Page() {
                         </DropdownMenu>
                     </div>
                 </header>
+                {activeBreadcrumb === 'feature' && (
+                    <FeatureToolbar setLayers={setLayers} />
+                )}
+
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">
-                    {activeBreadcrumb === 'topology' && updateCapacity && (
+                    {activeBreadcrumb === 'grid' && updateCapacity && (
                         <CapacityBar />
                     )}
                     <MapInit
@@ -615,8 +667,8 @@ export default function Page() {
                                             ? '关闭AI对话'
                                             : 'Close AI Chat'
                                         : language === 'zh'
-                                        ? '打开AI对话'
-                                        : 'Open AI Chat'}
+                                            ? '打开AI对话'
+                                            : 'Open AI Chat'}
                                 </span>
                             </Button>
                         )}
@@ -645,29 +697,33 @@ export default function Page() {
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 )}
-                                {activeBreadcrumb === 'project' && (
-                                    <Button
-                                        className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
-                                        onClick={handlePreviousClick}
-                                        aria-label={
-                                            language === 'zh'
-                                                ? '上一步'
-                                                : 'Previous'
-                                        }
-                                        title={
-                                            language === 'zh'
-                                                ? '上一步'
-                                                : 'Previous'
-                                        }
-                                    >
-                                        <ArrowLeft className="h-4 w-4" />
-                                        <span>
-                                            {language === 'zh'
-                                                ? '上一步'
-                                                : 'Previous'}
-                                        </span>
-                                    </Button>
-                                )}
+                                {(activeBreadcrumb === 'project' ||
+                                    activeBreadcrumb === 'grid' ||
+                                    activeBreadcrumb === 'raster' ||
+                                    activeBreadcrumb === 'feature' ||
+                                    activeBreadcrumb === 'aggregation') && (
+                                        <Button
+                                            className="rounded-md px-4 py-2 flex items-center justify-center bg-gray-800 hover:bg-gray-700 shadow-lg text-white cursor-pointer"
+                                            onClick={handlePreviousClick}
+                                            aria-label={
+                                                language === 'zh'
+                                                    ? '上一步'
+                                                    : 'Previous'
+                                            }
+                                            title={
+                                                language === 'zh'
+                                                    ? '上一步'
+                                                    : 'Previous'
+                                            }
+                                        >
+                                            <ArrowLeft className="h-4 w-4" />
+                                            <span>
+                                                {language === 'zh'
+                                                    ? '上一步'
+                                                    : 'Previous'}
+                                            </span>
+                                        </Button>
+                                    )}
                             </>
                         )}
                     </div>
