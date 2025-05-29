@@ -90,7 +90,7 @@ const validateProjectForm = (
     return { isValid: true, errors, generalError: null };
 };
 
-export default function CreatePPatch({
+export default function CreatePatch({
     onDrawRectangle,
     rectangleCoordinates,
     isDrawing = false,

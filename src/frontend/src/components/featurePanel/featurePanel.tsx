@@ -6,6 +6,7 @@ import { useContext, useState, useEffect } from 'react';
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar';
 import BasicInfo from '../aggregationPanel/components/basicInfo';
 import LayerList from './components/layerList';
+import store from '@/store';
 
 export default function FeaturePanel({
     onBack,
@@ -15,6 +16,7 @@ export default function FeaturePanel({
 }: FeaturePanelProps) {
 
     const { language } = useContext(LanguageContext);
+    const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
     const handleBack = () => {
         if (window.mapInstance) {
@@ -31,6 +33,12 @@ export default function FeaturePanel({
         if (onBack) {
             onBack();
         }
+    };
+
+    const handleSelectLayer = (id: string | null) => {
+        setSelectedLayerId(id);
+        store.get<{on: Function}>('isEditSwitchAllowed')!.on()
+        console.log('点击了图层')
     };
 
     return (
@@ -51,7 +59,12 @@ export default function FeaturePanel({
 
                 <div className="p-2 -mt-3 space-y-2">
                     <BasicInfo />
-                    <LayerList layers={layers} setLayers={setLayers} />
+                    <LayerList
+                        layers={layers}
+                        setLayers={setLayers}
+                        selectedLayerId={selectedLayerId}
+                        onSelectLayer={handleSelectLayer}
+                    />
                 </div>
             </SidebarContent>
             <SidebarRail />

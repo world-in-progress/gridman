@@ -4,8 +4,6 @@ import DrawButton from '@/components/operatePanel/components/DrawButton';
 import { Separator } from '@radix-ui/react-separator';
 import { UpdatedPatchBoundsProps } from '../types/types';
 
-
-
 export default function PatchBounds({
     isDrawing,
     rectangleCoordinates,
