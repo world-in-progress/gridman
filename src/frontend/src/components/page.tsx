@@ -46,8 +46,8 @@ import RasterPanel from './rasterPanel/rasterPanel';
 import AggregationPanel from './aggregationPanel/aggregationPanel';
 import FeaturePanel from './featurePanel/featurePanel';
 import FeatureToolbar from './featurePanel/components/featureToolbar';
-import { LayerItem } from './featurePanel/types/types';
-import { mockLayerData } from './featurePanel/components/layerList';
+import { LayerItem, LayerNode } from './featurePanel/types/types';
+import { layerGroups } from './featurePanel/components/layerList';
 
 export type SidebarType = 'home' | 'aggregation' | 'simulation' | null;
 export type BreadcrumbType =
@@ -104,7 +104,8 @@ export default function Page() {
     >(undefined);
     const [rectangleCoordinates, setRectangleCoordinates] =
         useState<RectangleCoordinates | null>(null);
-    const [layers, setLayers] = useState<LayerItem[]>(mockLayerData);
+    const [layers, setLayers] = useState<LayerNode[]>([]);
+    const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
     const mapRef = useRef<{
         startDrawRectangle: (cancel?: boolean) => void;
@@ -211,6 +212,11 @@ export default function Page() {
         };
     }, []);
 
+    const handleSelectLayer = useCallback((id: string | null) => {
+        setSelectedLayerId(id);
+        console.log('Selected layer ID:', id);
+    }, []);
+
     const toggleChat = () => {
         setIsChatOpen(!isChatOpen);
     };
@@ -250,8 +256,8 @@ export default function Page() {
 
     const handleBreadcrumbClick = (item: BreadcrumbType) => {
         setActiveBreadcrumb(item);
+        setSelectedLayerId(null);
 
-        // Clear TopologyLayer resource
         const clg = store.get<NHLayerGroup>('clg')!;
         const layer = clg.getLayerInstance('TopologyLayer')! as TopologyLayer;
         layer.removeResource();
@@ -305,7 +311,6 @@ export default function Page() {
             layer.removeResource();
         } else if (item === 'feature') {
             setActivePanel('feature');
-            // 其他可能的初始化或清理
         }
     };
 
@@ -463,6 +468,8 @@ export default function Page() {
                     }}
                     layers={layers}
                     setLayers={setLayers}
+                    selectedLayerId={selectedLayerId}
+                    onSelectLayer={handleSelectLayer}
                 />
             );
         } else if (activePanel === 'aggregation') {
@@ -638,7 +645,7 @@ export default function Page() {
                     </div>
                 </header>
                 {activeBreadcrumb === 'feature' && (
-                    <FeatureToolbar setLayers={setLayers} />
+                    <FeatureToolbar setLayers={setLayers} selectedLayerId={selectedLayerId} />
                 )}
 
                 <div className="h-screen group-data-[state=expanded]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:w-[calc(100vw-var(--sidebar-width-icon))] relative">

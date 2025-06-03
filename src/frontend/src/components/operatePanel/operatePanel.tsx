@@ -30,7 +30,6 @@ import GridLevel from './components/GridLevel';
 import SubdivideRules from './components/SubdivideRules';
 import GenerateJSONButton from './components/GenerateJSONButton';
 import DrawGridButton from './components/DrawGridButton';
-import TopologyLayer from '../mapComponent/layers/TopologyLayer';
 import NHLayerGroup from '../mapComponent/utils/NHLayerGroup';
 import { Map } from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';

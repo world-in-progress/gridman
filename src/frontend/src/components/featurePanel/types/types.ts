@@ -1,46 +1,68 @@
 import { Sidebar } from '@/components/ui/sidebar';
 import { LucideIcon } from 'lucide-react';
 
-export interface FeaturePanelProps extends React.ComponentProps<typeof Sidebar> {
-    onBack?: () => void;
-    layers: LayerItem[];
-    setLayers: React.Dispatch<React.SetStateAction<LayerItem[]>>;
-}
+export type LayerNode = LayerGroup | LayerItem;
 
-export interface LayerList {
+export interface LayerGroup {
+    id: string,
+    name: string,
+    type: 'group'
+    visible: boolean,
+    icon: React.ReactNode,
+    children: LayerNode[]
 }
 
 export interface LayerItem {
     id: string;
     name: string;
-    type: 'group' | 'raster' | 'vector' | 'feature';
+    type: string,
     visible: boolean;
-    children?: LayerItem[];
-    icon?: React.ReactNode;
+    icon: React.ReactNode;
+    group: string
+    symbology: string;
+    isEditing: boolean,
     opacity?: number;
-    symbology?: string;
+}
+
+export interface FeaturePanelProps extends React.ComponentProps<typeof Sidebar> {
+    onBack?: () => void;
+    layers: LayerNode[];
+    setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
+    selectedLayerId: string | null;
+    onSelectLayer: (id: string | null) => void;
+}
+
+export interface LayerList {
 }
 
 export interface LayerItemComponentProps {
-    layer: LayerItem;
+    layer: LayerNode;
+    layerGroup?: LayerGroup;
     level: number;
     onToggleVisibility: (id: string) => void;
     onToggleExpanded: (id: string) => void;
     expandedGroups: Set<string>;
+    selectedLayerId: string | null;
+    onSelectLayer: (id: string | null) => void;
 }
 
 export interface ToolItem {
     onClick: () => void;
     title: string;
     Icon: LucideIcon;
+    className?: string; // 添加可选的 className 属性
 }
 
 export interface FeatureToolbarProps {
-    setLayers: React.Dispatch<React.SetStateAction<LayerItem[]>>;
+    setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
+    selectedLayerId: string | null;
+    // onStartDrawPolygon: (cancel?: boolean) => void;
+    // isPolygonDrawing: boolean;
 }
 
 export interface LayerListProps {
-    layers: LayerItem[]; // 接收 layers 数组
-    setLayers: React.Dispatch<React.SetStateAction<LayerItem[]>>; // 接收 setLayers 函数
-    // 如果 LayerList 还有其他 props，也需要在这里添加
+    layers: LayerNode[];
+    setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
+    selectedLayerId: string | null;
+    onSelectLayer: (id: string | null) => void;
 }
