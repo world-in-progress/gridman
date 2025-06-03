@@ -215,6 +215,49 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
                             'fill-opacity': 0.1,
                         },
                     },
+                    {
+                        id: 'gl-draw-polygon',
+                        type: 'fill',
+                        filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+                        paint: {
+                            'fill-color': '#0077FF',
+                            'fill-outline-color': '#0077FF',
+                            'fill-opacity': 0.3
+                        }
+                    },
+                    {
+                        id: 'gl-draw-polygon-stroke',
+                        type: 'line',
+                        filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+                        layout: {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        paint: {
+                            'line-color': '#0077FF',
+                            'line-width': 2
+                        }
+                    },
+                    {
+                        id: 'gl-draw-polygon-midpoint',
+                        type: 'circle',
+                        filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+                        paint: {
+                            'circle-radius': 3,
+                            'circle-color': '#fff'
+                        }
+                    },
+                    {
+                        id: 'gl-draw-polygon-vertex',
+                        type: 'circle',
+                        filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+                        paint: {
+                            'circle-radius': 5,
+                            'circle-color': '#fff',
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#0077FF'
+                        }
+                    }
                 ],
             });
             mapInstance.addControl(drawInstance);
@@ -379,6 +422,7 @@ const MapInit: ForwardRefRenderFunction<MapInitHandle, MapInitProps> = (
             mapInstance.on('draw.create', (e: any) => {
                 if (e.features && e.features.length > 0) {
                     const feature = e.features[0];
+                    console.log('绘制的多边形:', feature);
                     setIsDrawMode(false);
                     setHasDrawnRectangle(true);
 

@@ -1,22 +1,14 @@
 import { useContext, useState } from 'react';
 import {
-    FilePlus2,
     ChevronDown,
     ChevronRight,
     Eye,
     EyeOff,
     MoreHorizontal,
-    Map,
     Layers,
-    Mountain,
-    Trees,
-    Building,
-    Waves,
-    Route,
     MapPin,
     PencilRuler,
     Pencil,
-    Import,
     Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,10 +66,11 @@ function LayerItemComponent({
     selectedLayerId,
     onSelectLayer,
 }: LayerItemComponentProps) {
+
     const { language } = useContext(LanguageContext);
     const isExpanded = expandedGroups.has(layer.id);
-    const hasChildren = layer.type === 'group' && (layer as LayerGroup).children && (layer as LayerGroup).children.length > 0;
     const isSelected = selectedLayerId === layer.id;
+    const hasChildren = layer.type === 'group' && (layer as LayerGroup).children && (layer as LayerGroup).children.length > 0;
 
     const getSymbologyColor = (symbology?: string) => {
         switch (symbology) {
@@ -133,15 +126,11 @@ function LayerItemComponent({
                 onClick={handleLayerClick}
             >
                 {/* Expand/Collapse Button */}
-                {hasChildren ? (
-                    isExpanded ? (
+                { isExpanded ? (
                         <ChevronDown className="ml-1 h-3 w-3" />
                     ) : (
                         <ChevronRight className="ml-1 h-3 w-3" />
-                    )
-                ) : (
-                    <div className="w-4" />
-                )}
+                    )}
 
                 {/* Visibility Checkbox */}
                 <Checkbox
@@ -239,9 +228,10 @@ function LayerItemComponent({
 }
 
 export default function LayerList({ layers, setLayers, selectedLayerId, onSelectLayer }: LayerListProps) {
+    
+    const [showAll, setShowAll] = useState(true);
     const { language } = useContext(LanguageContext);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(layerGroups.map(group => group.id)));
-    const [showAll, setShowAll] = useState(true);
 
     // Assign layers to their respective groups
     const populatedLayerGroups: LayerGroup[] = layerGroups.map(group => {

@@ -50,6 +50,7 @@ export interface ToolItem {
     onClick: () => void;
     title: string;
     Icon: LucideIcon;
+    className?: string; // 添加可选的 className 属性
 }
 
 export interface FeatureToolbarProps {

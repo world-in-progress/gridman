@@ -37,7 +37,7 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
     const [createNewFeatureError, setCreateNewFeatureError] = useState('');
     const [newIcon, setNewIcon] = useState('MapPin');
     const [dataSourceType, setDataSourceType] = useState('local');
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [isDrawing, setIsDrawing] = useState(false);
     const [importFeatureDialog, setImportFeatureDialog] = useState(false)
     const [isEditSwitchAllowed, setIsEditSwitchAllowed] = useState(false)
@@ -47,8 +47,8 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
         on: () => {
             setIsEditSwitchAllowed(prev => !prev)
             if (isEditSwitchAllowed === true) {
-                if (isEditing) {
-                    setIsEditing(prev => !prev)
+                if (isEditMode) {
+                    setIsEditMode(prev => !prev)
                 }
             }
         }
@@ -147,8 +147,8 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
     };
 
     const handleStartEditing = () => {
-        console.log(language === 'zh' ? (isEditing ? '点击了停止编辑工具' : '点击了开始编辑工具') : (isEditing ? 'Stop Editing tool clicked' : 'Start Editing tool clicked'));
-        setIsEditing(prev => !prev);
+        console.log(language === 'zh' ? (isEditMode ? '点击了停止编辑工具' : '点击了开始编辑工具') : (isEditMode ? 'Stop Editing tool clicked' : 'Start Editing tool clicked'));
+        setIsEditMode(prev => !prev);
     };
 
     const handleSaveFeature = () => {
@@ -156,8 +156,23 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
     }
 
     const handleDraw = () => {
-        console.log(language === 'zh' ? '点击了绘制工具' : 'Draw tool clicked');
-        setIsDrawing(prev => !prev)
+        const draw = window.mapboxDrawInstance;
+        if (!draw) return;
+        
+        if (isDrawing) {
+            // Stop to draw
+            draw.changeMode('simple_select');
+            if (window.mapInstance?.getCanvas()) {
+                window.mapInstance.getCanvas().style.cursor = '';
+            }
+        } else {
+            // Start to draw
+            draw.changeMode('draw_polygon');
+            if (window.mapInstance?.getCanvas()) {
+                window.mapInstance.getCanvas().style.cursor = 'crosshair';
+            }
+        }
+        setIsDrawing(!isDrawing);
     }
 
     const handleSelect = () => console.log(language === 'zh' ? '点击了选择工具' : 'Select tool clicked');
@@ -176,9 +191,9 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
         {
             onClick: handleStartEditing,
             title: language === 'zh'
-                ? (isEditing ? '停止编辑' : '开始编辑')
-                : (isEditing ? 'Stop Editing' : 'Start Editing'),
-            Icon: isEditing ? PencilOff : Pencil,
+                ? (isEditMode ? '停止编辑' : '开始编辑')
+                : (isEditMode ? 'Stop Editing' : 'Start Editing'),
+            Icon: isEditMode ? PencilOff : Pencil,
         },
         { onClick: handleSaveFeature, title: language === 'zh' ? '保存' : 'Save', Icon: Save },
     ]
@@ -189,7 +204,10 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
             title: language === 'zh'
                 ? (isDrawing ? '停止绘制' : '开始绘制')
                 : (isDrawing ? 'Stop Drawing' : 'Start Drawing'),
-            Icon: isDrawing ? PaintbrushVertical : Paintbrush
+            Icon: isDrawing 
+                ? PaintbrushVertical
+                : Paintbrush,
+            className: isDrawing ? "text-red-500" : "" 
         },
 
         { onClick: handleSelect, title: language === 'zh' ? '选择要素' : 'Select Feature', Icon: MousePointer2 },
@@ -461,15 +479,21 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({ setLayers, selectedLaye
                     {editTools.map((tool, index) => (
                         <button
                             key={index}
-                            onClick={isEditing ? tool.onClick : undefined}
+                            onClick={isEditMode ? tool.onClick : undefined}
                             className={cn(
                                 "p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                isEditing ? "hover:bg-gray-200 cursor-pointer" : "cursor-not-allowed"
+                                isEditMode ? "hover:bg-gray-200 cursor-pointer" : "cursor-not-allowed"
                             )}
                             title={tool.title}
-                            disabled={!isEditing}
+                            disabled={!isEditMode}
                         >
-                            <tool.Icon className={cn("w-6 h-6", isEditing ? "text-gray-600" : "text-gray-400")} />
+                            <tool.Icon 
+                                className={cn(
+                                    "w-6 h-6", 
+                                    isEditMode ? "text-gray-600" : "text-gray-400",
+                                    tool.className // 添加自定义类名
+                                )} 
+                            />
                         </button>
                     ))}
                 </div>

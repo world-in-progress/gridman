@@ -126,28 +126,19 @@ export default function CreatePatch({
     });
     const [gridLevel, setGridLevel] = useState<number[] | null>(null);
 
-    const [convertedRectangle, setConvertedRectangle] =
-        useState<RectangleCoordinates | null>(null);
+    const [convertedRectangle, setConvertedRectangle] = useState<RectangleCoordinates | null>(null);
 
-    const [alignedRectangle, setAlignedRectangle] =
-        useState<RectangleCoordinates | null>(null);
+    const [alignedRectangle, setAlignedRectangle] = useState<RectangleCoordinates | null>(null);
 
-    const [expandedRectangle, setExpandedRectangle] =
-        useState<RectangleCoordinates | null>(null);
+    const [expandedRectangle, setExpandedRectangle] = useState<RectangleCoordinates | null>(null);
 
-    const [schemaNameFromProps, setSchemaNameFromProps] =
-        useState<boolean>(false);
+    const [schemaNameFromProps, setSchemaNameFromProps] = useState<boolean>(false);
     const [epsgFromProps, setEpsgFromProps] = useState<boolean>(false);
 
-    const [schemaBasePoint, setSchemaBasePoint] = useState<
-        [number, number] | null
-    >(null);
-    const [schemaBasePointWGS84, setSchemaBasePointWGS84] = useState<
-        [number, number] | null
-    >(null);
+    const [schemaBasePoint, setSchemaBasePoint] = useState<[number, number] | null>(null);
+    const [schemaBasePointWGS84, setSchemaBasePointWGS84] = useState<[number, number] | null>(null);
 
-    const [patchBoundsManager, setPatchBoundsManager] =
-        useState<PatchBoundsManager | null>(null);
+    const [patchBoundsManager, setPatchBoundsManager] = useState<PatchBoundsManager | null>(null);
 
     const { setRectangleCoordinates, ...sidebarProps } = props;
 
