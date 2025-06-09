@@ -1,9 +1,50 @@
-import IAPI, { GridMeta } from '../types'
-import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../../grid/types'
+import { BaseResponse, PatchTopoStatus } from './types'
+import IAPI, { GridMeta } from './types'
+import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../grid/types'
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
-const API_PREFIX = '/api/grid/operation'
+const API_PREFIX = '/server/api/topo'
+
+export const isPatchTopoReady: IAPI<void, boolean> = {
+    api: `${API_PREFIX}`,
+    fetch: async (): Promise<boolean> => {
+        try {
+            const response = await fetch(isPatchTopoReady.api, { method: 'GET' })
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: PatchTopoStatus = await response.json()
+            return responseData.is_ready
+
+        } catch (error) {
+            throw new Error(`Failed to check patch readiness: ${error}`)
+        }
+    }
+}
+
+export const setCurrentPatchTopo: IAPI<{ projectName: string, patchName: string }, void> = {
+    api: `${API_PREFIX}/`,
+    fetch: async (query: { projectName: string; patchName: string }): Promise<void> => {
+        try {
+            const { projectName, patchName } = query
+
+            const response = await fetch(`${setCurrentPatchTopo.api}/${projectName}/${patchName}`, { method: 'GET' })
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: BaseResponse = await response.json()
+            if (!responseData.success) {
+                throw new Error(`Failed to set current patch: ${responseData.message}`)
+            }
+
+        } catch (error) {
+            throw new Error(`Failed to set current patch: ${error}`)
+        } 
+    }
+}
 
 export const subdivideGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/subdivide`,

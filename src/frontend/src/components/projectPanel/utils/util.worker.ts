@@ -10,10 +10,10 @@ export async function fetchProjects(
     const { startIndex, endIndex } = params
     try {
         // Step 1: Get number of projects
-        const numResponse = (await api.grid.projects.getProjectsNum.fetch()).number
+        const numResponse = (await api.projects.getProjectsNum.fetch()).number
         
         // Step 2: Get multi-project meta
-        const response = await api.grid.projects.getMultiProjectMeta.fetch({ startIndex, endIndex })
+        const response = await api.projects.getMultiProjectMeta.fetch({ startIndex, endIndex })
 
         callback(
             null,
@@ -33,7 +33,7 @@ export async function getProjectByName(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.project.getProject.fetch(projectName)
+        const response = await api.project.getProject.fetch(projectName)
         if (response.project_meta === null || response.project_meta === undefined) {
             throw new Error(
                 `项目 ${projectName} 不存在或未找到`
@@ -53,7 +53,7 @@ export async function updateProjectStarred(
     const { name: projectName, starred } = params;
     try {
         // Step 1: Get project
-        const projectMeta = (await api.grid.project.getProject.fetch(projectName)).project_meta
+        const projectMeta = (await api.project.getProject.fetch(projectName)).project_meta
         if (!projectMeta) {
             throw new Error(`项目 ${projectName} 不存在或未找到`)
         }
@@ -62,7 +62,7 @@ export async function updateProjectStarred(
         projectMeta.starred = starred
 
         // Step 3: Update project
-        const response = await api.grid.project.updateProject.fetch({
+        const response = await api.project.updateProject.fetch({
             projectName,
             projectMeta,
         })
@@ -81,7 +81,7 @@ export async function updateProjectDescription(
     const { name: projectName, description } = params;
     try {
         // Step 1: Get project
-        const projectMeta = (await api.grid.project.getProject.fetch(projectName)).project_meta
+        const projectMeta = (await api.project.getProject.fetch(projectName)).project_meta
         if (!projectMeta) {
             throw new Error(`项目 ${projectName} 不存在或未找到`)
         }
@@ -90,7 +90,7 @@ export async function updateProjectDescription(
         projectMeta.description = description
 
         // Step 3: Update project
-        const response = await api.grid.project.updateProject.fetch({
+        const response = await api.project.updateProject.fetch({
             projectName,
             projectMeta,
         })
@@ -107,7 +107,7 @@ export async function createProject(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.project.createProject.fetch(projectData)
+        const response = await api.project.createProject.fetch(projectData)
         callback(null, response)
 
     } catch (error) {
@@ -121,7 +121,7 @@ export async function deleteProject(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.project.deleteProject.fetch(projectName)
+        const response = await api.project.deleteProject.fetch(projectName)
         callback(null, response)
 
     } catch (error) {
@@ -136,7 +136,7 @@ export async function fetchPatches(
 ) {
     const { projectName } = params
     try {
-        const multiPatchMeta = await api.grid.patches.getMultiPatchMeta.fetch(projectName)
+        const multiPatchMeta = await api.patches.getMultiPatchMeta.fetch(projectName)
         if (!multiPatchMeta.patch_metas) {
             callback(new Error(`补丁列表为空`), null)
         }
@@ -154,7 +154,7 @@ export async function createPatch(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.patch.createPatch.fetch(PatchData)
+        const response = await api.patch.createPatch.fetch(PatchData)
         callback(null, response)
 
     } catch (error) {
@@ -170,7 +170,7 @@ export async function updatePatchStarred(
     const { projectName, patchName, starred } = params
     try {
         // Step 1: Get patch list
-        const multiPatchMeta = await api.grid.patches.getMultiPatchMeta.fetch(projectName)
+        const multiPatchMeta = await api.patches.getMultiPatchMeta.fetch(projectName)
 
         // Step 2: Find the patch to update
         if (!multiPatchMeta.patch_metas) {
@@ -187,7 +187,7 @@ export async function updatePatchStarred(
 
         // Step 2: Update patch starred status
         patchToUpdate.starred = starred
-        const response = await api.grid.patch.updatePatch.fetch({
+        const response = await api.patch.updatePatch.fetch({
             projectName,
             patchName,
             meta: patchToUpdate,
@@ -207,7 +207,7 @@ export async function updatePatchDescription(
     const { projectName, patchName, description } = params
     try {
         // Step 1: Get patch list
-        const multiPatchMeta = await api.grid.patches.getMultiPatchMeta.fetch(projectName)
+        const multiPatchMeta = await api.patches.getMultiPatchMeta.fetch(projectName)
 
         // Step 2: Find the patch to update
         if (!multiPatchMeta.patch_metas) {
@@ -224,7 +224,7 @@ export async function updatePatchDescription(
 
         // Step 2: Update patch description
         patchToUpdate.description = description
-        const response = await api.grid.patch.updatePatch.fetch({
+        const response = await api.patch.updatePatch.fetch({
             projectName,
             patchName,
             meta: patchToUpdate,
@@ -246,17 +246,17 @@ export async function setPatch(
 ) {
     try {
         // Step 1: Set current patch
-        await api.grid.patch.setCurrentPatch.fetch({ projectName, patchName })
+        await api.topo.setCurrentPatchTopo.fetch({ projectName, patchName })
 
         // Step 2: Poll until patch is ready
         while (true) {
-            const isReady = await api.grid.patch.isPatchReady.fetch()
+            const isReady = await api.topo.isPatchTopoReady.fetch()
             if (isReady) break
             setTimeout(() => {}, 1000)
         }
 
         // Step 3: Get patch info
-        const patchMeta = await api.grid.operation.getGridMeta.fetch()
+        const patchMeta = await api.topo.getGridMeta.fetch()
         callback(null, patchMeta)
 
     } catch (error) {

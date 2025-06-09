@@ -32,7 +32,7 @@ export interface MultiProjectSchema {
     project_schemas: ProjectSchema[] | null
 }
 
-export interface PatchStatus {
+export interface PatchTopoStatus {
     is_ready: boolean
     status: 'ACTIVATED' | 'DEACTIVATED'
 }

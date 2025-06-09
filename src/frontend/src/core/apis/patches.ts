@@ -1,6 +1,6 @@
-import IAPI, { MultiPatchMeta } from '../types'
+import IAPI, { MultiPatchMeta } from './types'
 
-const API_PREFIX = '/api/grid/patches'
+const API_PREFIX = '/server/api/patches'
 
 export const getMultiPatchMeta: IAPI<string, MultiPatchMeta> = {
     api: `${API_PREFIX}`,

@@ -7,7 +7,7 @@ export async function createSchema(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.schema.createSchema.fetch(schemaData)
+        const response = await api.schema.createSchema.fetch(schemaData)
         callback(null, response)
     } catch (error) {
         callback(new Error(`创建模板失败! 错误信息: ${error}`), null)
@@ -21,8 +21,8 @@ export async function fetchSchemas(
 ) {
     const { startIndex, endIndex } = params;
     try {
-        const schemaNum = (await api.grid.schemas.getSchemasNum.fetch()).number
-        const schemas = await api.grid.schemas.getSchemas.fetch({
+        const schemaNum = (await api.schemas.getSchemasNum.fetch()).number
+        const schemas = await api.schemas.getSchemas.fetch({
             startIndex,
             endIndex
         })
@@ -43,7 +43,7 @@ export async function updateSchemaStarred(
     const { name: schemaName, starred } = params
     try {
         // Step 1: Get schema
-        const getResponse = await api.grid.schema.getSchema.fetch(schemaName)
+        const getResponse = await api.schema.getSchema.fetch(schemaName)
 
         if (!getResponse.project_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
@@ -54,7 +54,7 @@ export async function updateSchemaStarred(
         schema.starred = starred
 
         // Step 3: Update schema
-        const putResponse = await api.grid.schema.updateSchema.fetch({ schemaName, schema })
+        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema })
         callback(null, putResponse)
 
     } catch (error) {
@@ -70,7 +70,7 @@ export async function updateSchemaDescription(
     const { name: schemaName, description } = params
     try {
         // Step 1: Get schema
-        const getResponse = await api.grid.schema.getSchema.fetch(schemaName)
+        const getResponse = await api.schema.getSchema.fetch(schemaName)
 
         if (!getResponse.project_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
@@ -81,7 +81,7 @@ export async function updateSchemaDescription(
         schema.description = description
 
         // Step 3: Update schema
-        const putResponse = await api.grid.schema.updateSchema.fetch({ schemaName, schema })
+        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema })
         return {
             err: null,
             result: putResponse,
@@ -100,7 +100,7 @@ export async function getSchemaByName(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.schema.getSchema.fetch(schemaName)
+        const response = await api.schema.getSchema.fetch(schemaName)
         callback(null, response)
 
     } catch (error) {
@@ -114,7 +114,7 @@ export async function deleteSchema(
     callback: Callback<any>
 ) {
     try {
-        const response = await api.grid.schema.deleteSchema.fetch(schemaName)
+        const response = await api.schema.deleteSchema.fetch(schemaName)
         callback(null, response)
 
     } catch (error) {
