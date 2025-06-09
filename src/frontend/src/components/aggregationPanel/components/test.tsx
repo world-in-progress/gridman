@@ -247,7 +247,7 @@ export default function Test({}: TestProps) {
                         {language === 'zh' ? '描述' : 'Description'}:
                     </h3>
                     <div className="text-gary-600 text-sm">
-                        节点功能描述信息
+                        Node Function Description
                     </div>
                 </div>
                 <div className="mt-2 p-2 bg-white rounded-md shadow-sm border border-gray-200">
