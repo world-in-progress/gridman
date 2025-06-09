@@ -1,7 +1,7 @@
 import IAPI, { ResponseWithProjectMeta } from '@/core/apis/types'
-import { BaseResponse, ProjectMeta } from '../types'
+import { BaseResponse, ProjectMeta } from './types'
 
-const API_PREFIX = '/api/grid/project'
+const API_PREFIX = '/server/api/project'
 
 export const createProject: IAPI<ProjectMeta, BaseResponse> = {
     api: `${API_PREFIX}`,

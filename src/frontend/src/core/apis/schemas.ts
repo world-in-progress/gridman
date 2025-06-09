@@ -1,6 +1,6 @@
-import IAPI, { MultiProjectSchema, ResponseWithNum } from '../types'
+import IAPI, { MultiProjectSchema, ResponseWithNum } from './types'
 
-const API_PREFIX = '/api/grid/schemas'
+const API_PREFIX = '/server/api/schemas'
 
 export const getSchemas: IAPI<{ startIndex: number, endIndex: number }, MultiProjectSchema> = {
     api: `${API_PREFIX}`,
