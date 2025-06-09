@@ -183,13 +183,13 @@ export default function GridPanel({ onBack, ...props }: GridPanelProps) {
                         <ArrowLeft className="h-5 w-5" />
                     </button>
                     <h1 className="text-4xl font-semibold text-center flex-1">
-                        {language === 'zh' ? '拓扑编辑' : 'Topology Editor'}
+                        {language === 'zh' ? '网格编辑' : 'Grid Editor'}
                     </h1>
                 </div>
 
                 <div className="p-2 -mt-3 space-y-2">
                     <BasicInfo />
-                    <LayerList onUpload={setUploadDialogOpen} />
+                    {/* <LayerList onUpload={setUploadDialogOpen} /> */}
                     <div
                         className="bg-green-500 hover:bg-green-600 p-3 flex items-center justify-center text-md text-white font-bold cursor-pointer rounded-md shadow-md"
                         onClick={handleSaveTopologyState}

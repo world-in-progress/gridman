@@ -10,6 +10,8 @@ import { GridSaveInfo } from '@/core/grid/types';
 import { toast } from 'sonner';
 import BasicInfo from './components/basicInfo';
 import Test from './components/test';
+import AggregationWorkflow from './components/aggregationWorkflow';
+import TestNode from './components/testNode';
 
 export default function AggregationPanel({
     onBack,
@@ -74,7 +76,9 @@ export default function AggregationPanel({
                     </div>
 
                     {/* 聚合工作流 */}
-                    <Test/>
+                    {/* <Test/> */}
+                    <AggregationWorkflow />
+                    <TestNode/>
                 </div>
             </SidebarContent>
             <SidebarRail />
