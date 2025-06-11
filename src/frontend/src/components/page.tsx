@@ -326,6 +326,8 @@ export default function Page() {
       if (draw) {
         draw.deleteAll();
       }
+      setIsDrawing(false);
+      setRectangleCoordinates(null);
     }
   };
 
@@ -475,6 +477,8 @@ export default function Page() {
           onBack={() => {
             setActivePanel("project");
             setActiveBreadcrumb("project");
+            setRectangleCoordinates(null);
+            setIsDrawing(false);
           }}
           layers={layers}
           setLayers={setLayers}

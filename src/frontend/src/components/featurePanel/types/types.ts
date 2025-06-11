@@ -1,3 +1,4 @@
+import { RectangleCoordinates } from "@/components/operatePanel/types/types";
 import { Sidebar } from "@/components/ui/sidebar";
 import { LucideIcon } from "lucide-react";
 
