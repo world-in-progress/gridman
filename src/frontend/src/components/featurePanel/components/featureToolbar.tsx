@@ -295,6 +295,7 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
     // call backend to save feature
     const featureService = new FeatureService(language);
+
     featureService.saveFeature(
       selectedLayer.name,
       selectedLayer.type,

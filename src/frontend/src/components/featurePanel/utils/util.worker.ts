@@ -13,7 +13,7 @@ export async function saveFeature(
 ) {
   const { feature_name, feature_type, feature_json } = params;
   try {
-    const response = await api.feature.operation.saveFeature.fetch({
+    const response = await api.feature.saveFeature.fetch({
       feature_name,
       feature_type,
       feature_json,
@@ -34,7 +34,7 @@ export async function getFeatureJson(
 ) {
   const { feature_name, feature_type } = params;
   try {
-    const response = await api.feature.operation.getFeatureJson.fetch({
+    const response = await api.feature.getFeatureJson.fetch({
       feature_name,
       feature_type,
     });
@@ -46,4 +46,3 @@ export async function getFeatureJson(
     callback(new Error(`获取要素失败! 错误信息: ${error}`), null);
   }
 }
-
