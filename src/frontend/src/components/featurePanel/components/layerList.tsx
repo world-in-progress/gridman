@@ -34,19 +34,19 @@ import { LanguageContext } from "@/context";
 // Define the fixed layer groups
 export const layerGroups: LayerGroup[] = [
   {
-    id: "Edited",
-    name: "Edited",
-    type: "group",
-    visible: true,
-    icon: <PencilRuler className="h-4 w-4" />,
-    children: [],
-  },
-  {
     id: "Editing",
     name: "Editing",
     type: "group",
     visible: true,
     icon: <Pencil className="h-4 w-4" />,
+    children: [],
+  },
+  {
+    id: "Edited",
+    name: "Edited",
+    type: "group",
+    visible: true,
+    icon: <PencilRuler className="h-4 w-4" />,
     children: [],
   },
 ];

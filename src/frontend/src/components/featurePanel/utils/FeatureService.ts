@@ -1,3 +1,4 @@
+import { FeatureProperty } from "@/core/feature/types";
 import Dispatcher from "@/core/message/dispatcher";
 import { Callback } from "@/core/types";
 
@@ -15,31 +16,45 @@ export class FeatureService {
   }
 
   public saveFeature(
-    feature_name: string,
-    feature_type: string,
-    feature_json: Record<string, any>,
+    featureProperty: FeatureProperty,
+    featureJson: Record<string, any>,
     callback?: Callback<any>
   ) {
     this._actor.send(
       "saveFeature",
-      { feature_name, feature_type, feature_json },
+      {
+        featureProperty,
+        featureJson,
+      },
       (err, result) => {
         if (callback) callback(err, { resource_path: result.resource_path });
       }
     );
   }
 
-  public getFeatureJson(
-    feature_name: string,
-    feature_type: string,
+  public getFeatureJson(feature_name: string, callback?: Callback<any>) {
+    this._actor.send("getFeatureJson", { feature_name }, (err, result) => {
+      if (callback) callback(err, { feature_json: result.feature_json });
+    });
+  }
+
+  public setFeature(
+    projectName: string,
+    patchName: string,
     callback?: Callback<any>
   ) {
     this._actor.send(
-      "getFeatureJson",
-      { feature_name, feature_type },
+      "setFeature",
+      { projectName, patchName },
       (err, result) => {
-        if (callback) callback(err, { feature_json: result.feature_json });
+        if (callback) callback(err, { feature_path: result.feature_path });
       }
     );
+  }
+
+  public getFeatureMeta(callback?: Callback<any>) {
+    this._actor.send("getFeatureMeta", {}, (err, result) => {
+      if (callback) callback(err, result.feature_meta);
+    });
   }
 }

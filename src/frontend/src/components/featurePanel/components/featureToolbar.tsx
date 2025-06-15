@@ -59,12 +59,15 @@ import wbda from "../../../assets/wbda.jpg";
 import store from "@/store";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { FeatureService } from "../utils/FeatureService";
+import { FeatureProperty } from "@/core/feature/types";
 
 const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
   layers,
   setLayers,
   selectedLayerId,
   setSelectedLayerId,
+  iconOptions,
+  getIconComponent,
 }) => {
   const { language } = useContext(LanguageContext);
   const [newId, setNewId] = useState("");
@@ -94,18 +97,6 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
   let localFeaturePath: string | null = "";
 
-  const iconOptions: { value: string; Icon: LucideIcon }[] = [
-    { value: "MapPin", Icon: MapPin },
-    { value: "Waves", Icon: Waves },
-    { value: "Building", Icon: Building },
-    { value: "Route", Icon: Route },
-    { value: "Map", Icon: Map },
-    { value: "Mountain", Icon: Mountain },
-    { value: "Trees", Icon: Trees },
-    { value: "LandPlot", Icon: LandPlot },
-    { value: "Warehouse", Icon: Warehouse },
-  ];
-
   const symbologyOptions: { value: string; color: string }[] = [
     { value: "red-fill", color: "bg-red-500" },
     { value: "blue-fill", color: "bg-blue-500" },
@@ -116,15 +107,16 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
     { value: "orange-fill", color: "bg-orange-500" },
   ];
 
-  const getIconComponent = (iconValue: string): React.ReactNode => {
-    const selectedIcon = iconOptions.find(
-      (option) => option.value === iconValue
-    );
-    return selectedIcon ? (
-      <selectedIcon.Icon className="h-4 w-4" />
-    ) : (
-      <MapPin className="h-4 w-4" />
-    );
+  const getIconString = (icon: React.ReactNode): string => {
+    if (!icon || typeof icon !== "object" || !("type" in icon)) {
+      return "MapPin";
+    }
+
+    const iconType = icon.type;
+    const iconString = iconOptions.find(
+      (option) => option.Icon === iconType
+    )?.value;
+    return iconString || "MapPin";
   };
 
   const openCreateNewFeatureDialog = () => {
@@ -229,8 +221,9 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
       const featureService = new FeatureService(language);
       featureService.getFeatureJson(
-        (selectedLayer as LayerItem).name,
-        (selectedLayer as LayerItem).type,
+        (selectedLayer as LayerItem).id +
+          "_" +
+          (selectedLayer as LayerItem).name,
         (error, result) => {
           if (error) {
             console.error("获取要素失败:", error);
@@ -255,7 +248,7 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
         }
       );
       map.removeLayer(selectedLayer.id);
-      map.removeSource(selectedLayer.id + "_feature");
+      map.removeSource(selectedLayer.id);
 
       map.getCanvas().style.cursor = "default";
     }
@@ -296,47 +289,49 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
     // call backend to save feature
     const featureService = new FeatureService(language);
 
-    featureService.saveFeature(
-      selectedLayer.name,
-      selectedLayer.type,
-      data,
-      (error, result) => {
-        if (error) {
-          console.error("保存要素失败:", error);
-        } else {
-          console.log("要素保存成功:", result);
-          // update the layer group to "Edited"
-          setLayers((prevLayers) => {
-            const updatedLayers = prevLayers.map((layer) => {
-              if (layer.id === selectedLayerId) {
-                return { ...layer, group: "Edited" };
-              }
-              return layer;
-            });
-            return updatedLayers;
-          });
+    const featureProperty: FeatureProperty = {
+      id: selectedLayer.id,
+      name: selectedLayer.name,
+      type: selectedLayer.type,
+      icon: getIconString(selectedLayer.icon),
+      symbology: (selectedLayer as LayerItem).symbology,
+    };
 
-          // add layer to map with the resource_path
-          map.addSource(selectedLayer.id + "_feature", {
-            type: "geojson",
-            data: data,
-          });
+    console.log("featureProperty", featureProperty);
 
-          map.addLayer({
-            id: selectedLayer.id,
-            type: "fill",
-            source: selectedLayer.id + "_feature",
-            paint: {
-              "fill-color": (selectedLayer as LayerItem).symbology.replace(
-                "-fill",
-                ""
-              ),
-              "fill-opacity": 0.5,
-            },
+    featureService.saveFeature(featureProperty, data, (error, result) => {
+      if (error) {
+        console.error("保存要素失败:", error);
+      } else {
+        console.log("要素保存成功:", result);
+        // update the layer group to "Edited"
+        setLayers((prevLayers) => {
+          const updatedLayers = prevLayers.map((layer) => {
+            if (layer.id === selectedLayerId) {
+              return { ...layer, group: "Edited" };
+            }
+            return layer;
           });
-        }
+          return updatedLayers;
+        });
+
+        // add layer to map with the resource_path
+        map.addSource(featureProperty.id, {
+          type: "geojson",
+          data: data,
+        });
+
+        map.addLayer({
+          id: featureProperty.id,
+          type: "fill",
+          source: featureProperty.id,
+          paint: {
+            "fill-color": featureProperty.symbology.replace("-fill", ""),
+            "fill-opacity": 0.5,
+          },
+        });
       }
-    );
+    });
 
     // after saving, clear the drawing and exit the drawing mode
     draw.deleteAll();
