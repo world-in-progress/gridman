@@ -4,6 +4,34 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  Pencil,
+  PencilOff,
+  MousePointer2,
+  RotateCcw,
+  Scissors,
+  Copy,
+  Clipboard,
+  Trash2,
+  FilePlus2,
+  Import,
+  MapPin,
+  Waves,
+  Building,
+  Route,
+  LucideIcon,
+  Upload,
+  Map,
+  Mountain,
+  Trees,
+  LandPlot,
+  Warehouse,
+  Paintbrush,
+  Save,
+  PaintbrushVertical,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
 import MapInit from "./mapComponent/mapInit";
 import { RectangleCoordinates } from "./operatePanel/operatePanel";
 import SchemaPanel from "./schemaPanel/schemaPanel";
@@ -21,7 +49,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +75,8 @@ import FeaturePanel from "./featurePanel/featurePanel";
 import FeatureToolbar from "./featurePanel/components/featureToolbar";
 import { LayerItem, LayerNode } from "./featurePanel/types/types";
 import { layerGroups } from "./featurePanel/components/layerList";
+import { FeatureService } from "./featurePanel/utils/FeatureService";
+import { FeatureProperty } from "@/core/feature/types";
 
 export type SidebarType = "home" | "aggregation" | "simulation" | null;
 export type BreadcrumbType =
@@ -208,6 +237,86 @@ export default function Page() {
       window.mapRef = undefined;
     };
   }, []);
+
+  useEffect(() => {
+    if (activePanel === "feature") {
+      const featureService = new FeatureService(language);
+
+      featureService.getFeatureMeta((err, result) => {
+        if (err) {
+          console.error("获取要素列表失败:", err);
+          return;
+        }
+        const featureMeta = result as FeatureProperty[];
+
+        console.log("featureMeta:", featureMeta);
+
+        setLayers(
+          featureMeta.map((feature: FeatureProperty) => ({
+            id: feature.id,
+            name: feature.name,
+            type: feature.type,
+            visible: true,
+            icon: getIconComponent(feature.icon),
+            group: "Edited",
+            symbology: feature.symbology,
+            isEditing: false,
+          }))
+        );
+        featureMeta.forEach((feature) => {
+          featureService.getFeatureJson(
+            feature.id + "_" + feature.name,
+            (err, result) => {
+              if (err) {
+                console.error("获取要素失败:", err);
+                return;
+              }
+              const map = window.mapInstance;
+              if (map) {
+                map.addSource(feature.id, {
+                  type: "geojson",
+                  data: result.feature_json,
+                });
+
+                map.addLayer({
+                  id: feature.id,
+                  type: "fill",
+                  source: feature.id,
+                  paint: {
+                    "fill-color": feature.symbology.replace("-fill", ""),
+                    "fill-opacity": 0.5,
+                  },
+                });
+              }
+            }
+          );
+        });
+      });
+    }
+  }, [activePanel]);
+
+  const iconOptions: { value: string; Icon: LucideIcon }[] = [
+    { value: "MapPin", Icon: MapPin },
+    { value: "Waves", Icon: Waves },
+    { value: "Building", Icon: Building },
+    { value: "Route", Icon: Route },
+    { value: "Map", Icon: Map },
+    { value: "Mountain", Icon: Mountain },
+    { value: "Trees", Icon: Trees },
+    { value: "LandPlot", Icon: LandPlot },
+    { value: "Warehouse", Icon: Warehouse },
+  ];
+
+  const getIconComponent = (iconValue: string): React.ReactNode => {
+    const selectedIcon = iconOptions.find(
+      (option) => option.value === iconValue
+    );
+    return selectedIcon ? (
+      <selectedIcon.Icon className="h-4 w-4" />
+    ) : (
+      <MapPin className="h-4 w-4" />
+    );
+  };
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
@@ -642,6 +751,8 @@ export default function Page() {
             setLayers={setLayers}
             selectedLayerId={selectedLayerId}
             setSelectedLayerId={setSelectedLayerId}
+            iconOptions={iconOptions}
+            getIconComponent={getIconComponent}
           />
         )}
 

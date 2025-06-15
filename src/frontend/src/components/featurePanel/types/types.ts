@@ -16,13 +16,13 @@ export interface LayerGroup {
 export interface LayerItem {
   id: string;
   name: string;
-  type: string;
   visible: boolean;
   icon: React.ReactNode;
   group: string;
   symbology: string;
   isEditing: boolean;
   opacity?: number;
+  type: string;
 }
 
 export interface FeaturePanelProps
@@ -59,6 +59,8 @@ export interface FeatureToolbarProps {
   setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
   selectedLayerId: string | null;
   setSelectedLayerId: (id: string | null) => void;
+  iconOptions: { value: string; Icon: LucideIcon }[];
+  getIconComponent: (iconValue: string) => React.ReactNode;
   // onStartDrawPolygon: (cancel?: boolean) => void;
   // isPolygonDrawing: boolean;
 }

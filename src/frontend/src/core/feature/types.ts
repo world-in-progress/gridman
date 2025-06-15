@@ -1,7 +1,14 @@
 export interface FeatureSaveBody {
-  feature_name: string;
-  feature_type: string;
+  feature_property: FeatureProperty;
   feature_json: Record<string, any>;
+}
+
+export interface FeatureProperty {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  symbology: string;
 }
 
 export interface FeatureSaveResponse {
@@ -12,11 +19,16 @@ export interface FeatureSaveResponse {
 
 export interface FeatureGetJsonBody {
   feature_name: string;
-  feature_type: string;
 }
 
 export interface FeatureGetJsonResponse {
   success: boolean;
   message: string;
   feature_json: Record<string, any>;
+}
+
+export interface FeatureList {
+  success: boolean;
+  message: string;
+  feature_list: string[];
 }
