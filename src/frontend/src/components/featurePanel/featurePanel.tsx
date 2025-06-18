@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { ArrowLeft, Mountain, MountainSnow, Upload } from "lucide-react";
 import { LanguageContext } from "../../context";
-import { FeaturePanelProps, LayerItem } from "./types/types";
+import { FeaturePanelProps, LayerItem, LayerNode } from "./types/types";
 import { useContext, useState, useEffect } from "react";
 import {
   Dialog,
@@ -28,6 +28,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
+import {
+  addLayerToMap,
+  removeLayerFromMap,
+  removeSourceFromMap,
+} from "@/utils/featureUtils";
 
 export default function FeaturePanel({
   onBack,
@@ -39,6 +44,7 @@ export default function FeaturePanel({
   setIsEditMode,
   iconOptions,
   symbologyOptions,
+  getIconComponent,
   getIconString,
   ...props
 }: FeaturePanelProps) {
@@ -110,11 +116,8 @@ export default function FeaturePanel({
         toast.success("删除要素成功");
         setLayers(layers.filter((layer) => layer.id !== id));
         setSelectedLayerId(null);
-        const map = window.mapInstance;
-        if (map) {
-          map.removeLayer(id);
-          map.removeSource(id);
-        }
+        removeLayerFromMap(id);
+        removeSourceFromMap(id);
       }
     });
   };
@@ -126,6 +129,7 @@ export default function FeaturePanel({
       setNewName(layer.name);
       setNewIcon(getIconString(layer.icon));
       setNewSymbology((layer as LayerItem).symbology);
+      setSelectedLayerId(id);
     }
     setIsPropertiesDialogOpen(true);
   };
@@ -146,9 +150,30 @@ export default function FeaturePanel({
           toast.error("更新要素属性失败");
         } else {
           toast.success("更新要素属性成功");
+          const oldLayer = layers.find((layer) => layer.id === selectedLayerId);
+          const newLayer = {
+            ...oldLayer,
+            name: newName,
+            icon: newIcon,
+            symbology: newSymbology,
+          };
+          setLayers((prevLayers) => {
+            const updatedLayers = prevLayers.map((layer) => {
+              if (layer.id === selectedLayerId) {
+                return newLayer as LayerNode;
+              }
+              return layer;
+            });
+            return updatedLayers;
+          });
+          if (oldLayer) {
+            removeLayerFromMap(oldLayer.id);
+            addLayerToMap(newLayer as LayerItem);
+          }
         }
       }
     );
+
     setIsPropertiesDialogOpen(false);
     setNewName("");
     setNewIcon("");
@@ -292,6 +317,7 @@ export default function FeaturePanel({
               onSelectLayer={handleSelectLayer}
               onDeleteLayer={handleDeleteLayer}
               onPropertiesChange={handlePropertiesChange}
+              getIconComponent={getIconComponent}
             />
           </div>
         </SidebarContent>

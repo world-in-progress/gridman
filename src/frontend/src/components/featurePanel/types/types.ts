@@ -37,6 +37,7 @@ export interface FeaturePanelProps
   iconOptions: { value: string; Icon: LucideIcon }[];
   symbologyOptions: { value: string; color: string }[];
   getIconString: (icon: React.ReactNode) => string;
+  getIconComponent: (iconValue: string) => React.ReactNode;
 }
 
 export interface LayerList {}
@@ -83,4 +84,5 @@ export interface LayerListProps {
   onSelectLayer: (id: string | null) => void;
   onDeleteLayer: (id: string) => void;
   onPropertiesChange: (id: string) => void;
+  getIconComponent: (iconValue: string) => React.ReactNode;
 }

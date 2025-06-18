@@ -60,6 +60,7 @@ import store from "@/store";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { FeatureService } from "../utils/FeatureService";
 import { FeatureProperty } from "@/core/feature/types";
+import { addLayerToMap, addSourceToMap } from "@/utils/featureUtils";
 
 const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
   layers,
@@ -317,45 +318,8 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
         });
 
         // add layer to map with the resource_path
-        map.addSource(featureProperty.id, {
-          type: "geojson",
-          data: data,
-        });
-
-        // 根据几何类型添加不同的图层样式
-        if (selectedLayer.type === "polygon") {
-          map.addLayer({
-            id: featureProperty.id,
-            type: "fill",
-            source: featureProperty.id,
-            paint: {
-              "fill-color": featureProperty.symbology.replace("-fill", ""),
-              "fill-opacity": 0.5,
-            },
-          });
-        } else if (selectedLayer.type === "line") {
-          map.addLayer({
-            id: featureProperty.id,
-            type: "line",
-            source: featureProperty.id,
-            paint: {
-              "line-color": featureProperty.symbology.replace("-fill", ""),
-              "line-width": 3,
-            },
-          });
-        } else if (selectedLayer.type === "point") {
-          map.addLayer({
-            id: featureProperty.id,
-            type: "circle",
-            source: featureProperty.id,
-            paint: {
-              "circle-radius": 8,
-              "circle-color": featureProperty.symbology.replace("-fill", ""),
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#fff",
-            },
-          });
-        }
+        addSourceToMap(selectedLayer.id, data);
+        addLayerToMap(selectedLayer as LayerItem);
       }
     });
 

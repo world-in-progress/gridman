@@ -256,6 +256,7 @@ export default function LayerList({
   onSelectLayer,
   onDeleteLayer,
   onPropertiesChange,
+  getIconComponent,
 }: LayerListProps) {
   const [showAll, setShowAll] = useState(true);
   const { language } = useContext(LanguageContext);
@@ -298,16 +299,25 @@ export default function LayerList({
           group.children.map((child) => [child.id, child])
         );
 
+        // update group and properties
         updatedGroup.children = groupLayers.map((layer) => {
           const existingChild = existingChildrenMap.get(layer.id);
           if (existingChild) {
             // If the layer exists in children, keep it as is
-            return existingChild;
+            return {
+              ...existingChild,
+              name: layer.name,
+              icon: getIconComponent(layer.icon as string),
+              symbology: (layer as LayerItem).symbology,
+            };
           } else {
             // If it's a new layer, add it to children
             return {
               ...layer,
               group: group.id,
+              name: layer.name,
+              icon: getIconComponent(layer.icon as string),
+              symbology: (layer as LayerItem).symbology,
             };
           }
         });

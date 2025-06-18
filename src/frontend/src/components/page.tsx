@@ -643,6 +643,7 @@ export default function Page() {
           iconOptions={iconOptions}
           symbologyOptions={symbologyOptions}
           getIconString={getIconString}
+          getIconComponent={getIconComponent}
         />
       );
     } else if (activePanel === "aggregation") {
