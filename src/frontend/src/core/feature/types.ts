@@ -11,6 +11,12 @@ export interface FeatureProperty {
   symbology: string;
 }
 
+export interface FeatureUpdatePropertyBody {
+  name: string;
+  icon: string;
+  symbology: string;
+}
+
 export interface FeatureSaveResponse {
   success: boolean;
   message: string;

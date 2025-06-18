@@ -68,9 +68,12 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
   setSelectedLayerId,
   iconOptions,
   getIconComponent,
+  getIconString,
+  symbologyOptions,
+  isEditMode,
+  setIsEditMode,
 }) => {
   const { language } = useContext(LanguageContext);
-  const [newId, setNewId] = useState("");
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
   const [newSymbology, setNewSymbology] = useState("");
@@ -78,7 +81,6 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
   const [createNewFeatureError, setCreateNewFeatureError] = useState("");
   const [newIcon, setNewIcon] = useState("MapPin");
   const [dataSourceType, setDataSourceType] = useState("local");
-  const [isEditMode, setIsEditMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [importFeatureDialog, setImportFeatureDialog] = useState(false);
   const [isEditSwitchAllowed, setIsEditSwitchAllowed] = useState(false);
@@ -97,26 +99,9 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
   let localFeaturePath: string | null = "";
 
-  const symbologyOptions: { value: string; color: string }[] = [
-    { value: "red-fill", color: "bg-red-500" },
-    { value: "blue-fill", color: "bg-blue-500" },
-    { value: "green-fill", color: "bg-green-500" },
-    { value: "gray-fill", color: "bg-gray-500" },
-    { value: "yellow-fill", color: "bg-yellow-500" },
-    { value: "purple-fill", color: "bg-purple-500" },
-    { value: "orange-fill", color: "bg-orange-500" },
-  ];
-
-  const getIconString = (icon: React.ReactNode): string => {
-    if (!icon || typeof icon !== "object" || !("type" in icon)) {
-      return "MapPin";
-    }
-
-    const iconType = icon.type;
-    const iconString = iconOptions.find(
-      (option) => option.Icon === iconType
-    )?.value;
-    return iconString || "MapPin";
+  const generateFeatureId = (name: string): string => {
+    const timestamp = Date.now();
+    return `${name}_${timestamp}_feature`;
   };
 
   const openCreateNewFeatureDialog = () => {
@@ -128,7 +113,6 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
       language === "zh" ? "点击了创建新要素" : "Create New Feature clicked"
     );
     if (
-      !newId.trim() ||
       !newName.trim() ||
       !newType.trim() ||
       !newIcon.trim() ||
@@ -140,8 +124,10 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
       return;
     }
 
+    const newId = generateFeatureId(newName);
+
     const newLayerItem: LayerItem = {
-      id: newId.toLowerCase().replace(/\s+/g, "-") + "_feature",
+      id: newId,
       name: newName,
       type: newType,
       visible: true,
@@ -159,7 +145,6 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
     setSelectedLayerId(newLayerItem.id);
     setIsEditSwitchAllowed(true);
     setCreateNewFeatureDialog(false);
-    setNewId("");
     setNewName("");
     setNewType("");
     setNewIcon("MapPin");
@@ -221,9 +206,7 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
       const featureService = new FeatureService(language);
       featureService.getFeatureJson(
-        (selectedLayer as LayerItem).id +
-          "_" +
-          (selectedLayer as LayerItem).name,
+        (selectedLayer as LayerItem).id,
         (error, result) => {
           if (error) {
             console.error("获取要素失败:", error);
@@ -247,8 +230,14 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
           }
         }
       );
-      map.removeLayer(selectedLayer.id);
-      map.removeSource(selectedLayer.id);
+
+      // 移除地图上的图层，但保留数据源以便重新添加
+      if (map.getLayer(selectedLayer.id)) {
+        map.removeLayer(selectedLayer.id);
+      }
+      if (map.getSource(selectedLayer.id)) {
+        map.removeSource(selectedLayer.id);
+      }
 
       map.getCanvas().style.cursor = "default";
     }
@@ -263,9 +252,21 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
 
     const data = draw.getAll(); // return a FeatureCollection
 
+    // 根据几何类型进行验证
     data.features.forEach((feature) => {
       if (feature.geometry?.type === "Polygon") {
         if (feature.geometry.coordinates[0].length < 3) {
+          data.features.splice(data.features.indexOf(feature), 1);
+        }
+      } else if (feature.geometry?.type === "LineString") {
+        if (feature.geometry.coordinates.length < 2) {
+          data.features.splice(data.features.indexOf(feature), 1);
+        }
+      } else if (feature.geometry?.type === "Point") {
+        if (
+          !feature.geometry.coordinates ||
+          feature.geometry.coordinates.length !== 2
+        ) {
           data.features.splice(data.features.indexOf(feature), 1);
         }
       }
@@ -321,15 +322,40 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
           data: data,
         });
 
-        map.addLayer({
-          id: featureProperty.id,
-          type: "fill",
-          source: featureProperty.id,
-          paint: {
-            "fill-color": featureProperty.symbology.replace("-fill", ""),
-            "fill-opacity": 0.5,
-          },
-        });
+        // 根据几何类型添加不同的图层样式
+        if (selectedLayer.type === "polygon") {
+          map.addLayer({
+            id: featureProperty.id,
+            type: "fill",
+            source: featureProperty.id,
+            paint: {
+              "fill-color": featureProperty.symbology.replace("-fill", ""),
+              "fill-opacity": 0.5,
+            },
+          });
+        } else if (selectedLayer.type === "line") {
+          map.addLayer({
+            id: featureProperty.id,
+            type: "line",
+            source: featureProperty.id,
+            paint: {
+              "line-color": featureProperty.symbology.replace("-fill", ""),
+              "line-width": 3,
+            },
+          });
+        } else if (selectedLayer.type === "point") {
+          map.addLayer({
+            id: featureProperty.id,
+            type: "circle",
+            source: featureProperty.id,
+            paint: {
+              "circle-radius": 8,
+              "circle-color": featureProperty.symbology.replace("-fill", ""),
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#fff",
+            },
+          });
+        }
       }
     });
 
@@ -374,7 +400,17 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
       }
     } else {
       // Start to draw
-      draw.changeMode("draw_polygon");
+      const selectedLayer = layers.find(
+        (layer) => layer.id === selectedLayerId
+      );
+      if (!selectedLayer) return;
+      if (selectedLayer.type === "polygon") {
+        draw.changeMode("draw_polygon");
+      } else if (selectedLayer.type === "line") {
+        draw.changeMode("draw_line_string");
+      } else if (selectedLayer.type === "point") {
+        draw.changeMode("draw_point");
+      }
       if (window.mapInstance?.getCanvas()) {
         window.mapInstance.getCanvas().style.cursor = "crosshair";
       }
@@ -491,21 +527,11 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
             </DialogTitle>
             <DialogDescription>
               {language === "zh"
-                ? "填写要素的ID、名称、类型、图标和符号样式以创建新要素"
-                : "Fill in the feature ID, name, type, icon, and symbology to create a new feature."}
+                ? "填写要素的名称、类型、图标和符号样式以创建新要素"
+                : "Fill in the feature name, type, icon, and symbology to create a new feature."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-6">
-              <Label className="w-20 text-right flex-shrink-0">
-                {language === "zh" ? "ID :" : "ID :"}
-              </Label>
-              <Input
-                className="flex-1"
-                value={newId}
-                onChange={(e) => setNewId(e.target.value)}
-              />
-            </div>
             <div className="flex items-center gap-6">
               <Label className="w-20 text-right flex-shrink-0">
                 {language === "zh" ? "名称 :" : "Name :"}
@@ -532,21 +558,21 @@ const FeatureToolbar: React.FC<FeatureToolbarProps> = ({
                   <SelectGroup>
                     <SelectItem
                       className="cursor-pointer hover:bg-gray-200"
-                      value="river"
+                      value="point"
                     >
-                      {language === "zh" ? "河流" : "River"}
+                      {language === "zh" ? "点" : "Point"}
                     </SelectItem>
                     <SelectItem
                       className="cursor-pointer hover:bg-gray-200"
-                      value="building"
+                      value="line"
                     >
-                      {language === "zh" ? "建筑" : "Building"}
+                      {language === "zh" ? "线" : "Line"}
                     </SelectItem>
                     <SelectItem
                       className="cursor-pointer hover:bg-gray-200"
-                      value="road"
+                      value="polygon"
                     >
-                      {language === "zh" ? "道路" : "Road"}
+                      {language === "zh" ? "面" : "Polygon"}
                     </SelectItem>
                   </SelectGroup>
                 </SelectContent>

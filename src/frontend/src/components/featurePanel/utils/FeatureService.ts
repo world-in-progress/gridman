@@ -1,4 +1,7 @@
-import { FeatureProperty } from "@/core/feature/types";
+import {
+  FeatureProperty,
+  FeatureUpdatePropertyBody,
+} from "@/core/feature/types";
 import Dispatcher from "@/core/message/dispatcher";
 import { Callback } from "@/core/types";
 
@@ -28,6 +31,26 @@ export class FeatureService {
       },
       (err, result) => {
         if (callback) callback(err, { resource_path: result.resource_path });
+      }
+    );
+  }
+
+  public deleteFeature(id: string, callback?: Callback<void>) {
+    this._actor.send("deleteFeature", { id }, (err, result) => {
+      if (callback) callback(err, result);
+    });
+  }
+
+  public updateFeatureProperty(
+    id: string,
+    featureProperty: FeatureUpdatePropertyBody,
+    callback?: Callback<void>
+  ) {
+    this._actor.send(
+      "updateFeatureProperty",
+      { id, featureProperty },
+      (err, result) => {
+        if (callback) callback(err, result);
       }
     );
   }
