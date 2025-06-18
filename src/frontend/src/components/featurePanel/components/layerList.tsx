@@ -65,6 +65,8 @@ function LayerItemComponent({
   expandedGroups,
   selectedLayerId,
   onSelectLayer,
+  onDeleteLayer,
+  onPropertiesChange,
 }: LayerItemComponentProps) {
   const { language } = useContext(LanguageContext);
   const isExpanded = expandedGroups.has(layer.id);
@@ -114,6 +116,20 @@ function LayerItemComponent({
         onSelectLayer(layer.id);
       }
     }
+  };
+
+  const onDeleteLayerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log(language === "zh" ? "点击了删除图层" : "Delete Layer clicked");
+    onDeleteLayer(layer.id);
+  };
+
+  const onPropertiesClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log(language === "zh" ? "点击了属性" : "Properties clicked");
+    setTimeout(() => {
+      onPropertiesChange(layer.id);
+    }, 100);
   };
 
   return (
@@ -195,12 +211,12 @@ function LayerItemComponent({
                 <MapPin className="h-4 w-4 mr-2" />
                 {language === "zh" ? "缩放到图层" : "Zoom to Layer"}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onPropertiesClick}>
                 <Layers className="h-4 w-4 mr-2" />
                 {language === "zh" ? "属性" : "Properties"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onDeleteLayerClick}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 {language === "zh" ? "删除图层" : "Remove Layer"}
               </DropdownMenuItem>
@@ -223,6 +239,8 @@ function LayerItemComponent({
               expandedGroups={expandedGroups}
               selectedLayerId={selectedLayerId}
               onSelectLayer={onSelectLayer}
+              onDeleteLayer={onDeleteLayer}
+              onPropertiesChange={onPropertiesChange}
             />
           ))}
         </div>
@@ -236,6 +254,8 @@ export default function LayerList({
   setLayers,
   selectedLayerId,
   onSelectLayer,
+  onDeleteLayer,
+  onPropertiesChange,
 }: LayerListProps) {
   const [showAll, setShowAll] = useState(true);
   const { language } = useContext(LanguageContext);
@@ -429,6 +449,8 @@ export default function LayerList({
               expandedGroups={expandedGroups}
               selectedLayerId={selectedLayerId}
               onSelectLayer={onSelectLayer}
+              onDeleteLayer={onDeleteLayer}
+              onPropertiesChange={onPropertiesChange}
             />
           ))}
         </div>

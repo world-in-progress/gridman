@@ -1,5 +1,9 @@
 import * as api from "@/core/apis/apis";
-import { FeatureProperty, FeatureSaveResponse } from "@/core/feature/types";
+import {
+  FeatureProperty,
+  FeatureSaveResponse,
+  FeatureUpdatePropertyBody,
+} from "@/core/feature/types";
 import { Callback, WorkerSelf } from "@/core/types";
 
 export async function saveFeature(
@@ -22,6 +26,34 @@ export async function saveFeature(
     } as FeatureSaveResponse);
   } catch (error) {
     callback(new Error(`保存要素失败! 错误信息: ${error}`), null);
+  }
+}
+
+export async function deleteFeature(
+  this: WorkerSelf,
+  params: { id: string },
+  callback: Callback<void>
+) {
+  const { id } = params;
+  try {
+    await api.feature.deleteFeature.fetch({ id });
+    callback(null, null);
+  } catch (error) {
+    callback(new Error(`删除要素失败! 错误信息: ${error}`), null);
+  }
+}
+
+export async function updateFeatureProperty(
+  this: WorkerSelf,
+  params: { id: string; featureProperty: FeatureUpdatePropertyBody },
+  callback: Callback<void>
+) {
+  const { id, featureProperty } = params;
+  try {
+    await api.feature.updateFeatureProperty.fetch({ id, featureProperty });
+    callback(null, null);
+  } catch (error) {
+    callback(new Error(`更新要素属性失败! 错误信息: ${error}`), null);
   }
 }
 

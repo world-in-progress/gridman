@@ -5,6 +5,7 @@ import {
   FeatureGetJsonBody,
   FeatureGetJsonResponse,
   FeatureList,
+  FeatureUpdatePropertyBody,
 } from "../feature/types";
 
 const API_PREFIX = "/server/api/feature";
@@ -28,6 +29,52 @@ export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
       return responseData;
     } catch (error) {
       throw new Error(`Failed to save feature: ${error}`);
+    }
+  },
+};
+
+export const deleteFeature: IAPI<{ id: string }, void> = {
+  api: `${API_PREFIX}`,
+  fetch: async (query: { id: string }): Promise<void> => {
+    const response = await fetch(`${deleteFeature.api}/${query.id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const responseData: BaseResponse = await response.json();
+    if (!responseData.success) {
+      throw new Error(`Failed to delete feature: ${responseData.message}`);
+    }
+  },
+};
+
+export const updateFeatureProperty: IAPI<
+  { id: string; featureProperty: FeatureUpdatePropertyBody },
+  void
+> = {
+  api: `${API_PREFIX}`,
+  fetch: async (query: {
+    id: string;
+    featureProperty: FeatureUpdatePropertyBody;
+  }): Promise<void> => {
+    const response = await fetch(`${updateFeatureProperty.api}/${query.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(query.featureProperty),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const responseData: BaseResponse = await response.json();
+    if (!responseData.success) {
+      throw new Error(
+        `Failed to update feature property: ${responseData.message}`
+      );
     }
   },
 };

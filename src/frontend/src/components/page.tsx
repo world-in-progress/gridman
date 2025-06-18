@@ -153,6 +153,8 @@ export default function Page() {
     ) => void;
   }>(null);
 
+  const [isEditMode, setIsEditMode] = useState(false);
+
   store.set("updateCapacity", {
     on: () => {
       setUpdateCapacity(true);
@@ -264,20 +266,19 @@ export default function Page() {
           }))
         );
         featureMeta.forEach((feature) => {
-          featureService.getFeatureJson(
-            feature.id + "_" + feature.name,
-            (err, result) => {
-              if (err) {
-                console.error("获取要素失败:", err);
-                return;
-              }
-              const map = window.mapInstance;
-              if (map) {
-                map.addSource(feature.id, {
-                  type: "geojson",
-                  data: result.feature_json,
-                });
+          featureService.getFeatureJson(feature.id, (err, result) => {
+            if (err) {
+              console.error("获取要素失败:", err);
+              return;
+            }
+            const map = window.mapInstance;
+            if (map) {
+              map.addSource(feature.id, {
+                type: "geojson",
+                data: result.feature_json,
+              });
 
+              if (feature.type === "polygon") {
                 map.addLayer({
                   id: feature.id,
                   type: "fill",
@@ -287,9 +288,31 @@ export default function Page() {
                     "fill-opacity": 0.5,
                   },
                 });
+              } else if (feature.type === "line") {
+                map.addLayer({
+                  id: feature.id,
+                  type: "line",
+                  source: feature.id,
+                  paint: {
+                    "line-color": feature.symbology.replace("-fill", ""),
+                    "line-width": 3,
+                  },
+                });
+              } else if (feature.type === "point") {
+                map.addLayer({
+                  id: feature.id,
+                  type: "circle",
+                  source: feature.id,
+                  paint: {
+                    "circle-radius": 8,
+                    "circle-color": feature.symbology.replace("-fill", ""),
+                    "circle-stroke-width": 2,
+                    "circle-stroke-color": "#fff",
+                  },
+                });
               }
             }
-          );
+          });
         });
       });
     }
@@ -307,6 +330,16 @@ export default function Page() {
     { value: "Warehouse", Icon: Warehouse },
   ];
 
+  const symbologyOptions: { value: string; color: string }[] = [
+    { value: "red-fill", color: "bg-red-500" },
+    { value: "blue-fill", color: "bg-blue-500" },
+    { value: "green-fill", color: "bg-green-500" },
+    { value: "gray-fill", color: "bg-gray-500" },
+    { value: "yellow-fill", color: "bg-yellow-500" },
+    { value: "purple-fill", color: "bg-purple-500" },
+    { value: "orange-fill", color: "bg-orange-500" },
+  ];
+
   const getIconComponent = (iconValue: string): React.ReactNode => {
     const selectedIcon = iconOptions.find(
       (option) => option.value === iconValue
@@ -316,6 +349,18 @@ export default function Page() {
     ) : (
       <MapPin className="h-4 w-4" />
     );
+  };
+
+  const getIconString = (icon: React.ReactNode): string => {
+    if (!icon || typeof icon !== "object" || !("type" in icon)) {
+      return "MapPin";
+    }
+
+    const iconType = icon.type;
+    const iconString = iconOptions.find(
+      (option) => option.Icon === iconType
+    )?.value;
+    return iconString || "MapPin";
   };
 
   const toggleChat = () => {
@@ -593,6 +638,11 @@ export default function Page() {
           setLayers={setLayers}
           selectedLayerId={selectedLayerId}
           setSelectedLayerId={setSelectedLayerId}
+          isEditMode={isEditMode}
+          setIsEditMode={setIsEditMode}
+          iconOptions={iconOptions}
+          symbologyOptions={symbologyOptions}
+          getIconString={getIconString}
         />
       );
     } else if (activePanel === "aggregation") {
@@ -753,6 +803,10 @@ export default function Page() {
             setSelectedLayerId={setSelectedLayerId}
             iconOptions={iconOptions}
             getIconComponent={getIconComponent}
+            getIconString={getIconString}
+            symbologyOptions={symbologyOptions}
+            isEditMode={isEditMode}
+            setIsEditMode={setIsEditMode}
           />
         )}
 

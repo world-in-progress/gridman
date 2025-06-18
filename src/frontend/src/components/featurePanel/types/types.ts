@@ -32,6 +32,11 @@ export interface FeaturePanelProps
   setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
   selectedLayerId: string | null;
   setSelectedLayerId: (id: string | null) => void;
+  isEditMode: boolean;
+  setIsEditMode: React.Dispatch<React.SetStateAction<boolean>>;
+  iconOptions: { value: string; Icon: LucideIcon }[];
+  symbologyOptions: { value: string; color: string }[];
+  getIconString: (icon: React.ReactNode) => string;
 }
 
 export interface LayerList {}
@@ -45,6 +50,8 @@ export interface LayerItemComponentProps {
   expandedGroups: Set<string>;
   selectedLayerId: string | null;
   onSelectLayer: (id: string | null) => void;
+  onDeleteLayer: (id: string) => void;
+  onPropertiesChange: (id: string) => void;
 }
 
 export interface ToolItem {
@@ -61,6 +68,10 @@ export interface FeatureToolbarProps {
   setSelectedLayerId: (id: string | null) => void;
   iconOptions: { value: string; Icon: LucideIcon }[];
   getIconComponent: (iconValue: string) => React.ReactNode;
+  getIconString: (icon: React.ReactNode) => string;
+  symbologyOptions: { value: string; color: string }[];
+  isEditMode: boolean;
+  setIsEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   // onStartDrawPolygon: (cancel?: boolean) => void;
   // isPolygonDrawing: boolean;
 }
@@ -70,4 +81,6 @@ export interface LayerListProps {
   setLayers: React.Dispatch<React.SetStateAction<LayerNode[]>>;
   selectedLayerId: string | null;
   onSelectLayer: (id: string | null) => void;
+  onDeleteLayer: (id: string) => void;
+  onPropertiesChange: (id: string) => void;
 }
