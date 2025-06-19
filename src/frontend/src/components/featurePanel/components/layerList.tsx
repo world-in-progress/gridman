@@ -203,10 +203,6 @@ function LayerItemComponent({
               sideOffset={-10}
               className="w-48"
             >
-              <DropdownMenuItem onClick={onEditLayerClick}>
-                <PencilRuler className="h-4 w-4 mr-2" />
-                {language === "zh" ? "编辑图层" : "Edit Layer"}
-              </DropdownMenuItem>
               <DropdownMenuItem>
                 <MapPin className="h-4 w-4 mr-2" />
                 {language === "zh" ? "缩放到图层" : "Zoom to Layer"}
