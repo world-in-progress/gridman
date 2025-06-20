@@ -23,7 +23,7 @@ const initialNodes = [
 
     {
         id: '2',
-        // type: TestNode,
+        type: 'testNode',
         data: { label: <div>Default Node</div> },
         position: { x: 100, y: 125 },
     },
@@ -39,6 +39,8 @@ const initialEdges = [
     { id: 'e2-3', source: '2', target: '3', animated: true },
 ];
 
+const nodeTypes = { testNode: TestNode };
+
 export default function AggregationWorkflow() {
     const [nodes, setNodes] = useNodesState(initialNodes);
     const [edges, setEdges] = useEdgesState(initialEdges);
@@ -48,6 +50,7 @@ export default function AggregationWorkflow() {
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
+                nodeTypes={nodeTypes}
             >
                 <Controls />
                 {/* <MiniMap/> */}
