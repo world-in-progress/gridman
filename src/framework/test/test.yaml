@@ -1,0 +1,23 @@
+version: 1.0
+project: my_app
+tests:
+  - name: test_login
+    type: unit
+    belongTo:
+      module: auth
+      submodule: login
+      owner: team_a
+    config:
+      timeout: 5000
+      retries: 2
+    description: Test login functionality
+  - name: test_payment_gateway
+    type: integration
+    belongTo:
+      module: payment
+      submodule: gateway
+      owner: team_b
+    config:
+      timeout: 10000
+      retries: 3
+    description: Test payment gateway integration
