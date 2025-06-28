@@ -1,16 +1,21 @@
 import React from 'react'
-import { FileText } from "lucide-react"
+import { FileText, User, X } from "lucide-react"
 import {
     ContextMenu,
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { Tab, ActivityBarItem } from "../framework"
 import { TabBarProps } from "./types"
 
-export default function TabBar({ tabs, activityBarItems, setActiveTab }: TabBarProps) {
+export default function TabBar({ 
+    tabs, 
+    setActiveTab, 
+    closeTab,
+    pinFile
+ }: TabBarProps) {
 
     const getTabContextMenu = (tab: Tab) => (
         <ContextMenuContent className="bg-white text-gray-900">
@@ -35,14 +40,20 @@ export default function TabBar({ tabs, activityBarItems, setActiveTab }: TabBarP
                                 tab.isActive && "bg-gray-900",
                             )}
                             onClick={() => setActiveTab(tab.id)}
+                            onDoubleClick={() => {
+                                pinFile(tab.name, tab.path)
+                            }}
                         >
                             {/* 根据tab类型显示对应图标 */}
-                            {(() => {
-                                const activityItem = activityBarItems.find((item) => item.id === tab.activityId)
-                                const IconComponent = activityItem?.icon || FileText
-                                return <IconComponent className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" />
-                            })()}
-                            <span className="text-sm truncate text-gray-300">{tab.name}</span>
+
+                            {tab.id === "user" ? <User className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" /> : <FileText className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" />}
+                            <span className={cn("text-sm truncate text-gray-300 px-0.5", tab.isPreview && "italic")}>{tab.name}</span>
+                            <X className="w-4 h-4 ml-2 text-gray-500 hover:text-white"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    closeTab(tab.id)
+                                }}
+                            />
                         </div>
                     </ContextMenuTrigger>
                     {getTabContextMenu(tab)}
