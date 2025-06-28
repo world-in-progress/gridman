@@ -47,7 +47,7 @@ export const enableMapPointSelection = (
     mapInstance: mapboxgl.Map | undefined,
     callback: (lng: number, lat: number) => void
 ): (() => void) => {
-    if (!mapInstance) return () => {};
+    if (!mapInstance) return () => { };
 
     const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
         callback(e.lngLat.lng, e.lngLat.lat);

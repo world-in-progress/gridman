@@ -11,6 +11,7 @@ import store from '@/store'
 import Loader from './components/ui/loader'
 import Home from './components/home'
 import Simulation from './components/simulation'
+import Demo from './demo'
 
 declare global {
     interface Window {
@@ -77,10 +78,12 @@ export default function App() {
                                     <Loader />
                                 </>
                             )}
+
                             <Navbar
                                 className="z-50 relative border-black"
                                 onNavItemClick={handleNavClick}
                             ></Navbar>
+
                             <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
                                 {activeNavbar === 'home' && <Home />}
                                 {activeNavbar === 'aggregation' && <Page />}
@@ -88,6 +91,7 @@ export default function App() {
                                     <Simulation />
                                 )}
                             </div>
+
                             <Toaster
                                 position="bottom-right"
                                 richColors
@@ -101,6 +105,10 @@ export default function App() {
                     </AIDialogContext.Provider>
                 </SidebarContext.Provider>
             </LanguageContext.Provider>
+
+            {/* <>
+                <Demo />
+            </> */}
         </div>
     )
 }

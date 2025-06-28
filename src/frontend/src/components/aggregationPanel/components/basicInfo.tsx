@@ -1,7 +1,6 @@
 import { useContext } from 'react';
 import { LanguageContext } from '../../../context';
 import store from '@/store';
-import GridCore from '@/core/grid/NHGridCore';
 import BoundsCard from '@/components/projectPanel/components/boundsCard';
 
 export default function BasicInfo() {

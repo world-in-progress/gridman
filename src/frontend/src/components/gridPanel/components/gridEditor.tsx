@@ -281,6 +281,7 @@ export default function GridEditor({
             zh: '细分',
             en: 'Subdivide',
             activeColor: 'bg-blue-600',
+            hoverColor: 'hover:bg-blue-700',
             shortcut: '[ Ctrl+S ]',
         },
         {
@@ -288,6 +289,7 @@ export default function GridEditor({
             zh: '合并',
             en: 'Merge',
             activeColor: 'bg-green-600',
+            hoverColor: 'hover:bg-green-700',
             shortcut: '[ Ctrl+M ]',
         },
         {
@@ -295,13 +297,15 @@ export default function GridEditor({
             zh: '删除',
             en: 'Delete',
             activeColor: 'bg-red-600',
+            hoverColor: 'hover:bg-red-700',
             shortcut: '[ Ctrl+D ]',
         },
         {
             type: 'recover' as TopologyOperationType,
             zh: '恢复',
             en: 'Recover',
-            activeColor: 'bg-purple-600',
+            activeColor: 'bg-orange-500',
+            hoverColor: 'hover:bg-orange-500',
             shortcut: '[ Ctrl+R ]',
         },
     ];
@@ -446,7 +450,7 @@ export default function GridEditor({
                                             ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
                                             : activeTopologyOperation ===
                                               'recover'
-                                            ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer'
+                                            ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer'
                                             : 'bg-gray-600 cursor-not-allowed'
                                     }
                                     disabled={activeTopologyOperation === null}
@@ -668,14 +672,10 @@ export default function GridEditor({
                         {topologyOperations.map((operation) => (
                             <button
                                 key={operation.type}
-                                className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer  text-white ${
+                                className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white ${
                                     activeTopologyOperation === operation.type
                                         ? operation.activeColor
-                                        : 'bg-gray-600 hover:' +
-                                          operation.activeColor.replace(
-                                              'bg-',
-                                              'bg-'
-                                          )
+                                        : `bg-gray-600 ${operation.hoverColor}`
                                 }`}
                                 onClick={() => {
                                     onTopologyOperationClick(operation.type);

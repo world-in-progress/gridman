@@ -1,174 +1,170 @@
-
-import type React from 'react';
-
-import { useState } from 'react';
+import { useContext, useEffect, useState } from "react";
 import {
     ChevronDown,
     ChevronRight,
     Eye,
+    EyeOff,
     MoreHorizontal,
-    Map,
     Layers,
-    Mountain,
-    Trees,
-    Building,
-    Waves,
-    Route,
     MapPin,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+    PencilRuler,
+    Pencil,
+    Trash2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/utils/utils';
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/utils/utils";
 import type {
     LayerItem,
-    LayerList,
+    LayerGroup,
+    LayerListProps,
     LayerItemComponentProps,
-} from '../types/types';
+    LayerNode,
+} from "../types/types";
+import { LanguageContext } from "@/context";
 
-const mockLayerData: LayerItem[] = [
+// Define the fixed layer groups
+export const layerGroups: LayerGroup[] = [
     {
-        id: 'terrain-group',
-        name: 'Terrain Layers',
-        type: 'group',
+        id: "Edited",
+        name: "Edited",
+        type: "group",
         visible: true,
-        icon: <Mountain className="h-4 w-4" />,
-        children: [
-            {
-                id: 'dem',
-                name: 'Digital Elevation Model',
-                type: 'raster',
-                visible: true,
-                icon: <Map className="h-4 w-4" />,
-                opacity: 80,
-                symbology: 'elevation',
-            },
-            {
-                id: 'hillshade',
-                name: 'Hillshade',
-                type: 'raster',
-                visible: true,
-                icon: <Mountain className="h-4 w-4" />,
-                opacity: 60,
-                symbology: 'grayscale',
-            },
-            {
-                id: 'contours',
-                name: 'Contour Lines',
-                type: 'vector',
-                visible: false,
-                icon: <Route className="h-4 w-4" />,
-                symbology: 'brown-lines',
-            },
-        ],
+        icon: <PencilRuler className="h-4 w-4" />,
+        children: [],
     },
     {
-        id: 'landuse-group',
-        name: 'Land Use',
-        type: 'group',
+        id: "Editing",
+        name: "Editing",
+        type: "group",
         visible: true,
-        icon: <Trees className="h-4 w-4" />,
-        children: [
-            {
-                id: 'forest',
-                name: 'Forest Areas',
-                type: 'feature',
-                visible: true,
-                icon: <Trees className="h-4 w-4" />,
-                symbology: 'green-fill',
-            },
-            {
-                id: 'urban',
-                name: 'Urban Areas',
-                type: 'feature',
-                visible: true,
-                icon: <Building className="h-4 w-4" />,
-                symbology: 'gray-fill',
-            },
-            {
-                id: 'water',
-                name: 'Water Bodies',
-                type: 'feature',
-                visible: true,
-                icon: <Waves className="h-4 w-4" />,
-                symbology: 'blue-fill',
-            },
-        ],
-    }
+        icon: <Pencil className="h-4 w-4" />,
+        children: [],
+    },
+    {
+        id: "Feature",
+        name: "Feature",
+        type: "group",
+        visible: true,
+        icon: <Layers className="h-4 w-4" />,
+        children: [],
+    },
 ];
+
+const groupNameMap: { [key: string]: { zh: string; en: string } } = {
+    Edited: { zh: "已编辑", en: "Edited" },
+    Editing: { zh: "未编辑", en: "Editing" },
+    Feature: { zh: "要素", en: "Feature" },
+};
 
 function LayerItemComponent({
     layer,
+    layerGroup,
     level,
     onToggleVisibility,
     onToggleExpanded,
     expandedGroups,
+    selectedLayerId,
+    onSelectLayer,
+    onDeleteLayer,
+    onPropertiesChange,
 }: LayerItemComponentProps) {
+    const { language } = useContext(LanguageContext);
     const isExpanded = expandedGroups.has(layer.id);
-    const hasChildren = layer.children && layer.children.length > 0;
+    const isSelected = selectedLayerId === layer.id;
+    const hasChildren =
+        layer.type === "group" &&
+        (layer as LayerGroup).children &&
+        (layer as LayerGroup).children.length > 0;
 
     const getSymbologyColor = (symbology?: string) => {
         switch (symbology) {
-            case 'elevation':
-                return 'bg-gradient-to-r from-green-500 to-red-500';
-            case 'grayscale':
-                return 'bg-gradient-to-r from-black to-white';
-            case 'green-fill':
-                return 'bg-green-500';
-            case 'gray-fill':
-                return 'bg-gray-500';
-            case 'blue-fill':
-                return 'bg-blue-500';
-            case 'brown-lines':
-                return 'bg-amber-700';
-            case 'black-lines':
-                return 'bg-black';
-            case 'red-lines':
-                return 'bg-red-500';
+            case "red-fill":
+                return "bg-red-500";
+            case "blue-fill":
+                return "bg-blue-500";
+            case "green-fill":
+                return "bg-green-500";
+            case "gray-fill":
+                return "bg-gray-500";
+            case "brown-lines":
+                return "bg-amber-700";
+            case "yellow-fill":
+                return "bg-yellow-500";
+            case "purple-fill":
+                return "bg-purple-500";
+            case "orange-fill":
+                return "bg-orange-500";
             default:
-                return 'bg-gray-300';
+                return "bg-gray-300";
         }
+    };
+
+    const onEditLayerClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log(language === "zh" ? "点击了编辑图层" : "Edit Layer clicked");
+        onSelectLayer(layer.id);
+    };
+
+    const handleLayerClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (layer.type === "group") {
+            onToggleExpanded(layer.id);
+        } else {
+            if (isSelected) {
+                onSelectLayer(null);
+            } else {
+                onSelectLayer(layer.id);
+            }
+        }
+    };
+
+    const onDeleteLayerClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log(language === "zh" ? "点击了删除图层" : "Delete Layer clicked");
+        onDeleteLayer(layer.id);
+    };
+
+    const onPropertiesClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log(language === "zh" ? "点击了属性" : "Properties clicked");
+        setTimeout(() => {
+            onPropertiesChange(layer.id);
+        }, 100);
     };
 
     return (
         <div className="select-none">
             <div
                 className={cn(
-                    'flex items-center gap-1 py-1 px-2 hover:bg-gray-100 group',
-                    level > 0 && 'ml-4'
+                    "flex items-center gap-1 rounded-md py-1 px-2 hover:bg-gray-100 group cursor-pointer",
+                    level > 0 && "ml-4",
+                    isSelected && "bg-gray-200 hover:bg-gray-200"
                 )}
-                style={{ paddingLeft: `${level * 16 + 8}px` }}
+                style={{ paddingLeft: `${level * 8}px` }}
+                onClick={handleLayerClick}
             >
                 {/* Expand/Collapse Button */}
-                {hasChildren ? (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 hover:bg-gray-200"
-                        onClick={() => onToggleExpanded(layer.id)}
-                    >
-                        {isExpanded ? (
-                            <ChevronDown className="h-3 w-3" />
-                        ) : (
-                            <ChevronRight className="h-3 w-3" />
-                        )}
-                    </Button>
+                {isExpanded ? (
+                    <ChevronDown className="ml-1 h-3 w-3" />
                 ) : (
-                    <div className="w-4" />
+                    <ChevronRight className="ml-1 h-3 w-3" />
                 )}
 
                 {/* Visibility Checkbox */}
                 <Checkbox
                     checked={layer.visible}
                     onCheckedChange={() => onToggleVisibility(layer.id)}
-                    className="h-4 w-4"
+                    className="h-4 w-4 cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
                 />
 
                 {/* Layer Icon */}
@@ -177,60 +173,79 @@ function LayerItemComponent({
                 {/* Layer Name */}
                 <span
                     className={cn(
-                        'flex-1 text-sm truncate',
-                        layer.type === 'group' && 'font-medium'
+                        "flex-1 text-sm truncate",
+                        layer.type === "group" && "font-medium"
                     )}
                 >
-                    {layer.name}
+                    {layer.type === "group"
+                        ? groupNameMap[layer.id]?.[language] || layer.name
+                        : layer.name}
                 </span>
 
                 {/* Symbology Preview */}
-                {layer.symbology && (
+                {layer.type !== "group" && (layer as LayerItem).symbology && (
                     <div
                         className={cn(
-                            'w-4 h-3 rounded-sm border border-gray-300',
-                            getSymbologyColor(layer.symbology)
+                            "w-4 h-3 rounded-sm border border-gray-300",
+                            getSymbologyColor((layer as LayerItem).symbology)
                         )}
                     />
                 )}
 
                 {/* Context Menu */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:bg-gray-200"
+                {layer.type !== "group" && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 hover:bg-gray-200"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <MoreHorizontal className="h-3 w-3" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            side="right"
+                            align="start"
+                            alignOffset={40}
+                            sideOffset={-10}
+                            className="w-48"
                         >
-                            <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Zoom to Layer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Layers className="h-4 w-4 mr-2" />
-                            Properties
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Remove Layer</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            <DropdownMenuItem>
+                                <MapPin className="h-4 w-4 mr-2" />
+                                {language === "zh" ? "缩放到图层" : "Zoom to Layer"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={onPropertiesClick}>
+                                <Layers className="h-4 w-4 mr-2" />
+                                {language === "zh" ? "属性" : "Properties"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={onDeleteLayerClick}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {language === "zh" ? "删除图层" : "Remove Layer"}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
 
             {/* Children */}
             {hasChildren && isExpanded && (
                 <div>
-                    {layer.children!.map((child) => (
+                    {(layer as LayerGroup).children.map((child) => (
                         <LayerItemComponent
                             key={child.id}
                             layer={child}
+                            layerGroup={layer as LayerGroup}
                             level={level + 1}
                             onToggleVisibility={onToggleVisibility}
                             onToggleExpanded={onToggleExpanded}
                             expandedGroups={expandedGroups}
+                            selectedLayerId={selectedLayerId}
+                            onSelectLayer={onSelectLayer}
+                            onDeleteLayer={onDeleteLayer}
+                            onPropertiesChange={onPropertiesChange}
                         />
                     ))}
                 </div>
@@ -239,88 +254,222 @@ function LayerItemComponent({
     );
 }
 
-export default function LayerList({ onUpload }: LayerList) {
-    const [layers, setLayers] = useState<LayerItem[]>(mockLayerData);
+export default function LayerList({
+    layers,
+    setLayers,
+    selectedLayerId,
+    onSelectLayer,
+    onDeleteLayer,
+    onPropertiesChange,
+    getIconComponent,
+}: LayerListProps) {
+    const [showAll, setShowAll] = useState(true);
+    const { language } = useContext(LanguageContext);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-        new Set(['terrain-group', 'landuse-group'])
+        new Set(layerGroups.map((group) => group.id))
     );
 
+    // Assign layers to their respective groups
+    // Add state for populatedLayerGroups
+    const [populatedLayerGroups, setPopulatedLayerGroups] = useState<
+        LayerGroup[]
+    >(() => {
+        return layerGroups.map((group) => {
+            const children = layers.filter(
+                (node) =>
+                    node.type !== "group" && (node as LayerItem).group === group.id
+            );
+            return {
+                ...group,
+                children: children as LayerNode[],
+            };
+        });
+    });
+
+    // Update populatedLayerGroups when layers change
+    useEffect(() => {
+        setPopulatedLayerGroups((prevGroups) => {
+            return prevGroups.map((group) => {
+                // Keep the group structure and properties
+                const updatedGroup = { ...group };
+
+                // Get all layers that belong to this group
+                const groupLayers = layers.filter(
+                    (layer) =>
+                        layer.type !== "group" && (layer as LayerItem).group === group.id
+                );
+
+                // Create a map of existing children by id for quick lookup
+                const existingChildrenMap = new Map(
+                    group.children.map((child) => [child.id, child])
+                );
+
+                // update group and properties
+                updatedGroup.children = groupLayers.map((layer) => {
+                    const existingChild = existingChildrenMap.get(layer.id);
+                    if (existingChild) {
+                        // If the layer exists in children, keep it as is
+                        return {
+                            ...existingChild,
+                            name: layer.name,
+                            icon: getIconComponent(layer.icon as string),
+                            symbology: (layer as LayerItem).symbology,
+                        };
+                    } else {
+                        // If it's a new layer, add it to children
+                        return {
+                            ...layer,
+                            group: group.id,
+                            name: layer.name,
+                            icon: getIconComponent(layer.icon as string),
+                            symbology: (layer as LayerItem).symbology,
+                        };
+                    }
+                });
+
+                return updatedGroup;
+            });
+        });
+    }, [layers]);
+
+    const updateGroupVisibility = (
+        group: LayerGroup,
+        newVisible: boolean
+    ): LayerGroup => {
+        if (group.id === "Edited") {
+            const map = window.mapInstance;
+            if (!map) return group;
+
+            group.children.forEach((child) => {
+                const layer = map.getLayer(child.id);
+                if (layer) {
+                    const visibility = newVisible ? "visible" : "none";
+                    map.setLayoutProperty(child.id, "visibility", visibility);
+                }
+            });
+        }
+
+        return {
+            ...group,
+            visible: newVisible,
+            children: group.children.map((child) => {
+                child.visible = newVisible;
+                return child;
+            }),
+        };
+    };
+
+    // Toggle visibility of a layer group or layer item
     const toggleVisibility = (id: string) => {
-        const updateLayer = (items: LayerItem[]): LayerItem[] => {
-            return items.map((item) => {
-                if (item.id === id) {
-                    return { ...item, visible: !item.visible };
+        console.log(id);
+        const updateNodes = (nodes: LayerItem[]): LayerNode[] => {
+            return nodes.map((node) => {
+                if (node.id === id) {
+                    const newVisible = !node.visible;
+
+                    if (node.group === "Edited") {
+                        const map = window.mapInstance;
+                        if (!map) return node;
+                        const layer = map.getLayer(node.id);
+                        if (layer) {
+                            const visibility = newVisible ? "visible" : "none";
+                            map.setLayoutProperty(node.id, "visibility", visibility);
+                        }
+                    }
+
+                    return { ...node, visible: newVisible };
                 }
-                if (item.children) {
-                    return { ...item, children: updateLayer(item.children) };
-                }
-                return item;
+                return node;
             });
         };
-        setLayers(updateLayer(layers));
+
+        setPopulatedLayerGroups((prevLayers) => {
+            const updatedPopulatedGroups = populatedLayerGroups.map((group) => {
+                if (group.id === id) {
+                    return updateGroupVisibility(group, !group.visible);
+                }
+                const updatedChildren = updateNodes(group.children as LayerItem[]);
+                return { ...group, children: updatedChildren } as LayerGroup;
+            });
+            return updatedPopulatedGroups;
+        });
     };
 
     const toggleExpanded = (id: string) => {
-        const newExpanded = new Set(expandedGroups);
-        if (newExpanded.has(id)) {
-            newExpanded.delete(id);
-        } else {
-            newExpanded.add(id);
-        }
-        setExpandedGroups(newExpanded);
+        setExpandedGroups((prevExpanded) => {
+            const newExpanded = new Set(prevExpanded);
+            if (newExpanded.has(id)) {
+                newExpanded.delete(id);
+            } else {
+                newExpanded.add(id);
+            }
+            return newExpanded;
+        });
+    };
+
+    const setAllVisible = (visible: boolean) => {
+        setPopulatedLayerGroups((prevGroups) => {
+            return prevGroups.map((group) => updateGroupVisibility(group, visible));
+        });
+
+        // Update layers to match the new visibility state
+        setLayers((prevLayers) => {
+            return prevLayers.map((layer) => ({
+                ...layer,
+                visible: visible,
+            }));
+        });
     };
 
     return (
-        <div className="w-full border rounded-lg bg-white shadow-sm">
+        <div className="w-full min-h-[480px] mb-2 border rounded-lg bg-white shadow-sm">
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b rounded-t-md bg-gray-50">
-                <h3 className="font-semibold text-sm">Layers</h3>
+                <h3 className="font-semibold text-lg">
+                    {language === "zh" ? "要素图层列表" : "Feature Layer List"}
+                </h3>
                 <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <MoreHorizontal className="h-3 w-3" />
+                    <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0 cursor-pointer"
+                        title={language === "zh" ? "切换全部显示" : "Switch all displays"}
+                        onClick={() => {
+                            setShowAll((prev) => {
+                                const newShowAll = !prev;
+                                setAllVisible(newShowAll);
+                                return newShowAll;
+                            });
+                        }}
+                    >
+                        {showAll ? (
+                            <Eye className="h-6 w-6" />
+                        ) : (
+                            <EyeOff className="h-6 w-6" />
+                        )}
                     </Button>
                 </div>
             </div>
 
             {/* Layer List */}
-            <ScrollArea className="h-80">
+            <ScrollArea className="h-[calc(100vh-300px)]">
                 <div className="p-1">
-                    {layers.map((layer) => (
+                    {/* Render top-level nodes from populatedLayerGroups */}
+                    {populatedLayerGroups.map((layerGroup) => (
                         <LayerItemComponent
-                            key={layer.id}
-                            layer={layer}
+                            key={layerGroup.id}
+                            layer={layerGroup}
                             level={0}
                             onToggleVisibility={toggleVisibility}
                             onToggleExpanded={toggleExpanded}
                             expandedGroups={expandedGroups}
+                            selectedLayerId={selectedLayerId}
+                            onSelectLayer={onSelectLayer}
+                            onDeleteLayer={onDeleteLayer}
+                            onPropertiesChange={onPropertiesChange}
                         />
                     ))}
                 </div>
             </ScrollArea>
-
-            {/* Footer */}
-            <div className="p-2 border-t rounded-b-md bg-gray-50">
-                <div className="flex gap-1">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 bg-gray-600 text-white text-xs cursor-pointer"
-                        onClick={() => onUpload(true)}
-                    >
-                        Add Layer
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 bg-gray-600 text-white text-xs cursor-pointer"
-                    >
-                        Add Group
-                    </Button>
-                </div>
-            </div>
         </div>
     );
 }
