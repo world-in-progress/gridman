@@ -1,6 +1,6 @@
 import IAPI, { MultiGridSchema, ResponseWithNum } from './types'
 
-const API_PREFIX = '/server/api/schemas'
+const API_PREFIX = '/local/api/schemas'
 
 export const getSchemas: IAPI<{ startIndex: number, endIndex: number }, MultiGridSchema> = {
     api: `${API_PREFIX}`,

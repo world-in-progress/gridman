@@ -28,6 +28,8 @@ export function workerContext(target: any, propertyKey: string, descriptor: Prop
     (self as WorkerSelf)[propertyKey] = descriptor.value.bind(self)
     return descriptor
 }
-    
 
-
+export interface ScenarioNodeDescription {
+    semanticPath: string
+    children: string[]
+}

@@ -189,3 +189,4 @@ resource
 node_modules
 
 *.pptx
+.env.local

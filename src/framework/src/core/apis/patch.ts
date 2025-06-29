@@ -1,6 +1,6 @@
 import IAPI, { BaseResponse, PatchMeta } from './types'
 
-const API_PREFIX = '/server/api/patch'
+const API_PREFIX = '/local/api/patch'
 
 export const createPatch: IAPI<{ projectName: string, patchMeta: PatchMeta }, BaseResponse> = {
     api: `${API_PREFIX}`,

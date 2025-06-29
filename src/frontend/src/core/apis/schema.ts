@@ -1,6 +1,6 @@
 import IAPI, { BaseResponse, GridSchema, ResponseWithGridSchema } from './types'
 
-const API_PREFIX = '/server/api/schema'
+const API_PREFIX = '/local/api/schema'
 
 export const createSchema: IAPI<GridSchema, BaseResponse> = {
     api: `${API_PREFIX}`,

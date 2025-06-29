@@ -3,47 +3,26 @@ import { Callback, WorkerSelf } from '@/core/types'
 
 export async function createSchema(
     this: WorkerSelf,
-    schemaData: any,
+    params: { schemaData: any, isRemote: boolean },
     callback: Callback<any>
 ) {
     try {
-        const response = await api.schema.createSchema.fetch(schemaData)
+        const response = await api.schema.createSchema.fetch(params.schemaData, params.isRemote)
         callback(null, response)
     } catch (error) {
         callback(new Error(`创建模板失败! 错误信息: ${error}`), null)
     }
 }
 
-export async function fetchSchemas(
-    this: WorkerSelf,
-    params: { startIndex: number; endIndex: number },
-    callback: Callback<any>
-) {
-    const { startIndex, endIndex } = params;
-    try {
-        const schemaNum = (await api.schemas.getSchemasNum.fetch()).number
-        const schemas = await api.schemas.getSchemas.fetch({
-            startIndex,
-            endIndex
-        })
-        callback(null, {
-            project_schemas: schemas.project_schemas,
-            total_count: schemaNum
-        })
-    } catch (error) {
-        callback(new Error(`获取模板列表失败! 错误信息: ${error}`), null)
-    }
-}
-
 export async function updateSchemaStarred(
     this: WorkerSelf,
-    params: { name: string; starred: boolean },
+    params: { name: string; starred: boolean, isRemote: boolean },
     callback: Callback<any>
 ) {
-    const { name: schemaName, starred } = params
+    const { name: schemaName, starred, isRemote } = params
     try {
         // Step 1: Get schema
-        const getResponse = await api.schema.getSchema.fetch(schemaName)
+        const getResponse = await api.schema.getSchema.fetch(schemaName, isRemote)
 
         if (!getResponse.project_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
@@ -54,7 +33,7 @@ export async function updateSchemaStarred(
         schema.starred = starred
 
         // Step 3: Update schema
-        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema })
+        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema }, isRemote)
         callback(null, putResponse)
 
     } catch (error) {
@@ -64,13 +43,13 @@ export async function updateSchemaStarred(
 
 export async function updateSchemaDescription(
     this: WorkerSelf,
-    params: { name: string; description: string },
+    params: { name: string; description: string, isRemote: boolean },
     callback: Callback<any>
 ) {
-    const { name: schemaName, description } = params
+    const { name: schemaName, description, isRemote } = params
     try {
         // Step 1: Get schema
-        const getResponse = await api.schema.getSchema.fetch(schemaName)
+        const getResponse = await api.schema.getSchema.fetch(schemaName, isRemote)
 
         if (!getResponse.project_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
@@ -81,7 +60,7 @@ export async function updateSchemaDescription(
         schema.description = description
 
         // Step 3: Update schema
-        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema })
+        const putResponse = await api.schema.updateSchema.fetch({ schemaName, schema }, isRemote)
         return {
             err: null,
             result: putResponse,
@@ -96,11 +75,11 @@ export async function updateSchemaDescription(
 
 export async function getSchemaByName(
     this: WorkerSelf,
-    schemaName: string,
+    params: { schemaName: string, isRemote: boolean },
     callback: Callback<any>
 ) {
     try {
-        const response = await api.schema.getSchema.fetch(schemaName)
+        const response = await api.schema.getSchema.fetch(params.schemaName, params.isRemote)
         callback(null, response)
 
     } catch (error) {
@@ -110,11 +89,11 @@ export async function getSchemaByName(
 
 export async function deleteSchema(
     this: WorkerSelf,
-    schemaName: string,
+    params: { schemaName: string, isRemote: boolean },
     callback: Callback<any>
 ) {
     try {
-        const response = await api.schema.deleteSchema.fetch(schemaName)
+        const response = await api.schema.deleteSchema.fetch(params.schemaName, params.isRemote)
         callback(null, response)
 
     } catch (error) {
