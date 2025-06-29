@@ -20,7 +20,7 @@ export default function IconBar({ activityBarItems, activeActivity, handleActivi
                     onClick={() => handleActivityClick(item.id)}
                     title={item.label}
                 >
-                    <item.icon className="w-5 h-5" />
+                    <item.icon className="w-5 h-5 text-white" />
                 </Button>
             ))}
         </div>

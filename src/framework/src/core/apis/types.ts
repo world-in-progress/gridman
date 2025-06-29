@@ -15,7 +15,7 @@ export interface ResponseWithNum {
     number: number;
 }
 
-export interface ProjectSchema {
+export interface GridSchema {
     name: string;
     epsg: number;
     starred: boolean;
@@ -24,12 +24,12 @@ export interface ProjectSchema {
     grid_info: [number, number][];
 }
 
-export interface ResponseWithProjectSchema {
-    project_schema: ProjectSchema | null;
+export interface ResponseWithGridSchema {
+    project_schema: GridSchema | null;
 }
 
-export interface MultiProjectSchema {
-    project_schemas: ProjectSchema[] | null;
+export interface MultiGridSchema {
+    project_schemas: GridSchema[] | null;
 }
 
 export interface PatchTopoStatus {
@@ -82,5 +82,6 @@ export interface ResponseWithMultiProjectMeta {
 export interface SceneMeta {
     node_name: string;
     node_degree: number;
+    scenario_node_name: string
     children: SceneMeta[] | null;
 }

@@ -1,14 +1,16 @@
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react"
 import TabBar from "./tabBar/tabBar"
 import IconBar from "./iconBar/iconBar"
-import MapContainer from "./mapContainer/mapContainer"
+import LoginPage from "./user/loginPage"
+import CreatePage from "./functionPage/createPage"
+import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
 import ResourceFolder from "./resourceFolder/resourceFolder"
 import { LucideProps } from "lucide-react"
-import { activityBarItems } from "./testData"
-import LoginPage from "./user/loginPage"
+import { SceneMeta, GridSchema } from '../core/apis/types'
 import { SceneService } from "./utils/sceneService"
-import { SceneMeta } from '../core/apis/types'
-import CreatePage from "./functionPage/createPage"
+import { SchemaService } from "./schemas/SchemaService"
+import { activityBarItems } from "./testData"
+import { MapContentProvider, useMapContent } from "../contexts/MapContentContext"
 
 export interface ActivityBarItem {
     id: string
@@ -34,39 +36,41 @@ export interface Tab {
 export interface FileNode {
     name: string
     type: "file" | "folder"
+    scenarioNodeName: string
     children?: FileNode[]
     path: string
-    isOpen?: boolean
 }
 
-export default function VSCodeInterface() {
-    const [activeActivity, setActiveActivity] = useState("grid-editor")
+function MainApp() {
     const [tabs, setTabs] = useState<Tab[]>([])
     const [fileTree, setFileTree] = useState<FileNode[]>([])
+    const [activeActivity, setActiveActivity] = useState("grid-editor")
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["root"]))
+    const { mapContent, setMapContentForTab } = useMapContent();
+    const mapRef = useRef<MapContainerHandles>(null);
+    
+    const sceneService = new SceneService()
+    const schemaService = new SchemaService();
 
-    const buildFileTreeFromScene = useCallback(
-        (rootSceneNode: SceneMeta): FileNode[] => {
-            const convert = (node: SceneMeta, currentPath: string): FileNode => {
-                const path = currentPath ? `${currentPath}/${node.node_name}` : node.node_name
-                const isFolder = node.node_degree !== 1
+    const buildFileTreeFromScene = useCallback((rootSceneNode: SceneMeta): FileNode[] => {
+        const convert = (node: SceneMeta, currentPath: string): FileNode => {
+            const path = currentPath ? `${currentPath}.${node.node_name}` : node.node_name
+            const isFolder = node.node_degree !== 0
 
-                return {
-                    name: node.node_name,
-                    type: isFolder ? "folder" : "file",
-                    path: path,
-                    children: node.children?.map((child) => convert(child, path)),
-                    isOpen: isFolder ? expandedFolders.has(node.node_name) : undefined,
-                }
+            return {
+                name: node.node_name,
+                type: isFolder ? "folder" : "file",
+                scenarioNodeName: node.scenario_node_name,
+                path: path,
+                children: node.children?.map((child) => convert(child, path)),
             }
+        }
 
-            return rootSceneNode ? [convert(rootSceneNode, "")] : []
-        },
-        [expandedFolders],
+        return rootSceneNode ? [convert(rootSceneNode, "")] : []
+    }, [],
     )
 
     useEffect(() => {
-        const sceneService = new SceneService()
         sceneService.getSceneMeta("_", (error, result) => {
             if (error) {
                 console.error(error)
@@ -79,7 +83,23 @@ export default function VSCodeInterface() {
         })
     }, [buildFileTreeFromScene])
 
-    const toggleFolder = (path: string, folderName: string) => {
+    const updateFileTree = (path: string, children: FileNode[]) => {
+        const updateNodeInChildren = (nodes: FileNode[], path: string, children: FileNode[]): FileNode[] => {
+            return nodes.map(node => {
+                if (node.path === path) {
+                    return { ...node, children: children };
+                }
+                if (node.children) {
+                    return { ...node, children: updateNodeInChildren(node.children, path, children) };
+                }
+                return node;
+            });
+        };
+
+        setFileTree(currentTree => updateNodeInChildren(currentTree, path, children));
+    };
+
+    const toggleFolder = (folderName: string) => {
         setExpandedFolders((prev) => {
             const newSet = new Set(prev)
             if (newSet.has(folderName)) {
@@ -91,26 +111,31 @@ export default function VSCodeInterface() {
         })
     }
 
-    const handleCreateNewSchema = useCallback(() => {
-        setTabs(prevTabs => {
-            const existingTab = prevTabs.find(t => t.id === 'create-schema');
-            if (existingTab) {
-                return prevTabs.map(t => ({ ...t, isActive: t.id === 'create-schema' }));
-            }
+    const handleFolderClick = (node: FileNode) => {
+        const isCurrentlyExpanded = expandedFolders.has(node.name)
+        const hasNoChildren = !node.children || node.children.length === 0
 
-            const newTabs = prevTabs.map(t => ({ ...t, isActive: false }));
-            const newSchemaTab: Tab = {
-                id: 'create-schema',
-                name: 'Create Schema',
-                path: '/schemas/create',
-                isActive: true,
-                isPreview: false,
-                activityId: 'grid-editor',
-            };
-            newTabs.push(newSchemaTab);
-            return newTabs;
-        });
-    }, []);
+        toggleFolder(node.name)
+
+        if (!isCurrentlyExpanded && hasNoChildren) {
+            sceneService.getSceneMeta(node.path, (error, result) => {
+                if (error) {
+                    console.error(error)
+                    return
+                }
+                if (result && result.children) {
+                    const newChildren: FileNode[] = result.children.map((child: any) => ({
+                        name: child.node_name,
+                        type: child.node_degree !== 0 ? 'folder' : 'file',
+                        scenarioNodeName: child.scenario_node_name,
+                        path: `${node.path}.${child.node_name}`,
+                        children: child.node_degree !== 0 ? [] : undefined,
+                    }))
+                    updateFileTree(node.path, newChildren)
+                }
+            })
+        }
+    }
 
     const handleOpenFile = (fileName: string, filePath: string) => {
         setTabs((prevTabs) => {
@@ -141,6 +166,63 @@ export default function VSCodeInterface() {
         })
     }
 
+
+    const handleDropDownMenuOpen = useCallback((node: FileNode) => {
+        if (node.scenarioNodeName === "schemas") {
+            setTabs(prevTabs => {
+                const existingTab = prevTabs.find(t => t.id === 'create-new-schema');
+                if (existingTab) {
+                    return prevTabs.map(t => ({ ...t, isActive: t.id === 'create-new-schema' }));
+                }
+
+                const newTabs = prevTabs.map(t => ({ ...t, isActive: false }));
+                const newSchemaTab: Tab = {
+                    id: 'create-new-schema',
+                    name: 'Create New Schema',
+                    path: '/schemas/create',
+                    isActive: true,
+                    isPreview: false,
+                    activityId: 'grid-editor',
+                };
+                newTabs.push(newSchemaTab);
+                return newTabs;
+            });
+        }
+        if (node.scenarioNodeName === "patches") {
+            setTabs(prevTabs => {
+                const existingTab = prevTabs.find(t => t.id === 'create-new-patch');
+                if (existingTab) {
+                    return prevTabs.map(t => ({ ...t, isActive: t.id === 'create-new-patch' }));
+                }
+
+                const newTabs = prevTabs.map(t => ({ ...t, isActive: false }));
+                const newPatchTab: Tab = {
+                    id: 'create-new-patch',
+                    name: 'Create New Patch',
+                    path: '/patches/create',
+                    isActive: true,
+                    isPreview: false,
+                    activityId: 'grid-editor',
+                };
+                newTabs.push(newPatchTab);
+                return newTabs;
+            });
+        }
+        if (node.scenarioNodeName === "schema") {
+            handleOpenFile(node.name, node.path);
+            schemaService.getSchemaByName(node.name, (err, result) => {
+                if (err) {
+                    console.error('Failed to get schema info:', err);
+                    return;
+                }
+                if (result.grid_schema) {
+                    setMapContentForTab(node.path, [result.grid_schema as GridSchema]);
+                    mapRef.current?.flyToSchema(result.grid_schema as GridSchema);
+                }
+            })
+        }
+    }, [handleOpenFile, schemaService, setMapContentForTab, setTabs]);
+
     const handlePinFile = (fileName: string, filePath: string) => {
         setTabs((prevTabs) => {
             const existingTabIndex = prevTabs.findIndex((t) => t.path === filePath)
@@ -166,7 +248,6 @@ export default function VSCodeInterface() {
                     newTabs.push(newTab)
                 }
             }
-
             return newTabs
         })
     }
@@ -181,14 +262,11 @@ export default function VSCodeInterface() {
                 const newActiveIndex = Math.max(0, tabToCloseIndex - 1);
                 newTabs[newActiveIndex].isActive = true;
             }
-
             return newTabs;
         });
     };
 
-    // 点击activity bar图标时激活对应的tab
     const handleActivityClick = (activityId: string) => {
-        // 如果点击的是 user 图标，则特殊处理
         if (activityId === "user") {
             const userTabExists = tabs.some(tab => tab.id === "user")
 
@@ -214,17 +292,8 @@ export default function VSCodeInterface() {
             return
         }
 
-
         setActiveActivity(activityId)
         setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === activityId })))
-        // 如果左侧的 panel 已经处于激活状态，并且点击的是同一个活动栏图标，那么就关闭这个 panel
-        // if (activeActivity === activityId) {
-        //     setActiveActivity("")
-        //     setTabs(tabs.map(t => ({ ...t, isActive: false })))
-        // } else {
-        //     setActiveActivity(activityId)
-        //     setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === activityId })))
-        // }
     }
 
     const setActiveTab = (tabId: string) => {
@@ -232,11 +301,37 @@ export default function VSCodeInterface() {
         if (tab) {
             setTabs(tabs?.map((t) => ({ ...t, isActive: t.id === tabId })) || [])
             setActiveActivity(tab.activityId)
+            const schemaData = mapContent[tab.path];
+            if (schemaData && schemaData.length > 0) {
+                setTimeout(() => {
+                    mapRef.current?.flyToSchema(schemaData[0]);
+                }, 150)
+            }
         }
     }
 
+    const mainEditorAreaComponent = () => {
+        const activeTab = tabs.find(tab => tab.isActive);
+        const isCreatePage = activeTab?.id === 'create-new-schema' || activeTab?.id === 'create-new-patch';
+        const isMapView = activeTab?.id !== 'user' && !isCreatePage;
+
+        return (
+            <div className="relative w-full h-full">
+                <div className={`w-full h-full ${isMapView ? 'block' : 'hidden'}`}>
+                    <MapContainer ref={mapRef} activeTab={activeTab} />
+                </div>
+                {!isMapView && (
+                    <div className="absolute top-0 left-0 w-full h-full bg-white z-10">
+                        {activeTab?.id === 'user' && <LoginPage />}
+                        {isCreatePage && <CreatePage creationType={activeTab.id === 'create-new-schema' ? 'schema' : 'patch'} />}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className="flex h-screen bg-gray-900 text-white">
+        <div className="flex h-screen bg-gray-900">
             {/* Activity Bar */}
             <IconBar
                 activityBarItems={activityBarItems}
@@ -248,10 +343,10 @@ export default function VSCodeInterface() {
             <ResourceFolder
                 fileTree={fileTree}
                 expandedFolders={expandedFolders}
-                toggleFolder={toggleFolder}
                 openFile={handleOpenFile}
                 pinFile={handlePinFile}
-                handleCreateNewSchema={handleCreateNewSchema}
+                handleFolderClick={handleFolderClick}
+                handleDropDownMenuOpen={handleDropDownMenuOpen}
             />
 
             {/* Main Content */}
@@ -266,19 +361,18 @@ export default function VSCodeInterface() {
 
                 {/* Main Editor Area */}
                 <div className="flex-1 overflow-hidden">
-                    {(() => {
-                        const activeTab = tabs.find(tab => tab.isActive);
-                        if (activeTab?.id === 'user') {
-                            return <LoginPage />;
-                        }
-                        if (activeTab?.id === 'create-schema') {
-                            return <CreatePage />;
-                        }
-                        return <MapContainer />;
-                    })()}
+                    {mainEditorAreaComponent()}
                 </div>
 
             </div>
         </div>
+    )
+}
+
+export default function Framework() {
+    return (
+        <MapContentProvider>
+            <MainApp />
+        </MapContentProvider>
     )
 }

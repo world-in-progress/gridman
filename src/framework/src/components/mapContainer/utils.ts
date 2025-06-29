@@ -64,7 +64,14 @@ export const convertSinglePointCoordinate = (
 ): [number, number] => {
     if (!coord) return [0, 0];
     try {
-        // Ensure source and target projection definitions
+        // Ensure source and target projection definitions are registered
+        if (epsgDefinitions[fromEPSG]) {
+            proj4.defs(`EPSG:${fromEPSG}`, epsgDefinitions[fromEPSG]);
+        }
+        if (epsgDefinitions[toEPSG]) {
+            proj4.defs(`EPSG:${toEPSG}`, epsgDefinitions[toEPSG]);
+        }
+
         const fromProjection = `EPSG:${fromEPSG}`;
         const toProjection = `EPSG:${toEPSG}`;
 
@@ -105,5 +112,25 @@ export const convertCoordinate = (
     } catch (e) {
         console.error('坐标转换错误:', e);
         return null;
+    }
+};
+
+export const convertToWGS84 = (
+    coordinates: number[],
+    fromEpsg: number
+): [number, number] => {
+    if (!coordinates || coordinates.length < 2 || !fromEpsg) {
+        return [0, 0];
+    }
+
+    try {
+        return convertSinglePointCoordinate(
+            [coordinates[0], coordinates[1]],
+            fromEpsg.toString(),
+            '4326'
+        );
+    } catch (error) {
+        console.error('坐标转换错误:', error);
+        return [0, 0];
     }
 };

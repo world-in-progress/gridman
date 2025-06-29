@@ -29,7 +29,7 @@ export default function TabBar({
     )
 
     return (
-        <div className="bg-gray-800 border-b border-gray-700 flex">
+        <div className="bg-gray-800 border-b border-gray-700 flex h-[37px]">
             {tabs.map((tab) => (
                 <ContextMenu key={tab.id}>
                     <ContextMenuTrigger asChild>

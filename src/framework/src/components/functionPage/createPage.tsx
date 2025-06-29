@@ -1,17 +1,26 @@
-import { useState } from "react";
-import MapContainer from "../mapContainer/mapContainer";
-import FunctionArea from "../schemas/functionArea";
+import { useEffect, useRef, useState } from "react";
+import MapContainer, { MapContainerHandles } from "../mapContainer/mapContainer";
+import CreateSchemaFunctionArea from '../schemas/createSchemaFunctionArea'
+import CreatePatchFunctionArea from "../patches/createPatchFunctionArea";
+import { CreatePageProps } from "./types";
 
-export default function CreatePage() {
-
+export default function CreatePage({creationType }: CreatePageProps) {
+    const mapContainerRef = useRef<MapContainerHandles>(null);
     const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
+
+    useEffect(() => {
+        if (mapContainerRef.current) {
+            setMapInstance(mapContainerRef.current.getMap());
+        }
+    }, [mapContainerRef.current]);
 
     return (
         <div className="w-full h-full flex flex-row bg-[#1E1E1E]">
-            <FunctionArea mapInstance={mapInstance}/>
+            {creationType === 'schema' && <CreateSchemaFunctionArea mapInstance={mapInstance} />}
+            {creationType === 'patch' && <CreatePatchFunctionArea mapInstance={mapInstance} />}
             <div className="w-3/5 h-full py-4 pr-2">
                 <div className="w-full h-full rounded-lg shadow-lg bg-gray-200 p-2">
-                    <MapContainer onMapLoad={setMapInstance} />
+                    <MapContainer ref={mapContainerRef} />
                 </div>
             </div>
         </div>
