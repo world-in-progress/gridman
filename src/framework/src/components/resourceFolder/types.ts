@@ -1,7 +1,8 @@
-import { FileNode } from "../framework"
+import { FileNode } from "../types"
 
 export interface ResourceFolderProps {
-    fileTree: FileNode[]
+    localFileTree: FileNode[]
+    remoteFileTree: FileNode[]
     expandedFolders: Set<string>
     openFile: (fileName: string, filePath: string) => void
     pinFile: (fileName: string, filePath: string) => void

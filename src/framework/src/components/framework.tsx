@@ -3,55 +3,28 @@ import TabBar from "./tabBar/tabBar"
 import IconBar from "./iconBar/iconBar"
 import LoginPage from "./user/loginPage"
 import CreatePage from "./functionPage/createPage"
-import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
 import ResourceFolder from "./resourceFolder/resourceFolder"
-import { LucideProps } from "lucide-react"
-import { SceneMeta, GridSchema } from '../core/apis/types'
+import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
+import { FileNode, Tab } from "./types"
 import { SceneService } from "./utils/sceneService"
 import { SchemaService } from "./schemas/SchemaService"
 import { activityBarItems } from "./testData"
+import { SceneMeta, GridSchema } from '../core/apis/types'
 import { MapContentProvider, useMapContent } from "../contexts/MapContentContext"
-
-export interface ActivityBarItem {
-    id: string
-    icon: React.ComponentType<LucideProps>
-    label: string
-    tabName: string
-    name: string
-    path: string
-    isActive: boolean
-    activityId: string
-    isPreview?: boolean
-}
-
-export interface Tab {
-    id: string
-    name: string
-    path: string
-    isActive: boolean
-    activityId: string
-    isPreview?: boolean
-}
-
-export interface FileNode {
-    name: string
-    type: "file" | "folder"
-    scenarioNodeName: string
-    children?: FileNode[]
-    path: string
-}
 
 function MainApp() {
     const [tabs, setTabs] = useState<Tab[]>([])
-    const [fileTree, setFileTree] = useState<FileNode[]>([])
+    const [localFileTree, setLocalFileTree] = useState<FileNode[]>([])
+    const [remoteFileTree, setRemoteFileTree] = useState<FileNode[]>([])
     const [activeActivity, setActiveActivity] = useState("grid-editor")
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["root"]))
-    const { mapContent, setMapContentForTab } = useMapContent();
     const mapRef = useRef<MapContainerHandles>(null);
-    
+    const { mapContent, setMapContentForTab } = useMapContent();
+
     const sceneService = new SceneService()
     const schemaService = new SchemaService();
 
+    // Build File Tree Structure from Scene
     const buildFileTreeFromScene = useCallback((rootSceneNode: SceneMeta): FileNode[] => {
         const convert = (node: SceneMeta, currentPath: string): FileNode => {
             const path = currentPath ? `${currentPath}.${node.node_name}` : node.node_name
@@ -71,14 +44,27 @@ function MainApp() {
     )
 
     useEffect(() => {
+        // Get Local File Tree
         sceneService.getSceneMeta("_", (error, result) => {
             if (error) {
                 console.error(error)
                 return
             }
             if (result) {
-                const newFileTree = buildFileTreeFromScene(result)
-                setFileTree(newFileTree)
+                const newLocalFileTree = buildFileTreeFromScene(result)
+                setLocalFileTree(newLocalFileTree)
+            }
+        })
+
+        // Get Remote File Tree
+        sceneService.getSceneMeta("_", (error, result) => {
+            if (error) {
+                console.error(error)
+                return
+            }
+            if (result) {
+                const newRemoteFileTree = buildFileTreeFromScene(result)
+                setRemoteFileTree(newRemoteFileTree)
             }
         })
     }, [buildFileTreeFromScene])
@@ -96,7 +82,7 @@ function MainApp() {
             });
         };
 
-        setFileTree(currentTree => updateNodeInChildren(currentTree, path, children));
+        setLocalFileTree(currentTree => updateNodeInChildren(currentTree, path, children));
     };
 
     const toggleFolder = (folderName: string) => {
@@ -341,7 +327,8 @@ function MainApp() {
 
             {/* Sidebar - File Explorer */}
             <ResourceFolder
-                fileTree={fileTree}
+                localFileTree={localFileTree}
+                remoteFileTree={remoteFileTree}
                 expandedFolders={expandedFolders}
                 openFile={handleOpenFile}
                 pinFile={handlePinFile}
