@@ -1,18 +1,13 @@
 import React from "react"
-import { ChevronDown, ChevronRight, FolderOpen, Folder, FileText, FilePlus2  } from "lucide-react"
+import { ChevronDown, ChevronRight, FolderOpen, Folder, FileText, FilePlus2, FileType2 } from "lucide-react"
 import { cn } from "@/utils/utils"
 import { ResourceFolderProps } from "./types"
 import { FileNode } from "../framework"
 import {
     ContextMenu,
-    ContextMenuCheckboxItem,
     ContextMenuContent,
     ContextMenuItem,
-    ContextMenuLabel,
-    ContextMenuRadioGroup,
-    ContextMenuRadioItem,
     ContextMenuSeparator,
-    ContextMenuShortcut,
     ContextMenuSub,
     ContextMenuSubContent,
     ContextMenuSubTrigger,
@@ -22,11 +17,71 @@ import {
 export default function ResourceFolder({
     fileTree,
     expandedFolders,
-    toggleFolder,
     openFile,
     pinFile,
-    handleCreateNewSchema
+    handleFolderClick,
+    handleDropDownMenuOpen,
 }: ResourceFolderProps) {
+
+    const dropDownMenuComponent = (node: FileNode) => {
+        if (node.scenarioNodeName === "schemas") {
+            return (
+                <ContextMenuContent className="w-50 bg-white text-gray-900 border-gray-200">
+                    <ContextMenuItem className="cursor-pointer" onClick={() => handleDropDownMenuOpen(node)}>
+                        <FilePlus2 className="w-4 h-4 ml-2" />Create New Schema
+                    </ContextMenuItem>
+                </ContextMenuContent>
+            )
+
+        }
+        else if (node.scenarioNodeName === "schema") {
+            return (
+                <ContextMenuContent className="w-50 bg-white text-gray-900 border-gray-200">
+                    <ContextMenuItem className="cursor-pointer" onClick={() => handleDropDownMenuOpen(node)}>
+                        <FileType2 className="w-4 h-4 ml-2" />Check Schema Info
+                    </ContextMenuItem>
+                </ContextMenuContent>
+            )
+        }
+        else if (node.scenarioNodeName === "patches") {
+            return (
+                <ContextMenuContent className="w-50 bg-white text-gray-900 border-gray-200">
+                    <ContextMenuItem className="cursor-pointer" onClick={() => handleDropDownMenuOpen(node)}>
+                        <FileType2 className="w-4 h-4 ml-2" />Create New Patch
+                    </ContextMenuItem>
+                </ContextMenuContent>
+            )
+        }
+        else {
+            return (
+                <ContextMenuContent className="w-52 bg-white text-gray-900 border-gray-200">
+                    <ContextMenuItem inset>
+                        Back
+                    </ContextMenuItem>
+                    <ContextMenuItem inset disabled>
+                        Forward
+                    </ContextMenuItem>
+                    <ContextMenuItem inset>
+                        Reload
+                    </ContextMenuItem>
+                    <ContextMenuSub>
+                        <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
+                        <ContextMenuSubContent className="w-44">
+                            <ContextMenuItem>Save Page...</ContextMenuItem>
+                            <ContextMenuItem>Create Shortcut...</ContextMenuItem>
+                            <ContextMenuItem>Name Window...</ContextMenuItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem>Developer Tools</ContextMenuItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem variant="destructive">Delete</ContextMenuItem>
+                        </ContextMenuSubContent>
+                    </ContextMenuSub>
+                    <ContextMenuSeparator />
+                </ContextMenuContent>
+            )
+        }
+    }
+
     const renderFileTree = (nodes: FileNode[], depth = 0): React.ReactNode => {
         return nodes.map((node) => (
             <div key={node.path}>
@@ -37,20 +92,19 @@ export default function ResourceFolder({
                             style={{ paddingLeft: `${depth * 16 + 2}px` }}
                             onClick={() => {
                                 if (node.type === "folder") {
-                                    toggleFolder(node.path, node.name)
+                                    handleFolderClick(node)
                                 } else {
                                     openFile(node.name, node.path)
                                 }
                             }}
                             onDoubleClick={() => {
                                 if (node.type === "folder") {
-                                    toggleFolder(node.path, node.name)
+                                    handleFolderClick(node)
                                 } else {
                                     pinFile(node.name, node.path)
                                 }
                             }}
                         >
-
                             {node.type === "folder" ? (
                                 <>
                                     {expandedFolders.has(node.name) ? (
@@ -70,50 +124,23 @@ export default function ResourceFolder({
                             <span>{node.name}</span>
                         </div>
                     </ContextMenuTrigger>
-                    {node.name === "schemas" ?
+                    {dropDownMenuComponent(node)}
+                    {/* {node.name === "schemas" ?
                         <ContextMenuContent className="w-50 bg-white text-gray-900 border-gray-200">
                             <ContextMenuItem className="cursor-pointer" onClick={handleCreateNewSchema}>
                                 <FilePlus2 className="w-4 h-4 ml-2" />Create New Schema
                             </ContextMenuItem>
-                            {/* <ContextMenuSub>
-                                <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
-                                <ContextMenuSubContent className="w-44">
-                                    <ContextMenuItem>Save Page...</ContextMenuItem>
-                                    <ContextMenuItem>Create Shortcut...</ContextMenuItem>
-                                    <ContextMenuItem>Name Window...</ContextMenuItem>
-                                    <ContextMenuSeparator />
-                                    <ContextMenuItem>Developer Tools</ContextMenuItem>
-                                    <ContextMenuSeparator />
-                                    <ContextMenuItem variant="destructive">Delete</ContextMenuItem>
-                                </ContextMenuSubContent>
-                            </ContextMenuSub>
-                            <ContextMenuSeparator className="bg-gray-200"/>
-                            <ContextMenuCheckboxItem checked>
-                                Show Bookmarks
-                            </ContextMenuCheckboxItem>
-                            <ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
-                            <ContextMenuSeparator className="bg-gray-200"/>
-                            <ContextMenuRadioGroup value="pedro">
-                                <ContextMenuLabel inset>People</ContextMenuLabel>
-                                <ContextMenuRadioItem value="pedro">
-                                    Pedro Duarte
-                                </ContextMenuRadioItem>
-                                <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
-                            </ContextMenuRadioGroup> */}
                         </ContextMenuContent>
                         :
                         <ContextMenuContent className="w-52 bg-white text-gray-900 border-gray-200">
                             <ContextMenuItem inset>
                                 Back
-                                <ContextMenuShortcut>⌘[</ContextMenuShortcut>
                             </ContextMenuItem>
                             <ContextMenuItem inset disabled>
                                 Forward
-                                <ContextMenuShortcut>⌘]</ContextMenuShortcut>
                             </ContextMenuItem>
                             <ContextMenuItem inset>
                                 Reload
-                                <ContextMenuShortcut>⌘R</ContextMenuShortcut>
                             </ContextMenuItem>
                             <ContextMenuSub>
                                 <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
@@ -128,26 +155,13 @@ export default function ResourceFolder({
                                 </ContextMenuSubContent>
                             </ContextMenuSub>
                             <ContextMenuSeparator />
-                            <ContextMenuCheckboxItem checked>
-                                Show Bookmarks
-                            </ContextMenuCheckboxItem>
-                            <ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
-                            <ContextMenuSeparator />
-                            <ContextMenuRadioGroup value="pedro">
-                                <ContextMenuLabel inset>People</ContextMenuLabel>
-                                <ContextMenuRadioItem value="pedro">
-                                    Pedro Duarte
-                                </ContextMenuRadioItem>
-                                <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
-                            </ContextMenuRadioGroup>
                         </ContextMenuContent>
-                    }
+                    } */}
                 </ContextMenu>
                 {node.type === "folder" &&
                     expandedFolders.has(node.name) &&
                     node.children &&
                     renderFileTree(node.children, depth + 1)}
-
             </div>
         ))
     }

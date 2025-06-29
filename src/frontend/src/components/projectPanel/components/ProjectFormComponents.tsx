@@ -6,7 +6,7 @@ import {
     ProjectErrorMessageProps,
     ProjectNameCardProps,
     ProjectDescriptionCardProps,
-    ProjectSchemaNameCardProps,
+    GridSchemaNameCardProps,
     ProjectEpsgCardProps,
     PatchNameCardProps,
     PatchDescriptionCardProps,
@@ -135,7 +135,7 @@ export const PatchDescriptionCard: React.FC<PatchDescriptionCardProps> = ({
     );
 };
 
-export const ProjectSchemaNameCard: React.FC<ProjectSchemaNameCardProps> = ({
+export const GridSchemaNameCard: React.FC<GridSchemaNameCardProps> = ({
     name,
     language,
     hasError,

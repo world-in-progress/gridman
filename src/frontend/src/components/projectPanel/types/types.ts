@@ -165,7 +165,7 @@ export interface PatchDescriptionCardProps {
     onChange: (value: string) => void;
 }
 
-export interface ProjectSchemaNameCardProps {
+export interface GridSchemaNameCardProps {
     name: string;
     language: string;
     hasError: boolean;

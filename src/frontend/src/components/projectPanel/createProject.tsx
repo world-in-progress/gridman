@@ -13,7 +13,7 @@ import { LanguageContext } from '../../context';
 import {
     ProjectNameCard,
     ProjectDescriptionCard,
-    ProjectSchemaNameCard,
+    GridSchemaNameCard,
     ProjectErrorMessage,
     ProjectEpsgCard,
 } from './components/ProjectFormComponents';
@@ -365,7 +365,7 @@ export default function CreateProject({
                                     onChange={setDescription}
                                 />
 
-                                <ProjectSchemaNameCard
+                                <GridSchemaNameCard
                                     name={schemaName}
                                     language={language}
                                     hasError={formErrors.schemaName}

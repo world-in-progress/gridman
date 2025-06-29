@@ -11,7 +11,7 @@ import {
     GridLevel,
     SchemaErrorMessage
 } from "./createSchemaComponents";
-import { FunctionAreaProps } from './types';
+import { CreateSchemaFunctionAreaProps } from './types';
 import { TopologyLayer } from "./types";
 import { enableMapPointSelection, convertCoordinate } from "../mapContainer/utils";
 import { createSchemaData, validateGridLayers, validateSchemaForm } from "./utils";
@@ -25,7 +25,7 @@ const schemaTips = [
     { tip4: 'Set the grid size for each level.' },
 ]
 
-export default function FunctionArea({ mapInstance }: FunctionAreaProps) {
+export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFunctionAreaProps) {
 
     const [lon, setLon] = useState('');
     const [lat, setLat] = useState('');
@@ -34,7 +34,6 @@ export default function FunctionArea({ mapInstance }: FunctionAreaProps) {
     const [description, setDescription] = useState('');
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [topologyLayers, setGridLayers] = useState<TopologyLayer[]>([]);
-    const [schemaService] = useState(() => new SchemaService());
     const [layerErrors, setLayerErrors] = useState<Record<number, string>>({});
     const [isSelectingPoint, setIsSelectingPoint] = useState(false);
     const [formErrors, setFormErrors] = useState<{
@@ -52,6 +51,8 @@ export default function FunctionArea({ mapInstance }: FunctionAreaProps) {
         x: string;
         y: string;
     } | null>(null);
+
+    const schemaService = new SchemaService();
 
     useEffect(() => {
         if (lon && lat && epsg) {
@@ -100,8 +101,7 @@ export default function FunctionArea({ mapInstance }: FunctionAreaProps) {
                     if (result && result.success === false) {
                         console.log(err);
                     } else {
-                        setGeneralError('Created successfully!'
-                        );
+                        setGeneralError('Created successfully!');
                         // setTimeout(() => {
                         //     if (onBack) {
                         //         onBack();
@@ -196,15 +196,15 @@ export default function FunctionArea({ mapInstance }: FunctionAreaProps) {
             <ScrollArea className="h-full">
                 <div className="h-50 w-full border-b border-gray-700 flex flex-row">
                     <div className="w-1/3 h-full flex justify-center items-center">
-                        <Avatar className="bg-[#007ACC] h-25 w-25">
+                        <Avatar className="bg-[#007ACC] h-28 w-28 border-2 border-white">
                             <AvatarFallback>
-                                <MapPinHouse className="h-15 w-15" />
+                                <MapPinHouse className="h-15 w-15 text-white" />
                             </AvatarFallback>
                         </Avatar>
                     </div>
-                    <div className="w-2/3 h-full p-4 space-y-2">
+                    <div className="w-2/3 h-full p-4 space-y-2 text-white">
                         <h1 className="font-bold text-3xl">Create New Schema</h1>
-                        <div className=" text-white text-sm p-2 px-4 w-full">
+                        <div className="  text-sm p-2 px-4 w-full">
                             <ul className="list-disc space-y-1">
                                 {schemaTips.map((tip, index) => (
                                     <li key={index}>

@@ -1,10 +1,10 @@
-import IAPI, { MultiProjectSchema, ResponseWithNum } from './types'
+import IAPI, { MultiGridSchema, ResponseWithNum } from './types'
 
 const API_PREFIX = '/server/api/schemas'
 
-export const getSchemas: IAPI<{ startIndex: number, endIndex: number }, MultiProjectSchema> = {
+export const getSchemas: IAPI<{ startIndex: number, endIndex: number }, MultiGridSchema> = {
     api: `${API_PREFIX}`,
-    fetch: async (query: { startIndex: number, endIndex: number }): Promise<MultiProjectSchema> => {
+    fetch: async (query: { startIndex: number, endIndex: number }): Promise<MultiGridSchema> => {
         try {
             const response = await fetch(`${getSchemas.api}?startIndex=${query.startIndex}&endIndex=${query.endIndex}`, { method: 'GET' })
 
@@ -12,7 +12,7 @@ export const getSchemas: IAPI<{ startIndex: number, endIndex: number }, MultiPro
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const schemas: MultiProjectSchema = await response.json()
+            const schemas: MultiGridSchema = await response.json()
             return schemas
 
         } catch (error) {

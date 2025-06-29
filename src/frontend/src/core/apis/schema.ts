@@ -1,10 +1,10 @@
-import IAPI, { BaseResponse, ProjectSchema, ResponseWithProjectSchema } from './types'
+import IAPI, { BaseResponse, GridSchema, ResponseWithGridSchema } from './types'
 
 const API_PREFIX = '/server/api/schema'
 
-export const createSchema: IAPI<ProjectSchema, BaseResponse> = {
+export const createSchema: IAPI<GridSchema, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (schema: ProjectSchema): Promise<BaseResponse> => {
+    fetch: async (schema: GridSchema): Promise<BaseResponse> => {
         try {
             const response = await fetch(createSchema.api, {
                 method: 'POST',
@@ -27,9 +27,9 @@ export const createSchema: IAPI<ProjectSchema, BaseResponse> = {
     }
 }
 
-export const getSchema: IAPI<string, ResponseWithProjectSchema> = {
+export const getSchema: IAPI<string, ResponseWithGridSchema> = {
     api: `${API_PREFIX}`,
-    fetch: async (schemaName: string): Promise<ResponseWithProjectSchema> => {
+    fetch: async (schemaName: string): Promise<ResponseWithGridSchema> => {
         try {
             const response = await fetch(`${getSchema.api}/${schemaName}`, { method: 'GET' })
 
@@ -37,7 +37,7 @@ export const getSchema: IAPI<string, ResponseWithProjectSchema> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const schema: ResponseWithProjectSchema = await response.json()
+            const schema: ResponseWithGridSchema = await response.json()
             return schema
 
         } catch (error) {
@@ -46,9 +46,9 @@ export const getSchema: IAPI<string, ResponseWithProjectSchema> = {
     }
 }
 
-export const updateSchema: IAPI<{ schemaName: string, schema: ProjectSchema }, BaseResponse> = {
+export const updateSchema: IAPI<{ schemaName: string, schema: GridSchema }, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (query: { schemaName: string; schema: ProjectSchema }): Promise<BaseResponse> => {
+    fetch: async (query: { schemaName: string; schema: GridSchema }): Promise<BaseResponse> => {
         try {
             const { schemaName, schema } = query
             const response = await fetch(`${updateSchema.api}/${schemaName}`, {

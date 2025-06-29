@@ -87,6 +87,6 @@ export interface ValidationResult {
     generalError: string | null;
 }
 
-export interface FunctionAreaProps {
+export interface CreateSchemaFunctionAreaProps {
     mapInstance: mapboxgl.Map | null;
 }
