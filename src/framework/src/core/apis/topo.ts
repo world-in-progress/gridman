@@ -4,7 +4,7 @@ import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../grid/ty
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
-const API_PREFIX = '/server/api/topo'
+const API_PREFIX = '/local/api/topo'
 
 export const isPatchTopoReady: IAPI<void, boolean> = {
     api: `${API_PREFIX}`,

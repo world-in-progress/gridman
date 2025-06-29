@@ -1,12 +1,17 @@
+import getPrefix from './prefix'
 import IAPI, { SceneMeta } from './types'
+import { ScenarioNodeDescription } from '../../core/types'
 
-const API_PREFIX = '/server/api/scene'
+const API_PREFIX = '/local/api/scene'
 
-export const getSceneMeta: IAPI<{ node_key: string, child_start_index: number, child_end_index: number }, SceneMeta> = {
+export const getSceneNodeInfo: IAPI<{ node_key: string, child_start_index?: number, child_end_index?: number }, SceneMeta> = {
     api: `${API_PREFIX}`,
-    fetch: async (query: { node_key: string, child_start_index: number, child_end_index: number }): Promise<SceneMeta> => {
+    fetch: async (query: { node_key: string, child_start_index?: number, child_end_index?: number }, isRemote: boolean): Promise<SceneMeta> => {
         try {
-            const url = `${getSceneMeta.api}?node_key=${query.node_key}&child_start_index=${query.child_start_index}&child_end_index=${query.child_end_index}`
+            const api = getPrefix(isRemote) + getScenarioDescription.api
+            let url = `${api}?node_key=${query.node_key}&child_start_index=${query.child_start_index || 0}`
+            if (query.child_end_index !== undefined) url += `&child_end_index=${query.child_end_index}`
+
             const response = await fetch(url, { method: "GET" })
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
@@ -16,6 +21,24 @@ export const getSceneMeta: IAPI<{ node_key: string, child_start_index: number, c
             return responseData
         } catch (error) {
             throw new Error(`Failed to get scene meta: ${error}`)
+        }
+    }
+}
+
+export const getScenarioDescription: IAPI<void, ScenarioNodeDescription[]> = {
+    api: `${API_PREFIX}/scenario`,
+    fetch: async (params: void, isRemote: boolean): Promise<ScenarioNodeDescription[]> => {
+        try {
+            const api = getPrefix(isRemote) + getScenarioDescription.api
+            const response = await fetch(api, { method: 'GET' })
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: ScenarioNodeDescription[] = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to get scenario description: ${error}`)
         }
     }
 }

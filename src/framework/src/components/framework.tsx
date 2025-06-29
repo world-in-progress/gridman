@@ -60,7 +60,7 @@ function MainApp() {
             return {
                 name: node.node_name,
                 type: isFolder ? "folder" : "file",
-                scenarioNodeName: node.scenario_node_name,
+                scenarioNodeName: node.scenario_path,
                 path: path,
                 children: node.children?.map((child) => convert(child, path)),
             }

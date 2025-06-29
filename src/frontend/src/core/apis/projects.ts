@@ -1,6 +1,6 @@
 import IAPI, { ResponseWithMultiProjectMeta, ResponseWithNum, ResponseWithProjectMeta } from '@/core/apis/types'
 
-const API_PREFIX = '/server/api/projects'
+const API_PREFIX = '/local/api/projects'
 
 export const getProjectsNum: IAPI<void, ResponseWithNum> = {
     api: `${API_PREFIX}/num`,

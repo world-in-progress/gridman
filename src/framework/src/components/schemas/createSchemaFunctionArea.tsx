@@ -81,7 +81,7 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
             description,
             epsg,
             convertedCoord,
-            topologyLayers
+            topologyLayers,
         )
 
         if (!schemaData) {
@@ -101,14 +101,9 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
                     if (result && result.success === false) {
                         console.log(err);
                     } else {
-                        setGeneralError('Created successfully!');
-                        // setTimeout(() => {
-                        //     if (onBack) {
-                        //         onBack();
-                        //     }
-                        // }, 1000);
+                        setGeneralError('Created successfully!')
                     }
-                    setIsSelectingPoint(false);
+                    setIsSelectingPoint(false)
                 }
             }
         );

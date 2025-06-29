@@ -8,7 +8,7 @@ import {
   FeatureUpdatePropertyBody,
 } from "../feature/types";
 
-const API_PREFIX = "/server/api/feature";
+const API_PREFIX = "/local/api/feature";
 
 export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
   api: `${API_PREFIX}/save`,

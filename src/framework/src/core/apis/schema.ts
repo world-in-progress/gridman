@@ -1,12 +1,14 @@
+import getPrefix from './prefix'
 import IAPI, { BaseResponse, GridSchema, ResponseWithGridSchema } from './types'
 
-const API_PREFIX = '/server/api/schema'
+const API_PREFIX = '/api/schema'
 
 export const createSchema: IAPI<GridSchema, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (schema: GridSchema): Promise<BaseResponse> => {
+    fetch: async (schema: GridSchema, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const response = await fetch(createSchema.api, {
+            const api = getPrefix(isRemote) + createSchema.api
+            const response = await fetch(api, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -29,9 +31,10 @@ export const createSchema: IAPI<GridSchema, BaseResponse> = {
 
 export const getSchema: IAPI<string, ResponseWithGridSchema> = {
     api: `${API_PREFIX}`,
-    fetch: async (schemaName: string): Promise<ResponseWithGridSchema> => {
+    fetch: async (schemaName: string, isRemote: boolean): Promise<ResponseWithGridSchema> => {
         try {
-            const response = await fetch(`${getSchema.api}/${schemaName}`, { method: 'GET' })
+            const api = getPrefix(isRemote) + getSchema.api
+            const response = await fetch(`${api}/${schemaName}`, { method: 'GET' })
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
@@ -48,10 +51,11 @@ export const getSchema: IAPI<string, ResponseWithGridSchema> = {
 
 export const updateSchema: IAPI<{ schemaName: string, schema: GridSchema }, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (query: { schemaName: string; schema: GridSchema }): Promise<BaseResponse> => {
+    fetch: async (query: { schemaName: string; schema: GridSchema }, isRemote: boolean): Promise<BaseResponse> => {
         try {
+            const api = getPrefix(isRemote) + updateSchema.api
             const { schemaName, schema } = query
-            const response = await fetch(`${updateSchema.api}/${schemaName}`, {
+            const response = await fetch(`${api}/${schemaName}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -74,9 +78,10 @@ export const updateSchema: IAPI<{ schemaName: string, schema: GridSchema }, Base
 
 export const deleteSchema: IAPI<string, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (schemaName: string): Promise<BaseResponse> => {
+    fetch: async (schemaName: string, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const response = await fetch(`${deleteSchema.api}/${schemaName}`, { method: 'DELETE' })
+            const api = getPrefix(isRemote) + deleteSchema.api
+            const response = await fetch(`${api}/${schemaName}`, { method: 'DELETE' })
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
