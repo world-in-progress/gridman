@@ -25,7 +25,12 @@ const schemaTips = [
     { tip4: 'Set the grid size for each level.' },
 ]
 
-export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFunctionAreaProps) {
+export default function CreateSchemaFunctionArea({
+    mapInstance,
+    remountMap,
+    resourceTree,
+    onCreationSuccess
+}: CreateSchemaFunctionAreaProps & { remountMap: () => void }) {
 
     const [lon, setLon] = useState('');
     const [lat, setLat] = useState('');
@@ -53,6 +58,25 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
     } | null>(null);
 
     const schemaService = new SchemaService();
+
+    const resetForm = () => {
+        setName('');
+        setDescription('');
+        setEpsg('');
+        setLon('');
+        setLat('');
+        setGridLayers([]);
+        setFormErrors({
+            name: false,
+            description: false,
+            coordinates: false,
+            epsg: false,
+        });
+        setLayerErrors({});
+        setConvertedCoord(null);
+        setGeneralError(null);
+        remountMap();
+    };
 
     useEffect(() => {
         if (lon && lat && epsg) {
@@ -93,15 +117,23 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
 
         schemaService.submitSchemaData(
             schemaData,
-            isSelectingPoint,
+            resourceTree?.isRemote || false,
             (err, result) => {
                 if (err) {
+                    console.log('这是err', schemaData)
                     console.log(err);
                 } else {
                     if (result && result.success === false) {
                         console.log(err);
                     } else {
                         setGeneralError('Created successfully!')
+                        if (onCreationSuccess) {
+                            console.log('你好')
+                            onCreationSuccess();
+                        }
+                        setTimeout(() => {
+                            resetForm();
+                        }, 500);
                     }
                     setIsSelectingPoint(false)
                 }
@@ -120,8 +152,8 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
         setIsSelectingPoint(true);
         if (mapInstance) {
             enableMapPointSelection(mapInstance, (lng, lat) => {
-                setLon(lng.toFixed(6));
-                setLat(lat.toFixed(6));
+                setLon(lng.toFixed(6))
+                setLat(lat.toFixed(6))
                 setIsSelectingPoint(false);
             });
         }
@@ -197,8 +229,8 @@ export default function CreateSchemaFunctionArea({ mapInstance }: CreateSchemaFu
                             </AvatarFallback>
                         </Avatar>
                     </div>
-                    <div className="w-2/3 h-full p-4 space-y-2 text-white">
-                        <h1 className="font-bold text-3xl">Create New Schema</h1>
+                    <div className="w-2/3 h-full p-4 space-y-1 text-white">
+                        <h1 className="font-bold text-[25px]">Create New Schema {resourceTree!.isRemote ? '(Remote)' : '(Local)'}</h1>
                         <div className="  text-sm p-2 px-4 w-full">
                             <ul className="list-disc space-y-1">
                                 {schemaTips.map((tip, index) => (

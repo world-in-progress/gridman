@@ -3,16 +3,16 @@ import login from '../../assets/login.jpg'
 
 export default function LoginPage() {
     return (
-        <div className="flex-1 h-full bg-background text-foreground">
-            <div className="grid h-full lg:grid-cols-2">
-                <div className="flex flex-col gap-4 p-6 md:p-10 bg-background">
+        <div className="flex-1 h-full bg-[#1E1E1E] text-white text-foreground">
+            <div className="flex h-full flex-row">
+                <div className="flex flex-col w-2/5 gap-4 p-6 md:p-10 bg-background">
                     <div className="flex flex-1 items-center justify-center">
                         <div className="w-full max-w-lg">
                             <LoginForm />
                         </div>
                     </div>
                 </div>
-                <div className="bg-muted relative hidden lg:block">
+                <div className="w-3/5 bg-muted relative hidden lg:block">
                     <img
                         src={login}
                         alt="Login background"

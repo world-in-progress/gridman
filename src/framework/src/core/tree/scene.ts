@@ -1,5 +1,4 @@
 import * as api from '../apis/apis'
-import { SceneMeta } from '../apis/types'
 import { ScenarioNode, ScenarioTree } from './scenario'
 
 export class SceneNode {
@@ -36,6 +35,8 @@ export class ResourceTree {
     }
 
     async alignNodeInfo(node: SceneNode) {
+        if (node.aligned) return
+
         const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isRemote)
         
         // Update parent-child relationship
@@ -43,12 +44,19 @@ export class ResourceTree {
             for (const child of meta.children) {
                 if (!this.scenario.getNode(child.scenario_path)) continue // skip if scenario node not found
 
+                if (node.children.has(child.node_key)) continue // skip if child node already exists
+
                 const childNode = new SceneNode(child.node_key, node, this.scenario.getNode(child.scenario_path)!)
                 this.scene.set(childNode.key, childNode) // add child node to the scene map
             }
         }
 
         node.aligned = true // mark as aligned after loading
+    }
+
+    markAsDirty(sceneNodeKey: string) {
+        const node = this.scene.get(sceneNodeKey)!
+        node.aligned = false
     }
 
     async getNodeChildNames(sceneNodeKey: string): Promise<string[] | null> {

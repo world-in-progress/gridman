@@ -32,7 +32,7 @@ export const SchemaNameCard: React.FC<SchemaNameCardProps> = ({
                     placeholder={
                         'Enter new schema name'
                     }
-                    className={`w-full text-black ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                    className={`w-full text-black border-gray-300 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
                         }`}
                 />
             </div>
@@ -56,7 +56,7 @@ export const SchemaDescriptionCard: React.FC<SchemaDescriptionCardProps> = ({
                     value={description}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={'Enter schema description'}
-                    className={`w-full text-black ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                    className={`w-full text-black border-gray-300 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
                         }`}
                 />
             </div>
@@ -80,7 +80,7 @@ export const SchemaEpsgCard: React.FC<SchemaEpsgCardProps> = ({
                     placeholder={
                         'Enter EPSG code (e.g. 4326)'
                     }
-                    className={`text-black w-full ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                    className={`text-black w-full border-gray-300 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
                         }`}
                     value={epsg}
                     onChange={(e) => onChange(e.target.value)}
@@ -119,7 +119,7 @@ export const SchemaCoordinateCard: React.FC<SchemaCoordinateCardProps> = ({
                             value={lon}
                             onChange={(e) => onLonChange(e.target.value)}
                             placeholder={'Enter longitude'}
-                            className={`w-3/4 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                            className={`w-3/4 border-gray-300 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
                                 }`}
                         />
                     </div>
@@ -136,7 +136,7 @@ export const SchemaCoordinateCard: React.FC<SchemaCoordinateCardProps> = ({
                             value={lat}
                             onChange={(e) => onLatChange(e.target.value)}
                             placeholder={'Enter latitude'}
-                            className={`w-3/4 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                            className={`w-3/4 border-gray-300 ${hasError ? 'border-red-500 focus:ring-red-500' : ''
                                 }`}
                         />
                     </div>

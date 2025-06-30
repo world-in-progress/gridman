@@ -1,3 +1,5 @@
+import { ResourceTree, SceneNode } from "@/core/tree/scene";
+
 export interface Schema {
     name: string;
     description?: string;
@@ -87,6 +89,11 @@ export interface ValidationResult {
     generalError: string | null;
 }
 
-export interface CreateSchemaFunctionAreaProps {
+export type CreateSchemaFunctionAreaProps = {
     mapInstance: mapboxgl.Map | null;
-}
+    remountMap?: () => void;
+    resourceTree?: ResourceTree;
+    onCreationSuccess?: () => void;
+    // fileTree: ResourceTree
+    // node: SceneNode
+};
