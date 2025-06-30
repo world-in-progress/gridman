@@ -12,7 +12,7 @@ import { activityBarItems } from "./testData"
 import { SceneMeta, GridSchema } from '../core/apis/types'
 import { MapContentProvider, useMapContent } from "../contexts/MapContentContext"
 import { ResourceTree, SceneNode } from "@/core/tree/scene"
-import store from "@/store"
+import store from '@/store'
 import { DropResult } from "react-beautiful-dnd"
 
 function FrameworkComponent() {
@@ -29,7 +29,7 @@ function FrameworkComponent() {
     const { mapContent, setMapContentForTab } = useMapContent();
 
     const sceneService = new SceneService()
-    const schemaService = new SchemaService();
+    const schemaService = new SchemaService()
 
     useEffect(() => {
         const initTree = async () => {
@@ -37,6 +37,7 @@ function FrameworkComponent() {
             const _remoteTree = await ResourceTree.create(true)
             store.set('localFileTree', _localTree)
             store.set('remoteFileTree', _remoteTree)
+            store.set('updateTree', () => setTreeGeneration(g => g + 1))
             setLocalFileTree(_localTree)
             setRemoteFileTree(_remoteTree)
             setGetLocalTree(true)
@@ -53,7 +54,7 @@ function FrameworkComponent() {
         if (parentNode) {
             resourceTree.markAsDirty(parentNode.key);
             await resourceTree.alignNodeInfo(parentNode);
-            setTreeGeneration(g => g + 1); // 强制刷新
+            // setTreeGeneration(g => g + 1); // 强制刷新
         }
     };
 
@@ -89,7 +90,7 @@ function FrameworkComponent() {
 
         if (isDirty) {
             await tree.alignNodeInfo(node)
-            setTreeGeneration(g => g + 1)
+            // setTreeGeneration(g => g + 1)
         }
     }, [])
 

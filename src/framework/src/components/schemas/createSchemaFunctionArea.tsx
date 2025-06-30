@@ -129,7 +129,12 @@ export default function CreateSchemaFunctionArea({
                         setGeneralError('Created successfully!')
                         if (onCreationSuccess) {
                             console.log('你好')
-                            onCreationSuccess();
+                            onCreationSuccess()
+                            if (resourceTree) {
+                                const schemasKey = 'root.topo.schemas'
+                                const schemasNode = resourceTree.scene.get(schemasKey)!
+                                resourceTree.alignNodeInfo(schemasNode, true)
+                            }
                         }
                         setTimeout(() => {
                             resetForm();

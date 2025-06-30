@@ -1,3 +1,4 @@
+import store from '@/store'
 import * as api from '../apis/apis'
 import { ScenarioNode, ScenarioTree } from './scenario'
 
@@ -34,8 +35,8 @@ export class ResourceTree {
         this.scene.set(root.key, root)
     }
 
-    async alignNodeInfo(node: SceneNode) {
-        if (node.aligned) return
+    async alignNodeInfo(node: SceneNode, force: boolean = false): Promise<void> {
+        if (node.aligned && !force) return
 
         const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isRemote)
         
@@ -52,6 +53,10 @@ export class ResourceTree {
         }
 
         node.aligned = true // mark as aligned after loading
+        const domTrigger = store.get('updateTree') as Function
+        if (domTrigger) {
+            domTrigger() // trigger DOM update if available
+        }
     }
 
     markAsDirty(sceneNodeKey: string) {
