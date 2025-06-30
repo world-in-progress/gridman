@@ -92,18 +92,22 @@ export class SchemaService {
         );
     }
 
-    public getSchemaByName(schemaName: string, callback?: Callback<any>) {
-        this._actor.send('getSchemaByName', schemaName, (err, result) => {
+    public getSchemaByName(
+        schemaName: string, 
+        isRemote: boolean,
+        callback?: Callback<any>
+    ) {
+        this._actor.send('getSchemaByName', {schemaName, isRemote}, (err, result) => {
             if (callback) callback(err, result);
         });
     }
 
     public submitSchemaData(
         schemaData: Schema,
-        isSelectingPoint: boolean,
+        isRemote: boolean,
         callback?: Callback<any>
     ) {
-        this._actor.send('createSchema', schemaData, (err, result) => {
+        this._actor.send('createSchema', {schemaData, isRemote},  (err, result) => {
             callback?.(err, result);
         });
     }

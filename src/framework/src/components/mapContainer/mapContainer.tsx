@@ -6,7 +6,7 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { GridSchema } from '../../core/apis/types';
 import { convertToWGS84 } from './utils';
 import { useMapContent } from '../../contexts/MapContentContext';
-import { Tab } from '../framework';
+import { Tab } from '../types';
 
 
 const initialLongitude = 114.051537
@@ -130,7 +130,7 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
                         .setLngLat(coordinates)
                         .setPopup(popup)
                         .addTo(map);
-                    
+
                     marker.getElement().addEventListener('click', () => {
                         closeActivePopup();
                         activePopupRef.current = marker;

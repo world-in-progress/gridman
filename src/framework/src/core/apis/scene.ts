@@ -2,13 +2,13 @@ import getPrefix from './prefix'
 import IAPI, { SceneMeta } from './types'
 import { ScenarioNodeDescription } from '../../core/types'
 
-const API_PREFIX = '/local/api/scene'
+const API_PREFIX = '/api/scene'
 
 export const getSceneNodeInfo: IAPI<{ node_key: string, child_start_index?: number, child_end_index?: number }, SceneMeta> = {
     api: `${API_PREFIX}`,
     fetch: async (query: { node_key: string, child_start_index?: number, child_end_index?: number }, isRemote: boolean): Promise<SceneMeta> => {
         try {
-            const api = getPrefix(isRemote) + getScenarioDescription.api
+            const api = getPrefix(isRemote) + getSceneNodeInfo.api
             let url = `${api}?node_key=${query.node_key}&child_start_index=${query.child_start_index || 0}`
             if (query.child_end_index !== undefined) url += `&child_end_index=${query.child_end_index}`
 

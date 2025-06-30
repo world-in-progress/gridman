@@ -1,11 +1,14 @@
 import { FileNode } from "../types"
+import { SceneNode, ResourceTree } from "@/core/tree/scene"
 
 export interface ResourceFolderProps {
-    localFileTree: FileNode[]
-    remoteFileTree: FileNode[]
-    expandedFolders: Set<string>
+    localFileTree: ResourceTree
+    remoteFileTree: ResourceTree
+    localExpandedFolders: Set<string>
+    remoteExpandedFolders: Set<string>
+    getLocalTree: boolean,
     openFile: (fileName: string, filePath: string) => void
     pinFile: (fileName: string, filePath: string) => void
-    handleDropDownMenuOpen: (node: FileNode) => void
-    handleFolderClick: (node: FileNode) => void
+    handleDropDownMenuOpen: (node: SceneNode, isRemote: boolean) => void
+    handleFolderClick: (tree: ResourceTree, node: SceneNode) => Promise<void>
 }

@@ -5,7 +5,7 @@ import { IconBarProps } from "./types"
 
 export default function IconBar({ activityBarItems, activeActivity, handleActivityClick }: IconBarProps) {
     return (
-        <div className="w-16 bg-slate-900 flex flex-col items-center py-2">
+        <div className="w-14 bg-slate-900 flex flex-col items-center py-2">
             {activityBarItems.map((item) => (
                 <Button
                     id={item.id === "user" ? "user-activity-button" : ""}
@@ -20,7 +20,7 @@ export default function IconBar({ activityBarItems, activeActivity, handleActivi
                     onClick={() => handleActivityClick(item.id)}
                     title={item.label}
                 >
-                    <item.icon className="w-5 h-5 text-white" />
+                    <item.icon className="w-8 h-8 text-white"/>
                 </Button>
             ))}
         </div>

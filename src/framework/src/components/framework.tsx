@@ -5,125 +5,95 @@ import LoginPage from "./user/loginPage"
 import CreatePage from "./functionPage/createPage"
 import ResourceFolder from "./resourceFolder/resourceFolder"
 import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
-import { FileNode, Tab } from "./types"
+import { Tab } from "./types"
 import { SceneService } from "./utils/sceneService"
 import { SchemaService } from "./schemas/SchemaService"
 import { activityBarItems } from "./testData"
 import { SceneMeta, GridSchema } from '../core/apis/types'
 import { MapContentProvider, useMapContent } from "../contexts/MapContentContext"
+import { ResourceTree, SceneNode } from "@/core/tree/scene"
+import store from "@/store"
+import { DropResult } from "react-beautiful-dnd"
 
-function MainApp() {
+function FrameworkComponent() {
+
     const [tabs, setTabs] = useState<Tab[]>([])
-    const [localFileTree, setLocalFileTree] = useState<FileNode[]>([])
-    const [remoteFileTree, setRemoteFileTree] = useState<FileNode[]>([])
+    const [treeGeneration, setTreeGeneration] = useState(0);
+    const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
+    const [localFileTree, setLocalFileTree] = useState<ResourceTree | null>(null)
+    const [remoteFileTree, setRemoteFileTree] = useState<ResourceTree | null>(null)
     const [activeActivity, setActiveActivity] = useState("grid-editor")
-    const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["root"]))
+    const [localExpandedFolders, setLocalExpandedFolders] = useState<Set<string>>(new Set(["_"]))
+    const [remoteExpandedFolders, setRemoteExpandedFolders] = useState<Set<string>>(new Set(["_"]))
     const mapRef = useRef<MapContainerHandles>(null);
     const { mapContent, setMapContentForTab } = useMapContent();
 
     const sceneService = new SceneService()
     const schemaService = new SchemaService();
 
-    // Build File Tree Structure from Scene
-    const buildFileTreeFromScene = useCallback((rootSceneNode: SceneMeta): FileNode[] => {
-        const convert = (node: SceneMeta, currentPath: string): FileNode => {
-            const path = currentPath ? `${currentPath}.${node.node_name}` : node.node_name
-            const isFolder = node.node_degree !== 0
-
-            return {
-                name: node.node_name,
-                type: isFolder ? "folder" : "file",
-                scenarioNodeName: node.scenario_path,
-                path: path,
-                children: node.children?.map((child) => convert(child, path)),
-            }
-        }
-
-        return rootSceneNode ? [convert(rootSceneNode, "")] : []
-    }, [],
-    )
-
     useEffect(() => {
-        // Get Local File Tree
-        sceneService.getSceneMeta("_", (error, result) => {
-            if (error) {
-                console.error(error)
-                return
-            }
-            if (result) {
-                const newLocalFileTree = buildFileTreeFromScene(result)
-                setLocalFileTree(newLocalFileTree)
-            }
-        })
+        const initTree = async () => {
+            const _localTree = await ResourceTree.create(false)
+            const _remoteTree = await ResourceTree.create(true)
+            store.set('localFileTree', _localTree)
+            store.set('remoteFileTree', _remoteTree)
+            setLocalFileTree(_localTree)
+            setRemoteFileTree(_remoteTree)
+            setGetLocalTree(true)
+        }
+        initTree()
+    }, [])
 
-        // Get Remote File Tree
-        sceneService.getSceneMeta("_", (error, result) => {
-            if (error) {
-                console.error(error)
-                return
-            }
-            if (result) {
-                const newRemoteFileTree = buildFileTreeFromScene(result)
-                setRemoteFileTree(newRemoteFileTree)
-            }
-        })
-    }, [buildFileTreeFromScene])
-
-    const updateFileTree = (path: string, children: FileNode[]) => {
-        const updateNodeInChildren = (nodes: FileNode[], path: string, children: FileNode[]): FileNode[] => {
-            return nodes.map(node => {
-                if (node.path === path) {
-                    return { ...node, children: children };
-                }
-                if (node.children) {
-                    return { ...node, children: updateNodeInChildren(node.children, path, children) };
-                }
-                return node;
-            });
-        };
-
-        setLocalFileTree(currentTree => updateNodeInChildren(currentTree, path, children));
+    const handleCreationSuccess = async (resourceTree: ResourceTree, creationType: 'schema' | 'patch') => {
+        if (!resourceTree) return;
+    
+        const parentNodeName = creationType === 'schema' ? 'schemas' : 'patches';
+        const parentNode = Array.from(resourceTree.root.children.values()).find(n => n.scenarioNode.name === parentNodeName);
+    
+        if (parentNode) {
+            resourceTree.markAsDirty(parentNode.key);
+            await resourceTree.alignNodeInfo(parentNode);
+            setTreeGeneration(g => g + 1); // 强制刷新
+        }
     };
 
-    const toggleFolder = (folderName: string) => {
-        setExpandedFolders((prev) => {
+    const handleTabDragEnd = (result: DropResult) => {
+        if (!result.destination) {
+            return;
+        }
+
+        const newTabs = Array.from(tabs);
+        const [reorderedItem] = newTabs.splice(result.source.index, 1);
+        newTabs.splice(result.destination.index, 0, reorderedItem);
+
+        setTabs(newTabs);
+    };
+
+    const toggleFolder = (folderKey: string, isRemote: boolean) => {
+        const setFolders = isRemote ? setRemoteExpandedFolders : setLocalExpandedFolders;
+        setFolders((prev) => {
             const newSet = new Set(prev)
-            if (newSet.has(folderName)) {
-                newSet.delete(folderName)
+            if (newSet.has(folderKey)) {
+                newSet.delete(folderKey)
             } else {
-                newSet.add(folderName)
+                newSet.add(folderKey)
             }
             return newSet
         })
     }
 
-    const handleFolderClick = (node: FileNode) => {
-        const isCurrentlyExpanded = expandedFolders.has(node.name)
-        const hasNoChildren = !node.children || node.children.length === 0
+    const handleFolderClick = useCallback(async (tree: ResourceTree, node: SceneNode) => {
+        const isDirty = !node.aligned
 
-        toggleFolder(node.name)
+        toggleFolder(node.key, tree.isRemote)
 
-        if (!isCurrentlyExpanded && hasNoChildren) {
-            sceneService.getSceneMeta(node.path, (error, result) => {
-                if (error) {
-                    console.error(error)
-                    return
-                }
-                if (result && result.children) {
-                    const newChildren: FileNode[] = result.children.map((child: any) => ({
-                        name: child.node_name,
-                        type: child.node_degree !== 0 ? 'folder' : 'file',
-                        scenarioNodeName: child.scenario_node_name,
-                        path: `${node.path}.${child.node_name}`,
-                        children: child.node_degree !== 0 ? [] : undefined,
-                    }))
-                    updateFileTree(node.path, newChildren)
-                }
-            })
+        if (isDirty) {
+            await tree.alignNodeInfo(node)
+            setTreeGeneration(g => g + 1)
         }
-    }
+    }, [])
 
-    const handleOpenFile = (fileName: string, filePath: string) => {
+    const handleOpenFile = useCallback((fileName: string, filePath: string) => {
         setTabs((prevTabs) => {
             const existingPinnedTab = prevTabs.find((t) => t.path === filePath && !t.isPreview)
             if (existingPinnedTab) {
@@ -150,15 +120,22 @@ function MainApp() {
 
             return newTabs
         })
-    }
+    }, [activeActivity])
 
 
-    const handleDropDownMenuOpen = useCallback((node: FileNode) => {
-        if (node.scenarioNodeName === "schemas") {
+    const handleDropDownMenuOpen = useCallback((node: SceneNode, isRemote: boolean) => {
+        if (node.scenarioNode.name === "schemas") {
             setTabs(prevTabs => {
                 const existingTab = prevTabs.find(t => t.id === 'create-new-schema');
                 if (existingTab) {
-                    return prevTabs.map(t => ({ ...t, isActive: t.id === 'create-new-schema' }));
+                    const newTabs = prevTabs.map(t => ({ ...t, isActive: t.id === 'create-new-schema' }));
+                    if (existingTab.resourceTree?.isRemote !== isRemote) {
+                        const tabIndex = newTabs.findIndex(t => t.id === 'create-new-schema');
+                        if (tabIndex !== -1) {
+                            newTabs[tabIndex].resourceTree = isRemote ? remoteFileTree! : localFileTree!;
+                        }
+                    }
+                    return newTabs;
                 }
 
                 const newTabs = prevTabs.map(t => ({ ...t, isActive: false }));
@@ -169,12 +146,13 @@ function MainApp() {
                     isActive: true,
                     isPreview: false,
                     activityId: 'grid-editor',
+                    resourceTree: isRemote ? remoteFileTree! : localFileTree!,
                 };
                 newTabs.push(newSchemaTab);
                 return newTabs;
             });
         }
-        if (node.scenarioNodeName === "patches") {
+        if (node.scenarioNode.name === "patches") {
             setTabs(prevTabs => {
                 const existingTab = prevTabs.find(t => t.id === 'create-new-patch');
                 if (existingTab) {
@@ -194,22 +172,24 @@ function MainApp() {
                 return newTabs;
             });
         }
-        if (node.scenarioNodeName === "schema") {
-            handleOpenFile(node.name, node.path);
-            schemaService.getSchemaByName(node.name, (err, result) => {
+        if (node.scenarioNode.name === "schema") {
+            handleOpenFile(node.name, node.key);
+            schemaService.getSchemaByName(node.name, isRemote, (err, result) => {
                 if (err) {
                     console.error('Failed to get schema info:', err);
                     return;
                 }
                 if (result.grid_schema) {
-                    setMapContentForTab(node.path, [result.grid_schema as GridSchema]);
-                    mapRef.current?.flyToSchema(result.grid_schema as GridSchema);
+                    setMapContentForTab(node.key, [result.grid_schema as GridSchema]);
+                    setTimeout(() => {
+                        mapRef.current?.flyToSchema(result.grid_schema as GridSchema);  
+                    }, 100)
                 }
             })
         }
-    }, [handleOpenFile, schemaService, setMapContentForTab, setTabs]);
+    }, [handleOpenFile, schemaService, setMapContentForTab, setTabs, localFileTree, remoteFileTree]);
 
-    const handlePinFile = (fileName: string, filePath: string) => {
+    const handlePinFile = useCallback((fileName: string, filePath: string) => {
         setTabs((prevTabs) => {
             const existingTabIndex = prevTabs.findIndex((t) => t.path === filePath)
             let newTabs = [...prevTabs]
@@ -236,7 +216,8 @@ function MainApp() {
             }
             return newTabs
         })
-    }
+    }, [activeActivity])
+    
     const handleCloseTab = (tabIdToClose: string) => {
         setTabs(prevTabs => {
             const tabToCloseIndex = prevTabs.findIndex(t => t.id === tabIdToClose);
@@ -291,7 +272,7 @@ function MainApp() {
             if (schemaData && schemaData.length > 0) {
                 setTimeout(() => {
                     mapRef.current?.flyToSchema(schemaData[0]);
-                }, 150)
+                }, 200)
             }
         }
     }
@@ -309,7 +290,12 @@ function MainApp() {
                 {!isMapView && (
                     <div className="absolute top-0 left-0 w-full h-full bg-white z-10">
                         {activeTab?.id === 'user' && <LoginPage />}
-                        {isCreatePage && <CreatePage creationType={activeTab.id === 'create-new-schema' ? 'schema' : 'patch'} />}
+                        {isCreatePage && 
+                            <CreatePage 
+                                creationType={activeTab.id === 'create-new-schema' ? 'schema' : 'patch'} 
+                                resourceTree={activeTab.resourceTree!}
+                                onCreationSuccess={handleCreationSuccess}
+                            />}
                     </div>
                 )}
             </div>
@@ -324,42 +310,43 @@ function MainApp() {
                 activeActivity={activeActivity}
                 handleActivityClick={handleActivityClick}
             />
-
             {/* Sidebar - File Explorer */}
-            <ResourceFolder
-                localFileTree={localFileTree}
-                remoteFileTree={remoteFileTree}
-                expandedFolders={expandedFolders}
+            < ResourceFolder
+                localFileTree={localFileTree!}
+                remoteFileTree={remoteFileTree!}
+                localExpandedFolders={localExpandedFolders}
+                remoteExpandedFolders={remoteExpandedFolders}
                 openFile={handleOpenFile}
                 pinFile={handlePinFile}
                 handleFolderClick={handleFolderClick}
-                handleDropDownMenuOpen={handleDropDownMenuOpen}
+                handleDropDownMenuOpen={(node: SceneNode, isRemote: boolean) => handleDropDownMenuOpen(node, isRemote)}
+                getLocalTree={getLocalTree}
             />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            < div className="flex-1 flex flex-col" >
                 {/* Tab Bar */}
-                <TabBar
+                < TabBar
                     tabs={tabs || []}
                     setActiveTab={setActiveTab}
                     closeTab={handleCloseTab}
                     pinFile={handlePinFile}
+                    onTabDragEnd={handleTabDragEnd}
                 />
 
                 {/* Main Editor Area */}
-                <div className="flex-1 overflow-hidden">
+                < div className="flex-1 overflow-hidden" >
                     {mainEditorAreaComponent()}
                 </div>
-
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 
 export default function Framework() {
     return (
         <MapContentProvider>
-            <MainApp />
+            <FrameworkComponent />
         </MapContentProvider>
     )
 }

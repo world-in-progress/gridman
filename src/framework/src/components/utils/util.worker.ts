@@ -9,7 +9,7 @@ export async function getSceneMeta(
 ) {
     const { node_key, child_start_index, child_end_index } = params
     try {
-        const response = await api.scene.getSceneNodeInfo.fetch({ node_key, child_start_index, child_end_index })
+        const response = await api.scene.getSceneNodeInfo.fetch({ node_key, child_start_index, child_end_index }, false)
         callback(null, response as SceneMeta)
     } catch (error) {
         callback(new Error(`Failed to get scene meta: ${error}`), null)

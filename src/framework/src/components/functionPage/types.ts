@@ -1,5 +1,7 @@
-import { FileNode } from "../framework"
+import { ResourceTree } from "@/core/tree/scene"
 
-export interface CreatePageProps {
-    creationType: 'schema' | 'patch'
+export type CreatePageProps = {
+    creationType: 'schema' | 'patch',
+    resourceTree: ResourceTree,
+    onCreationSuccess: (resourceTree: ResourceTree, creationType: 'schema' | 'patch') => void
 }

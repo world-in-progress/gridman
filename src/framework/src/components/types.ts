@@ -1,4 +1,5 @@
 import { LucideProps } from "lucide-react"
+import { ResourceTree } from "@/core/tree/scene";
 
 export interface ActivityBarItem {
     id: string
@@ -19,6 +20,7 @@ export interface Tab {
     isActive: boolean
     activityId: string
     isPreview?: boolean
+    resourceTree?: ResourceTree
 }
 
 export interface FileNode {

@@ -22,7 +22,7 @@ const patchTips = [
     { tip4: 'Set the grid size for each level.' },
 ]
 
-export default function CreatePatchFunctionArea({ mapInstance }: CreatePatchFunctionAreaProps) {
+export default function CreatePatchFunctionArea({ mapInstance, remountMap }: CreatePatchFunctionAreaProps & { remountMap: () => void }) {
     const [name, setName] = useState('');
     const [epsg, setEpsg] = useState('');
     const [description, setDescription] = useState('');
