@@ -9,7 +9,7 @@ import {
 import { cn } from "@/utils/utils"
 import { Tab } from "../types"
 import { TabBarProps } from "./types"
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd"
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export default function TabBar({
     tabs,

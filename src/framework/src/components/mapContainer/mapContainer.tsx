@@ -5,7 +5,7 @@ import { MapContainerProps } from './types';
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import { GridSchema } from '../../core/apis/types';
 import { convertToWGS84 } from './utils';
-import { useMapContent } from '../../contexts/MapContentContext';
+// import { useMapContent } from '../../contexts/MapContentContext';
 import { Tab } from '../types';
 
 
@@ -36,14 +36,14 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
     return (...args: any[]) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
-            func.apply(null, args);
+            // func.apply(null, args);
         }, delay);
     };
 };
 
 const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>((props, ref) => {
     const { activeTab } = props;
-    const { mapContent } = useMapContent();
+    // const { mapContent } = useMapContent();
 
     const mapWrapperRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -194,16 +194,16 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
 
     useEffect(() => {
         if (activeTab) {
-            const schemas = mapContent[activeTab.path];
-            if (schemas) {
-                showSchemaMarkerOnMap(schemas);
-            } else {
-                clearAllMarkers();
-            }
+            // const schemas = mapContent[activeTab.path];
+            // if (schemas) {
+            //     showSchemaMarkerOnMap(schemas);
+            // } else {
+            //     clearAllMarkers();
+            // }
         } else {
             clearAllMarkers();
         }
-    }, [activeTab, mapContent]);
+    }, [activeTab]);
 
     useEffect(() => {
         isUnmountedRef.current = false;
