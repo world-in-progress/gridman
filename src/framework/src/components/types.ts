@@ -1,4 +1,4 @@
-import { ResourceTree } from '@/core/tree/scene'
+import { ISceneTree } from '@/core/scene/iscene'
 
 export interface Tab {
     id: string
@@ -7,7 +7,7 @@ export interface Tab {
     isActive: boolean
     activityId: string
     isPreview?: boolean
-    resourceTree?: ResourceTree
+    resourceTree?: ISceneTree
 }
 
 export interface FileNode {

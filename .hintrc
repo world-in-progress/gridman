@@ -3,6 +3,7 @@
     "development"
   ],
   "hints": {
-    "detect-css-reflows/composite": "off"
+    "detect-css-reflows/composite": "off",
+    "no-inline-styles": "off"
   }
 }

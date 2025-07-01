@@ -1,6 +1,6 @@
 import getPrefix from './prefix'
 import IAPI, { SceneMeta } from './types'
-import { ScenarioNodeDescription } from '../../core/types'
+import { ScenarioNodeDescription } from '../scenario/iscenario'
 
 const API_PREFIX = '/api/scene'
 
