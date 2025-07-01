@@ -1,5 +1,5 @@
-import { Tab } from "../types";
-import { DropResult } from "react-beautiful-dnd";
+import { Tab } from '../types'
+import { DropResult } from '@hello-pangea/dnd'
 
 export interface TabBarProps{
     tabs: Tab[]
