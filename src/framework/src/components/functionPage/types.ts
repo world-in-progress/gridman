@@ -1,7 +1,7 @@
-import { ResourceTree } from "@/core/tree/scene"
+import { ISceneTree } from "@/core/scene/iscene"
 
 export type CreatePageProps = {
     creationType: 'schema' | 'patch',
-    resourceTree: ResourceTree,
-    onCreationSuccess: (resourceTree: ResourceTree, creationType: 'schema' | 'patch') => void
+    resourceTree: ISceneTree,
+    onCreationSuccess: (resourceTree: ISceneTree, creationType: 'schema' | 'patch') => void
 }
