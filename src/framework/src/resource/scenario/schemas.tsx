@@ -1,7 +1,29 @@
 import { FilePlus2 } from 'lucide-react'
-import DefaultScenarioNode from '@/resource/scenario/default'
+import { Tab } from '@/components/tabBar/types'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+
+export class SchemasPageContext extends DefaultPageContext {
+    name: string
+    epsg: number
+    description: string
+    starred: boolean
+    base_point: number[]
+    grid_info: number[][]
+
+    constructor() {
+        super()
+        
+        this.name = ''
+        this.description = ''
+        this.starred = false
+        this.epsg = 0
+        this.base_point = []
+        this.grid_info = []
+    }
+}
 
 export default class SchemasScenarioNode extends DefaultScenarioNode {
     static classKey: string = 'root.topo.schemas'
@@ -14,13 +36,20 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf)}>
-                    <FilePlus2 className='w-4 h-4 ml-2' />Check Schema Info
+                    <FilePlus2 className='w-4 h-4 ml-2' />Create New Schema
                 </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleDropDownMenuOpen(nodeSelf: ISceneNode, tree: ISceneTree): void {
-        console.log('Check Schema Info')
+    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+        (nodeSelf as SceneNode).tab = {
+            name: (nodeSelf.tree.isRemote ? 'public' : 'private') + ': ' + nodeSelf.name,
+            path: nodeSelf.key,
+            isActive: true,
+            isPreview: false,
+        } as Tab
+
+        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf)
     }
 }

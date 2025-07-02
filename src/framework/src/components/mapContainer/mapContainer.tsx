@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapContainerProps } from './types';
+import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import { Tab } from '../tabBar/types';
 import { GridSchema } from '../../core/apis/types';
 import { convertToWGS84 } from './utils';
-// import { useMapContent } from '../../contexts/MapContentContext';
-import { Tab } from '../types';
+import { MapContainerProps } from './types';
 
 
 const initialLongitude = 114.051537

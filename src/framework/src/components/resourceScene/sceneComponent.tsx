@@ -23,6 +23,7 @@ import {
     FileType2,
 } from 'lucide-react'
 import { cn } from '@/utils/utils'
+import store from '@/store'
 
 interface TreeNodeProps {
     node: ISceneNode
@@ -37,7 +38,7 @@ interface ResourceTreeProps {
     getRemoteTree: boolean
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
-    onDropDownMenuOpen: (node: ISceneNode, isRemote: boolean) => void
+    onDropDownMenuOpen: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -59,7 +60,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
     }, [tree, node])
 
     const handleContextMenu = useCallback((node: ISceneNode) => {
-        return tree.getContextMenuHandler(node)(node, tree.isRemote)
+        return tree.getContextMenuHandler(node)(node)
     }, [tree])
 
     const renderContextMenu = useCallback(() => {
@@ -119,17 +120,6 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
 }
 
 const TreeRenderer: React.FC<TreeRendererProps> = ({ tree, title }) => {
-    const [, forceUpdate] = useState({})
-
-    useEffect(() => {
-        if (!tree) return
-
-        const unsubscribe = tree.subscribe(() => {
-            forceUpdate({})
-        })
-
-        return unsubscribe
-    }, [tree])
 
     if (!tree) return null
 
@@ -176,7 +166,7 @@ export default function ResourceTreeComponent({
     }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen])
 
     return (
-        <ScrollArea className='h-full'>
+        <ScrollArea className='h-full bg-gray-800'>
             <div className='w-64 bg-gray-800 border-r border-gray-700'>
                 <div className='p-2'>
                     <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>

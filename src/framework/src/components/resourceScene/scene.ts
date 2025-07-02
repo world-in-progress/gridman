@@ -3,7 +3,8 @@ import store from '@/store'
 import * as api from '@/core/apis/apis'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { IScenarioNode } from '@/core/scenario/iscenario'
-import { SCENARIO_NODE_REGISTRY } from '@/resource/scenarioNodeRegistry'
+import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
+import { Tab } from '../tabBar/types'
 
 export interface DomNodeState {
     isLoading: boolean
@@ -25,6 +26,9 @@ export class SceneNode implements ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
+    
+    tab: Tab | null = null
+    pageContext: any = null
 
     tree: SceneTree
     private domState: DomNodeState = {
@@ -99,10 +103,11 @@ export class SceneTree implements ISceneTree {
     private updateCallbacks: Set<TreeUpdateCallback> = new Set()
     private expandedNodes: Set<string> = new Set(['_']) // default root node is expanded
     private selectedNode: string | null = null
+    editingNodes: Set<ISceneNode> = new Set()
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
-    private handleDropDownMenuOpen: (node: ISceneNode, isRemote: boolean) => void = () => {}
+    private handleDropDownMenuOpen: (node: ISceneNode) => void = () => {}
 
     constructor(isRemote: boolean) {
         this.isRemote = isRemote
@@ -135,12 +140,9 @@ export class SceneTree implements ISceneTree {
         }
 
         node.aligned = true // mark as aligned after loading
-        const domTrigger = store.get('updateTree') as Function
-        if (domTrigger) {
-            domTrigger() // trigger DOM update if available
-        }
     }
 
+    // TODO: Check
     markAsDirty(sceneNodeKey: string) {
         const node = this.scene.get(sceneNodeKey)!
         node.aligned = false
@@ -169,12 +171,28 @@ export class SceneTree implements ISceneTree {
         this.updateCallbacks.forEach(callback => callback())
     }
 
-    toggleNodeExpansion(nodeKey: string): void {
-        if (this.expandedNodes.has(nodeKey)) {
-            this.expandedNodes.delete(nodeKey)
+    async toggleNodeExpansion(node: ISceneNode): Promise<void> {
+        if (this.expandedNodes.has(node.key)) {
+            this.expandedNodes.delete(node.key)
         } else {
-            this.expandedNodes.add(nodeKey)
+            this.expandedNodes.add(node.key)
+
+            if (!node.aligned) {
+                await this.alignNodeInfo(node)
+            }
         }
+        this.notifyDomUpdate()
+    }
+
+    startEditingNode(node: ISceneNode): void {
+        this.editingNodes.add(node);
+        (node as SceneNode).pageContext = new SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath]()
+        this.notifyDomUpdate()
+    }
+
+    closeEditingNode(node: ISceneNode): void {
+        this.editingNodes.delete(node)
+        ;(node as SceneNode).pageContext = null
         this.notifyDomUpdate()
     }
 
@@ -191,13 +209,9 @@ export class SceneTree implements ISceneTree {
         return this.selectedNode
     }
 
-    async handleNodeClick(node: ISceneNode): Promise<void> {
+    handleNodeClick(node: ISceneNode): void {
         if (node.scenarioNode.degree > 0) {
-            this.toggleNodeExpansion(node.key)
-
-            if (this.isNodeExpanded(node.key) && !node.aligned) {
-                await this.alignNodeInfo(node)
-            }
+            this.toggleNodeExpansion(node)
         } else {
             this.selectNode(node.key)
             this.handleOpenFile(node.name, node.key)
@@ -213,16 +227,16 @@ export class SceneTree implements ISceneTree {
     bindHandlers(handlers: {
         openFile: (fileName: string, filePath: string) => void
         pinFile: (fileName: string, filePath: string) => void
-        handleDropDownMenuOpen: (node: ISceneNode, isRemote: boolean) => void
+        handleDropDownMenuOpen: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
         this.handleDropDownMenuOpen = handlers.handleDropDownMenuOpen
     }
 
-    getContextMenuHandler(node: ISceneNode): (node: ISceneNode, isRemote: boolean) => void {
-        return (node: ISceneNode, isRemote: boolean) => {
-            this.handleDropDownMenuOpen(node, isRemote)
+    getContextMenuHandler(node: ISceneNode): (node: ISceneNode) => void {
+        return node => {
+            this.handleDropDownMenuOpen(node)
         }
     }
 

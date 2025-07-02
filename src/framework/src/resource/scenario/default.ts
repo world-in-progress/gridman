@@ -1,6 +1,9 @@
 import { IScenarioNode } from '@/core/scenario/iscenario'
 import { ISceneNode, ISceneTree } from '../../core/scene/iscene'
 
+export class DefaultPageContext {
+}
+
 export default class DefaultScenarioNode implements IScenarioNode {
     static classKey: string = 'default'
     semanticPath: string = 'default'
@@ -18,6 +21,10 @@ export default class DefaultScenarioNode implements IScenarioNode {
         return null
     }
     
-    handleDropDownMenuOpen(nodeSelf: ISceneNode, tree: ISceneTree): void {
+    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+    }
+
+    renderNodeTab(nodeSelf: ISceneNode): React.JSX.Element | null {
+        return null
     }
 }
