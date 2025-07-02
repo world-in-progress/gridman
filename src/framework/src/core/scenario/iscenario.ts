@@ -24,5 +24,12 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @param nodeSelf The scene node being rendered.
      * @param tree The scene tree containing the node.
      */
-    handleDropDownMenuOpen(nodeSelf: ISceneNode, tree: ISceneTree): void
+    handleDropDownMenuOpen(nodeSelf: ISceneNode): void
+
+    /**
+     * Renders the tab for the scenario node.
+     * @param nodeSelf The scene node being rendered.
+     * @returns The rendered tab or null.
+     */
+    renderNodeTab(nodeSelf: ISceneNode): React.JSX.Element | null
 }

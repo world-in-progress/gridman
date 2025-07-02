@@ -15,13 +15,13 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf)}>
-                    <FilePlus2 className='w-4 h-4 ml-2' />Create New Schema
+                    <FilePlus2 className='w-4 h-4 ml-2' />Check Schema Info
                 </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleDropDownMenuOpen(nodeSelf: ISceneNode, tree: ISceneTree): void {
-        console.log('Create new schema')
+    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+        console.log('Check Schema Info')
     }
 }

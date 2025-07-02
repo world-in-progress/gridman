@@ -1,25 +1,26 @@
-import { useState, useCallback, useEffect, useRef, use } from "react"
-import TabBar from "./tabBar/tabBar"
-import IconBar from "./iconBar/iconBar"
-import { MapContainerHandles } from "./mapContainer/mapContainer"
-import { Tab } from "./types"
-import { ISceneNode } from "@/core/scene/iscene"
+import { useState, useCallback, useEffect, useRef } from "react"
 import store from '@/store'
-
-import { ICON_REGISTRY } from '@/resource/iconRegistry'
-import { IconBarClickHandlers } from '@/components/iconBar/types'
-import { SceneTree } from "./resourceScene/scene"
+import TabBar, { renderNodeTab } from "./tabBar/tabBar"
+import IconBar from "./iconBar/iconBar"
 import ResourceTreeComponent from "./resourceScene/sceneComponent"
+import { Tab } from "./tabBar/types"
+import { SceneNode, SceneTree } from "./resourceScene/scene"
+import { ISceneNode } from "@/core/scene/iscene"
+import { DropResult } from "@hello-pangea/dnd"
+import { ICON_REGISTRY } from '@/resource/iconRegistry'
+import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
+import { IconBarClickHandlers } from '@/components/iconBar/types'
+import CreatePage from "./functionPage/createPage"
 
 function FrameworkComponent() {
 
-    const [tabs, setTabs] = useState<Tab[]>([])
+    const [tabNames, setTabNames] = useState<string[]>([])
     const [treeGeneration, setTreeGeneration] = useState(0)
+    const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
     const [localFileTree, setLocalFileTree] = useState<SceneTree | null>(null)
     const [remoteFileTree, setRemoteFileTree] = useState<SceneTree | null>(null)
-    const [activeIconID, setActiveIconID] = useState('grid-editor')
     const mapRef = useRef<MapContainerHandles>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
@@ -28,7 +29,7 @@ function FrameworkComponent() {
         iconClickHandlers[icon.id] = (iconID: string) => {
             console.log('Clicked icon:', icon.id, 'with activityId:', iconID)
             setActiveIconID(iconID)
-            setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === iconID })))
+            // setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === iconID })))
         }
     })
 
@@ -39,6 +40,34 @@ function FrameworkComponent() {
                 const _localTree = await SceneTree.create(false)
                 const _remoteTree = await SceneTree.create(true)
 
+                const updateTabNames = () => {
+                    console.log('???')
+                    const nodes = Array.from(localFileTree?.editingNodes || []).concat(Array.from(remoteFileTree?.editingNodes || []))
+                    const _tabNames: string[] = []
+                    nodes.forEach(node=> {
+                        const _n: SceneNode = node as SceneNode
+                        if (_n.tab) {
+                            _tabNames.push(_n.tab.name)
+                        }
+                    })
+                    setTabNames(_tabNames)
+                }
+
+                // Subscribe to tree update
+                _localTree.subscribe(() => {
+                    setTreeGeneration(prev => prev + 1)
+                })
+                _localTree.subscribe(() => {
+                    updateTabNames()
+                })
+                _remoteTree.subscribe(() => {
+                    updateTabNames()
+                    setTreeGeneration(prev => prev + 1)
+                })
+                _remoteTree.subscribe(() => {
+                    updateTabNames()
+                })
+
                 store.set('localFileTree', _localTree)
                 store.set('remoteFileTree', _remoteTree)
                 store.set('updateTree', () => setTreeGeneration(g => g + 1))
@@ -47,7 +76,7 @@ function FrameworkComponent() {
                 setRemoteFileTree(_remoteTree)
                 setGetLocalTree(true)
                 setGetRemoteTree(true)
-                
+
             } catch (error) {
                 console.error('Failed to initialize resource trees:', error)
             }
@@ -57,71 +86,66 @@ function FrameworkComponent() {
 
     // File processing handlers
     const handleOpenFile = useCallback((fileName: string, filePath: string) => {
-        setTabs(prevTabs => {
-            const existingPinnedTab = prevTabs.find(t => t.path === filePath && !t.isPreview)
-            if (existingPinnedTab) {
-                return prevTabs.map(t => ({ ...t, isActive: t.path === filePath }))
-            }
+        // setTabNames(prevTabs => {
+        //     const existingPinnedTab = prevTabs.find(t => t.path === filePath && !t.isPreview)
+        //     if (existingPinnedTab) {
+        //         return prevTabs.map(t => ({ ...t, isActive: t.path === filePath }))
+        //     }
 
-            const newTabs = prevTabs.map(t => ({ ...t, isActive: false }))
-            const previewIndex = newTabs.findIndex(t => t.isPreview)
+        //     const newTabs = prevTabs.map(t => ({ ...t, isActive: false }))
+        //     const previewIndex = newTabs.findIndex(t => t.isPreview)
 
-            const newTab: Tab = {
-                id: filePath,
-                name: fileName,
-                path: filePath,
-                isActive: true,
-                activityId: activeIconID,
-                isPreview: true,
-            }
+        //     const newTab: Tab = {
+        //         name: fileName,
+        //         path: filePath,
+        //         isActive: true,
+        //         isPreview: true,
+        //     }
 
-            if (previewIndex !== -1) {
-                newTabs[previewIndex] = newTab
-            } else {
-                newTabs.push(newTab)
-            }
+        //     if (previewIndex !== -1) {
+        //         newTabs[previewIndex] = newTab
+        //     } else {
+        //         newTabs.push(newTab)
+        //     }
 
-            return newTabs
-        })
+        //     return newTabs
+        // })
     }, [activeIconID])
 
     const handlePinFile = useCallback((fileName: string, filePath: string) => {
-        setTabs((prevTabs) => {
-            const existingTabIndex = prevTabs.findIndex((t) => t.path === filePath)
-            let newTabs = [...prevTabs]
+        // setTabNames((prevTabs) => {
+        //     const existingTabIndex = prevTabs.findIndex((t) => t.path === filePath)
+        //     let newTabs = [...prevTabs]
 
-            if (existingTabIndex !== -1) {
-                newTabs[existingTabIndex] = { ...newTabs[existingTabIndex], isPreview: false, isActive: true }
-                newTabs = newTabs.map((t, index) => (index === existingTabIndex ? { ...t } : { ...t, isActive: false }))
-            } else {
-                newTabs = newTabs.map((t) => ({ ...t, isActive: false }))
-                const newTab: Tab = {
-                    id: filePath,
-                    name: fileName,
-                    path: filePath,
-                    isActive: true,
-                    activityId: activeIconID,
-                    isPreview: false,
-                }
-                const previewIndex = newTabs.findIndex(t => t.isPreview)
-                if (previewIndex !== -1) {
-                    newTabs[previewIndex] = newTab
-                } else {
-                    newTabs.push(newTab)
-                }
-            }
-            return newTabs
-        })
+        //     if (existingTabIndex !== -1) {
+        //         newTabs[existingTabIndex] = { ...newTabs[existingTabIndex], isPreview: false, isActive: true }
+        //         newTabs = newTabs.map((t, index) => (index === existingTabIndex ? { ...t } : { ...t, isActive: false }))
+        //     } else {
+        //         newTabs = newTabs.map((t) => ({ ...t, isActive: false }))
+        //         const newTab: Tab = {
+        //             name: fileName,
+        //             path: filePath,
+        //             isActive: true,
+        //             isPreview: false,
+        //         }
+        //         const previewIndex = newTabs.findIndex(t => t.isPreview)
+        //         if (previewIndex !== -1) {
+        //             newTabs[previewIndex] = newTab
+        //         } else {
+        //             newTabs.push(newTab)
+        //         }
+        //     }
+        //     return newTabs
+        // })
     }, [activeIconID])
 
     // Handle menu open
-    const handleDropDownMenuOpen = useCallback((node: ISceneNode, isRemote: boolean) => {
-        console.log('Context menu opened for node:', node.name, 'isRemote:', isRemote)
+    const handleDropDownMenuOpen = useCallback((node: ISceneNode) => {
+        console.log('Context menu opened for node:', node.name)
         if (localFileTree === null || remoteFileTree === null) {
             return
         }
-        const tree = isRemote ? remoteFileTree : localFileTree
-        node.scenarioNode.handleDropDownMenuOpen(node, tree)
+        node.scenarioNode.handleDropDownMenuOpen(node)
     }, [localFileTree, remoteFileTree])
 
     // Handle creation success
@@ -136,6 +160,38 @@ function FrameworkComponent() {
             await resourceTree.alignNodeInfo(parentNode)
         }
     }, [])
+
+    // Handle drag tag on tabBar
+    const handleTabDragEnd = (result: DropResult) => {
+        if (!result.destination) {
+            return
+        }
+
+        const nodes = Array.from(localFileTree?.editingNodes || []).concat(Array.from(remoteFileTree?.editingNodes || []))
+        const prevTabs: Tab[] = []
+        nodes.forEach(node=> {
+            const _n: SceneNode = node as SceneNode
+            if (_n.tab) {
+                prevTabs.push(_n.tab)
+            }
+        })
+        const [reorderedItem] = prevTabs.splice(result.source.index, 1)
+        prevTabs.splice(result.destination.index, 0, reorderedItem)
+        const _tabNames: string[] = []  
+        prevTabs.forEach(tab => {
+            _tabNames.push(tab.name)
+        })
+        setTabNames(_tabNames)
+    }
+
+    const mainEditorAreaComponent = (tree: SceneTree) => {
+        if (tree.editingNodes.size === 0) {
+            return(
+                <MapContainer />
+            )
+        }
+        // if (tree.)
+    }
 
     return (
         <div className="flex h-screen bg-gray-900">
@@ -159,15 +215,26 @@ function FrameworkComponent() {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col">
                 {/* 这里可以添加TabBar和其他组件 */}
+                {/* Tab Bar */}
+                <TabBar
+                    tabNames={tabNames}
+                    localTree={localFileTree}
+                    remoteTree={remoteFileTree}
+                    onTabDragEnd={handleTabDragEnd}
+                />
                 <div className="flex-1 bg-gray-100">
                     {/* 主编辑器区域 */}
+                    {/* {mainEditorAreaComponent()} */}
+                    <MapContainer />
+                    {/* {  && <CreatePage/>} */}
                 </div>
             </div>
 
+
             {/* Main Content */}
             {/* < div className="flex-1 flex flex-col" > */}
-                {/* Tab Bar */}
-                {/* < TabBar
+            {/* Tab Bar */}
+            {/* < TabBar
                     tabs={tabs || []}
                     setActiveTab={setActiveTab}
                     closeTab={handleCloseTab}
@@ -175,8 +242,8 @@ function FrameworkComponent() {
                     onTabDragEnd={handleTabDragEnd}
                 /> */}
 
-                {/* Main Editor Area */}
-                {/* < div className="flex-1 overflow-hidden" >
+            {/* Main Editor Area */}
+            {/* < div className="flex-1 overflow-hidden" >
                     {mainEditorAreaComponent()}
                 </div> */}
             {/* </div > */}
