@@ -46,6 +46,10 @@ function FrameworkComponent() {
     store.set('changeMainEditorAreaState', (state: string) => {
         setMainEditorAreaState(state)
     })
+    const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
+    const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
+    // const mapRef = useRef<MapContainerHandles>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
