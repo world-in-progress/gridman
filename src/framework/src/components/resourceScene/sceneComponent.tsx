@@ -21,6 +21,8 @@ import {
     FileText,
     FilePlus2,
     FileType2,
+    CloudDownload,
+    CloudCheck,
 } from 'lucide-react'
 import { cn } from '@/utils/utils'
 import store from '@/store'
@@ -53,6 +55,8 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
     const isSelected = tree.selectedNodeKey === node.key
     const isFolder = node.scenarioNode.degree > 0
 
+    const [isDownloaded, setIsDownloaded] = useState(false)
+
     const handleClick = useCallback(() => {
         tree.handleNodeClick(node)
     }, [tree, node])
@@ -69,13 +73,19 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
         return node.scenarioNode.renderContextMenu(node, tree, handleContextMenu)
     }, [node, tree, handleContextMenu])
 
+    const handleClickPublicDownload = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault()
+        setIsDownloaded(true)
+        console.log('Download public resource')
+    }
+
     return (
         <div>
             <ContextMenu>
                 <ContextMenuTrigger>
                     <div
                         className={cn(
-                            'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm',
+                            'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm w-full',
                             isSelected ? 'bg-gray-600 text-white' : 'text-gray-300',
                         )}
                         style={{ paddingLeft: `${depth * 16 + 2}px` }}
@@ -99,6 +109,14 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
                             <FileText className='w-4 h-4 mr-2 ml-3 text-gray-400' />
                         )}
                         <span>{node.name}</span>
+                        {!isFolder && tree.isRemote &&
+                            <button
+                                className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
+                                title='download'
+                                onClick={handleClickPublicDownload}
+                            >
+                                {isDownloaded ? <CloudCheck className='w-4 h-4 text-green-500' /> : <CloudDownload className='w-4 h-4 text-white' />}
+                            </button>}
                     </div>
                 </ContextMenuTrigger>
                 {renderContextMenu()}
@@ -146,7 +164,7 @@ export default function ResourceTreeComponent({
     onNodeStartEditing,
     onNodeStopEditing,
 }: ResourceTreeProps) {
-    
+
     // Bind handlers to local tree
     useEffect(() => {
         if (localTree) {
@@ -180,7 +198,7 @@ export default function ResourceTreeComponent({
                     <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>
                         Explorer
                     </div>
-                    
+
                     {getLocalTree && (
                         <TreeRenderer tree={localTree} title='Local' />
                     )}
