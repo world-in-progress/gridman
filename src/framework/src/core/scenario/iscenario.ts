@@ -30,5 +30,5 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @param nodeSelf The scene node being rendered.
      * @returns The rendered tab page or null.
      */
-    renderNodePage(nodeSelf: ISceneNode): React.JSX.Element | null
+    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null
 }

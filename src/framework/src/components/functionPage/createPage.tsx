@@ -1,13 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
-import MapContainer, { MapContainerHandles } from '../mapContainer/mapContainer'
-import CreateSchemaFunctionArea from '../schemas/createSchemaFunctionArea'
-import CreatePatchFunctionArea from '../patches/createPatchFunctionArea'
 import { CreatePageProps } from './types'
+import { ISceneNode } from '@/core/scene/iscene'
+import { SceneNode } from '../resourceScene/scene'
+import React, { useEffect, useRef, useState } from 'react'
+import MapContainer, { MapContainerHandles } from '../mapContainer/mapContainer'
+
+
+const renderPage = (node: ISceneNode) => {
+    return node.scenarioNode.renderPage(node)
+}
+
+const renderMap = (node: ISceneNode) => {
+    return null
+}
 
 export default function CreatePage({
-    creationType, 
-    resourceTree,
-    onCreationSuccess
+    node
 }: CreatePageProps) {
     const mapContainerRef = useRef<MapContainerHandles>(null)
     const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null)
@@ -23,16 +30,15 @@ export default function CreatePage({
         }
     }, [mapKey])
 
-    const handleCreationSuccess = () => {
-        if (onCreationSuccess && resourceTree) {
-            onCreationSuccess(resourceTree, creationType)
-        }
-    }
+    // const handleCreationSuccess = () => {
+    //     if (onCreationSuccess && resourceTree) {
+    //         onCreationSuccess(resourceTree, creationType)
+    //     }
+    // }
 
     return (
         <div className='w-full h-full flex flex-row bg-[#1E1E1E]'>
-            {creationType === 'schema' && <CreateSchemaFunctionArea mapInstance={mapInstance} remountMap={remountMap} resourceTree={resourceTree} onCreationSuccess={handleCreationSuccess} />}
-            {creationType === 'patch' && <CreatePatchFunctionArea mapInstance={mapInstance} remountMap={remountMap} />}
+            { renderPage(node) }
             <div className='w-3/5 h-full py-4 pr-2'>
                 <div className='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'>
                     <MapContainer key={mapKey} ref={mapContainerRef} />

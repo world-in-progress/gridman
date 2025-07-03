@@ -103,8 +103,8 @@ export class SceneTree implements ISceneTree {
 
     private updateCallbacks: Set<TreeUpdateCallback> = new Set()
     private expandedNodes: Set<string> = new Set()
-    private _selectedNodeKey: string | null = null
     editingNodes: Set<ISceneNode> = new Set()
+    selectedNode: ISceneNode | null = null
 
     constructor(isRemote: boolean) {
         this.isRemote = isRemote
@@ -203,10 +203,6 @@ export class SceneTree implements ISceneTree {
         return this.expandedNodes.has(nodeKey)
     }
 
-    get selectedNodeKey(): string | null {
-        return this._selectedNodeKey
-    }
-
     async toggleNodeExpansion(node: ISceneNode): Promise<void> {
         if (this.expandedNodes.has(node.key)) {
             this.expandedNodes.delete(node.key)
@@ -228,13 +224,10 @@ export class SceneTree implements ISceneTree {
             this.handleOpenFile(node.name, node.key)
         }
 
-        // Deselect the previous node
-        if (this._selectedNodeKey !== null) {
-            (this.scene.get(this._selectedNodeKey) as SceneNode).isSelected = false
-        }
         // Select the node
-        (node as SceneNode).isSelected = true
-        this._selectedNodeKey = node.key
+        this.selectedNode = node
+
+        this.notifyDomUpdate()
     }
 
     // Node Editing //////////////////////////////////////////////////

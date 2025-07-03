@@ -31,7 +31,7 @@ register(func);
 import * as gridUtils from "../grid/util.worker";
 register(gridUtils);
 
-import * as schemaUtils from "@/components/schemas/util.worker";
+import * as schemaUtils from "@/resource/scenario/schemas/util.worker";
 register(schemaUtils);
 
 // import * as projectUtils from "@/components/projectPanel/utils/util.worker";

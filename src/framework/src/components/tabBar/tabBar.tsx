@@ -7,7 +7,7 @@ import {
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { TabBarProps, Tab, renderNodeTabProps } from "./types"
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import { DragDropContext, Droppable, Draggable, DragStart } from '@hello-pangea/dnd'
 import { cn } from "@/utils/utils"
 import { SceneNode, SceneTree } from '../resourceScene/scene'
 
@@ -27,6 +27,7 @@ const renderNodeTab = (
     { 
         node,
         index,
+        onTabClick,
         // onPinFile,
         // setActiveTab,
     }: renderNodeTabProps
@@ -36,6 +37,7 @@ const renderNodeTab = (
         <Draggable key={tab.id} draggableId={tab.id} index={index}>
             {(providedDraggable, snapshot) => (
                 <div
+                    onClick={() => onTabClick(tab)}
                     ref={providedDraggable.innerRef}
                     {...providedDraggable.draggableProps}
                     {...providedDraggable.dragHandleProps}
@@ -86,7 +88,12 @@ const renderNodeTab = (
     )
 }
 
-const renderNodeTabs = (tabs: Set<Tab>, localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined) => {
+const renderNodeTabs = (
+    tabs: Set<Tab>, 
+    localTree: SceneTree | null | undefined, 
+    remoteTree: SceneTree | null | undefined,
+    onTabClick: (tab: Tab) => void
+) => {
     console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
     
     const elements =  Array.from(tabs).map((tab, index) => {
@@ -97,7 +104,9 @@ const renderNodeTabs = (tabs: Set<Tab>, localTree: SceneTree | null | undefined,
         if (!node) return null
 
         return renderNodeTab({
-            node: (node as SceneNode), index
+            node: (node as SceneNode), 
+            index,
+            onTabClick
         })
     })
 
@@ -108,7 +117,8 @@ export default function TabBar({
     tabs,
     localTree,
     remoteTree,
-    onTabDragEnd
+    onTabDragEnd,
+    onTabClick,
 }: TabBarProps) {
     const [triggerTabBar, setTriggerTabBar] = useState(0)
     const [localUnsubscribe, setLocalUnsubscribe] = useState<(() => void) | undefined>()
@@ -147,9 +157,16 @@ export default function TabBar({
         }
     }, [localTree, remoteTree, localUnsubscribe, remoteUnsubscribe])
 
+    const handleDragStart = (start: DragStart) => {
+        const index = start.source.index
+        const tab = Array.from(tabs)[index]
+
+        onTabClick(tab)
+    }
+
     return (
         <>
-            <DragDropContext onDragEnd={onTabDragEnd}>
+            <DragDropContext  onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                 <Droppable droppableId="tabs" direction="horizontal">
                     {(provided) => (
                         <div
@@ -158,7 +175,7 @@ export default function TabBar({
                             className="bg-gray-800 border-b border-gray-700 flex h-[37px]"
                         >
                             {
-                                renderNodeTabs(tabs, localTree, remoteTree)
+                                renderNodeTabs(tabs, localTree, remoteTree, onTabClick)
                             }
                             {provided.placeholder}
                         </div>

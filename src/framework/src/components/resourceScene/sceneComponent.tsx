@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, use } from 'react'
 import { SceneTree, SceneNode } from './scene'
-import { ISceneNode } from '@/core/scene/iscene'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -29,7 +29,8 @@ import store from '@/store'
 
 interface TreeNodeProps {
     node: ISceneNode
-    tree: SceneTree
+    privateTree: ISceneTree
+    publicTree: ISceneTree
     depth: number
 }
 
@@ -46,20 +47,29 @@ interface ResourceTreeProps {
 }
 
 interface TreeRendererProps {
-    tree: SceneTree | null
+    privateTree: SceneTree | null
+    publicTree: SceneTree | null
     title: string
+    isPublic: boolean
 }
 
-export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
-    const isSelected = tree.selectedNodeKey === node.key
+export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth }) => {
+    const _privateTree = privateTree as SceneTree
+    const _publicTree = publicTree as SceneTree
+
+    const tree = node.tree as SceneTree
+    const isSelected = tree.selectedNode?.key === node.key
     const isExpanded = tree.isNodeExpanded(node.key)
     const isFolder = node.scenarioNode.degree > 0
 
     const [isDownloaded, setIsDownloaded] = useState(false)
 
     const handleClick = useCallback(() => {
+        // Set the selected node in the other tree as null
+        tree.isRemote ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
+
         tree.handleNodeClick(node)
-    }, [tree, node])
+    }, [tree, node, _privateTree, _publicTree])
 
     const handleDoubleClick = useCallback(() => {
         tree.handleNodeDoubleClick(node)
@@ -129,7 +139,8 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, tree, depth }) => 
                         <NodeRenderer
                             key={childNode.key}
                             node={childNode}
-                            tree={tree}
+                            privateTree={privateTree}
+                            publicTree={publicTree}
                             depth={depth + 1}
                         />
                     ))}
@@ -139,15 +150,16 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, tree, depth }) => 
     )
 }
 
-const TreeRenderer: React.FC<TreeRendererProps> = ({ tree, title }) => {
-    if (!tree) return null
+const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic }) => {
+    if (!privateTree && !publicTree) return null
+    const tree = isPublic ? publicTree : privateTree
 
     return (
         <div>
             <div className='sticky top-0 z-10 bg-gray-800 text-sm font-semibold text-gray-200 mb-1 ml-1'>
                 {title}
             </div>
-            <NodeRenderer node={tree.root} tree={tree} depth={0} />
+            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} />
         </div>
     )
 }
@@ -199,13 +211,13 @@ export default function ResourceTreeComponent({
                     </div>
 
                     {getLocalTree && (
-                        <TreeRenderer tree={localTree} title='Local' />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Local' isPublic={false} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
                     {getRemoteTree && (
-                        <TreeRenderer tree={remoteTree} title='Remote' />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Local' isPublic={true} />
                     )}
                 </div>
             </div>
