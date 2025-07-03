@@ -1,7 +1,3 @@
-import React, { useEffect, useState } from 'react'
-import { ScrollArea } from '../ui/scroll-area'
-import { Avatar, AvatarFallback } from '../ui/avatar'
-import { MapPinHouse, Save } from 'lucide-react'
 import {
     SchemaNameCard,
     SchemaDescriptionCard,
@@ -10,13 +6,16 @@ import {
     SchemaConvertedCoordCard,
     GridLevel,
     SchemaErrorMessage
-} from "./createSchemaComponents";
-import { CreateSchemaFunctionAreaProps } from './types';
-import { TopologyLayer } from "./types";
-import { enableMapPointSelection, convertCoordinate } from "../mapContainer/utils";
-import { createSchemaData, validateGridLayers, validateSchemaForm } from "./utils";
-import { SchemaService } from "./SchemaService";
-import { Button } from '../ui/button';
+} from './createSchemaComponents'
+import { Button } from '../ui/button'
+import { ScrollArea } from '../ui/scroll-area'
+import { SchemaService } from './SchemaService'
+import { MapPinHouse, Save } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Avatar, AvatarFallback } from '../ui/avatar'
+import { TopologyLayer, CreateSchemaFunctionAreaProps } from './types'
+import { enableMapPointSelection, convertCoordinate } from '../mapContainer/utils'
+import { createSchemaData, validateGridLayers, validateSchemaForm } from './utils'
 
 const schemaTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -32,20 +31,20 @@ export default function CreateSchemaFunctionArea({
     onCreationSuccess
 }: CreateSchemaFunctionAreaProps & { remountMap: () => void }) {
 
-    const [lon, setLon] = useState('');
-    const [lat, setLat] = useState('');
-    const [epsg, setEpsg] = useState('');
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [generalError, setGeneralError] = useState<string | null>(null);
-    const [topologyLayers, setGridLayers] = useState<TopologyLayer[]>([]);
-    const [layerErrors, setLayerErrors] = useState<Record<number, string>>({});
-    const [isSelectingPoint, setIsSelectingPoint] = useState(false);
+    const [lon, setLon] = useState('')
+    const [lat, setLat] = useState('')
+    const [epsg, setEpsg] = useState('')
+    const [name, setName] = useState('')
+    const [description, setDescription] = useState('')
+    const [generalError, setGeneralError] = useState<string | null>(null)
+    const [topologyLayers, setGridLayers] = useState<TopologyLayer[]>([])
+    const [layerErrors, setLayerErrors] = useState<Record<number, string>>({})
+    const [isSelectingPoint, setIsSelectingPoint] = useState(false)
     const [formErrors, setFormErrors] = useState<{
-        name: boolean;
-        description: boolean;
-        coordinates: boolean;
-        epsg: boolean;
+        name: boolean
+        description: boolean
+        coordinates: boolean
+        epsg: boolean
     }>({
         name: false,
         description: false,
@@ -53,51 +52,51 @@ export default function CreateSchemaFunctionArea({
         epsg: false,
     });
     const [convertedCoord, setConvertedCoord] = useState<{
-        x: string;
-        y: string;
-    } | null>(null);
+        x: string
+        y: string
+    } | null>(null)
 
-    const schemaService = new SchemaService();
+    const schemaService = new SchemaService()
 
     const resetForm = () => {
-        setName('');
-        setDescription('');
-        setEpsg('');
-        setLon('');
-        setLat('');
-        setGridLayers([]);
+        setName('')
+        setDescription('')
+        setEpsg('')
+        setLon('')
+        setLat('')
+        setGridLayers([])
         setFormErrors({
             name: false,
             description: false,
             coordinates: false,
             epsg: false,
-        });
-        setLayerErrors({});
-        setConvertedCoord(null);
-        setGeneralError(null);
-        remountMap();
+        })
+        setLayerErrors({})
+        setConvertedCoord(null)
+        setGeneralError(null)
+        remountMap()
     };
 
     useEffect(() => {
         if (lon && lat && epsg) {
-            const result = convertCoordinate(lon, lat, '4326', epsg);
-            setConvertedCoord(result);
+            const result = convertCoordinate(lon, lat, '4326', epsg)
+            setConvertedCoord(result)
         } else {
-            setConvertedCoord(null);
+            setConvertedCoord(null)
         }
-    }, [lon, lat, epsg]);
+    }, [lon, lat, epsg])
 
     const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault()
 
         const validation = validateSchemaForm(
             { name, epsg, lon, lat, topologyLayers, convertedCoord },
         )
 
         if (!validation.isValid) {
-            setFormErrors(validation.errors);
-            setGeneralError(validation.generalError);
-            return;
+            setFormErrors(validation.errors)
+            setGeneralError(validation.generalError)
+            return
         }
 
         const schemaData = createSchemaData(
@@ -110,10 +109,10 @@ export default function CreateSchemaFunctionArea({
 
         if (!schemaData) {
             setGeneralError('Unable to create Schema data')
-            return;
+            return
         }
 
-        setGeneralError('Submitting data...');
+        setGeneralError('Submitting data...')
 
         schemaService.submitSchemaData(
             schemaData,
@@ -137,14 +136,14 @@ export default function CreateSchemaFunctionArea({
                             }
                         }
                         setTimeout(() => {
-                            resetForm();
-                        }, 500);
+                            resetForm()
+                        }, 500)
                     }
                     setIsSelectingPoint(false)
                 }
             }
-        );
-    };
+        )
+    }
 
     const handleDraw = () => {
         if (isSelectingPoint && mapInstance) {
@@ -180,7 +179,7 @@ export default function CreateSchemaFunctionArea({
             const { errors } = validateGridLayers(updatedLayers);
             setLayerErrors(errors);
 
-            return updatedLayers;
+            return updatedLayers
         });
     };
 
@@ -188,25 +187,25 @@ export default function CreateSchemaFunctionArea({
         setGridLayers((prevLayers) => {
             const updatedLayers = prevLayers.map((layer) =>
                 layer.id === id ? { ...layer, width } : layer
-            );
+            )
 
             const { errors } = validateGridLayers(updatedLayers);
-            setLayerErrors(errors);
+            setLayerErrors(errors)
 
-            return updatedLayers;
-        });
-    };
+            return updatedLayers
+        })
+    }
 
     const handleUpdateHeight = (id: number, height: string) => {
         setGridLayers((prevLayers) => {
             const updatedLayers = prevLayers.map((layer) =>
                 layer.id === id ? { ...layer, height } : layer
-            );
+            )
 
-            const { errors } = validateGridLayers(updatedLayers);
-            setLayerErrors(errors);
+            const { errors } = validateGridLayers(updatedLayers)
+            setLayerErrors(errors)
 
-            return updatedLayers;
+            return updatedLayers
         });
     };
 
@@ -214,30 +213,30 @@ export default function CreateSchemaFunctionArea({
         setGridLayers((prevLayers) => {
             const filteredLayers = prevLayers.filter(
                 (layer) => layer.id !== id
-            );
+            )
 
             const { errors } = validateGridLayers(filteredLayers);
-            setLayerErrors(errors);
+            setLayerErrors(errors)
 
-            return filteredLayers;
-        });
-    };
+            return filteredLayers
+        })
+    }
 
     return (
-        <form onSubmit={handleSubmit} className="pt-0 w-2/5 h-full">
-            <ScrollArea className="h-full">
-                <div className="h-50 w-full border-b border-gray-700 flex flex-row">
-                    <div className="w-1/3 h-full flex justify-center items-center">
-                        <Avatar className="bg-[#007ACC] h-28 w-28 border-2 border-white">
+        <form onSubmit={handleSubmit} className='pt-0 w-2/5 h-full'>
+            <ScrollArea className='h-full'>
+                <div className='h-50 w-full border-b border-gray-700 flex flex-row'>
+                    <div className='w-1/3 h-full flex justify-center items-center'>
+                        <Avatar className='bg-[#007ACC] h-28 w-28 border-2 border-white'>
                             <AvatarFallback>
-                                <MapPinHouse className="h-15 w-15 text-white" />
+                                <MapPinHouse className='h-15 w-15 text-white' />
                             </AvatarFallback>
                         </Avatar>
                     </div>
-                    <div className="w-2/3 h-full p-4 space-y-1 text-white">
-                        <h1 className="font-bold text-[25px]">Create New Schema {resourceTree!.isRemote ? '(Remote)' : '(Local)'}</h1>
-                        <div className="  text-sm p-2 px-4 w-full">
-                            <ul className="list-disc space-y-1">
+                    <div className='w-2/3 h-full p-4 space-y-1 text-white'>
+                        <h1 className='font-bold text-[25px]'>Create New Schema {resourceTree!.isRemote ? '(Remote)' : '(Local)'}</h1>
+                        <div className='  text-sm p-2 px-4 w-full'>
+                            <ul className='list-disc space-y-1'>
                                 {schemaTips.map((tip, index) => (
                                     <li key={index}>
                                         {Object.values(tip)[0]}
@@ -247,7 +246,7 @@ export default function CreateSchemaFunctionArea({
                         </div>
                     </div>
                 </div>
-                <div className="w-2/3 mx-auto mt-4 mb-4 space-y-4">
+                <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4'>
                     <SchemaNameCard
                         name={name}
                         hasError={formErrors.name}
@@ -293,10 +292,10 @@ export default function CreateSchemaFunctionArea({
                     <SchemaErrorMessage message={generalError} />
 
                     <Button
-                        type="submit"
-                        className="w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                        type='submit'
+                        className='w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer'
                     >
-                        <Save className="h-4 w-4 mr-2" />
+                        <Save className='h-4 w-4 mr-2' />
                         Create and Back
                     </Button>
                 </div>

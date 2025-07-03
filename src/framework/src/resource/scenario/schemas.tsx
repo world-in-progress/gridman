@@ -1,6 +1,6 @@
 import { FilePlus2 } from 'lucide-react'
 import { Tab } from '@/components/tabBar/types'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import { ISceneNode } from '@/core/scene/iscene'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
@@ -32,7 +32,8 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         'schema',
     ]
 
-    renderContextMenu(nodeSelf: ISceneNode, tree: ISceneTree, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+        console.log('????')
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf)}>
@@ -42,7 +43,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+    handleMenuOpen(nodeSelf: ISceneNode): void {
         const _node = nodeSelf as SceneNode
         const _tree = nodeSelf.tree as SceneTree
 
