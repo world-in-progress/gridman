@@ -21,7 +21,12 @@ function FrameworkComponent() {
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
     const [localSceneTree, setLocalFileTree] = useState<SceneTree | null>(null)
     const [remoteSceneTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [mainEditorAreaState, setMainEditorAreaState] = useState<string>()
     const mapRef = useRef<MapContainerHandles>(null)
+
+    store.set('changeMainEditorAreaState', (state: string) => {
+        setMainEditorAreaState(state)
+    })
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
