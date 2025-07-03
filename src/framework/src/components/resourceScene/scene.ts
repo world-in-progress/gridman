@@ -97,7 +97,7 @@ export class SceneTree implements ISceneTree {
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
-    private handleDropDownMenuOpen: (node: ISceneNode) => void = () => {}
+    private handleNodeMenuOpen: (node: ISceneNode) => void = () => {}
     private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
 
@@ -111,7 +111,7 @@ export class SceneTree implements ISceneTree {
     }
 
     /**
-     * 
+     * Bind handlers for various actions in the scene tree.
      * @param handlers Handlers for various actions in the scene tree.
      * This method binds the provided handlers to the scene tree, allowing it to handle file opening,
      * pinning files, opening dropdown menus, and starting/stopping node editing.
@@ -119,21 +119,19 @@ export class SceneTree implements ISceneTree {
     bindHandlers(handlers: {
         openFile: (fileName: string, filePath: string) => void
         pinFile: (fileName: string, filePath: string) => void
-        handleDropDownMenuOpen: (node: ISceneNode) => void
+        handleNodeMenuOpen: (node: ISceneNode) => void
         handleNodeStartEditing: (node: ISceneNode) => void
         handleNodeStopEditing: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
-        this.handleDropDownMenuOpen = handlers.handleDropDownMenuOpen
+        this.handleNodeMenuOpen = handlers.handleNodeMenuOpen
         this.handleNodeStartEditing = handlers.handleNodeStartEditing
         this.handleNodeStopEditing = handlers.handleNodeStopEditing
     }
 
-    getContextMenuHandler(node: ISceneNode): (node: ISceneNode) => void {
-        return node => {
-            this.handleDropDownMenuOpen(node)
-        }
+    getNodeMenuHandler(): (node: ISceneNode) => void {
+        return this.handleNodeMenuOpen
     }
     
     /**
@@ -199,7 +197,7 @@ export class SceneTree implements ISceneTree {
         this.updateCallbacks.forEach(callback => callback())
     }
 
-    // Node Selection //////////////////////////////////////////////////
+    // Node Click //////////////////////////////////////////////////
 
     isNodeExpanded(nodeKey: string): boolean {
         return this.expandedNodes.has(nodeKey)
@@ -222,9 +220,6 @@ export class SceneTree implements ISceneTree {
     }
 
     async handleNodeClick(node: ISceneNode): Promise<void> {
-        // Select the node
-        this._selectedNodeKey = node.key
-
         // If the node is a resource folder, toggle its expansion
         // If the node is a file, open it
         if (node.scenarioNode.degree > 0) {
@@ -233,13 +228,19 @@ export class SceneTree implements ISceneTree {
             this.handleOpenFile(node.name, node.key)
         }
 
-        // Notify DOM update
-        this.notifyDomUpdate()
+        // Deselect the previous node
+        if (this._selectedNodeKey !== null) {
+            (this.scene.get(this._selectedNodeKey) as SceneNode).isSelected = false
+        }
+        // Select the node
+        (node as SceneNode).isSelected = true
+        this._selectedNodeKey = node.key
     }
 
     // Node Editing //////////////////////////////////////////////////
 
     startEditingNode(node: ISceneNode): void {
+        console.log('Starting editing node:', node)
         // Do nothing if already editing
         if (this.editingNodes.has(node)) {
             return
@@ -267,18 +268,18 @@ export class SceneTree implements ISceneTree {
         this.notifyDomUpdate()
     }
 
+    // Node Pinning //////////////////////////////////////////////////
+
     handleNodeDoubleClick(node: ISceneNode): void {
         if (node.scenarioNode.degree === 0) {
             this.handlePinFile(node.name, node.key)
         }
     }
 
+    // Scene Tree Creation //////////////////////////////////////////////////
+
     static async create(isRemote: boolean): Promise<SceneTree> {
         try {
-            // Get scenario tree
-            const scenarioDescription = await api.scene.getScenarioDescription.fetch(undefined, isRemote)
-            // const scenarioTree = new ScenarioTree(scenarioDescription)
-
             // Create resource tree
             const tree = new SceneTree(isRemote)
 

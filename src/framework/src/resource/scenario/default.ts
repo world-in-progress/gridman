@@ -17,11 +17,11 @@ export default class DefaultScenarioNode implements IScenarioNode {
         return this.children.length
     }
 
-    renderContextMenu(nodeSelf: ISceneNode, tree: ISceneTree, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
         return null
     }
     
-    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+    handleMenuOpen(nodeSelf: ISceneNode): void {
     }
 
     renderNodePage(nodeSelf: ISceneNode): React.JSX.Element | null {

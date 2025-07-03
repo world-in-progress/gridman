@@ -19,8 +19,8 @@ function FrameworkComponent() {
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
-    const [localFileTree, setLocalFileTree] = useState<SceneTree | null>(null)
-    const [remoteFileTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [localSceneTree, setLocalFileTree] = useState<SceneTree | null>(null)
+    const [remoteSceneTree, setRemoteFileTree] = useState<SceneTree | null>(null)
     const mapRef = useRef<MapContainerHandles>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
@@ -32,37 +32,6 @@ function FrameworkComponent() {
             // setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === iconID })))
         }
     })
-
-    // Init DomResourceTree
-    useEffect(() => {
-        const initTree = async () => {
-            try {
-                const _localTree = await SceneTree.create(false)
-                const _remoteTree = await SceneTree.create(true)
-
-                // Subscribe to tree update
-                _localTree.subscribe(() => {
-                    setTreeGeneration(prev => prev + 1)
-                })
-                _remoteTree.subscribe(() => {
-                    setTreeGeneration(prev => prev + 1)
-                })
-
-                store.set('localFileTree', _localTree)
-                store.set('remoteFileTree', _remoteTree)
-                store.set('updateTree', () => setTreeGeneration(g => g + 1))
-
-                setLocalFileTree(_localTree)
-                setRemoteFileTree(_remoteTree)
-                setGetLocalTree(true)
-                setGetRemoteTree(true)
-
-            } catch (error) {
-                console.error('Failed to initialize resource trees:', error)
-            }
-        }
-        initTree()
-    }, [])
 
     // File processing handlers
     const handleOpenFile = useCallback((fileName: string, filePath: string) => {
@@ -120,12 +89,12 @@ function FrameworkComponent() {
     }, [])
 
     // Handle menu open
-    const handleDropDownMenuOpen = useCallback((node: ISceneNode) => {
-        if (localFileTree === null || remoteFileTree === null) {
+    const handleNodeMenuOpen = useCallback((node: ISceneNode) => {
+        if (localSceneTree === null || remoteSceneTree === null) {
             return
         }
-        node.scenarioNode.handleDropDownMenuOpen(node)
-    }, [localFileTree, remoteFileTree])
+        node.scenarioNode.handleMenuOpen(node)
+    }, [localSceneTree, remoteSceneTree])
 
     // Handle open node editing tab
     const handleNodeStartEditing = useCallback((node: ISceneNode) => {
@@ -134,7 +103,6 @@ function FrameworkComponent() {
          // Add the node tab to the tabs
         tabs.add((node as SceneNode).tab)
         setTabs(new Set(tabs))
-
     }, [tabs])
 
     // Handle close node editing tab
@@ -184,6 +152,37 @@ function FrameworkComponent() {
         // if (tree.)
     }
 
+    // Init DomResourceTree
+    useEffect(() => {
+        const initTree = async () => {
+            try {
+                const _localTree = await SceneTree.create(false)
+                const _remoteTree = await SceneTree.create(true)
+
+                // Subscribe to tree update
+                _localTree.subscribe(() => {
+                    setTreeGeneration(prev => prev + 1)
+                })
+                _remoteTree.subscribe(() => {
+                    setTreeGeneration(prev => prev + 1)
+                })
+
+                store.set('localFileTree', _localTree)
+                store.set('remoteFileTree', _remoteTree)
+                store.set('updateTree', () => setTreeGeneration(g => g + 1))
+
+                setLocalFileTree(_localTree)
+                setRemoteFileTree(_remoteTree)
+                setGetLocalTree(true)
+                setGetRemoteTree(true)
+
+            } catch (error) {
+                console.error('Failed to initialize resource trees:', error)
+            }
+        }
+        initTree()
+    }, [])
+
     return (
         <div className="flex h-screen bg-gray-900">
             {/* Activity Bar */}
@@ -194,13 +193,13 @@ function FrameworkComponent() {
 
             {/* Resource Tree Panel */}
             <ResourceTreeComponent
-                localTree={localFileTree}
-                remoteTree={remoteFileTree}
+                localTree={localSceneTree}
+                remoteTree={remoteSceneTree}
                 getLocalTree={getLocalTree}
                 getRemoteTree={getRemoteTree}
                 onOpenFile={handleOpenFile}
                 onPinFile={handlePinFile}
-                onDropDownMenuOpen={handleDropDownMenuOpen}
+                onDropDownMenuOpen={handleNodeMenuOpen}
                 onNodeStartEditing={handleNodeStartEditing}
                 onNodeStopEditing={handleNodeStopEditing}
             />
@@ -210,8 +209,8 @@ function FrameworkComponent() {
                 {/* Tab Bar */}
                 <TabBar
                     tabs={tabs}
-                    localTree={localFileTree}
-                    remoteTree={remoteFileTree}
+                    localTree={localSceneTree}
+                    remoteTree={remoteSceneTree}
                     onTabDragEnd={handleTabDragEnd}
                 />
                 <div className="flex-1 bg-gray-100">

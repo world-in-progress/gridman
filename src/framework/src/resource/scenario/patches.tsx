@@ -28,7 +28,7 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
         'patch',
     ]
 
-    renderContextMenu(nodeSelf: ISceneNode, tree: ISceneTree, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf)}>
@@ -38,7 +38,7 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
+    handleMenuOpen(nodeSelf: ISceneNode): void {
         const _node = nodeSelf as SceneNode
         const _tree = nodeSelf.tree as SceneTree
 

@@ -50,9 +50,9 @@ interface TreeRendererProps {
     title: string
 }
 
-export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
-    const isExpanded = tree.isNodeExpanded(node.key)
+export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
     const isSelected = tree.selectedNodeKey === node.key
+    const isExpanded = tree.isNodeExpanded(node.key)
     const isFolder = node.scenarioNode.degree > 0
 
     const [isDownloaded, setIsDownloaded] = useState(false)
@@ -65,13 +65,13 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
         tree.handleNodeDoubleClick(node)
     }, [tree, node])
 
-    const handleContextMenu = useCallback((node: ISceneNode) => {
-        return tree.getContextMenuHandler(node)(node)
+    const handleNodeMenu = useCallback((node: ISceneNode) => {
+        return tree.getNodeMenuHandler()(node)
     }, [tree])
 
-    const renderContextMenu = useCallback(() => {
-        return node.scenarioNode.renderContextMenu(node, tree, handleContextMenu)
-    }, [node, tree, handleContextMenu])
+    const renderNodeMenu = useCallback(() => {
+        return node.scenarioNode.renderMenu(node, handleNodeMenu)
+    }, [node, handleNodeMenu])
 
     const handleClickPublicDownload = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
@@ -119,14 +119,14 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
                             </button>}
                     </div>
                 </ContextMenuTrigger>
-                {renderContextMenu()}
+                {renderNodeMenu()}
             </ContextMenu>
 
             {/* Render child nodes */}
             {isFolder && isExpanded && node.children && (
                 <div>
                     {Array.from(node.children.values()).map(childNode => (
-                        <TreeNode
+                        <NodeRenderer
                             key={childNode.key}
                             node={childNode}
                             tree={tree}
@@ -140,7 +140,6 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
 }
 
 const TreeRenderer: React.FC<TreeRendererProps> = ({ tree, title }) => {
-
     if (!tree) return null
 
     return (
@@ -148,7 +147,7 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ tree, title }) => {
             <div className='sticky top-0 z-10 bg-gray-800 text-sm font-semibold text-gray-200 mb-1 ml-1'>
                 {title}
             </div>
-            <TreeNode node={tree.root} tree={tree} depth={0} />
+            <NodeRenderer node={tree.root} tree={tree} depth={0} />
         </div>
     )
 }
@@ -171,7 +170,7 @@ export default function ResourceTreeComponent({
             localTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
-                handleDropDownMenuOpen: onDropDownMenuOpen,
+                handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
             })
@@ -184,7 +183,7 @@ export default function ResourceTreeComponent({
             remoteTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
-                handleDropDownMenuOpen: onDropDownMenuOpen,
+                handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
             })

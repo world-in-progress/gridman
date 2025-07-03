@@ -13,18 +13,17 @@ export interface IScenarioNode extends ScenarioNodeDescription {
     /**
      * Renders the context menu for the scenario node.
      * @param nodeSelf The scene node being rendered.
-     * @param tree The scene tree containing the node.
      * @param handleContextMenu Callback to handle context menu actions.
      * @returns The rendered context menu or null.
      */
-    renderContextMenu(nodeSelf: ISceneNode, tree: ISceneTree, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null
 
     /**
      * Handles the opening of the dropdown menu for the scenario node.
      * @param nodeSelf The scene node being rendered.
      * @param tree The scene tree containing the node.
      */
-    handleDropDownMenuOpen(nodeSelf: ISceneNode): void
+    handleMenuOpen(nodeSelf: ISceneNode): void
 
     /**
      * Renders the tab page for the scenario node.
