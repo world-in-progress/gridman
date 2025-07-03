@@ -100,6 +100,7 @@ export class SceneTree implements ISceneTree {
     private handleNodeMenuOpen: (node: ISceneNode) => void = () => {}
     private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
+    private handleNodeClickEnd: (node: ISceneNode) => void = () => {}
 
     private updateCallbacks: Set<TreeUpdateCallback> = new Set()
     private expandedNodes: Set<string> = new Set()
@@ -122,12 +123,14 @@ export class SceneTree implements ISceneTree {
         handleNodeMenuOpen: (node: ISceneNode) => void
         handleNodeStartEditing: (node: ISceneNode) => void
         handleNodeStopEditing: (node: ISceneNode) => void
+        handleNodeClickEnd: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
         this.handleNodeMenuOpen = handlers.handleNodeMenuOpen
         this.handleNodeStartEditing = handlers.handleNodeStartEditing
         this.handleNodeStopEditing = handlers.handleNodeStopEditing
+        this.handleNodeClickEnd = handlers.handleNodeClickEnd
     }
 
     getNodeMenuHandler(): (node: ISceneNode) => void {
@@ -226,6 +229,7 @@ export class SceneTree implements ISceneTree {
 
         // Select the node
         this.selectedNode = node
+        this.handleNodeClickEnd(node)
 
         this.notifyDomUpdate()
     }
@@ -258,6 +262,33 @@ export class SceneTree implements ISceneTree {
         this.handleNodeStopEditing(node)
 
         this.notifyDomUpdate()
+    }
+
+    // Node Tab Click //////////////////////////////////////////////////
+    async focusToNode(targetNode: ISceneNode): Promise<boolean> {
+        if (!targetNode) return false
+
+        // Get all parent nodes
+        const path: ISceneNode[] = []
+        let current: ISceneNode | null = targetNode
+        while (current) {
+            path.unshift(current)
+            current = current.parent
+        }
+
+        // Expand all parent nodes
+        for (let i = 0; i < path.length - 1; i++) {
+            const node = path[i]
+            if (!this.expandedNodes.has(node.key)) {
+                await this.alignNodeInfo(node)
+                this.expandedNodes.add(node.key)
+            }
+        }
+
+        // Select the target node
+        this.selectedNode = targetNode
+        this.notifyDomUpdate()
+        return true
     }
 
     // Node Pinning //////////////////////////////////////////////////

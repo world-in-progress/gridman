@@ -28,8 +28,6 @@ const renderNodeTab = (
         node,
         index,
         onTabClick,
-        // onPinFile,
-        // setActiveTab,
     }: renderNodeTabProps
 ) => {
     const tab = node.tab
@@ -37,7 +35,9 @@ const renderNodeTab = (
         <Draggable key={tab.id} draggableId={tab.id} index={index}>
             {(providedDraggable, snapshot) => (
                 <div
-                    onClick={() => onTabClick(tab)}
+                    onClick={() => {
+                        onTabClick(tab)
+                    }}
                     ref={providedDraggable.innerRef}
                     {...providedDraggable.draggableProps}
                     {...providedDraggable.dragHandleProps}
@@ -46,12 +46,11 @@ const renderNodeTab = (
                         <ContextMenuTrigger asChild>
                             <div
                                 className={cn(
-                                    "flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer",
-                                    "hover:bg-gray-700 min-w-0 max-w-48",
-                                    tab.isActive && "bg-gray-900",
-                                    snapshot.isDragging && "bg-gray-600"
+                                    'flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer',
+                                    'hover:bg-gray-700 min-w-0 max-w-48',
+                                    tab.isActive && 'bg-gray-900',
+                                    snapshot.isDragging && 'bg-gray-600'
                                 )}
-                                // onClick={() => setActiveTab(tab.name)}
                                 // onDoubleClick={() => {
                                 //     onPinFile(tab.name, tab.path)
                                 // }}
@@ -92,7 +91,7 @@ const renderNodeTabs = (
     tabs: Set<Tab>, 
     localTree: SceneTree | null | undefined, 
     remoteTree: SceneTree | null | undefined,
-    onTabClick: (tab: Tab) => void
+    onTabClick: (tab: Tab) => void,
 ) => {
     console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
     
@@ -106,7 +105,7 @@ const renderNodeTabs = (
         return renderNodeTab({
             node: (node as SceneNode), 
             index,
-            onTabClick
+            onTabClick,
         })
     })
 
@@ -160,14 +159,13 @@ export default function TabBar({
     const handleDragStart = (start: DragStart) => {
         const index = start.source.index
         const tab = Array.from(tabs)[index]
-
         onTabClick(tab)
     }
 
     return (
         <>
             <DragDropContext  onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
-                <Droppable droppableId="tabs" direction="horizontal">
+                <Droppable droppableId='tabs' direction='horizontal'>
                     {(provided) => (
                         <div
                             ref={provided.innerRef}
