@@ -28,7 +28,6 @@ const renderNodeTab = (
         node,
         index,
         onTabClick,
-        // setActiveTab,
     }: renderNodeTabProps
 ) => {
     const tab = node.tab
@@ -52,7 +51,6 @@ const renderNodeTab = (
                                     tab.isActive && 'bg-gray-900',
                                     snapshot.isDragging && 'bg-gray-600'
                                 )}
-                                // onClick={() => setActiveTab(tab.name)}
                                 // onDoubleClick={() => {
                                 //     onPinFile(tab.name, tab.path)
                                 // }}
@@ -161,7 +159,6 @@ export default function TabBar({
     const handleDragStart = (start: DragStart) => {
         const index = start.source.index
         const tab = Array.from(tabs)[index]
-
         onTabClick(tab)
     }
 

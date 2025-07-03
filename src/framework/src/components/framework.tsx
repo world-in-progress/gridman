@@ -34,22 +34,14 @@ function FrameworkComponent() {
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
+    const [mainEditorAreaState, setMainEditorAreaState] = useState<string>()
     const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
     const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
     const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
-    // const mapRef = useRef<MapContainerHandles>(null)
-    const [localSceneTree, setLocalFileTree] = useState<SceneTree | null>(null)
-    const [remoteSceneTree, setRemoteFileTree] = useState<SceneTree | null>(null)
-    const [mainEditorAreaState, setMainEditorAreaState] = useState<string>()
-    const mapRef = useRef<MapContainerHandles>(null)
 
     store.set('changeMainEditorAreaState', (state: string) => {
         setMainEditorAreaState(state)
     })
-    const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
-    const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
-    const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
-    // const mapRef = useRef<MapContainerHandles>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -172,7 +164,7 @@ function FrameworkComponent() {
     }, [tabs, nodeStack])
 
     const handleNodeFocused = useCallback((node: ISceneNode) => {
-        setFocusNode(node)
+        setFocusNode(undefined)
     }, [])
 
     const handleTabClick = useCallback((tab: Tab) => {
@@ -202,7 +194,6 @@ function FrameworkComponent() {
         tree.selectedNode = node
 
         // Update state
-        console.log('????')
         setFocusNode(node)
         setNodeStack(newNodeStack)
 

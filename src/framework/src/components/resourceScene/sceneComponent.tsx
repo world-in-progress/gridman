@@ -32,6 +32,7 @@ interface TreeNodeProps {
     privateTree: ISceneTree
     publicTree: ISceneTree
     depth: number
+    scrollTrigger: number
 }
 
 interface SceneTreeProps {
@@ -54,9 +55,10 @@ interface TreeRendererProps {
     publicTree: SceneTree | null
     title: string
     isPublic: boolean
+    scrollTrigger: number
 }
 
-export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth }) => {
+export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth, scrollTrigger }) => {
     const _privateTree = privateTree as SceneTree
     const _publicTree = publicTree as SceneTree
 
@@ -71,7 +73,6 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     const handleClick = useCallback(() => {
         // Set the selected node in the other tree as null
         tree.isRemote ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
-
         tree.handleNodeClick(node)
     }, [tree, node, _privateTree, _publicTree])
 
@@ -100,7 +101,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                 block: 'center'
             })
         }
-    }, [isSelected])
+    }, [isSelected, scrollTrigger])
 
     return (
         <div>
@@ -156,6 +157,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                             privateTree={privateTree}
                             publicTree={publicTree}
                             depth={depth + 1}
+                            scrollTrigger={scrollTrigger}
                         />
                     ))}
                 </div>
@@ -164,7 +166,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     )
 }
 
-const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic }) => {
+const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic, scrollTrigger }) => {
     if (!privateTree && !publicTree) return null
     const tree = isPublic ? publicTree : privateTree
 
@@ -173,7 +175,7 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
             <div className='sticky top-0 z-10 bg-gray-800 text-sm font-semibold text-gray-200 mb-1 ml-1'>
                 {title}
             </div>
-            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} />
+            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} scrollTrigger={scrollTrigger} />
         </div>
     )
 }
@@ -192,6 +194,9 @@ export default function ResourceTreeComponent({
     onNodeClickEnd,
     onNodeFocused,
 }: SceneTreeProps) {
+    // Force focusing on the focused node 
+    // to ensure focus again when the component re-renders
+    const [scrollTrigger, setScrollTrigger] = useState(0)
 
     // Bind handlers to local tree
     useEffect(() => {
@@ -226,7 +231,10 @@ export default function ResourceTreeComponent({
             const tree = focusNode.tree as SceneTree
             const focus = async () => {
                 const success = await tree.focusToNode(focusNode)
-                if (success) onNodeFocused(focusNode)
+                if (success) {
+                    setScrollTrigger(prev => prev + 1)
+                    onNodeFocused(focusNode)
+                }
             }
             focus()
         }
@@ -241,13 +249,13 @@ export default function ResourceTreeComponent({
                     </div>
 
                     {getLocalTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Private' isPublic={false} />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Private' isPublic={false} scrollTrigger={scrollTrigger} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
                     {getRemoteTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Public' isPublic={true} />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Public' isPublic={true} scrollTrigger={scrollTrigger} />
                     )}
                 </div>
             </div>
