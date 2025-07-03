@@ -1,9 +1,9 @@
-import React from "react"
-import { ISceneNode, ISceneTree } from "../scene/iscene"
+import React from 'react'
+import { ISceneNode, ISceneTree } from '../scene/iscene'
 
 export interface ScenarioNodeDescription {
-    semanticPath: string
     children: string[]
+    semanticPath: string
 }
 
 export interface IScenarioNode extends ScenarioNodeDescription {
@@ -27,9 +27,9 @@ export interface IScenarioNode extends ScenarioNodeDescription {
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void
 
     /**
-     * Renders the tab for the scenario node.
+     * Renders the tab page for the scenario node.
      * @param nodeSelf The scene node being rendered.
-     * @returns The rendered tab or null.
+     * @returns The rendered tab page or null.
      */
-    renderNodeTab(nodeSelf: ISceneNode): React.JSX.Element | null
+    renderNodePage(nodeSelf: ISceneNode): React.JSX.Element | null
 }

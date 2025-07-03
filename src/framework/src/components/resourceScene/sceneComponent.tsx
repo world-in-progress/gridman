@@ -39,6 +39,8 @@ interface ResourceTreeProps {
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
     onDropDownMenuOpen: (node: ISceneNode) => void
+    onNodeStartEditing: (node: ISceneNode) => void
+    onNodeStopEditing: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -141,6 +143,8 @@ export default function ResourceTreeComponent({
     onOpenFile,
     onPinFile,
     onDropDownMenuOpen,
+    onNodeStartEditing,
+    onNodeStopEditing,
 }: ResourceTreeProps) {
     
     // Bind handlers to local tree
@@ -150,9 +154,11 @@ export default function ResourceTreeComponent({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
                 handleDropDownMenuOpen: onDropDownMenuOpen,
+                handleNodeStartEditing: onNodeStartEditing,
+                handleNodeStopEditing: onNodeStopEditing,
             })
         }
-    }, [localTree, onOpenFile, onPinFile, onDropDownMenuOpen])
+    }, [localTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing])
 
     // Bind handlers to remote tree
     useEffect(() => {
@@ -161,9 +167,11 @@ export default function ResourceTreeComponent({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
                 handleDropDownMenuOpen: onDropDownMenuOpen,
+                handleNodeStartEditing: onNodeStartEditing,
+                handleNodeStopEditing: onNodeStopEditing,
             })
         }
-    }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen])
+    }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing])
 
     return (
         <ScrollArea className='h-full bg-gray-800'>

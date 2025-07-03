@@ -1,23 +1,23 @@
 import { FileType2 } from 'lucide-react'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
-import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
-import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { Tab } from '@/components/tabBar/types'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
     bounds: number[]
-    description?: string;
-    starred: boolean;
+    starred: boolean
+    description: string
 
     constructor() {
         super()
 
         this.name = ''
         this.bounds = []
-        this.description = ''
         this.starred = false
+        this.description = ''
     }
 }
 
@@ -39,10 +39,9 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     }
 
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
-        // console.log('Create new patch')
         (nodeSelf as SceneNode).tab = {
             name: (nodeSelf.tree.isRemote ? 'public' : 'private') + ': ' + nodeSelf.name,
-            path: nodeSelf.key,
+            id: nodeSelf.key,
             isActive: true,
             isPreview: false
         } as Tab

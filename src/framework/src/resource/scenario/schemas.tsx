@@ -8,8 +8,8 @@ import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-men
 export class SchemasPageContext extends DefaultPageContext {
     name: string
     epsg: number
-    description: string
     starred: boolean
+    description: string
     base_point: number[]
     grid_info: number[][]
 
@@ -17,9 +17,9 @@ export class SchemasPageContext extends DefaultPageContext {
         super()
         
         this.name = ''
-        this.description = ''
-        this.starred = false
         this.epsg = 0
+        this.starred = false
+        this.description = ''
         this.base_point = []
         this.grid_info = []
     }
@@ -44,8 +44,8 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
 
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
         (nodeSelf as SceneNode).tab = {
-            name: (nodeSelf.tree.isRemote ? 'public' : 'private') + ': ' + nodeSelf.name,
-            path: nodeSelf.key,
+            id: (nodeSelf.tree.isRemote ? 'public' : 'private') + ':' + nodeSelf.key,
+            name: nodeSelf.name,
             isActive: true,
             isPreview: false,
         } as Tab
