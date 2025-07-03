@@ -23,5 +23,6 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
 
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
         console.log('Check Schema Info')
+        // TODO: Inject schema context to map container
     }
 }
