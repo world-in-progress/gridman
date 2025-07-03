@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, use } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, use, useRef } from 'react'
 import { SceneTree, SceneNode } from './scene'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -34,16 +34,19 @@ interface TreeNodeProps {
     depth: number
 }
 
-interface ResourceTreeProps {
+interface SceneTreeProps {
     localTree: SceneTree | null
     remoteTree: SceneTree | null
     getLocalTree: boolean
     getRemoteTree: boolean
+    focusNode?: ISceneNode
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
     onDropDownMenuOpen: (node: ISceneNode) => void
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
+    onNodeClickEnd: (node: ISceneNode) => void
+    onNodeFocused: (node: ISceneNode) => void 
 }
 
 interface TreeRendererProps {
@@ -62,6 +65,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     const isExpanded = tree.isNodeExpanded(node.key)
     const isFolder = node.scenarioNode.degree > 0
 
+    const nodeRef = useRef<HTMLDivElement>(null)
     const [isDownloaded, setIsDownloaded] = useState(false)
 
     const handleClick = useCallback(() => {
@@ -89,11 +93,21 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
         console.log('Download public resource')
     }
 
+    useEffect(() => {
+        if (isSelected && nodeRef.current) {
+            nodeRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            })
+        }
+    }, [isSelected])
+
     return (
         <div>
             <ContextMenu>
                 <ContextMenuTrigger>
                     <div
+                        ref={nodeRef}
                         className={cn(
                             'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm w-full',
                             isSelected ? 'bg-gray-600 text-white' : 'text-gray-300',
@@ -169,12 +183,15 @@ export default function ResourceTreeComponent({
     remoteTree,
     getLocalTree,
     getRemoteTree,
+    focusNode,
     onOpenFile,
     onPinFile,
     onDropDownMenuOpen,
     onNodeStartEditing,
     onNodeStopEditing,
-}: ResourceTreeProps) {
+    onNodeClickEnd,
+    onNodeFocused,
+}: SceneTreeProps) {
 
     // Bind handlers to local tree
     useEffect(() => {
@@ -185,9 +202,10 @@ export default function ResourceTreeComponent({
                 handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
+                handleNodeClickEnd: onNodeClickEnd,
             })
         }
-    }, [localTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing])
+    }, [localTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
 
     // Bind handlers to remote tree
     useEffect(() => {
@@ -198,9 +216,21 @@ export default function ResourceTreeComponent({
                 handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
+                handleNodeClickEnd: onNodeClickEnd,
             })
         }
-    }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing])
+    }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
+
+    useEffect(() => {
+        if (focusNode) {
+            const tree = focusNode.tree as SceneTree
+            const focus = async () => {
+                const success = await tree.focusToNode(focusNode)
+                if (success) onNodeFocused(focusNode)
+            }
+            focus()
+        }
+    }, [focusNode, onNodeFocused])
 
     return (
         <ScrollArea className='h-full bg-gray-800'>
@@ -211,13 +241,13 @@ export default function ResourceTreeComponent({
                     </div>
 
                     {getLocalTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Local' isPublic={false} />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Private' isPublic={false} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
                     {getRemoteTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Local' isPublic={true} />
+                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Public' isPublic={true} />
                     )}
                 </div>
             </div>

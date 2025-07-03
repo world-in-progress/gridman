@@ -1,16 +1,31 @@
-import { useState, useCallback, useEffect, useRef } from "react"
+import React, { 
+    useRef,
+    useState,
+    useEffect,
+    useCallback,
+} from 'react'
 import store from '@/store'
 import TabBar from './tabBar/tabBar'
-import IconBar from "./iconBar/iconBar"
-import ResourceTreeComponent from "./resourceScene/sceneComponent"
-import { Tab } from "./tabBar/types"
-import { SceneNode, SceneTree } from "./resourceScene/scene"
-import { ISceneNode } from "@/core/scene/iscene"
-import { DropResult } from "@hello-pangea/dnd"
+import { Tab } from './tabBar/types'
+import IconBar from './iconBar/iconBar'
+import { DropResult } from '@hello-pangea/dnd'
+import { ISceneNode } from '@/core/scene/iscene'
+import CreatePage from './functionPage/createPage'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
-import MapContainer, { MapContainerHandles } from "./mapContainer/mapContainer"
+import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
-import CreatePage from "./functionPage/createPage"
+import ResourceTreeComponent from './resourceScene/sceneComponent'
+import MapContainer, { MapContainerHandles } from './mapContainer/mapContainer'
+
+const MainEditorArea: React.FC<{ nodeStack: ISceneNode[] }> = ({ nodeStack }) => {
+    if (nodeStack.length === 0) {
+        return <MapContainer />
+    }
+
+    const editingNode = nodeStack[nodeStack.length - 1]
+    console.debug('Rendering main editor area for node:', editingNode)
+    return <CreatePage node={editingNode} />
+}
 
 function FrameworkComponent() {
     const [tabs, setTabs] = useState<Set<Tab>>(new Set())
@@ -19,9 +34,10 @@ function FrameworkComponent() {
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
-    const [localSceneTree, setLocalFileTree] = useState<SceneTree | null>(null)
-    const [remoteSceneTree, setRemoteFileTree] = useState<SceneTree | null>(null)
-    const mapRef = useRef<MapContainerHandles>(null)
+    const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
+    const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
+    // const mapRef = useRef<MapContainerHandles>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -89,11 +105,11 @@ function FrameworkComponent() {
 
     // Handle menu open
     const handleNodeMenuOpen = useCallback((node: ISceneNode) => {
-        if (localSceneTree === null || remoteSceneTree === null) {
+        if (privateTree === null || publicTree === null) {
             return
         }
         node.scenarioNode.handleMenuOpen(node)
-    }, [localSceneTree, remoteSceneTree])
+    }, [privateTree, publicTree])
 
     // Handle open node editing tab
     const handleNodeStartEditing = useCallback((node: ISceneNode) => {
@@ -126,52 +142,35 @@ function FrameworkComponent() {
 
         // Remove the node tab from the tabs
         tabs.delete(_node.tab)
-        setTabs(new Set(tabs))
-        setNodeStack(nodeStack.filter(n => n.key !== _node.key))
+        const newNodeStack = nodeStack.filter(n => {
+            const _n = n as SceneNode
+            return _n.tab.id != _node.tab.id
+        })
 
         // Activate the last picked node
-        if (nodeStack.length > 0) {
-            const lastNode = nodeStack[nodeStack.length - 1] as SceneNode
+        if (newNodeStack.length > 0) {
+            const lastNode = newNodeStack[newNodeStack.length - 1] as SceneNode
             lastNode.tab.isActive = true
         }
 
+        // Update state
+        setTabs(new Set(tabs))
+        setNodeStack(newNodeStack)
+
     }, [tabs, nodeStack])
 
-    // Handle creation success
-    const handleCreationSuccess = useCallback(async (resourceTree: SceneTree, creationType: 'schema' | 'patch') => {
-        if (!resourceTree) return
-
-        const parentNodeName = creationType === 'schema' ? 'schemas' : 'patches'
-        const parentNode = Array.from(resourceTree.root.children.values()).find(n => n.scenarioNode.name === parentNodeName)
-
-        if (parentNode) {
-            // TODO: How to force align?
-            await resourceTree.alignNodeInfo(parentNode)
-        }
+    const handleNodeFocused = useCallback((node: ISceneNode) => {
+        setFocusNode(node)
     }, [])
 
-    // Handle drag tag on tabBar
-    const handleTabDragEnd = (result: DropResult) => {
-        if (!result.destination) {
-            return
-        }
-
-        const prevTabs: Tab[] = [...tabs]
-        const [reorderedItem] = prevTabs.splice(result.source.index, 1)
-        prevTabs.splice(result.destination.index, 0, reorderedItem)
-
-        setTabs(new Set(prevTabs))
-
-        console.debug('Reordered tabs:', prevTabs.map(t => t.name))
-    }
-
-    const handleTabClick = (tab: Tab) => {
+    const handleTabClick = useCallback((tab: Tab) => {
         const [domain, path] = tab.id.split(':')
         const isPublic = domain === 'public'
-        const tree = isPublic ? remoteSceneTree : localSceneTree
+        const tree = isPublic ? publicTree : privateTree
+        const _privateTree = privateTree as SceneTree
+        const _publicTree = publicTree as SceneTree
 
         if (tree === null || nodeStack.length === 0) return
-        console.log('wuhu')
 
         // Deactivate the active node
         ;(nodeStack[nodeStack.length - 1] as SceneNode).tab.isActive = false
@@ -183,18 +182,57 @@ function FrameworkComponent() {
         // Add picked tab to the end of the stack
         const newNodeStack = nodeStack.filter(n => n.key !== tab.id)
         newNodeStack.push(node)
-        setNodeStack(newNodeStack)
-    }
 
-    const mainEditorAreaComponent = () => {
-        if (nodeStack.length === 0) {
-            return <MapContainer />
+        // Set the selected node in the other tree as null
+        tree.isRemote ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
+
+        // Select the current node
+        tree.selectedNode = node
+
+        // Update state
+        console.log('????')
+        setFocusNode(node)
+        setNodeStack(newNodeStack)
+
+    }, [nodeStack, publicTree, privateTree])
+
+    // Handle drag tag on tabBar
+    const handleTabDragEnd = useCallback((result: DropResult) => {
+        if (!result.destination) {
+            return
         }
 
-        const editingNode = nodeStack[nodeStack.length - 1]
-        console.debug('Rendering main editor area for node:', editingNode)
-        return <CreatePage node={editingNode} />
-    }
+        const prevTabs: Tab[] = [...tabs]
+        const [reorderedItem] = prevTabs.splice(result.source.index, 1)
+        prevTabs.splice(result.destination.index, 0, reorderedItem)
+
+        setTabs(new Set(prevTabs))
+
+        console.debug('Reordered tabs:', prevTabs.map(t => t.name))
+    }, [tabs])
+
+    const handleNodeClickEnd = useCallback((node: ISceneNode) => {
+        const _node = node as SceneNode
+        
+        // Check if the node is already in the stack
+        const existingIndex = nodeStack.findIndex(n => {
+            const _n = n as SceneNode
+            return _n.tab.id === _node.tab.id
+        })
+
+        // If the node is already in the stack and not active, activate it
+        if (existingIndex !== -1 && !_node.tab.isActive) {
+            // Deactivate the active node
+            if (nodeStack.length > 0) {
+                (nodeStack[nodeStack.length - 1] as SceneNode).tab.isActive = false
+            }
+
+            const newNodeStack = nodeStack.filter((_, index) => index !== existingIndex)
+            newNodeStack.push(_node)
+            _node.tab.isActive = true
+            setNodeStack(newNodeStack)
+        }
+    }, [nodeStack])
 
     // Init DomResourceTree
     useEffect(() => {
@@ -237,15 +275,18 @@ function FrameworkComponent() {
 
             {/* Resource Tree Panel */}
             <ResourceTreeComponent
-                localTree={localSceneTree}
-                remoteTree={remoteSceneTree}
+                localTree={privateTree}
+                remoteTree={publicTree}
                 getLocalTree={getLocalTree}
                 getRemoteTree={getRemoteTree}
+                focusNode={focusNode}
                 onOpenFile={handleOpenFile}
                 onPinFile={handlePinFile}
                 onDropDownMenuOpen={handleNodeMenuOpen}
                 onNodeStartEditing={handleNodeStartEditing}
                 onNodeStopEditing={handleNodeStopEditing}
+                onNodeClickEnd={handleNodeClickEnd}
+                onNodeFocused={handleNodeFocused}
             />
 
             {/* Main Content Area */}
@@ -253,13 +294,13 @@ function FrameworkComponent() {
                 {/* Tab Bar */}
                 <TabBar
                     tabs={tabs}
-                    localTree={localSceneTree}
-                    remoteTree={remoteSceneTree}
+                    localTree={privateTree}
+                    remoteTree={publicTree}
                     onTabDragEnd={handleTabDragEnd}
                     onTabClick={handleTabClick}
                 />
                 <div className="flex-1 bg-gray-100">
-                    {mainEditorAreaComponent()}
+                    <MainEditorArea nodeStack={nodeStack}/>
                 </div>
             </div>
         </div >
