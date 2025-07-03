@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileText, User, X } from "lucide-react"
 import {
     ContextMenu,
@@ -23,7 +23,7 @@ const getTabContextMenu = (tab: Tab) => (
     </ContextMenuContent>
 )
 
-export const renderNodeTab = (
+const renderNodeTab = (
     { 
         node,
         index,
@@ -34,7 +34,7 @@ export const renderNodeTab = (
     if (!node || node.tab === null) return null
     const tab = node.tab
     return (
-        <Draggable key={tab.name} draggableId={tab.name} index={index}>
+        <Draggable key={tab.id} draggableId={tab.id} index={index}>
             {(providedDraggable, snapshot) => (
                 <div
                     ref={providedDraggable.innerRef}
@@ -72,7 +72,7 @@ export const renderNodeTab = (
                                     className="w-4 h-4 ml-2 text-gray-500 hover:text-white"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        node.tree.closeEditingNode(node)
+                                        node.tree.stopEditingNode(node)
                                     }}
                                 />
                             </div>
@@ -85,32 +85,27 @@ export const renderNodeTab = (
     )
 }
 
-const renderNodeTabs = (tabNames: string[] | null, localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined) => {
-
-    if (tabNames && tabNames.length !== 0) {
-        return tabNames.map((tabName, index) => {
-            const partialParts = tabName.split(':')
-            const isPublic = partialParts[0] === 'public'
-            const _tabName = partialParts[1]
-            const node = isPublic ? (remoteTree?.scene.get(_tabName)!) : (localTree?.scene.get(_tabName)!)
+const renderNodeTabs = (tabs: Set<Tab>, localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined) => {
+    console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
+    if (tabs && tabs.size !== 0) {
+        const elements =  Array.from(tabs).map((tab, index) => {
+            const [domain, path] = tab.id.split(':')
+            const isPublic = domain === 'public'
+            const node = isPublic ? (remoteTree?.scene.get(path)) : (localTree?.scene.get(path))
+            
+            if (!node) return null
             return renderNodeTab({
                 node: (node as SceneNode), index
             })
         })
 
-    } else {
-        const nodes = Array.from(localTree?.editingNodes || []).concat(Array.from(remoteTree?.editingNodes || []))
-        return nodes.map((node, index) => {
-            if (!node || !(node as SceneNode).tab) return null
-            return renderNodeTab({
-                node: (node as SceneNode), index
-            })
-        })
-    }
+        return elements
+
+    } 
 }
 
 export default function TabBar({
-    tabNames,
+    tabs,
     localTree,
     remoteTree,
     onTabDragEnd
@@ -118,28 +113,27 @@ export default function TabBar({
     const [triggerTabBar, setTriggerTabBar] = useState(0)
     const [localUnsubscribe, setLocalUnsubscribe] = useState<(() => void) | undefined>()
     const [remoteUnsubscribe, setRemoteUnsubscribe] = useState<(() => void) | undefined>()
-
     
     useEffect(() => {
         const initTree = async () => {
             try {
                 if (!localTree || !remoteTree) return
 
-                // 取消之前的订阅
-                if (localUnsubscribe) localUnsubscribe()
-                if (remoteUnsubscribe) remoteUnsubscribe()
-
                 // Subscribe to tree update
-                localUnsubscribe && setLocalUnsubscribe(
-                    localTree.subscribe(() => {
-                        setTriggerTabBar(prev => prev + 1)
-                    })
-                )
-                remoteUnsubscribe && setRemoteUnsubscribe(
-                    remoteTree.subscribe(() => {
-                        setTriggerTabBar(prev => prev + 1)
-                    })
-                )
+                if (localUnsubscribe === undefined) {
+                    setLocalUnsubscribe(
+                        localTree.subscribe(() => {
+                            setTriggerTabBar(prev => prev + 1)
+                        })
+                    )
+                }
+                if (remoteUnsubscribe === undefined) {
+                    setRemoteUnsubscribe(
+                        remoteTree.subscribe(() => {
+                            setTriggerTabBar(prev => prev + 1)
+                        })
+                    )
+                }
 
             } catch (error) {
                 console.error('Failed to initialize resource trees:', error)
@@ -147,17 +141,11 @@ export default function TabBar({
         }
         initTree()
         
-        // 组件卸载时取消订阅
         return () => {
             if (localUnsubscribe) localUnsubscribe()
             if (remoteUnsubscribe) remoteUnsubscribe()
         }
-    }, [localTree, remoteTree])
-
-    // 当tabNames变化时，也触发重新渲染
-    useEffect(() => {
-        setTriggerTabBar(prev => prev + 1)
-    }, [tabNames])
+    }, [localTree, remoteTree, localUnsubscribe, remoteUnsubscribe])
 
     return (
         <>
@@ -170,22 +158,7 @@ export default function TabBar({
                             className="bg-gray-800 border-b border-gray-700 flex h-[37px]"
                         >
                             {
-                                renderNodeTabs(tabNames, localTree, remoteTree)
-                                // Array.from(localTree?.editingNodes || []).concat(Array.from(remoteTree?.editingNodes || []))
-                                // tabNames.map((tabName, index) => {
-                                //     const isPublic = tabName.split(':')[0] === 'public'
-                                //     const node = isPublic ? (remoteTree?.scene.get(tabName)!) : (localTree?.scene.get(tabName)!)
-                                //     return renderNodeTab({
-                                //         node: (node as SceneNode), index
-                                //     })
-                                // })
-                                // tabs.map((tab, index) => {
-                                //     const isPublic = tab.name.split(':')[0] === 'public'
-                                //     const node = isPublic ? (remoteTree?.scene.get(tab.path)!) : (localTree?.scene.get(tab.path)!)
-                                //     return renderNodeTab({
-                                //         node: (node as SceneNode), index
-                                //     })
-                                // })
+                                renderNodeTabs(tabs, localTree, remoteTree)
                             }
                             {provided.placeholder}
                         </div>

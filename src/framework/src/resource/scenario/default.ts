@@ -24,7 +24,7 @@ export default class DefaultScenarioNode implements IScenarioNode {
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
     }
 
-    renderNodeTab(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderNodePage(nodeSelf: ISceneNode): React.JSX.Element | null {
         return null
     }
 }

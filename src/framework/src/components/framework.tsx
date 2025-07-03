@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import store from '@/store'
-import TabBar, { renderNodeTab } from "./tabBar/tabBar"
+import TabBar from './tabBar/tabBar'
 import IconBar from "./iconBar/iconBar"
 import ResourceTreeComponent from "./resourceScene/sceneComponent"
 import { Tab } from "./tabBar/types"
@@ -14,7 +14,7 @@ import CreatePage from "./functionPage/createPage"
 
 function FrameworkComponent() {
 
-    const [tabNames, setTabNames] = useState<string[]>([])
+    const [tabs, setTabs] = useState<Set<Tab>>(new Set())
     const [treeGeneration, setTreeGeneration] = useState(0)
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
@@ -27,7 +27,7 @@ function FrameworkComponent() {
     const iconClickHandlers: IconBarClickHandlers = {}
     ICON_REGISTRY.forEach(icon => {
         iconClickHandlers[icon.id] = (iconID: string) => {
-            console.log('Clicked icon:', icon.id, 'with activityId:', iconID)
+            console.debug('Clicked icon:', icon.id, 'with activityId:', iconID)
             setActiveIconID(iconID)
             // setTabs(tabs.map(t => ({ ...t, isActive: t.activityId === iconID })))
         }
@@ -40,32 +40,12 @@ function FrameworkComponent() {
                 const _localTree = await SceneTree.create(false)
                 const _remoteTree = await SceneTree.create(true)
 
-                const updateTabNames = () => {
-                    console.log('???')
-                    const nodes = Array.from(localFileTree?.editingNodes || []).concat(Array.from(remoteFileTree?.editingNodes || []))
-                    const _tabNames: string[] = []
-                    nodes.forEach(node=> {
-                        const _n: SceneNode = node as SceneNode
-                        if (_n.tab) {
-                            _tabNames.push(_n.tab.name)
-                        }
-                    })
-                    setTabNames(_tabNames)
-                }
-
                 // Subscribe to tree update
                 _localTree.subscribe(() => {
                     setTreeGeneration(prev => prev + 1)
                 })
-                _localTree.subscribe(() => {
-                    updateTabNames()
-                })
                 _remoteTree.subscribe(() => {
-                    updateTabNames()
                     setTreeGeneration(prev => prev + 1)
-                })
-                _remoteTree.subscribe(() => {
-                    updateTabNames()
                 })
 
                 store.set('localFileTree', _localTree)
@@ -110,7 +90,7 @@ function FrameworkComponent() {
 
         //     return newTabs
         // })
-    }, [activeIconID])
+    }, [])
 
     const handlePinFile = useCallback((fileName: string, filePath: string) => {
         // setTabNames((prevTabs) => {
@@ -137,16 +117,35 @@ function FrameworkComponent() {
         //     }
         //     return newTabs
         // })
-    }, [activeIconID])
+    }, [])
 
     // Handle menu open
     const handleDropDownMenuOpen = useCallback((node: ISceneNode) => {
-        console.log('Context menu opened for node:', node.name)
         if (localFileTree === null || remoteFileTree === null) {
             return
         }
         node.scenarioNode.handleDropDownMenuOpen(node)
     }, [localFileTree, remoteFileTree])
+
+    // Handle open node editing tab
+    const handleNodeStartEditing = useCallback((node: ISceneNode) => {
+        console.debug('Opening node editing tab:', node)
+
+         // Add the node tab to the tabs
+        tabs.add((node as SceneNode).tab!)
+        setTabs(new Set(tabs))
+
+    }, [tabs])
+
+    // Handle close node editing tab
+    const handleNodeStopEditing = useCallback((node: ISceneNode) => {
+        console.debug('Closing node editing tab:', node)
+
+        // Remove the node tab from the tabsx
+        tabs.delete((node as SceneNode).tab!)
+        setTabs(new Set(tabs))
+        
+    }, [tabs])
 
     // Handle creation success
     const handleCreationSuccess = useCallback(async (resourceTree: SceneTree, creationType: 'schema' | 'patch') => {
@@ -156,7 +155,7 @@ function FrameworkComponent() {
         const parentNode = Array.from(resourceTree.root.children.values()).find(n => n.scenarioNode.name === parentNodeName)
 
         if (parentNode) {
-            resourceTree.markAsDirty(parentNode.key)
+            // TODO: How to force align?
             await resourceTree.alignNodeInfo(parentNode)
         }
     }, [])
@@ -167,21 +166,13 @@ function FrameworkComponent() {
             return
         }
 
-        const nodes = Array.from(localFileTree?.editingNodes || []).concat(Array.from(remoteFileTree?.editingNodes || []))
-        const prevTabs: Tab[] = []
-        nodes.forEach(node=> {
-            const _n: SceneNode = node as SceneNode
-            if (_n.tab) {
-                prevTabs.push(_n.tab)
-            }
-        })
+        const prevTabs: Tab[] = [...tabs]
         const [reorderedItem] = prevTabs.splice(result.source.index, 1)
         prevTabs.splice(result.destination.index, 0, reorderedItem)
-        const _tabNames: string[] = []  
-        prevTabs.forEach(tab => {
-            _tabNames.push(tab.name)
-        })
-        setTabNames(_tabNames)
+
+        setTabs(new Set(prevTabs))
+
+        console.debug('Reordered tabs:', prevTabs.map(t => t.name))
     }
 
     const mainEditorAreaComponent = (tree: SceneTree) => {
@@ -210,20 +201,20 @@ function FrameworkComponent() {
                 onOpenFile={handleOpenFile}
                 onPinFile={handlePinFile}
                 onDropDownMenuOpen={handleDropDownMenuOpen}
+                onNodeStartEditing={handleNodeStartEditing}
+                onNodeStopEditing={handleNodeStopEditing}
             />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col">
-                {/* 这里可以添加TabBar和其他组件 */}
                 {/* Tab Bar */}
                 <TabBar
-                    tabNames={tabNames}
+                    tabs={tabs}
                     localTree={localFileTree}
                     remoteTree={remoteFileTree}
                     onTabDragEnd={handleTabDragEnd}
                 />
                 <div className="flex-1 bg-gray-100">
-                    {/* 主编辑器区域 */}
                     {/* {mainEditorAreaComponent()} */}
                     <MapContainer />
                     {/* {  && <CreatePage/>} */}

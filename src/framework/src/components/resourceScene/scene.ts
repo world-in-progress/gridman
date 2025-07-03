@@ -108,6 +108,8 @@ export class SceneTree implements ISceneTree {
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
     private handleDropDownMenuOpen: (node: ISceneNode) => void = () => {}
+    private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
+    private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
 
     constructor(isRemote: boolean) {
         this.isRemote = isRemote
@@ -134,18 +136,11 @@ export class SceneTree implements ISceneTree {
                 if (node.children.has(child.node_key)) continue // skip if child node already exists
 
                 const childNode = new SceneNode(this, child.node_key, node, new SCENARIO_NODE_REGISTRY[child.scenario_path]())
-                console.log((new SCENARIO_NODE_REGISTRY[child.scenario_path]()).semanticPath, child.scenario_path)
                 this.scene.set(childNode.key, childNode) // add child node to the scene map
             }
         }
 
         node.aligned = true // mark as aligned after loading
-    }
-
-    // TODO: Check
-    markAsDirty(sceneNodeKey: string) {
-        const node = this.scene.get(sceneNodeKey)!
-        node.aligned = false
     }
 
     async getNodeChildNames(sceneNodeKey: string): Promise<string[] | null> {
@@ -185,14 +180,30 @@ export class SceneTree implements ISceneTree {
     }
 
     startEditingNode(node: ISceneNode): void {
-        this.editingNodes.add(node);
-        (node as SceneNode).pageContext = new SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath]()
+        // Do nothing if already editing
+        if (this.editingNodes.has(node)) {
+            return
+        }
+
+        this.editingNodes.add(node)
+        ;(node as SceneNode).pageContext = new SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath]()
+        
+        this.handleNodeStartEditing(node)
+
         this.notifyDomUpdate()
     }
 
-    closeEditingNode(node: ISceneNode): void {
+    stopEditingNode(node: ISceneNode): void {
+        // Do nothing if not editing
+        if (!this.editingNodes.has(node)) {
+            return
+        }
+
         this.editingNodes.delete(node)
         ;(node as SceneNode).pageContext = null
+
+        this.handleNodeStopEditing(node)
+
         this.notifyDomUpdate()
     }
 
@@ -228,10 +239,14 @@ export class SceneTree implements ISceneTree {
         openFile: (fileName: string, filePath: string) => void
         pinFile: (fileName: string, filePath: string) => void
         handleDropDownMenuOpen: (node: ISceneNode) => void
+        handleNodeStartEditing: (node: ISceneNode) => void
+        handleNodeStopEditing: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
         this.handleDropDownMenuOpen = handlers.handleDropDownMenuOpen
+        this.handleNodeStartEditing = handlers.handleNodeStartEditing
+        this.handleNodeStopEditing = handlers.handleNodeStopEditing
     }
 
     getContextMenuHandler(node: ISceneNode): (node: ISceneNode) => void {

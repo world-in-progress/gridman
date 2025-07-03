@@ -5,8 +5,8 @@ export interface ISceneNode {
     name: string
     aligned: boolean 
     tree: ISceneTree
-    scenarioNode: IScenarioNode
     parent: ISceneNode | null
+    scenarioNode: IScenarioNode
     children: Map<string, ISceneNode>
 }
 
@@ -16,7 +16,6 @@ export interface ISceneTree {
     scene: Map<string, ISceneNode>
 
     setRoot(root: ISceneNode): Promise<void>
-    markAsDirty(sceneNodeKey: string): void
     alignNodeInfo(node: ISceneNode, force: boolean): Promise<void>
     getNodeChildNames(sceneNodeKey: string): Promise<string[] | null>
 }
