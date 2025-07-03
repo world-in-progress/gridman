@@ -1,12 +1,12 @@
+import store from '@/store'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { Tab } from '../tabBar/types'
+import { convertToWGS84 } from './utils'
+import { MapContainerProps } from './types'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import { GridSchema } from '../../core/apis/types'
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import "mapbox-gl/dist/mapbox-gl.css";
-import mapboxgl from "mapbox-gl";
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import { Tab } from '../tabBar/types';
-import { GridSchema } from '../../core/apis/types';
-import { convertToWGS84 } from './utils';
-import { MapContainerProps } from './types';
-
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -14,9 +14,9 @@ const initialZoom = 11
 const maxZoom = 22
 
 export interface MapContainerHandles {
-    showSchemaMarkerOnMap: (schemas: GridSchema[]) => void;
-    flyToSchema: (schema: GridSchema) => void;
-    getMap: () => mapboxgl.Map | null;
+    showSchemaMarkerOnMap: (schemas: GridSchema[]) => void
+    flyToSchema: (schema: GridSchema) => void
+    getMap: () => mapboxgl.Map | null
 }
 
 interface ExtendedMapContainerProps extends MapContainerProps {
@@ -52,31 +52,31 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
     const isUnmountedRef = useRef(false);
 
     const clearAllMarkers = () => {
-        markersRef.current.forEach(marker => marker.remove());
-        markersRef.current = [];
-        markerMapRef.current.clear();
-    };
+        markersRef.current.forEach(marker => marker.remove())
+        markersRef.current = []
+        markerMapRef.current.clear()
+    }
 
     const closeActivePopup = () => {
         if (activePopupRef.current) {
             if (activePopupRef.current.getPopup()?.isOpen()) {
-                activePopupRef.current.togglePopup();
+                activePopupRef.current.togglePopup()
             }
-            activePopupRef.current = null;
+            activePopupRef.current = null
         }
-    };
+    }
 
     const showSchemaMarkerOnMap = (schemas: GridSchema[]) => {
-        const map = mapRef.current;
-        if (!map) return;
+        const map = mapRef.current
+        if (!map) return
 
-        clearAllMarkers();
+        clearAllMarkers()
 
-        const newMarkers: mapboxgl.Marker[] = [];
+        const newMarkers: mapboxgl.Marker[] = []
 
         schemas.forEach((schema) => {
             if (schema.base_point && schema.epsg) {
-                const coordinates = convertToWGS84(schema.base_point, schema.epsg);
+                const coordinates = convertToWGS84(schema.base_point, schema.epsg)
 
                 if (coordinates[0] !== 0 || coordinates[1] !== 0) {
                     const gridInfoHtml = schema.grid_info
@@ -144,7 +144,7 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
         });
 
         markersRef.current = newMarkers;
-    };
+    }
 
     const flyToSchema = (schema: GridSchema) => {
         const map = mapRef.current;
@@ -189,7 +189,7 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
         showSchemaMarkerOnMap,
         flyToSchema,
         getMap: () => mapRef.current,
-    }));
+    }))
 
     useEffect(() => {
         if (activeTab) {
@@ -205,10 +205,10 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
     }, [activeTab]);
 
     useEffect(() => {
-        isUnmountedRef.current = false;
-        mapboxgl.accessToken = "pk.eyJ1IjoieWNzb2t1IiwiYSI6ImNrenozdWdodDAza3EzY3BtdHh4cm5pangifQ.ZigfygDi2bK4HXY1pWh-wg";
-        let mapInstance: mapboxgl.Map | null = null;
-        let resizer: ResizeObserver | null = null;
+        isUnmountedRef.current = false
+        mapboxgl.accessToken = import.meta.env.VITE_MAP_TOKEN
+        let mapInstance: mapboxgl.Map | null = null
+        let resizer: ResizeObserver | null = null
 
         if (mapWrapperRef.current) {
             mapInstance = new mapboxgl.Map({
@@ -220,9 +220,10 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
                 maxZoom: maxZoom,
                 attributionControl: false,
                 boxZoom: false,
-            });
+            })
+            store.set('map', mapInstance)
 
-            mapRef.current = mapInstance;
+            mapRef.current = mapInstance
 
             if (mapWrapperRef.current) {
                 if (mapInstance) {
@@ -246,19 +247,19 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
         return () => {
             isUnmountedRef.current = true;
             if (resizer && mapWrapperRef.current) {
-                resizer.unobserve(mapWrapperRef.current);
-                resizer.disconnect();
+                resizer.unobserve(mapWrapperRef.current)
+                resizer.disconnect()
             }
             if (mapInstance) {
-                mapInstance.remove();
+                mapInstance.remove()
             }
-            mapRef.current = null;
-        };
-    }, []);
+            mapRef.current = null
+        }
+    }, [])
 
     return (
         <div className="relative w-full h-full" ref={mapWrapperRef} />
     )
-});
+})
 
 export default MapContainer

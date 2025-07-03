@@ -1,6 +1,6 @@
-import { Schema } from './types';
-import { Callback } from '../../core/types';
-import Dispatcher from '../../core/message/dispatcher';
+import { Schema } from './types'
+import { Callback } from '@/core/types'
+import Dispatcher from '@/core/message/dispatcher'
 
 export class SchemaService {
     private _dispatcher: Dispatcher;

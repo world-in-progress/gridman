@@ -1,9 +1,10 @@
+import store from '@/store'
+import SchemasPage from './schemasPage'
 import { FilePlus2 } from 'lucide-react'
-import { Tab } from '@/components/tabBar/types'
 import { ISceneNode } from '@/core/scene/iscene'
-import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 
 export class SchemasPageContext extends DefaultPageContext {
     name: string
@@ -33,10 +34,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     ]
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
-        console.log('????')
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf)}>
+                <ContextMenuItem className='cursor-pointer' onClick={() => this.handleMenuOpen(nodeSelf)}>
                     <FilePlus2 className='w-4 h-4 ml-2' />Create New Schema
                 </ContextMenuItem>
             </ContextMenuContent>
@@ -47,7 +47,14 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         const _node = nodeSelf as SceneNode
         const _tree = nodeSelf.tree as SceneTree
 
-        _node.tab.isActive = true
         _tree.startEditingNode(_node)
+    }
+
+    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+        const map = store.get<mapboxgl.Map>('map')
+
+        return (
+            <SchemasPage node={nodeSelf} mapInstance={map} />
+        )
     }
 }

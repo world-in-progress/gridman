@@ -15,11 +15,13 @@ export interface TabBarProps{
     localTree?: SceneTree | null
     remoteTree?: SceneTree | null
     onTabDragEnd: (result: DropResult) => void
+    onTabClick: (tab: Tab) => void
 }
 
 export interface renderNodeTabProps {
     node: SceneNode,
     index: number,
+    onTabClick: (tab: Tab) => void
 }
 
 
