@@ -5,10 +5,11 @@ import { ISceneNode } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
+import MapContainer from '@/components/mapContainer/mapContainer'
 
 export class SchemasPageContext extends DefaultPageContext {
     name: string
-    epsg: number
+    epsg: number | null
     starred: boolean
     description: string
     base_point: number[]
@@ -18,7 +19,7 @@ export class SchemasPageContext extends DefaultPageContext {
         super()
         
         this.name = ''
-        this.epsg = 0
+        this.epsg = null
         this.starred = false
         this.description = ''
         this.base_point = []
@@ -57,4 +58,10 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
             <SchemasPage node={nodeSelf} mapInstance={map} />
         )
     }
+
+    // renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
+    //     return  (
+    //         <MapContainer key={mapKey} ref={mapContainerRef} />
+    //     )
+    // }
 }

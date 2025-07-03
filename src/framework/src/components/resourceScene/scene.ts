@@ -233,7 +233,6 @@ export class SceneTree implements ISceneTree {
     // Node Editing //////////////////////////////////////////////////
 
     startEditingNode(node: ISceneNode): void {
-        console.log('Starting editing node:', node)
         // Do nothing if already editing
         if (this.editingNodes.has(node)) {
             return
