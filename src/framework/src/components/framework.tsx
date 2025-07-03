@@ -132,7 +132,7 @@ function FrameworkComponent() {
         console.debug('Opening node editing tab:', node)
 
          // Add the node tab to the tabs
-        tabs.add((node as SceneNode).tab!)
+        tabs.add((node as SceneNode).tab)
         setTabs(new Set(tabs))
 
     }, [tabs])
@@ -141,8 +141,8 @@ function FrameworkComponent() {
     const handleNodeStopEditing = useCallback((node: ISceneNode) => {
         console.debug('Closing node editing tab:', node)
 
-        // Remove the node tab from the tabsx
-        tabs.delete((node as SceneNode).tab!)
+        // Remove the node tab from the tabs
+        tabs.delete((node as SceneNode).tab)
         setTabs(new Set(tabs))
         
     }, [tabs])
@@ -220,18 +220,6 @@ function FrameworkComponent() {
                     {/* {  && <CreatePage/>} */}
                 </div>
             </div>
-
-
-            {/* Main Content */}
-            {/* < div className="flex-1 flex flex-col" > */}
-            {/* Tab Bar */}
-            {/* < TabBar
-                    tabs={tabs || []}
-                    setActiveTab={setActiveTab}
-                    closeTab={handleCloseTab}
-                    pinFile={handlePinFile}
-                    onTabDragEnd={handleTabDragEnd}
-                /> */}
 
             {/* Main Editor Area */}
             {/* < div className="flex-1 overflow-hidden" >

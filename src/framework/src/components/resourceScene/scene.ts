@@ -1,19 +1,18 @@
 import React from 'react'
-import store from '@/store'
 import * as api from '@/core/apis/apis'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { IScenarioNode } from '@/core/scenario/iscenario'
 import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
 import { Tab } from '../tabBar/types'
 
-export interface DomNodeState {
+export interface SceneNodeState {
     isLoading: boolean
     isExpanded: boolean
     isSelected: boolean
     contextMenuOpen: boolean
 }
 
-export interface DomNodeActions {
+export interface SceneNodeActions {
     onSelect: () => void
     onOpenFile: () => void
     onToggleExpand: () => void
@@ -22,72 +21,68 @@ export interface DomNodeActions {
 
 export class SceneNode implements ISceneNode {
     key: string
+    tree: SceneTree
     aligned: boolean = false
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
-    
-    tab: Tab | null = null
-    pageContext: any = null
 
-    tree: SceneTree
-    private domState: DomNodeState = {
+    // SceneNode state
+    private _state: SceneNodeState = {
         isExpanded: false,
         isSelected: false,
         isLoading: false,
         contextMenuOpen: false
     }
-    private domActions: DomNodeActions | null = null
 
+    // SceneNode actions
+    actions: SceneNodeActions | null = null
+    
+    // Dom-related properties
+    tab: Tab
+    pageContext: any = null
 
     constructor(tree: SceneTree, node_key: string, parent: ISceneNode | null, scenarioNode: IScenarioNode) {
+        this.tree = tree
         this.key = node_key
         this.parent = parent
         this.scenarioNode = scenarioNode
+        if (this.parent !== null) this.parent.children.set(this.name, this) // bind self to parent
 
-        this.parent?.children.set(this.name, this)
-        this.tree = tree
+        // Set tab (not active, not preview)
+        this.tab = {
+            id: (this.tree.isRemote ? 'public' : 'private') + ':' + this.key,
+            name: this.name,
+            isActive: false,
+            isPreview: false,
+        }
     }
 
-    get name(): string {
-        return this.key.split('.').pop() || ''
-    }
-
-    get isExpanded(): boolean { return this.domState.isExpanded }
-    get isSelected(): boolean { return this.domState.isSelected }
-    get isLoading(): boolean { return this.domState.isLoading }
-    get contextMenuOpen(): boolean { return this.domState.contextMenuOpen }
+    get name(): string { return this.key.split('.').pop() || '' }
+    get isExpanded(): boolean { return this._state.isExpanded }
+    get isSelected(): boolean { return this._state.isSelected }
+    get isLoading(): boolean { return this._state.isLoading }
+    get contextMenuOpen(): boolean { return this._state.contextMenuOpen }
 
     set isExpanded(expanded: boolean) {
-        this.domState.isExpanded = expanded
-        this.notifyTreeUpdate()
+        this._state.isExpanded = expanded
+        this._notifyTreeUpdate()
     }
     set isSelected(selected: boolean) {
-        this.domState.isSelected = selected
-        this.notifyTreeUpdate()
+        this._state.isSelected = selected
+        this._notifyTreeUpdate()
     }
     set isLoading(loading: boolean) {
-        this.domState.isLoading = loading
-        this.notifyTreeUpdate()
+        this._state.isLoading = loading
+        this._notifyTreeUpdate()
     }
     set contextMenuOpen(open: boolean) {
-        this.domState.contextMenuOpen = open
-        this.notifyTreeUpdate()
+        this._state.contextMenuOpen = open
+        this._notifyTreeUpdate()
     }
 
-    get actions(): DomNodeActions | null {
-        return this.domActions
-    }
-
-    set actions(ations: DomNodeActions) {
-        this.domActions = ations
-    }
-
-    private notifyTreeUpdate(): void {
-        const tree = this.tree
-        if (tree) {
-            tree.notifyDomUpdate()
-        }
+    private _notifyTreeUpdate(): void {
+        this.tree.notifyDomUpdate()
     }
 }
 
@@ -100,34 +95,57 @@ export class SceneTree implements ISceneTree {
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
 
-    private updateCallbacks: Set<TreeUpdateCallback> = new Set()
-    private expandedNodes: Set<string> = new Set(['_']) // default root node is expanded
-    private selectedNode: string | null = null
-    editingNodes: Set<ISceneNode> = new Set()
-
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
     private handleDropDownMenuOpen: (node: ISceneNode) => void = () => {}
     private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
 
+    private updateCallbacks: Set<TreeUpdateCallback> = new Set()
+    private expandedNodes: Set<string> = new Set()
+    private _selectedNodeKey: string | null = null
+    editingNodes: Set<ISceneNode> = new Set()
+
     constructor(isRemote: boolean) {
         this.isRemote = isRemote
     }
 
-    async setRoot(root: ISceneNode) {
-        if (this.root) {
-            throw new Error('Root node is already set')
-        }
+    /**
+     * 
+     * @param handlers Handlers for various actions in the scene tree.
+     * This method binds the provided handlers to the scene tree, allowing it to handle file opening,
+     * pinning files, opening dropdown menus, and starting/stopping node editing.
+     */
+    bindHandlers(handlers: {
+        openFile: (fileName: string, filePath: string) => void
+        pinFile: (fileName: string, filePath: string) => void
+        handleDropDownMenuOpen: (node: ISceneNode) => void
+        handleNodeStartEditing: (node: ISceneNode) => void
+        handleNodeStopEditing: (node: ISceneNode) => void
+    }): void {
+        this.handleOpenFile = handlers.openFile
+        this.handlePinFile = handlers.pinFile
+        this.handleDropDownMenuOpen = handlers.handleDropDownMenuOpen
+        this.handleNodeStartEditing = handlers.handleNodeStartEditing
+        this.handleNodeStopEditing = handlers.handleNodeStopEditing
+    }
 
-        this.root = root
-        this.scene.set(root.key, root) // add root node to the scene map
-        await this.alignNodeInfo(root) // align the root node
+    getContextMenuHandler(node: ISceneNode): (node: ISceneNode) => void {
+        return node => {
+            this.handleDropDownMenuOpen(node)
+        }
     }
     
+    /**
+     * Update the node information from the server.
+     * @param node The node to align.
+     * @param force Whether to force alignment even if already aligned.
+     * @returns A promise that resolves when the alignment is complete.
+     */
     async alignNodeInfo(node: ISceneNode, force: boolean = false): Promise<void> {
         if (node.aligned && !force) return
 
+        // Fetch the latest metadata for the node
         const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isRemote)
         
         // Update parent-child relationship
@@ -140,21 +158,33 @@ export class SceneTree implements ISceneTree {
             }
         }
 
-        node.aligned = true // mark as aligned after loading
+        // Mark as aligned after loading
+        node.aligned = true
     }
 
-    async getNodeChildNames(sceneNodeKey: string): Promise<string[] | null> {
-        // Get node from scene
-        const node = this.scene.get(sceneNodeKey)!
-        
-        if (!node.aligned) {
-            // If the node is not aligned, load it
-            await this.alignNodeInfo(node)
+    /**
+     * Set the root node for the scene tree.
+     * @param root The root node to set for the scene tree.
+     * @returns A promise that resolves when the root is set.
+     */
+    async setRoot(root: ISceneNode): Promise<void> {
+        if (this.root) {
+            console.debug('Root node is already set, skipping setRoot')
+            return
         }
 
-        return Array.from(node.children.keys())
+        this.root = root
+        this.scene.set(root.key, root)      // add root node to the scene map
+        await this.alignNodeInfo(root)      // align the root node information
+        this.expandedNodes.add(root.key)    // ensure root is expanded by default
     }
 
+    /**
+     * Subscribe a callback to tree updates.
+     * @param callback Callback to be called when the tree is updated.
+     * This is used to notify the DOM that the tree has been updated and needs to be re-rendered.
+     * @returns A function to unsubscribe from the updates.
+     */
     subscribe(callback: TreeUpdateCallback): () => void {
         this.updateCallbacks.add(callback)
         return () => {
@@ -162,8 +192,21 @@ export class SceneTree implements ISceneTree {
         }
     }
 
+    /**
+     * Notify all subscribers about a DOM update.
+     */
     notifyDomUpdate(): void {
         this.updateCallbacks.forEach(callback => callback())
+    }
+
+    // Node Selection //////////////////////////////////////////////////
+
+    isNodeExpanded(nodeKey: string): boolean {
+        return this.expandedNodes.has(nodeKey)
+    }
+
+    get selectedNodeKey(): string | null {
+        return this._selectedNodeKey
     }
 
     async toggleNodeExpansion(node: ISceneNode): Promise<void> {
@@ -176,8 +219,25 @@ export class SceneTree implements ISceneTree {
                 await this.alignNodeInfo(node)
             }
         }
+    }
+
+    async handleNodeClick(node: ISceneNode): Promise<void> {
+        // Select the node
+        this._selectedNodeKey = node.key
+
+        // If the node is a resource folder, toggle its expansion
+        // If the node is a file, open it
+        if (node.scenarioNode.degree > 0) {
+            await this.toggleNodeExpansion(node)
+        } else {    
+            this.handleOpenFile(node.name, node.key)
+        }
+
+        // Notify DOM update
         this.notifyDomUpdate()
     }
+
+    // Node Editing //////////////////////////////////////////////////
 
     startEditingNode(node: ISceneNode): void {
         // Do nothing if already editing
@@ -207,51 +267,9 @@ export class SceneTree implements ISceneTree {
         this.notifyDomUpdate()
     }
 
-    isNodeExpanded(nodeKey: string): boolean {
-        return this.expandedNodes.has(nodeKey)
-    }
-
-    selectNode(nodeKey: string): void {
-        this.selectedNode = nodeKey
-        this.notifyDomUpdate()
-    }
-
-    getSelectedNode(): string | null {
-        return this.selectedNode
-    }
-
-    handleNodeClick(node: ISceneNode): void {
-        if (node.scenarioNode.degree > 0) {
-            this.toggleNodeExpansion(node)
-        } else {
-            this.selectNode(node.key)
-            this.handleOpenFile(node.name, node.key)
-        }
-    }
-
     handleNodeDoubleClick(node: ISceneNode): void {
         if (node.scenarioNode.degree === 0) {
             this.handlePinFile(node.name, node.key)
-        }
-    }
-
-    bindHandlers(handlers: {
-        openFile: (fileName: string, filePath: string) => void
-        pinFile: (fileName: string, filePath: string) => void
-        handleDropDownMenuOpen: (node: ISceneNode) => void
-        handleNodeStartEditing: (node: ISceneNode) => void
-        handleNodeStopEditing: (node: ISceneNode) => void
-    }): void {
-        this.handleOpenFile = handlers.openFile
-        this.handlePinFile = handlers.pinFile
-        this.handleDropDownMenuOpen = handlers.handleDropDownMenuOpen
-        this.handleNodeStartEditing = handlers.handleNodeStartEditing
-        this.handleNodeStopEditing = handlers.handleNodeStopEditing
-    }
-
-    getContextMenuHandler(node: ISceneNode): (node: ISceneNode) => void {
-        return node => {
-            this.handleDropDownMenuOpen(node)
         }
     }
 

@@ -337,23 +337,23 @@ export const GridLevel: React.FC<GridLevelProps> = ({
 export const SchemaErrorMessage: React.FC<SchemaErrorMessageProps> = ({
     message,
 }) => {
-    if (!message) return null;
+    if (!message) return null
 
-    let bgColor = 'bg-red-50';
-    let textColor = 'text-red-700';
-    let borderColor = 'border-red-200';
+    let bgColor = 'bg-red-50'
+    let textColor = 'text-red-700'
+    let borderColor = 'border-red-200'
 
     if (message.includes('正在提交数据') || message.includes('Submitting data')) {
-        bgColor = 'bg-orange-50';
-        textColor = 'text-orange-700';
-        borderColor = 'border-orange-200';
+        bgColor = 'bg-orange-50'
+        textColor = 'text-orange-700'
+        borderColor = 'border-orange-200'
     } else if (
         message.includes('创建成功') ||
         message.includes('Created successfully')
     ) {
-        bgColor = 'bg-green-50';
-        textColor = 'text-green-700';
-        borderColor = 'border-green-200';
+        bgColor = 'bg-green-50'
+        textColor = 'text-green-700'
+        borderColor = 'border-green-200'
     }
 
     return (

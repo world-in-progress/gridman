@@ -43,13 +43,10 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     }
 
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
-        (nodeSelf as SceneNode).tab = {
-            id: (nodeSelf.tree.isRemote ? 'public' : 'private') + ':' + nodeSelf.key,
-            name: nodeSelf.name,
-            isActive: true,
-            isPreview: false,
-        } as Tab
+        const _node = nodeSelf as SceneNode
+        const _tree = nodeSelf.tree as SceneTree
 
-        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf)
+        _node.tab.isActive = true
+        _tree.startEditingNode(_node)
     }
 }
