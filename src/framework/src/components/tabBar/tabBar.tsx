@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileText, User, X } from "lucide-react"
+import { Cloudy, FileText, User, X } from "lucide-react"
 import {
     ContextMenu,
     ContextMenuContent,
@@ -62,12 +62,14 @@ const renderNodeTab = (
                                 )}
                                 <span
                                     className={cn(
-                                        "text-sm truncate text-gray-300 px-0.5",
+                                        "text-sm truncate text-gray-300 px-0.5 flex items-center",
                                         tab.isPreview && "italic"
                                     )}
                                 >
                                     {tab.name}
+                                    { node.tree.isRemote && <Cloudy className='w-4 h-4 ml-2 text-gray-300'/>}
                                 </span>
+
                                 <X
                                     className="w-4 h-4 ml-2 text-gray-500 hover:text-white"
                                     onClick={(e) => {
