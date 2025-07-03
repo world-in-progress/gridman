@@ -50,7 +50,7 @@ interface TreeRendererProps {
 
 export const TreeNode: React.FC<TreeNodeProps> = ({ node, tree, depth }) => {
     const isExpanded = tree.isNodeExpanded(node.key)
-    const isSelected = tree.getSelectedNode() === node.key
+    const isSelected = tree.selectedNodeKey === node.key
     const isFolder = node.scenarioNode.degree > 0
 
     const handleClick = useCallback(() => {

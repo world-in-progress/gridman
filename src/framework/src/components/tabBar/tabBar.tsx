@@ -31,7 +31,6 @@ const renderNodeTab = (
         // setActiveTab,
     }: renderNodeTabProps
 ) => {
-    if (!node || node.tab === null) return null
     const tab = node.tab
     return (
         <Draggable key={tab.id} draggableId={tab.id} index={index}>
@@ -87,21 +86,20 @@ const renderNodeTab = (
 
 const renderNodeTabs = (tabs: Set<Tab>, localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined) => {
     console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
-    if (tabs && tabs.size !== 0) {
-        const elements =  Array.from(tabs).map((tab, index) => {
-            const [domain, path] = tab.id.split(':')
-            const isPublic = domain === 'public'
-            const node = isPublic ? (remoteTree?.scene.get(path)) : (localTree?.scene.get(path))
-            
-            if (!node) return null
-            return renderNodeTab({
-                node: (node as SceneNode), index
-            })
+    
+    const elements =  Array.from(tabs).map((tab, index) => {
+        const [domain, path] = tab.id.split(':')
+        const isPublic = domain === 'public'
+        const node = isPublic ? (remoteTree?.scene.get(path)) : (localTree?.scene.get(path))
+        
+        if (!node) return null
+
+        return renderNodeTab({
+            node: (node as SceneNode), index
         })
+    })
 
-        return elements
-
-    } 
+    return elements
 }
 
 export default function TabBar({

@@ -39,13 +39,10 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     }
 
     handleDropDownMenuOpen(nodeSelf: ISceneNode): void {
-        (nodeSelf as SceneNode).tab = {
-            name: (nodeSelf.tree.isRemote ? 'public' : 'private') + ': ' + nodeSelf.name,
-            id: nodeSelf.key,
-            isActive: true,
-            isPreview: false
-        } as Tab
+        const _node = nodeSelf as SceneNode
+        const _tree = nodeSelf.tree as SceneTree
 
-        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf)
+        _node.tab.isActive = true
+        _tree.startEditingNode(_node)
     }
 }

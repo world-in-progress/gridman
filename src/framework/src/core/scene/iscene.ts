@@ -17,5 +17,4 @@ export interface ISceneTree {
 
     setRoot(root: ISceneNode): Promise<void>
     alignNodeInfo(node: ISceneNode, force: boolean): Promise<void>
-    getNodeChildNames(sceneNodeKey: string): Promise<string[] | null>
 }
