@@ -59,7 +59,7 @@ export interface GridLevelItemProps {
 }
 
 export interface GridLevelProps {
-    layers: TopologyLayer[];
+    layers: GridLevel[];
     layerErrors: Record<number, string>;
     onAddLayer: () => void;
     onUpdateWidth: (id: number, width: string) => void;
@@ -67,7 +67,7 @@ export interface GridLevelProps {
     onRemoveLayer: (id: number) => void;
 }
 
-export interface TopologyLayer {
+export interface GridLevel {
     id: number;
     width: string;
     height: string;

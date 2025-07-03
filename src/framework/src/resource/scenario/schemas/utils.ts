@@ -1,7 +1,7 @@
-import { Schema, TopologyLayer, ValidationResult } from './types';
+import { Schema, GridLevel, ValidationResult } from './types';
 
 export const validateGridLayers = (
-    topologyLayers: TopologyLayer[]
+    gridLevel: GridLevel[]
 ): { errors: Record<number, string>; isValid: boolean } => {
     const errors: Record<number, string> = {};
     let isValid = true;
@@ -30,7 +30,7 @@ export const validateGridLayers = (
     };
 
 
-    const sortedLayers = [...topologyLayers].sort((a, b) => a.id - b.id);
+    const sortedLayers = [...gridLevel].sort((a, b) => a.id - b.id);
 
     sortedLayers.forEach((layer, index) => {
         const width = String(layer.width).trim();
@@ -115,7 +115,7 @@ export const validateSchemaForm = (
         epsg: string;
         lon: string;
         lat: string;
-        topologyLayers: TopologyLayer[];
+        gridLevel: GridLevel[];
         convertedCoord: { x: string; y: string } | null;
     },
 ): ValidationResult => {
@@ -146,13 +146,13 @@ export const validateSchemaForm = (
         return { isValid: false, errors, generalError };
     }
 
-    if (data.topologyLayers.length === 0) {
+    if (data.gridLevel.length === 0) {
         generalError = 'Please add at least one grid level'
         return { isValid: false, errors, generalError };
     }
 
-    for (let i = 0; i < data.topologyLayers.length; i++) {
-        const layer = data.topologyLayers[i];
+    for (let i = 0; i < data.gridLevel.length; i++) {
+        const layer = data.gridLevel[i];
         if (
             !layer.width.toString().trim() ||
             !layer.height.toString().trim() ||
@@ -165,7 +165,7 @@ export const validateSchemaForm = (
     }
 
     const { errors: layerErrors, isValid: gridValid } = validateGridLayers(
-        data.topologyLayers,
+        data.gridLevel,
     );
     if (!gridValid) {
         generalError = 'Please fix errors in grid levels'
@@ -185,7 +185,7 @@ export const createSchemaData = (
     description: string,
     epsg: string,
     convertedCoord: { x: string; y: string } | null,
-    topologyLayers: TopologyLayer[]
+    gridLevel: GridLevel[]
 ): Schema | null => {
     if (!convertedCoord) return null;
 
@@ -198,7 +198,7 @@ export const createSchemaData = (
             parseFloat(convertedCoord.x),
             parseFloat(convertedCoord.y),
         ],
-        grid_info: topologyLayers.map((layer) => [
+        grid_info: gridLevel.map((layer) => [
             parseInt(layer.width.toString()),
             parseInt(layer.height.toString()),
         ]),

@@ -38,6 +38,14 @@ function FrameworkComponent() {
     const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
     const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
     // const mapRef = useRef<MapContainerHandles>(null)
+    const [localSceneTree, setLocalFileTree] = useState<SceneTree | null>(null)
+    const [remoteSceneTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [mainEditorAreaState, setMainEditorAreaState] = useState<string>()
+    const mapRef = useRef<MapContainerHandles>(null)
+
+    store.set('changeMainEditorAreaState', (state: string) => {
+        setMainEditorAreaState(state)
+    })
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -266,7 +274,7 @@ function FrameworkComponent() {
     }, [])
 
     return (
-        <div className="flex h-screen bg-gray-900">
+        <div className="flex h-screen overflow-hidden bg-gray-900">
             {/* Activity Bar */}
             <IconBar
                 currentActiveId={activeIconID}

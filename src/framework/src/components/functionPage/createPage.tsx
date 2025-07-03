@@ -19,6 +19,7 @@ export default function CreatePage({
     const mapContainerRef = useRef<MapContainerHandles>(null)
     const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null)
     const [mapKey, setMapKey] = useState(0)
+    const [creationType, setCreationType] = useState<string>()
 
     const remountMap = () => {
         setMapKey(prevKey => prevKey + 1)
