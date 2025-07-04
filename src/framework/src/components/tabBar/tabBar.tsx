@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Cloudy, FileText, User, X } from "lucide-react"
 import {
     ContextMenu,
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuTrigger,
-} from "@/components/ui/context-menu"
-import { TabBarProps, Tab, renderNodeTabProps } from "./types"
-import { DragDropContext, Droppable, Draggable, DragStart } from '@hello-pangea/dnd'
-import { cn } from "@/utils/utils"
+} from '@/components/ui/context-menu'
+import { cn } from '@/utils/utils'
+import { useEffect, useState } from 'react'
+import { Cloudy, FileText, User, X } from 'lucide-react'
 import { SceneNode, SceneTree } from '../resourceScene/scene'
+import { TabBarProps, Tab, renderNodeTabProps } from './types'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { DragDropContext, Droppable, Draggable, DragStart } from '@hello-pangea/dnd'
 
 
 const getTabContextMenu = (tab: Tab) => (
@@ -167,16 +168,19 @@ export default function TabBar({
             <DragDropContext  onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                 <Droppable droppableId='tabs' direction='horizontal'>
                     {(provided) => (
-                        <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className="bg-gray-800 border-b border-gray-700 flex h-[37px]"
-                        >
-                            {
-                                renderNodeTabs(tabs, localTree, remoteTree, onTabClick)
-                            }
-                            {provided.placeholder}
-                        </div>
+                        <ScrollArea className='w-full'>
+                            <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className='bg-gray-800 border-b border-gray-700 flex h-[37px] min-w-max'
+                            >
+                                {
+                                    renderNodeTabs(tabs, localTree, remoteTree, onTabClick)
+                                }
+                                {provided.placeholder}
+                            </div>
+                            <ScrollBar orientation='horizontal' />
+                        </ScrollArea>
                     )}
                 </Droppable>
             </DragDropContext>
