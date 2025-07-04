@@ -176,7 +176,7 @@ export default function SchemasPage({
                     console.log(err)
                 } else {
                     if (result && result.success === false) {
-                        console.log(err)
+                        console.log(result.message)
                     } else {
                         setGeneralMessage('Created successfully!')
                             ; (node.tree as SceneTree).notifyDomUpdate()

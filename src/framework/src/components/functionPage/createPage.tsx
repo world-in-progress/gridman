@@ -44,8 +44,8 @@ export default function CreatePage({
             { renderPage(node) }
             <div className='w-3/5 h-full py-4 pr-2'>
                 <div className={node.scenarioNode.mapStyle}>
-                    {/* <MapContainer key={mapKey} ref={mapContainerRef} node={node} /> */}
-                    { renderMap(node) }
+                    <MapContainer key={mapKey} ref={mapContainerRef} node={node} />
+                    {/* { renderMap(node) } */}
                 </div>
                 
             </div>

@@ -9,6 +9,7 @@ export interface ScenarioNodeDescription {
 export interface IScenarioNode extends ScenarioNodeDescription {
     name: string
     degree: number
+    mapStyle: string
     
     /**
      * Renders the context menu for the scenario node.
