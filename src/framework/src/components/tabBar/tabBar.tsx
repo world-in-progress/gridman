@@ -48,7 +48,7 @@ const renderNodeTab = (
                             <div
                                 className={cn(
                                     'flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer',
-                                    'hover:bg-gray-700 min-w-0 max-w-48',
+                                    'hover:bg-gray-700 h-[4vh]',
                                     tab.isActive && 'bg-gray-900',
                                     snapshot.isDragging && 'bg-gray-600'
                                 )}
@@ -183,9 +183,9 @@ export default function TabBar({
                         </ScrollArea>
                     )}
 
-                </Droppable>
+                </Droppable> 
             </DragDropContext> */}
-            <div className='bg-gray-800 border-b border-gray-700 flex h-[37px] max-w-[calc(100%-11.5rem)]'>
+            <div className='bg-gray-800 border-b border-gray-700 flex h-[4vh] w-[85vw]'>
                 <ScrollArea className='w-full'>
                     <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                         <Droppable droppableId='tabs' direction='horizontal'>
@@ -193,7 +193,7 @@ export default function TabBar({
                                 <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
-                                    className='bg-gray-800 border-b border-gray-700 flex h-[37px] min-w-max'
+                                    className='bg-gray-800 border-b border-gray-700 flex h-[4vh] min-w-max'
                                 >
                                     {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
                                     {provided.placeholder}
