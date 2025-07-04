@@ -95,6 +95,7 @@ export class SceneTree implements ISceneTree {
     isRemote: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
+    mapContainerRef: React.RefObject<any> | null = null
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}

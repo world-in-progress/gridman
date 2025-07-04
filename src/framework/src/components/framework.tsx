@@ -273,7 +273,7 @@ function FrameworkComponent() {
     }, [])
 
     return (
-        <div className="flex h-screen w-full overflow-hidden bg-gray-900">
+        <div className="flex h-screen w-screen overflow-hidden bg-red-900">
             {/* Activity Bar */}
             <IconBar
                 currentActiveId={activeIconID}
@@ -306,7 +306,7 @@ function FrameworkComponent() {
                     onTabDragEnd={handleTabDragEnd}
                     onTabClick={handleTabClick}
                 />
-                <div className="flex-1 bg-gray-100 v-[97.5vh]">
+                <div className="flex-1 bg-gray-100 h-[50vh]">
                     <MainEditorArea nodeStack={nodeStack}/>
                 </div>
             </div>

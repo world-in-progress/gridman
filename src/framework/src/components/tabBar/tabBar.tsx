@@ -193,7 +193,7 @@ export default function TabBar({
                                 <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
-                                    className='bg-gray-800 border-b border-gray-700 flex h-[4vh] min-w-max'
+                                    className='bg-gray-800 border-b border-gray-700 flex h-full min-w-max'
                                 >
                                     {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
                                     {provided.placeholder}
