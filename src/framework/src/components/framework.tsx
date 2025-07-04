@@ -1,5 +1,4 @@
 import React, { 
-    useRef,
     useState,
     useEffect,
     useCallback,
@@ -11,11 +10,11 @@ import IconBar from './iconBar/iconBar'
 import { DropResult } from '@hello-pangea/dnd'
 import { ISceneNode } from '@/core/scene/iscene'
 import CreatePage from './functionPage/createPage'
+import MapContainer from './mapContainer/mapContainer'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
 import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
-import MapContainer, { MapContainerHandles } from './mapContainer/mapContainer'
 
 const MainEditorArea: React.FC<{ nodeStack: ISceneNode[] }> = ({ nodeStack }) => {
     if (nodeStack.length === 0) {
@@ -34,14 +33,9 @@ function FrameworkComponent() {
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
     const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
-    const [mainEditorAreaState, setMainEditorAreaState] = useState<string>()
     const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
     const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
     const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
-
-    store.set('changeMainEditorAreaState', (state: string) => {
-        setMainEditorAreaState(state)
-    })
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -112,6 +106,16 @@ function FrameworkComponent() {
         if (privateTree === null || publicTree === null) {
             return
         }
+
+        const _privateTree = privateTree as SceneTree
+        const _publicTree = publicTree as SceneTree
+        const _tree = node.tree as SceneTree
+
+        // Set the selected node in the other tree as null
+        _privateTree.selectedNode = null
+        _publicTree.selectedNode = null
+        _tree.selectedNode = node
+
         node.scenarioNode.handleMenuOpen(node)
     }, [privateTree, publicTree])
 
