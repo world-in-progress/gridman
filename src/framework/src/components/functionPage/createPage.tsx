@@ -10,7 +10,7 @@ const renderPage = (node: ISceneNode) => {
 }
 
 const renderMap = (node: ISceneNode) => {
-    return null
+    return node.scenarioNode.renderMap(node)
 }
 
 export default function CreatePage({
@@ -42,8 +42,10 @@ export default function CreatePage({
             { renderPage(node) }
             <div className='w-3/5 h-full py-4 pr-2'>
                 <div className='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'>
-                    <MapContainer key={mapKey} ref={mapContainerRef} />
+                    {/* <MapContainer key={mapKey} ref={mapContainerRef} node={node} /> */}
+                    { renderMap(node) }
                 </div>
+                
             </div>
         </div>
     )

@@ -28,4 +28,8 @@ export default class DefaultScenarioNode implements IScenarioNode {
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
         return null
     }
+
+    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
+        return null
+    }
 }

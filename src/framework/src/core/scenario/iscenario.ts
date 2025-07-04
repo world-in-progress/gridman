@@ -31,4 +31,11 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @returns The rendered tab page or null.
      */
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null
+
+    /**
+     * Renders the map for the scenario node.
+     * @param nodeSelf The scene node being rendered.
+     * @returns The rendered map or null.
+     */
+    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null
 }

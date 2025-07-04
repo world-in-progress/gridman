@@ -14,6 +14,7 @@ export class SchemasPageContext extends DefaultPageContext {
     description: string
     base_point: number[]
     grid_info: number[][]
+    style: string
 
     constructor() {
         super()
@@ -24,6 +25,7 @@ export class SchemasPageContext extends DefaultPageContext {
         this.description = ''
         this.base_point = []
         this.grid_info = []
+        this.style = ''
     }
 }
 
@@ -59,9 +61,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    // renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
-    //     return  (
-    //         <MapContainer key={mapKey} ref={mapContainerRef} />
-    //     )
-    // }
+    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
+        return  (
+            <MapContainer node={nodeSelf} />
+        )
+    }
 }
