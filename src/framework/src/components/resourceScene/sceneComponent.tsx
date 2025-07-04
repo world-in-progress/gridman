@@ -47,7 +47,7 @@ interface SceneTreeProps {
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
     onNodeClickEnd: (node: ISceneNode) => void
-    onNodeFocused: (node: ISceneNode) => void 
+    onNodeFocused: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -171,12 +171,12 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
     const tree = isPublic ? publicTree : privateTree
 
     return (
-        <div>
-            <div className='sticky top-0 z-10 bg-gray-800 text-sm font-semibold text-gray-200 mb-1 ml-1'>
+        <>
+            <div className=' z-10 bg-gray-800 text-sm font-semibold text-gray-200 ml-1'>
                 {title}
             </div>
             <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} scrollTrigger={scrollTrigger} />
-        </div>
+        </>
     )
 }
 
@@ -241,7 +241,7 @@ export default function ResourceTreeComponent({
     }, [focusNode, onNodeFocused])
 
     return (
-        <ScrollArea className='h-full bg-gray-800'>
+        <ScrollArea className='h-full bg-gray-800 overflow-hidden'>
             <div className='w-[12.5vw] bg-gray-800 border-r border-gray-700'>
                 <div className='p-2'>
                     <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>

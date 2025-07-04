@@ -1,5 +1,6 @@
 import { IScenarioNode } from '@/core/scenario/iscenario'
 import { ISceneNode, ISceneTree } from '../../core/scene/iscene'
+import { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 
 export class DefaultPageContext {
 }
@@ -30,7 +31,7 @@ export default class DefaultScenarioNode implements IScenarioNode {
         return null
     }
 
-    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
         return null
     }
 }

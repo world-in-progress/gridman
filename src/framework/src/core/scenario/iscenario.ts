@@ -1,5 +1,6 @@
 import React from 'react'
 import { ISceneNode, ISceneTree } from '../scene/iscene'
+import { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 
 export interface ScenarioNodeDescription {
     children: string[]
@@ -38,5 +39,5 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @param nodeSelf The scene node being rendered.
      * @returns The rendered map or null.
      */
-    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null
+    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null
 }
