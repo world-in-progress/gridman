@@ -180,6 +180,13 @@ function FrameworkComponent() {
 
         if (tree === null || nodeStack.length === 0) return
 
+        // Skip if click the same tab
+        const activateNode = nodeStack[nodeStack.length - 1] as SceneNode
+        if (activateNode.tab.id === tab.id) return
+
+        // Freeze the state of the previous active node
+        activateNode.scenarioNode.freezeMap(activateNode)
+
         // Deactivate the active node
         ;(nodeStack[nodeStack.length - 1] as SceneNode).tab.isActive = false
 
@@ -196,6 +203,9 @@ function FrameworkComponent() {
 
         // Select the current node
         tree.selectedNode = node
+
+        // Melt the state of the previous active node
+        node.scenarioNode.meltMap(node)
 
         // Update state
         setFocusNode(node)

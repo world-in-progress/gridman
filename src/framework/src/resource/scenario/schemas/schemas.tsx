@@ -8,6 +8,12 @@ import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/def
 import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 import { useRef } from 'react'
 
+interface MapState {
+    isDrawingPoint: boolean
+    lon: number
+    lat: number
+}
+
 export class SchemasPageContext extends DefaultPageContext {
     name: string
     epsg: number | null
@@ -15,9 +21,9 @@ export class SchemasPageContext extends DefaultPageContext {
     description: string
     base_point: number[]
     grid_info: number[][]
-    isDrawingPoint: boolean
-    lon: string
-    lat: string
+
+    // isDrawingPoint: boolean
+    mapState: MapState
 
     constructor() {
         super()
@@ -28,9 +34,12 @@ export class SchemasPageContext extends DefaultPageContext {
         this.description = ''
         this.base_point = []
         this.grid_info = []
-        this.isDrawingPoint = false
-        this.lon = ''
-        this.lat = ''
+
+        this.mapState = {
+            isDrawingPoint: false,
+            lon: 0,
+            lat: 0,
+        }
     }
 }
 
@@ -71,5 +80,23 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         return (
             <MapContainer node={nodeSelf} ref={mapContainerRef} />
         )
+    }
+
+    freezeMap(nodeSelf: ISceneNode): void {
+        const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
+        const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
+
+        // Add map state to context
+        // Clear Marker
+        const mapContainerRef = (nodeSelf.tree as any).mapContainerRef
+        mapContainerRef.current.clearAllMarkers()
+    }
+
+    meltMap(nodeSelf: ISceneNode): void {
+        const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
+        const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
+
+        // Use context to update map state
+        // Add Marker
     }
 }

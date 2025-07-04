@@ -4,6 +4,9 @@ import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
+import store from '@/store'
+import PatchesPage from './patchesPage'
+import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
@@ -42,7 +45,21 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
         const _node = nodeSelf as SceneNode
         const _tree = nodeSelf.tree as SceneTree
 
-        _node.tab.isActive = true
         _tree.startEditingNode(_node)
+    }
+
+    // renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+    //     const map = store.get<mapboxgl.Map>('map')
+
+    //     return 
+    //     (
+    //         <PatchesPage node={nodeSelf} />
+    //     )
+    // }
+
+    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
+        return (
+            <MapContainer node={nodeSelf} ref={mapContainerRef} />
+        )
     }
 }

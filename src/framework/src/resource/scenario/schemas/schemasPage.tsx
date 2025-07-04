@@ -208,30 +208,25 @@ export default function SchemasPage({
     }
 
     const handleDraw = () => {
-        // 如果已经在选点模式，则取消选点
+
         if (isSelectingPoint) {
             setIsSelectingPoint(false)
-            
-            // 更新节点状态
+
             if (node) {
                 const _node = node as SceneNode
                 if (_node.pageContext) {
                     const context = _node.pageContext as SchemasPageContext
-                    context.isDrawingPoint = false
+                    context.mapState.isDrawingPoint = false
                 }
             }
-            
             return
         }
         
-        // 进入选点模式
         setIsSelectingPoint(true)
         
-        // 获取地图容器引用
         const mapContainerRef = (node?.tree as any)?.mapContainerRef
         
         if (mapContainerRef?.current) {
-            // 通知节点当前处于绘制状态
             if (node) {
                 const _node = node as SceneNode
                 if (!_node.pageContext) {
@@ -239,22 +234,19 @@ export default function SchemasPage({
                 }
                 
                 const context = _node.pageContext as SchemasPageContext
-                context.isDrawingPoint = true
-                
-                // 使用地图容器的方法启用绘制模式
+                context.mapState.isDrawingPoint = true
+
                 mapContainerRef.current.enableDrawMode((lng: number, lat: number) => {
-                    // 设置经纬度
+
                     setLon(lng.toFixed(6))
                     setLat(lat.toFixed(6))
-                    
-                    // 更新节点中的坐标信息，实现持久化存储
+
                     if (_node.pageContext) {
                         const context = _node.pageContext as SchemasPageContext
-                        context.lon = lng.toFixed(6)
-                        context.lat = lat.toFixed(6)
-                        context.isDrawingPoint = false
-                        
-                        // 如果有EPSG，同时更新转换后的坐标
+                        context.mapState.lon = parseFloat(lng.toFixed(6))
+                        context.mapState.lat = parseFloat(lat.toFixed(6))
+                        context.mapState.isDrawingPoint = false
+
                         if (epsg) {
                             const result = convertCoordinate(lng.toFixed(6), lat.toFixed(6), '4326', epsg)
                             if (result) {

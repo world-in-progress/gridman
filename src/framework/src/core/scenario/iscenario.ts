@@ -40,4 +40,8 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @returns The rendered map or null.
      */
     renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null
+
+    freezeMap(nodeSelf: ISceneNode): void
+
+    meltMap(nodeSelf: ISceneNode): void
 }

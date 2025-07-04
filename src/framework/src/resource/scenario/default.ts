@@ -34,4 +34,10 @@ export default class DefaultScenarioNode implements IScenarioNode {
     renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
         return null
     }
+
+    freezeMap(nodeSelf: ISceneNode): void {
+    }
+
+    meltMap(nodeSelf: ISceneNode): void {
+    }
 }

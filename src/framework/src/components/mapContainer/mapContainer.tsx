@@ -22,6 +22,7 @@ export interface MapContainerHandles {
     getMap: () => mapboxgl.Map | null
     enableDrawMode: (callback: (lng: number, lat: number) => void) => void
     disableDrawMode: () => void
+    clearAllMarkers: () => void
 }
 
 // interface ExtendedMapContainerProps extends MapContainerProps {
@@ -64,6 +65,7 @@ const MapContainer = forwardRef<
         markersRef.current.forEach(marker => marker.remove())
         markersRef.current = []
         markerMapRef.current.clear()
+        console.log('clearAllMarkers')
     }
 
     const closeActivePopup = () => {
@@ -219,7 +221,8 @@ const MapContainer = forwardRef<
         flyToSchema,
         getMap: () => mapRef.current,
         enableDrawMode,
-        disableDrawMode
+        disableDrawMode,
+        clearAllMarkers,
     }))
 
     useEffect(() => {
@@ -228,7 +231,7 @@ const MapContainer = forwardRef<
         const _node = node as SceneNode;
         const context = _node.pageContext as SchemasPageContext;
         
-        if (context && context.isDrawingPoint) {
+        if (context && context.mapState.isDrawingPoint) {
             const map = mapRef.current;
             if (map && map.getCanvas()) {
                 map.getCanvas().style.cursor = 'crosshair';
