@@ -5,7 +5,8 @@ import { ISceneNode } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
-import MapContainer from '@/components/mapContainer/mapContainer'
+import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
+import { useRef } from 'react'
 
 export class SchemasPageContext extends DefaultPageContext {
     name: string
@@ -14,16 +15,22 @@ export class SchemasPageContext extends DefaultPageContext {
     description: string
     base_point: number[]
     grid_info: number[][]
+    isDrawingPoint: boolean
+    lon: string
+    lat: string
 
     constructor() {
         super()
-        
+
         this.name = ''
         this.epsg = null
         this.starred = false
         this.description = ''
         this.base_point = []
         this.grid_info = []
+        this.isDrawingPoint = false
+        this.lon = ''
+        this.lat = ''
     }
 }
 
@@ -60,9 +67,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
-        return  (
-            <MapContainer node={nodeSelf} />
+    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
+        return (
+            <MapContainer node={nodeSelf} ref={mapContainerRef} />
         )
     }
 }

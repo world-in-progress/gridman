@@ -1,4 +1,4 @@
-import { FormErrors } from "../schemas/types";
+import { FormErrors } from "@/resource/scenario/schemas/types";
 
 export interface PatchNameCardProps {
     name: string;

@@ -6,7 +6,10 @@ import { convertToWGS84 } from './utils'
 import { MapContainerProps } from './types'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import { GridSchema } from '../../core/apis/types'
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { SceneNode } from '../resourceScene/scene'
+import { SchemasPageContext } from '@/resource/scenario/schemas/schemas'
+import { enableMapPointSelection } from './utils'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -17,11 +20,13 @@ export interface MapContainerHandles {
     showSchemaMarkerOnMap: (schemas: GridSchema[]) => void
     flyToSchema: (schema: GridSchema) => void
     getMap: () => mapboxgl.Map | null
+    enableDrawMode: (callback: (lng: number, lat: number) => void) => void
+    disableDrawMode: () => void
 }
 
-interface ExtendedMapContainerProps extends MapContainerProps {
-    activeTab?: Tab;
-}
+// interface ExtendedMapContainerProps extends MapContainerProps {
+//     activeTab?: Tab;
+// }
 
 declare global {
     interface Window {
@@ -40,8 +45,12 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
     };
 };
 
-const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>((props, ref) => {
-    const { activeTab } = props;
+const MapContainer = forwardRef<
+    MapContainerHandles,
+    MapContainerProps
+>((props, ref) => {
+    const { node } = props;
+    // const { activeTab } = props;
     // const { mapContent } = useMapContent();
 
     const mapWrapperRef = useRef<HTMLDivElement>(null);
@@ -185,24 +194,47 @@ const MapContainer = forwardRef<MapContainerHandles, ExtendedMapContainerProps>(
         }
     };
 
+    const enableDrawMode = (callback: (lng: number, lat: number) => void) => {
+        const map = mapRef.current;
+        if (!map) return;
+        
+        if (map.getCanvas()) {
+            map.getCanvas().style.cursor = 'crosshair';
+        }
+        
+        return enableMapPointSelection(map, callback);
+    };
+    
+    const disableDrawMode = () => {
+        const map = mapRef.current;
+        if (!map) return;
+        
+        if (map.getCanvas()) {
+            map.getCanvas().style.cursor = '';
+        }
+    };
+
     useImperativeHandle(ref, () => ({
         showSchemaMarkerOnMap,
         flyToSchema,
         getMap: () => mapRef.current,
+        enableDrawMode,
+        disableDrawMode
     }))
 
     useEffect(() => {
-        if (activeTab) {
-            // const schemas = mapContent[activeTab.path];
-            // if (schemas) {
-            //     showSchemaMarkerOnMap(schemas);
-            // } else {
-            //     clearAllMarkers();
-            // }
-        } else {
-            clearAllMarkers();
+        if (!node) return;
+        
+        const _node = node as SceneNode;
+        const context = _node.pageContext as SchemasPageContext;
+        
+        if (context && context.isDrawingPoint) {
+            const map = mapRef.current;
+            if (map && map.getCanvas()) {
+                map.getCanvas().style.cursor = 'crosshair';
+            }
         }
-    }, [activeTab]);
+    }, [node])
 
     useEffect(() => {
         isUnmountedRef.current = false
