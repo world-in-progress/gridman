@@ -14,7 +14,6 @@ export class SchemasPageContext extends DefaultPageContext {
     description: string
     base_point: number[]
     grid_info: number[][]
-    style: string
 
     constructor() {
         super()
@@ -25,7 +24,6 @@ export class SchemasPageContext extends DefaultPageContext {
         this.description = ''
         this.base_point = []
         this.grid_info = []
-        this.style = ''
     }
 }
 
@@ -35,6 +33,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     children: string[] = [
         'schema',
     ]
+    mapStyle: string = 'w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
         return (

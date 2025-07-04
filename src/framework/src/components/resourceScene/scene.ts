@@ -26,6 +26,7 @@ export class SceneNode implements ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
+    mapStyle: string = ''
 
     // SceneNode state
     private _state: SceneNodeState = {

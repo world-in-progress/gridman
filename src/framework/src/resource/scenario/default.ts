@@ -8,6 +8,7 @@ export default class DefaultScenarioNode implements IScenarioNode {
     static classKey: string = 'default'
     semanticPath: string = 'default'
     children: string[] = []
+    mapStyle: string = ''
 
     get name(): string {
         return this.semanticPath.split('.').pop() || ''
