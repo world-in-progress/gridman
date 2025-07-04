@@ -10,7 +10,9 @@ const renderPage = (node: ISceneNode) => {
 }
 
 const renderMap = (node: ISceneNode) => {
-    return null
+    console.log(node.scenarioNode.mapStyle)
+    console.log(node.scenarioNode)
+    return node.scenarioNode.renderMap(node)
 }
 
 export default function CreatePage({
@@ -41,9 +43,11 @@ export default function CreatePage({
         <div className='w-full h-full flex flex-row bg-[#1E1E1E]'>
             { renderPage(node) }
             <div className='w-3/5 h-full py-4 pr-2'>
-                <div className='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'>
-                    <MapContainer key={mapKey} ref={mapContainerRef} />
+                <div className={node.scenarioNode.mapStyle}>
+                    <MapContainer key={mapKey} ref={mapContainerRef} node={node} />
+                    {/* { renderMap(node) } */}
                 </div>
+                
             </div>
         </div>
     )

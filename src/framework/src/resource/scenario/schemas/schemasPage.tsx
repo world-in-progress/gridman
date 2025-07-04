@@ -1,26 +1,17 @@
-import {
-    SchemaNameCard,
-    SchemaDescriptionCard,
-    SchemaEpsgCard,
-    SchemaCoordinateCard,
-    SchemaConvertedCoordCard,
-    // GridLevel,
-    SchemaErrorMessage
-} from './createSchemaComponents'
-import { Button } from '@/components/ui/button'
-import { SchemaService } from './schemaService'
-import { MapPin, MapPinHouse, Save, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { GridLevel, SchemasPageProps } from './types'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { createSchemaData, validateGridLayers, validateSchemaForm } from './utils'
-import { enableMapPointSelection, convertCoordinate } from '@/components/mapContainer/utils'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
-import { SchemasPageContext } from './schemas'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { SchemaService } from './schemaService'
+import { SchemasPageContext } from './schemas'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { GridLevel, SchemasPageProps } from './types'
+import { MapPin, MapPinHouse, Save, X } from 'lucide-react'
+import { enableMapPointSelection, convertCoordinate } from '@/components/mapContainer/utils'
+import { createSchemaData, validateGridLayers, validateSchemaForm } from './utils'
 
 const schemaTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -101,31 +92,8 @@ export default function SchemasPage({
     const schemaService = new SchemaService()
 
     const resetForm = () => {
-        // setName('')
-        // setDescription('')
-        // setEpsg('')
-        // setLon('')
-        // setLat('')
-        // setGridLayers([])
-        // setFormErrors({
-        //     name: false,
-        //     description: false,
-        //     coordinates: false,
-        //     epsg: false,
-        // })
-        // setLayerErrors({})
-        // setConvertedCoord(null)
-        // setGeneralMessage(null)
         setSchemaContext(null)
     }
-
-    // useEffect(() => {
-    //     const _node = node as SceneNode
-    //     const context = _node.pageContext as SchemasPageContext
-    //     if (context) {
-    //         setSchemaContext(context)
-    //     }
-    // }, [])
 
     useEffect(() => {
         const _node = node as SceneNode
@@ -135,7 +103,7 @@ export default function SchemasPage({
             setName(context.name || '')
             setEpsg(context.epsg?.toString() || '')
             setDescription(context.description || '')
-            
+
             // Add null check for base_point
             if (context.base_point && Array.isArray(context.base_point) && context.base_point.length >= 2) {
                 setConvertedCoord({
@@ -143,7 +111,7 @@ export default function SchemasPage({
                     y: context.base_point[1].toString()
                 })
             }
-            
+
             // Add null check for grid_info
             if (context.grid_info && Array.isArray(context.grid_info)) {
                 setGridLayers(context.grid_info.map((layer, index) => ({
@@ -208,7 +176,7 @@ export default function SchemasPage({
                     console.log(err)
                 } else {
                     if (result && result.success === false) {
-                        console.log(err)
+                        console.log(result.message)
                     } else {
                         setGeneralMessage('Created successfully!')
                             ; (node.tree as SceneTree).notifyDomUpdate()
@@ -268,16 +236,16 @@ export default function SchemasPage({
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
                 if (!prev) return null;
-                
+
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = updatedLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
                 ]);
-                
+
                 return { ...prev, grid_info: gridInfo };
             });
-            
+
             return updatedLayers;
         })
     }
@@ -294,16 +262,16 @@ export default function SchemasPage({
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
                 if (!prev) return null;
-                
+
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = updatedLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
                 ]);
-                
+
                 return { ...prev, grid_info: gridInfo };
             });
-            
+
             return updatedLayers;
         })
     }
@@ -320,16 +288,16 @@ export default function SchemasPage({
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
                 if (!prev) return null;
-                
+
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = updatedLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
                 ]);
-                
+
                 return { ...prev, grid_info: gridInfo };
             });
-            
+
             return updatedLayers;
         })
     }
@@ -346,16 +314,16 @@ export default function SchemasPage({
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
                 if (!prev) return null;
-                
+
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = filteredLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
                 ]);
-                
+
                 return { ...prev, grid_info: gridInfo };
             });
-            
+
             return filteredLayers;
         })
     }

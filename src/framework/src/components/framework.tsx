@@ -18,7 +18,7 @@ import ResourceTreeComponent from './resourceScene/sceneComponent'
 
 const MainEditorArea: React.FC<{ nodeStack: ISceneNode[] }> = ({ nodeStack }) => {
     if (nodeStack.length === 0) {
-        return <MapContainer />
+        return <MapContainer node={null} />
     }
 
     const editingNode = nodeStack[nodeStack.length - 1]

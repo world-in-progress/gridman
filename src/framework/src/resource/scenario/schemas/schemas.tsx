@@ -33,6 +33,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     children: string[] = [
         'schema',
     ]
+    mapStyle: string = 'w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
         return (
@@ -59,9 +60,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    // renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
-    //     return  (
-    //         <MapContainer key={mapKey} ref={mapContainerRef} />
-    //     )
-    // }
+    renderMap(nodeSelf: ISceneNode): React.JSX.Element | null {
+        return  (
+            <MapContainer node={nodeSelf} />
+        )
+    }
 }
