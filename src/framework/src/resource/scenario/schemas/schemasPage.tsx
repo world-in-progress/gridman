@@ -28,7 +28,7 @@ const gridLevelText = {
     rule1: 'Each level should have smaller cell dimensions than the previous level',
     rule2: "Previous level's width/height must be a multiple of the current level's width/height",
     rule3: 'First level defines the base grid cell size, and higher levels define increasingly finer grids'
-};
+}
 
 const gridItemText = {
     level: 'Level',
@@ -37,12 +37,13 @@ const gridItemText = {
     height: 'Height/m',
     widthPlaceholder: 'Width',
     heightPlaceholder: 'Height'
-};
+}
 
 export default function SchemasPage({
     node,
     mapInstance,
 }: SchemasPageProps) {
+    const schemaService = new SchemaService()
 
     const [lon, setLon] = useState('')
     const [lat, setLat] = useState('')
@@ -70,12 +71,10 @@ export default function SchemasPage({
     } | null>(null)
     const [schemaContext, setSchemaContext] = useState<SchemasPageContext | null>(null)
 
-    const sortedLayers = [...gridLevel].sort((a, b) => a.id - b.id);
-
+    // Style variables for general message
     let bgColor = 'bg-red-50'
     let textColor = 'text-red-700'
     let borderColor = 'border-red-200'
-
     if (generalMessage?.includes('正在提交数据') || generalMessage?.includes('Submitting data')) {
         bgColor = 'bg-orange-50'
         textColor = 'text-orange-700'
@@ -89,11 +88,11 @@ export default function SchemasPage({
         borderColor = 'border-green-200'
     }
 
-    const schemaService = new SchemaService()
-
     const resetForm = () => {
         setSchemaContext(null)
     }
+
+    const sortedLayers = [...gridLevel].sort((a, b) => a.id - b.id)
 
     useEffect(() => {
         const _node = node as SceneNode
@@ -123,35 +122,7 @@ export default function SchemasPage({
                 })))
             }
         }
-    }, [node])
-
-    // useEffect(() => {
-    //     if (lon || lat) {
-    //         if (epsg) {
-    //             const result = convertCoordinate(lon, lat, '4326', epsg)
-    //             setConvertedCoord(result)
-    //         }
-    //         if (node) {
-    //             const _node = node as SceneNode
-    //             if (_node.pageContext) {
-    //                 const context = _node.pageContext as SchemasPageContext
-    //                 context.base_point = [parseFloat(lon), parseFloat(lat)]
-    //                 console.log('context.base_point', context.base_point)
-    //             }
-    //         }
-
-    //         // if (node && result) {
-    //         //     const _node = node as SceneNode
-    //         //     if (_node.pageContext) {
-    //         //         const context = _node.pageContext as SchemasPageContext
-    //         //         context.base_point = [parseFloat(result.x), parseFloat(result.y)]
-    //         //         console.log('context.base_point', context.base_point)
-    //         //     }
-    //         // }
-    //     } else {
-    //         setConvertedCoord(null)
-    //     }
-    // }, [lon, lat, epsg, node])
+    }, [epsg, node])
 
     useEffect(() => {
         if (schemaContext && node) {
@@ -193,23 +164,13 @@ export default function SchemasPage({
             node.tree.isRemote || false,
             (err: Error | null | undefined, result: any) => {
                 if (err) {
-                    console.log('这是err', schemaData)
                     console.log(err)
                 } else {
                     if (result && result.success === false) {
                         console.log(result.message)
                     } else {
                         setGeneralMessage('Created successfully!')
-                            ; (node.tree as SceneTree).notifyDomUpdate()
-                        // if (onCreationSuccess) {
-                        //     console.log('你好')
-                        //     onCreationSuccess()
-                        //     if (sceneTree) {
-                        //         const schemasKey = 'root.topo.schemas'
-                        //         const schemasNode = sceneTree.scene.get(schemasKey)!
-                        //         sceneTree.alignNodeInfo(schemasNode, true)
-                        //     }
-                        // }
+                        ;(node.tree as SceneTree).notifyDomUpdate()
                         setTimeout(() => {
                             resetForm()
                         }, 500)
@@ -221,7 +182,6 @@ export default function SchemasPage({
     }
 
     const handleDraw = () => {
-
         if (isSelectingPoint) {
             setIsSelectingPoint(false)
 
@@ -237,7 +197,7 @@ export default function SchemasPage({
 
         setIsSelectingPoint(true)
 
-        const mapContainerRef = (node?.tree as any)?.mapContainerRef
+        const mapContainerRef = (node.tree as SceneTree).mapContainerRef
 
         if (mapContainerRef?.current) {
             if (node) {
@@ -250,7 +210,6 @@ export default function SchemasPage({
                 context.mapState.isDrawingPoint = true
 
                 mapContainerRef.current.enableDrawMode((lng: number, lat: number) => {
-
                     setLon(lng.toFixed(6))
                     setLat(lat.toFixed(6))
 
@@ -264,42 +223,6 @@ export default function SchemasPage({
                 })
             }
         }
-        // else if (mapInstance) {
-        //     // 兼容原有方式
-        //     if (node) {
-        //         const _node = node as SceneNode
-        //         if (!_node.pageContext) {
-        //             _node.pageContext = new SchemasPageContext()
-        //         }
-
-        //         const context = _node.pageContext as SchemasPageContext
-        //         context.isDrawingPoint = true
-
-        //         enableMapPointSelection(mapInstance, (lng, lat) => {
-        //             // 设置经纬度
-        //             setLon(lng.toFixed(6))
-        //             setLat(lat.toFixed(6))
-
-        //             // 更新节点中的坐标信息，实现持久化存储
-        //             if (_node.pageContext) {
-        //                 const context = _node.pageContext as SchemasPageContext
-        //                 context.lon = lng.toFixed(6)
-        //                 context.lat = lat.toFixed(6)
-        //                 context.isDrawingPoint = false
-
-        //                 // 如果有EPSG，同时更新转换后的坐标
-        //                 if (epsg) {
-        //                     const result = convertCoordinate(lng.toFixed(6), lat.toFixed(6), '4326', epsg)
-        //                     if (result) {
-        //                         context.base_point = [parseFloat(result.x), parseFloat(result.y)]
-        //                     }
-        //                 }
-        //             }
-
-        //             setIsSelectingPoint(false)
-        //         })
-        //     }
-        // }
     }
 
     const handleAddLayer = () => {
@@ -307,7 +230,7 @@ export default function SchemasPage({
             const nextId =
                 prevLayers.length > 0
                     ? Math.max(...prevLayers.map((layer) => layer.id)) + 1
-                    : 0;
+                    : 0
 
             const updatedLayers = [
                 ...prevLayers,
@@ -319,18 +242,18 @@ export default function SchemasPage({
 
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
-                if (!prev) return null;
+                if (!prev) return null
 
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = updatedLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
-                ]);
+                ])
 
-                return { ...prev, grid_info: gridInfo };
-            });
+                return { ...prev, grid_info: gridInfo }
+            })
 
-            return updatedLayers;
+            return updatedLayers
         })
     }
 
@@ -371,18 +294,18 @@ export default function SchemasPage({
 
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
-                if (!prev) return null;
+                if (!prev) return null
 
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = updatedLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
-                ]);
+                ])
 
-                return { ...prev, grid_info: gridInfo };
-            });
+                return { ...prev, grid_info: gridInfo }
+            })
 
-            return updatedLayers;
+            return updatedLayers
         })
     }
 
@@ -397,18 +320,18 @@ export default function SchemasPage({
 
             // Update the grid_info in schemaContext
             setSchemaContext(prev => {
-                if (!prev) return null;
+                if (!prev) return null
 
                 // Convert GridLevel[] to number[][] for grid_info
                 const gridInfo = filteredLayers.map(layer => [
                     parseInt(layer.width) || 0,
                     parseInt(layer.height) || 0
-                ]);
+                ])
 
-                return { ...prev, grid_info: gridInfo };
-            });
+                return { ...prev, grid_info: gridInfo }
+            })
 
-            return filteredLayers;
+            return filteredLayers
         })
     }
 

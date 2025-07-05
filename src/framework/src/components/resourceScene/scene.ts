@@ -1,7 +1,8 @@
 import React from 'react'
 import * as api from '@/core/apis/apis'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { IScenarioNode } from '@/core/scenario/iscenario'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
 import { Tab } from '../tabBar/types'
 
@@ -95,7 +96,7 @@ export class SceneTree implements ISceneTree {
     isRemote: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
-    mapContainerRef: React.RefObject<any> | null = null
+    mapContainerRef: React.RefObject<MapContainerHandles> | null = null
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
