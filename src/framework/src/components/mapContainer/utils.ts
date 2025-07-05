@@ -1,3 +1,4 @@
+import store from '@/store';
 import mapboxgl from 'mapbox-gl';
 
 import proj4 from 'proj4';
@@ -8,8 +9,22 @@ export const clearMapMarkers = (): void => {
         Array.from(markers).forEach((marker) => {
             marker.remove();
         });
+        console.log('clearMapMarkers', markers)
     }
 };
+
+export const addMapMarker = (basePoint: number[]) => {
+    const map = store.get<mapboxgl.Map>('map')!
+    if (basePoint && basePoint.length === 2) {
+        new mapboxgl.Marker({
+            color: '#FF0000',
+        })
+            .setLngLat([basePoint[0], basePoint[1]])
+            .addTo(map)
+        console.log('addMapMarker', basePoint)
+    }
+}
+
 
 export const enableMapPointSelection = (
     mapInstance: mapboxgl.Map | undefined,

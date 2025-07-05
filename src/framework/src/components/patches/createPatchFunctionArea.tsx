@@ -72,7 +72,7 @@ export default function CreatePatchFunctionArea({ mapInstance, remountMap }: Cre
                     <div className="w-1/3 h-full flex justify-center items-center">
                         <Avatar className="bg-[#007ACC] h-28 w-28 border-2 border-white">
                             <AvatarFallback>
-                                <SquaresIntersect  className="h-15 w-15 text-white" />
+                                <SquaresIntersect className="h-15 w-15 text-white" />
                             </AvatarFallback>
                         </Avatar>
                     </div>
@@ -103,8 +103,8 @@ export default function CreatePatchFunctionArea({ mapInstance, remountMap }: Cre
                     />
 
                     {/* <BelongToProjectCard
-                    projectName={parentProject?.name || ''}
-                /> */}
+                        projectName={parentProject?.name || ''}
+                    /> */}
 
                     <ProjectEpsgCard
                         epsg={epsg}
@@ -114,15 +114,15 @@ export default function CreatePatchFunctionArea({ mapInstance, remountMap }: Cre
                         formErrors={formErrors}
                     />
 
-                    {/* <PatchBounds
-                    isDrawing={isDrawing}
-                    rectangleCoordinates={rectangleCoordinates!}
-                    onDrawRectangle={handleDrawRectangle}
-                    onAdjustAndDraw={handleAdjustAndDraw}
-                    convertedRectangle={convertedRectangle}
-                    setConvertedRectangle={setConvertedRectangle}
-                    drawExpandedRectangleOnMap={drawExpandedRectangleOnMap}
-                /> */}
+                    <PatchBounds
+                        isDrawing={isDrawing}
+                        rectangleCoordinates={rectangleCoordinates!}
+                        onDrawRectangle={handleDrawRectangle}
+                        onAdjustAndDraw={handleAdjustAndDraw}
+                        convertedRectangle={convertedRectangle}
+                        setConvertedRectangle={setConvertedRectangle}
+                        drawExpandedRectangleOnMap={drawExpandedRectangleOnMap}
+                    />
 
                     {convertedRectangle && (
                         <CoordinateBox
