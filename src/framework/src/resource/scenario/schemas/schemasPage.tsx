@@ -103,13 +103,15 @@ export default function SchemasPage({
             setName(context.name || '')
             setEpsg(context.epsg?.toString() || '')
             setDescription(context.description || '')
+            setLon(context.base_point?.[0]?.toString() || '')
+            setLat(context.base_point?.[1]?.toString() || '')
 
             // Add null check for base_point
-            if (context.base_point && Array.isArray(context.base_point) && context.base_point.length >= 2) {
-                setConvertedCoord({
-                    x: context.base_point[0].toString(),
-                    y: context.base_point[1].toString()
-                })
+            if (context.base_point && Array.isArray(context.base_point) && context.base_point.length === 2 && epsg) {
+                const convertedBasePoint = convertCoordinate(context.base_point[0].toString(), context.base_point[1].toString(), '4326', epsg)
+                console.log('node切换坐标初始化', context.base_point)
+                console.log('当前node', node.name, node.tree.isRemote)
+                setConvertedCoord(convertedBasePoint)
             }
 
             // Add null check for grid_info
@@ -123,22 +125,33 @@ export default function SchemasPage({
         }
     }, [node])
 
-    useEffect(() => {
-        if (lon && lat && epsg) {
-            const result = convertCoordinate(lon, lat, '4326', epsg)
-            setConvertedCoord(result)
-            
-            if (node && result) {
-                const _node = node as SceneNode
-                if (_node.pageContext) {
-                    const context = _node.pageContext as SchemasPageContext
-                    context.base_point = [parseFloat(result.x), parseFloat(result.y)]
-                }
-            }
-        } else {
-            setConvertedCoord(null)
-        }
-    }, [lon, lat, epsg, node])
+    // useEffect(() => {
+    //     if (lon || lat) {
+    //         if (epsg) {
+    //             const result = convertCoordinate(lon, lat, '4326', epsg)
+    //             setConvertedCoord(result)
+    //         }
+    //         if (node) {
+    //             const _node = node as SceneNode
+    //             if (_node.pageContext) {
+    //                 const context = _node.pageContext as SchemasPageContext
+    //                 context.base_point = [parseFloat(lon), parseFloat(lat)]
+    //                 console.log('context.base_point', context.base_point)
+    //             }
+    //         }
+
+    //         // if (node && result) {
+    //         //     const _node = node as SceneNode
+    //         //     if (_node.pageContext) {
+    //         //         const context = _node.pageContext as SchemasPageContext
+    //         //         context.base_point = [parseFloat(result.x), parseFloat(result.y)]
+    //         //         console.log('context.base_point', context.base_point)
+    //         //     }
+    //         // }
+    //     } else {
+    //         setConvertedCoord(null)
+    //     }
+    // }, [lon, lat, epsg, node])
 
     useEffect(() => {
         if (schemaContext && node) {
@@ -221,18 +234,18 @@ export default function SchemasPage({
             }
             return
         }
-        
+
         setIsSelectingPoint(true)
-        
+
         const mapContainerRef = (node?.tree as any)?.mapContainerRef
-        
+
         if (mapContainerRef?.current) {
             if (node) {
                 const _node = node as SceneNode
                 if (!_node.pageContext) {
                     _node.pageContext = new SchemasPageContext()
                 }
-                
+
                 const context = _node.pageContext as SchemasPageContext
                 context.mapState.isDrawingPoint = true
 
@@ -243,22 +256,14 @@ export default function SchemasPage({
 
                     if (_node.pageContext) {
                         const context = _node.pageContext as SchemasPageContext
-                        context.mapState.lon = parseFloat(lng.toFixed(6))
-                        context.mapState.lat = parseFloat(lat.toFixed(6))
+                        context.base_point = [parseFloat(lng.toFixed(6)), parseFloat(lat.toFixed(6))]
                         context.mapState.isDrawingPoint = false
-
-                        if (epsg) {
-                            const result = convertCoordinate(lng.toFixed(6), lat.toFixed(6), '4326', epsg)
-                            if (result) {
-                                context.base_point = [parseFloat(result.x), parseFloat(result.y)]
-                            }
-                        }
                     }
-                    
+
                     setIsSelectingPoint(false)
                 })
             }
-        } 
+        }
         // else if (mapInstance) {
         //     // 兼容原有方式
         //     if (node) {
@@ -266,22 +271,22 @@ export default function SchemasPage({
         //         if (!_node.pageContext) {
         //             _node.pageContext = new SchemasPageContext()
         //         }
-                
+
         //         const context = _node.pageContext as SchemasPageContext
         //         context.isDrawingPoint = true
-                
+
         //         enableMapPointSelection(mapInstance, (lng, lat) => {
         //             // 设置经纬度
         //             setLon(lng.toFixed(6))
         //             setLat(lat.toFixed(6))
-                    
+
         //             // 更新节点中的坐标信息，实现持久化存储
         //             if (_node.pageContext) {
         //                 const context = _node.pageContext as SchemasPageContext
         //                 context.lon = lng.toFixed(6)
         //                 context.lat = lat.toFixed(6)
         //                 context.isDrawingPoint = false
-                        
+
         //                 // 如果有EPSG，同时更新转换后的坐标
         //                 if (epsg) {
         //                     const result = convertCoordinate(lng.toFixed(6), lat.toFixed(6), '4326', epsg)
@@ -290,7 +295,7 @@ export default function SchemasPage({
         //                     }
         //                 }
         //             }
-                    
+
         //             setIsSelectingPoint(false)
         //         })
         //     }

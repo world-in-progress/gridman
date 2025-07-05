@@ -6,12 +6,10 @@ import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
-import { useRef } from 'react'
+import { addMapMarker, clearMapMarkers } from '@/components/mapContainer/utils'
 
 interface MapState {
     isDrawingPoint: boolean
-    lon: number
-    lat: number
 }
 
 export class SchemasPageContext extends DefaultPageContext {
@@ -37,8 +35,6 @@ export class SchemasPageContext extends DefaultPageContext {
 
         this.mapState = {
             isDrawingPoint: false,
-            lon: 0,
-            lat: 0,
         }
     }
 }
@@ -84,19 +80,18 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
 
     freezeMap(nodeSelf: ISceneNode): void {
         const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
+        const mapMethods = store.get<MapContainerHandles>('mapMethods')!
         const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
 
-        // Add map state to context
-        // Clear Marker
-        const mapContainerRef = (nodeSelf.tree as any).mapContainerRef
-        mapContainerRef.current.clearAllMarkers()
+        // clearMapMarkers()
     }
 
     meltMap(nodeSelf: ISceneNode): void {
         const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
         const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
 
-        // Use context to update map state
-        // Add Marker
+        clearMapMarkers()
+
+        addMapMarker(context.base_point)
     }
 }

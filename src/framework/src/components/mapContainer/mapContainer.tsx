@@ -55,7 +55,6 @@ const MapContainer = forwardRef<
     // const { mapContent } = useMapContent();
 
     const mapWrapperRef = useRef<HTMLDivElement>(null);
-    const mapRef = useRef<mapboxgl.Map | null>(null);
     const markersRef = useRef<mapboxgl.Marker[]>([]);
     const markerMapRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
     const activePopupRef = useRef<mapboxgl.Marker | null>(null);
@@ -78,7 +77,7 @@ const MapContainer = forwardRef<
     }
 
     const showSchemaMarkerOnMap = (schemas: GridSchema[]) => {
-        const map = mapRef.current
+        const map = store.get<mapboxgl.Map | null>('map');
         if (!map) return
 
         clearAllMarkers()
@@ -158,7 +157,7 @@ const MapContainer = forwardRef<
     }
 
     const flyToSchema = (schema: GridSchema) => {
-        const map = mapRef.current;
+        const map = store.get<mapboxgl.Map | null>('map');
         if (!map || !schema.base_point || !schema.epsg) return;
 
         const coordinates = convertToWGS84(schema.base_point, schema.epsg);
@@ -197,7 +196,7 @@ const MapContainer = forwardRef<
     };
 
     const enableDrawMode = (callback: (lng: number, lat: number) => void) => {
-        const map = mapRef.current;
+        const map = store.get<mapboxgl.Map | null>('map');
         if (!map) return;
         
         if (map.getCanvas()) {
@@ -208,7 +207,7 @@ const MapContainer = forwardRef<
     };
     
     const disableDrawMode = () => {
-        const map = mapRef.current;
+        const map = store.get<mapboxgl.Map | null>('map');
         if (!map) return;
         
         if (map.getCanvas()) {
@@ -219,7 +218,7 @@ const MapContainer = forwardRef<
     useImperativeHandle(ref, () => ({
         showSchemaMarkerOnMap,
         flyToSchema,
-        getMap: () => mapRef.current,
+        getMap: () => store.get<mapboxgl.Map | null>('map'),
         enableDrawMode,
         disableDrawMode,
         clearAllMarkers,
@@ -232,7 +231,7 @@ const MapContainer = forwardRef<
         const context = _node.pageContext as SchemasPageContext;
         
         if (context && context.mapState.isDrawingPoint) {
-            const map = mapRef.current;
+            const map = store.get<mapboxgl.Map | null>('map');
             if (map && map.getCanvas()) {
                 map.getCanvas().style.cursor = 'crosshair';
             }
@@ -257,8 +256,13 @@ const MapContainer = forwardRef<
                 boxZoom: false,
             })
             store.set('map', mapInstance)
-
-            mapRef.current = mapInstance
+            store.set('mapMethods', {
+                clearAllMarkers,
+                flyToSchema,
+                showSchemaMarkerOnMap,
+                enableDrawMode,
+                disableDrawMode
+            })
 
             if (mapWrapperRef.current) {
                 if (mapInstance) {
@@ -287,8 +291,9 @@ const MapContainer = forwardRef<
             }
             if (mapInstance) {
                 mapInstance.remove()
+                store.set('map', null)
+                store.set('mapMethods', null)
             }
-            mapRef.current = null
         }
     }, [])
 
