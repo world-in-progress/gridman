@@ -1,15 +1,16 @@
 import { IScenarioNode } from '@/core/scenario/iscenario'
 import { ISceneNode, ISceneTree } from '../../core/scene/iscene'
-import { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 
 export class DefaultPageContext {
+    static async create(): Promise<DefaultPageContext> {
+        return new DefaultPageContext()
+    }
 }
 
 export default class DefaultScenarioNode implements IScenarioNode {
     static classKey: string = 'default'
     semanticPath: string = 'default'
     children: string[] = []
-    mapStyle: string = ''
 
     get name(): string {
         return this.semanticPath.split('.').pop() || ''
@@ -29,15 +30,5 @@ export default class DefaultScenarioNode implements IScenarioNode {
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
         return null
-    }
-
-    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
-        return null
-    }
-
-    freezeMap(nodeSelf: ISceneNode): void {
-    }
-
-    meltMap(nodeSelf: ISceneNode): void {
     }
 }

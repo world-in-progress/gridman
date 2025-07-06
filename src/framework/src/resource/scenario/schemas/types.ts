@@ -21,5 +21,4 @@ export interface ValidationResult {
 
 export type SchemasPageProps = {
     node: ISceneNode
-    mapInstance: mapboxgl.Map | null
 }

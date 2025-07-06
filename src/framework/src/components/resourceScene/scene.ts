@@ -1,10 +1,9 @@
 import React from 'react'
+import { Tab } from '../tabBar/types'
 import * as api from '@/core/apis/apis'
 import { IScenarioNode } from '@/core/scenario/iscenario'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
-import { MapContainerHandles } from '@/components/mapContainer/mapContainer'
 import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
-import { Tab } from '../tabBar/types'
 
 export interface SceneNodeState {
     isLoading: boolean
@@ -27,7 +26,6 @@ export class SceneNode implements ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
-    mapStyle: string = ''
 
     // SceneNode state
     private _state: SceneNodeState = {
@@ -72,7 +70,6 @@ export class SceneTree implements ISceneTree {
     isPublic: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
-    mapContainerRef: React.RefObject<MapContainerHandles> | null = null
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
@@ -137,6 +134,8 @@ export class SceneTree implements ISceneTree {
                 this.scene.set(childNode.key, childNode) // add child node to the scene map
             }
         }
+
+        // TODO: reorder scene
 
         // Mark as aligned after loading
         node.aligned = true
@@ -215,15 +214,15 @@ export class SceneTree implements ISceneTree {
 
     // Node Editing //////////////////////////////////////////////////
 
-    startEditingNode(node: ISceneNode): void {
+    async startEditingNode(node: ISceneNode): Promise<void> {
         // Do nothing if already editing
         if (this.editingNodes.has(node)) {
             return
         }
 
         this.editingNodes.add(node)
-        ;(node as SceneNode).pageContext = new SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath]()
-        
+        ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create()
+
         this.handleNodeStartEditing(node)
 
         this.notifyDomUpdate()

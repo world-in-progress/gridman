@@ -1,4 +1,3 @@
-import store from '@/store'
 import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
 import { FilePlus2 } from 'lucide-react'
@@ -6,11 +5,6 @@ import { ISceneNode } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
-import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
-
-interface MapState {
-    isDrawingPoint: boolean
-}
 
 export class SchemasPageContext extends DefaultPageContext {
     name: string
@@ -19,20 +13,17 @@ export class SchemasPageContext extends DefaultPageContext {
     gridLayers: GridLayerInfo[]
     basePoint: [number | null, number | null]
 
-    mapState: MapState
-
     constructor() {
         super()
-
         this.name = ''
         this.epsg = null
         this.description = ''
         this.basePoint = [null, null]
         this.gridLayers = []
+    }
 
-        this.mapState = {
-            isDrawingPoint: false,
-        }
+    static async create(): Promise<SchemasPageContext> {
+        return new SchemasPageContext()
     }
 }
 
@@ -42,7 +33,6 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     children: string[] = [
         'schema',
     ]
-    mapStyle: string = 'w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
         return (
@@ -55,41 +45,12 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     }
 
     handleMenuOpen(nodeSelf: ISceneNode): void {
-        const _node = nodeSelf as SceneNode
-        const _tree = nodeSelf.tree as SceneTree
-
-        _tree.startEditingNode(_node)
+        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
-        const map = store.get<mapboxgl.Map>('map')
-
         return (
-            <SchemasPage node={nodeSelf} mapInstance={map} />
+            <SchemasPage node={nodeSelf} />
         )
     }
-
-    renderMap(nodeSelf: ISceneNode, mapContainerRef: React.RefObject<MapContainerHandles>): React.JSX.Element | null {
-        return (
-            <MapContainer node={nodeSelf} ref={mapContainerRef} />
-        )
-    }
-
-    // freezeMap(nodeSelf: ISceneNode): void {
-    //     const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
-    //     const mapMethods = store.get<MapContainerHandles>('mapMethods')!
-    //     const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
-
-    //     // clearMapMarkers()
-    // }
-
-    // meltMap(nodeSelf: ISceneNode): void {
-    //     const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
-    //     const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
-
-    //     clearMapMarkers()
-
-    //     const [lon, lat] = context.basePoint
-    //     if (lon !== null && lat !== null) addMapMarker([lon, lat])
-    // }
 }

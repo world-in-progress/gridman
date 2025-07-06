@@ -9,7 +9,6 @@ export interface ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode>
-    mapStyle: string
 }
 
 export interface ISceneTree {

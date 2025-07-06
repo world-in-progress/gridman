@@ -4,7 +4,6 @@ import React, {
     useCallback,
     useReducer,
 } from 'react'
-import store from '@/store'
 import TabBar from './tabBar/tabBar'
 import { Tab } from './tabBar/types'
 import IconBar from './iconBar/iconBar'
@@ -186,9 +185,7 @@ function FrameworkComponent() {
         if (activateNode.id === node.id) return
 
         // Deactivate the active node
-        // and freeze the state of the previous active node
         activateNode.tab.isActive = false
-        activateNode.scenarioNode.freezeMap(activateNode)
 
         // Activate node tab
         node.tab.isActive = true
@@ -201,9 +198,6 @@ function FrameworkComponent() {
         _privateTree.selectedNode = null
         _publicTree.selectedNode = null
         tree.selectedNode = node
-
-        // Melt the state of the this node
-        node.scenarioNode.meltMap(node)
 
         // Update state
         setFocusNode(node)
