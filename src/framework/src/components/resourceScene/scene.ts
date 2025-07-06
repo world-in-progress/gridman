@@ -1,9 +1,9 @@
 import React from 'react'
-import * as api from '@/core/apis/apis'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
-import { IScenarioNode } from '@/core/scenario/iscenario'
-import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
 import { Tab } from '../tabBar/types'
+import * as api from '@/core/apis/apis'
+import { IScenarioNode } from '@/core/scenario/iscenario'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
 
 export interface SceneNodeState {
     isLoading: boolean
@@ -26,7 +26,6 @@ export class SceneNode implements ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
-    mapStyle: string = ''
 
     // SceneNode state
     private _state: SceneNodeState = {
@@ -52,7 +51,7 @@ export class SceneNode implements ISceneNode {
 
         // Set tab (not active, not preview)
         this.tab = {
-            id: (this.tree.isRemote ? 'public' : 'private') + ':' + this.key,
+            node: this,
             name: this.name,
             isActive: false,
             isPreview: false,
@@ -60,31 +59,7 @@ export class SceneNode implements ISceneNode {
     }
 
     get name(): string { return this.key.split('.').pop() || '' }
-    get isExpanded(): boolean { return this._state.isExpanded }
-    get isSelected(): boolean { return this._state.isSelected }
-    get isLoading(): boolean { return this._state.isLoading }
-    get contextMenuOpen(): boolean { return this._state.contextMenuOpen }
-
-    set isExpanded(expanded: boolean) {
-        this._state.isExpanded = expanded
-        this._notifyTreeUpdate()
-    }
-    set isSelected(selected: boolean) {
-        this._state.isSelected = selected
-        this._notifyTreeUpdate()
-    }
-    set isLoading(loading: boolean) {
-        this._state.isLoading = loading
-        this._notifyTreeUpdate()
-    }
-    set contextMenuOpen(open: boolean) {
-        this._state.contextMenuOpen = open
-        this._notifyTreeUpdate()
-    }
-
-    private _notifyTreeUpdate(): void {
-        this.tree.notifyDomUpdate()
-    }
+    get id(): string { return (this.tree.isPublic ? 'public' : 'private') + ':' + this.key }
 }
 
 export interface TreeUpdateCallback {
@@ -92,10 +67,9 @@ export interface TreeUpdateCallback {
 }
 
 export class SceneTree implements ISceneTree {
-    isRemote: boolean
+    isPublic: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
-    mapContainerRef: React.RefObject<any> | null = null
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
@@ -110,7 +84,7 @@ export class SceneTree implements ISceneTree {
     selectedNode: ISceneNode | null = null
 
     constructor(isRemote: boolean) {
-        this.isRemote = isRemote
+        this.isPublic = isRemote
     }
 
     /**
@@ -149,7 +123,7 @@ export class SceneTree implements ISceneTree {
         if (node.aligned && !force) return
 
         // Fetch the latest metadata for the node
-        const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isRemote)
+        const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isPublic)
         
         // Update parent-child relationship
         if (meta.children && meta.children.length > 0) {
@@ -160,6 +134,8 @@ export class SceneTree implements ISceneTree {
                 this.scene.set(childNode.key, childNode) // add child node to the scene map
             }
         }
+
+        // TODO: reorder scene
 
         // Mark as aligned after loading
         node.aligned = true
@@ -238,15 +214,15 @@ export class SceneTree implements ISceneTree {
 
     // Node Editing //////////////////////////////////////////////////
 
-    startEditingNode(node: ISceneNode): void {
+    async startEditingNode(node: ISceneNode): Promise<void> {
         // Do nothing if already editing
         if (this.editingNodes.has(node)) {
             return
         }
 
         this.editingNodes.add(node)
-        ;(node as SceneNode).pageContext = new SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath]()
-        
+        ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create()
+
         this.handleNodeStartEditing(node)
 
         this.notifyDomUpdate()

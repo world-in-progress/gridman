@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, use, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, use, useRef, useReducer } from 'react'
 import { SceneTree, SceneNode } from './scene'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -36,10 +36,10 @@ interface TreeNodeProps {
 }
 
 interface SceneTreeProps {
-    localTree: SceneTree | null
-    remoteTree: SceneTree | null
-    getLocalTree: boolean
-    getRemoteTree: boolean
+    privateTree: SceneTree | null
+    publicTree: SceneTree | null
+    getPrivateTree: boolean
+    getPublicTree: boolean
     focusNode?: ISceneNode
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
@@ -72,7 +72,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
 
     const handleClick = useCallback(() => {
         // Set the selected node in the other tree as null
-        tree.isRemote ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
+        tree.isPublic ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
         tree.handleNodeClick(node)
     }, [tree, node, _privateTree, _publicTree])
 
@@ -134,7 +134,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                             <FileText className='w-4 h-4 mr-2 ml-3 text-gray-400' />
                         )}
                         <span>{node.name}</span>
-                        {!isFolder && tree.isRemote &&
+                        {!isFolder && tree.isPublic &&
                             <button
                                 className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
                                 title='download'
@@ -181,10 +181,10 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
 }
 
 export default function ResourceTreeComponent({
-    localTree,
-    remoteTree,
-    getLocalTree,
-    getRemoteTree,
+    privateTree,
+    publicTree,
+    getPrivateTree,
+    getPublicTree,
     focusNode,
     onOpenFile,
     onPinFile,
@@ -197,11 +197,12 @@ export default function ResourceTreeComponent({
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
     const [scrollTrigger, setScrollTrigger] = useState(0)
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
-    // Bind handlers to local tree
+    // Bind handlers to private tree
     useEffect(() => {
-        if (localTree) {
-            localTree.bindHandlers({
+        if (privateTree) {
+            privateTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
                 handleNodeMenuOpen: onDropDownMenuOpen,
@@ -209,13 +210,15 @@ export default function ResourceTreeComponent({
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeClickEnd: onNodeClickEnd,
             })
-        }
-    }, [localTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
 
-    // Bind handlers to remote tree
+            privateTree.subscribe(triggerRepaint)
+        }
+    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
+
+    // Bind handlers to public tree
     useEffect(() => {
-        if (remoteTree) {
-            remoteTree.bindHandlers({
+        if (publicTree) {
+            publicTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
                 handleNodeMenuOpen: onDropDownMenuOpen,
@@ -223,8 +226,10 @@ export default function ResourceTreeComponent({
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeClickEnd: onNodeClickEnd,
             })
+
+            publicTree.subscribe(triggerRepaint)
         }
-    }, [remoteTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
+    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
 
     useEffect(() => {
         if (focusNode) {
@@ -248,14 +253,14 @@ export default function ResourceTreeComponent({
                         Explorer
                     </div>
 
-                    {getLocalTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Private' isPublic={false} scrollTrigger={scrollTrigger} />
+                    {getPrivateTree && (
+                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} scrollTrigger={scrollTrigger} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
-                    {getRemoteTree && (
-                        <TreeRenderer privateTree={localTree} publicTree={remoteTree} title='Public' isPublic={true} scrollTrigger={scrollTrigger} />
+                    {getPublicTree && (
+                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} scrollTrigger={scrollTrigger} />
                     )}
                 </div>
             </div>
