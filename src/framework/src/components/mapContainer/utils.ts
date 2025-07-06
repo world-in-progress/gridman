@@ -40,8 +40,8 @@ export const enableMapPointSelection = (
         new mapboxgl.Marker({
             color: '#FF0000',
         })
-            .setLngLat([e.lngLat.lng, e.lngLat.lat])
-            .addTo(mapInstance);
+        .setLngLat([e.lngLat.lng, e.lngLat.lat])
+        .addTo(mapInstance);
 
         mapInstance.off('click', handleMapClick);
 
@@ -104,29 +104,29 @@ export const convertCoordinate = (
     fromEPSG: string,
     toEPSG: string
 ): { x: string; y: string } | null => {
-    if (!lon || !lat || !fromEPSG || !toEPSG) return null;
+    if (!lon || !lat || !fromEPSG || !toEPSG) return null
 
     try {
         if (epsgDefinitions[fromEPSG]) {
-            proj4.defs(`EPSG:${fromEPSG}`, epsgDefinitions[fromEPSG]);
+            proj4.defs(`EPSG:${fromEPSG}`, epsgDefinitions[fromEPSG])
         }
 
         if (epsgDefinitions[toEPSG]) {
-            proj4.defs(`EPSG:${toEPSG}`, epsgDefinitions[toEPSG]);
+            proj4.defs(`EPSG:${toEPSG}`, epsgDefinitions[toEPSG])
         }
 
         const result = proj4(`EPSG:${fromEPSG}`, `EPSG:${toEPSG}`, [
             parseFloat(lon),
             parseFloat(lat),
-        ]);
+        ])
 
         return {
             x: result[0].toFixed(6),
             y: result[1].toFixed(6),
-        };
+        }
     } catch (e) {
-        console.error('坐标转换错误:', e);
-        return null;
+        console.error('Coordinate conversion error:', e)
+        return null
     }
 };
 

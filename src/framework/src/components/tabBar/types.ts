@@ -1,10 +1,11 @@
 import { DropResult } from '@hello-pangea/dnd'
-import { ISceneTree } from '@/core/scene/iscene'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '../resourceScene/scene'
 
 export interface Tab {
     name: string
-    id: string
+    // id: string
+    node: ISceneNode
     isActive: boolean
     isPreview?: boolean
     resourceTree?: ISceneTree

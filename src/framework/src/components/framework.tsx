@@ -2,6 +2,7 @@ import React, {
     useState,
     useEffect,
     useCallback,
+    useReducer,
 } from 'react'
 import store from '@/store'
 import TabBar from './tabBar/tabBar'
@@ -27,14 +28,14 @@ const MainEditorArea: React.FC<{ nodeStack: ISceneNode[] }> = ({ nodeStack }) =>
 }
 
 function FrameworkComponent() {
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [tabs, setTabs] = useState<Set<Tab>>(new Set())
-    const [treeGeneration, setTreeGeneration] = useState(0)
     const [nodeStack, setNodeStack] = useState<ISceneNode[]>([])
     const [activeIconID, setActiveIconID] = useState('grid-editor')
-    const [getLocalTree, setGetLocalTree] = useState<boolean>(false)
-    const [getRemoteTree, setGetRemoteTree] = useState<boolean>(false)
-    const [privateTree, setLocalFileTree] = useState<SceneTree | null>(null)
-    const [publicTree, setRemoteFileTree] = useState<SceneTree | null>(null)
+    const [getPublicTree, setGetPublicTree] = useState<boolean>(false)
+    const [getPrivateTree, setGetPrivateTree] = useState<boolean>(false)
+    const [publicTree, setPublicFileTree] = useState<SceneTree | null>(null)
+    const [privateTree, setPrivateFileTree] = useState<SceneTree | null>(null)
     const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
 
     // Default icon click handlers: all icon have the same clicking behavior
@@ -152,7 +153,7 @@ function FrameworkComponent() {
         tabs.delete(_node.tab)
         const newNodeStack = nodeStack.filter(n => {
             const _n = n as SceneNode
-            return _n.tab.id != _node.tab.id
+            return _n.id != _node.id
         })
 
         // Activate the last picked node
@@ -172,8 +173,8 @@ function FrameworkComponent() {
     }, [])
 
     const handleTabClick = useCallback((tab: Tab) => {
-        const [domain, path] = tab.id.split(':')
-        const isPublic = domain === 'public'
+        const node = tab.node as SceneNode
+        const isPublic = node.tree.isPublic
         const tree = isPublic ? publicTree : privateTree
         const _privateTree = privateTree as SceneTree
         const _publicTree = publicTree as SceneTree
@@ -182,29 +183,26 @@ function FrameworkComponent() {
 
         // Skip if click the same tab
         const activateNode = nodeStack[nodeStack.length - 1] as SceneNode
-        if (activateNode.tab.id === tab.id) return
-
-        // Freeze the state of the previous active node
-        activateNode.scenarioNode.freezeMap(activateNode)
+        if (activateNode.id === node.id) return
 
         // Deactivate the active node
-        ;(nodeStack[nodeStack.length - 1] as SceneNode).tab.isActive = false
+        // and freeze the state of the previous active node
+        activateNode.tab.isActive = false
+        activateNode.scenarioNode.freezeMap(activateNode)
 
-        // Get and activate node tab
-        const node = tree.scene.get(path)! as SceneNode
+        // Activate node tab
         node.tab.isActive = true
 
         // Add picked tab to the end of the stack
-        const newNodeStack = nodeStack.filter(n => n.key !== tab.id)
+        const newNodeStack = nodeStack.filter(n => n.id !== node.id)
         newNodeStack.push(node)
 
-        // Set the selected node in the other tree as null
-        tree.isRemote ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
-
         // Select the current node
+        _privateTree.selectedNode = null
+        _publicTree.selectedNode = null
         tree.selectedNode = node
 
-        // Melt the state of the previous active node
+        // Melt the state of the this node
         node.scenarioNode.meltMap(node)
 
         // Update state
@@ -234,7 +232,7 @@ function FrameworkComponent() {
         // Check if the node is already in the stack
         const existingIndex = nodeStack.findIndex(n => {
             const _n = n as SceneNode
-            return _n.tab.id === _node.tab.id
+            return _n.tab.node.id === _node.tab.node.id
         })
 
         // If the node is already in the stack and not active, activate it
@@ -255,25 +253,17 @@ function FrameworkComponent() {
     useEffect(() => {
         const initTree = async () => {
             try {
-                const _localTree = await SceneTree.create(false)
-                const _remoteTree = await SceneTree.create(true)
+                const _privateTree = await SceneTree.create(false)
+                const _publicTree = await SceneTree.create(true)
 
-                // Subscribe to tree update
-                _localTree.subscribe(() => {
-                    setTreeGeneration(prev => prev + 1)
-                })
-                _remoteTree.subscribe(() => {
-                    setTreeGeneration(prev => prev + 1)
-                })
+                // Subscribe to tree updates
+                _privateTree.subscribe(triggerRepaint)
+                _publicTree.subscribe(triggerRepaint)
 
-                store.set('localFileTree', _localTree)
-                store.set('remoteFileTree', _remoteTree)
-                store.set('updateTree', () => setTreeGeneration(g => g + 1))
-
-                setLocalFileTree(_localTree)
-                setRemoteFileTree(_remoteTree)
-                setGetLocalTree(true)
-                setGetRemoteTree(true)
+                setPrivateFileTree(_privateTree)
+                setPublicFileTree(_publicTree)
+                setGetPrivateTree(true)
+                setGetPublicTree(true)
 
             } catch (error) {
                 console.error('Failed to initialize resource trees:', error)
@@ -292,10 +282,10 @@ function FrameworkComponent() {
 
             {/* Resource Tree Panel */}
             <ResourceTreeComponent
-                localTree={privateTree}
-                remoteTree={publicTree}
-                getLocalTree={getLocalTree}
-                getRemoteTree={getRemoteTree}
+                privateTree={privateTree}
+                publicTree={publicTree}
+                getPrivateTree={getPrivateTree}
+                getPublicTree={getPublicTree}
                 focusNode={focusNode}
                 onOpenFile={handleOpenFile}
                 onPinFile={handlePinFile}
@@ -307,7 +297,7 @@ function FrameworkComponent() {
             />
 
             {/* Main Content Area */}
-            <div className="flex flex-col flex-1">
+            <div className='flex flex-col flex-1'>
                 {/* Tab Bar */}
                 <TabBar
                     tabs={tabs}
@@ -316,7 +306,7 @@ function FrameworkComponent() {
                     onTabDragEnd={handleTabDragEnd}
                     onTabClick={handleTabClick}
                 />
-                <div className="flex-1 bg-gray-100 h-[50vh]">
+                <div className='flex-1 bg-gray-100 h-[50vh]'>
                     <MainEditorArea nodeStack={nodeStack}/>
                 </div>
             </div>

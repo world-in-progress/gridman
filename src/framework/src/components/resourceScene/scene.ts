@@ -53,7 +53,7 @@ export class SceneNode implements ISceneNode {
 
         // Set tab (not active, not preview)
         this.tab = {
-            id: (this.tree.isRemote ? 'public' : 'private') + ':' + this.key,
+            node: this,
             name: this.name,
             isActive: false,
             isPreview: false,
@@ -61,31 +61,7 @@ export class SceneNode implements ISceneNode {
     }
 
     get name(): string { return this.key.split('.').pop() || '' }
-    get isExpanded(): boolean { return this._state.isExpanded }
-    get isSelected(): boolean { return this._state.isSelected }
-    get isLoading(): boolean { return this._state.isLoading }
-    get contextMenuOpen(): boolean { return this._state.contextMenuOpen }
-
-    set isExpanded(expanded: boolean) {
-        this._state.isExpanded = expanded
-        this._notifyTreeUpdate()
-    }
-    set isSelected(selected: boolean) {
-        this._state.isSelected = selected
-        this._notifyTreeUpdate()
-    }
-    set isLoading(loading: boolean) {
-        this._state.isLoading = loading
-        this._notifyTreeUpdate()
-    }
-    set contextMenuOpen(open: boolean) {
-        this._state.contextMenuOpen = open
-        this._notifyTreeUpdate()
-    }
-
-    private _notifyTreeUpdate(): void {
-        this.tree.notifyDomUpdate()
-    }
+    get id(): string { return (this.tree.isPublic ? 'public' : 'private') + ':' + this.key }
 }
 
 export interface TreeUpdateCallback {
@@ -93,7 +69,7 @@ export interface TreeUpdateCallback {
 }
 
 export class SceneTree implements ISceneTree {
-    isRemote: boolean
+    isPublic: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
     mapContainerRef: React.RefObject<MapContainerHandles> | null = null
@@ -111,7 +87,7 @@ export class SceneTree implements ISceneTree {
     selectedNode: ISceneNode | null = null
 
     constructor(isRemote: boolean) {
-        this.isRemote = isRemote
+        this.isPublic = isRemote
     }
 
     /**
@@ -150,7 +126,7 @@ export class SceneTree implements ISceneTree {
         if (node.aligned && !force) return
 
         // Fetch the latest metadata for the node
-        const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isRemote)
+        const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isPublic)
         
         // Update parent-child relationship
         if (meta.children && meta.children.length > 0) {

@@ -1,15 +1,14 @@
 import store from '@/store'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { Tab } from '../tabBar/types'
 import { convertToWGS84 } from './utils'
 import { MapContainerProps } from './types'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import { enableMapPointSelection } from './utils'
 import { GridSchema } from '../../core/apis/types'
-import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { SceneNode } from '../resourceScene/scene'
 import { SchemasPageContext } from '@/resource/scenario/schemas/schemas'
-import { enableMapPointSelection } from './utils'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -25,40 +24,33 @@ export interface MapContainerHandles {
     clearAllMarkers: () => void
 }
 
-// interface ExtendedMapContainerProps extends MapContainerProps {
-//     activeTab?: Tab;
-// }
-
 declare global {
     interface Window {
-        // mapInstance?: mapboxgl.Map
-        mapboxDrawInstance?: MapboxDraw;
+        mapboxDrawInstance?: MapboxDraw
     }
 }
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout
     return (...args: any[]) => {
-        clearTimeout(timeoutId);
+        clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-            // func.apply(null, args);
-        }, delay);
-    };
-};
+            // func.apply(null, args)
+        }, delay)
+    }
+}
 
 const MapContainer = forwardRef<
     MapContainerHandles,
     MapContainerProps
 >((props, ref) => {
-    const { node } = props;
-    // const { activeTab } = props;
-    // const { mapContent } = useMapContent();
+    const { node } = props
 
-    const mapWrapperRef = useRef<HTMLDivElement>(null);
-    const markersRef = useRef<mapboxgl.Marker[]>([]);
-    const markerMapRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-    const activePopupRef = useRef<mapboxgl.Marker | null>(null);
-    const isUnmountedRef = useRef(false);
+    const isUnmountedRef = useRef(false)
+    const markersRef = useRef<mapboxgl.Marker[]>([])
+    const mapWrapperRef = useRef<HTMLDivElement>(null)
+    const activePopupRef = useRef<mapboxgl.Marker | null>(null)
+    const markerMapRef = useRef<Map<string, mapboxgl.Marker>>(new Map())
 
     const clearAllMarkers = () => {
         markersRef.current.forEach(marker => marker.remove())
@@ -77,7 +69,7 @@ const MapContainer = forwardRef<
     }
 
     const showSchemaMarkerOnMap = (schemas: GridSchema[]) => {
-        const map = store.get<mapboxgl.Map | null>('map');
+        const map = store.get<mapboxgl.Map | null>('map')
         if (!map) return
 
         clearAllMarkers()
@@ -91,129 +83,129 @@ const MapContainer = forwardRef<
                 if (coordinates[0] !== 0 || coordinates[1] !== 0) {
                     const gridInfoHtml = schema.grid_info
                         .map((grid: [number, number], index: number) => `Level ${index + 1}: ${grid[0]} × ${grid[1]}`)
-                        .join('<br>');
+                        .join('<br>')
 
-                    const popupId = `schema-popup-${schema.name.replace(/\s+/g, '-')}`;
+                    const popupId = `schema-popup-${schema.name.replace(/\s+/g, '-')}`
 
                     const popupHtml = `
-                        <div id="${popupId}" style="max-width: 300px; color: black; padding: 10px; font-family: sans-serif;">
-                          <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: bold; color: #333;">${schema.name}</h3>
-                          <div style="border-bottom: 1px solid #ccc; margin-bottom: 8px;"></div>
-                          <div style="font-size: 12px; margin-bottom: 4px;">
-                            <strong>EPSG:</strong> ${schema.epsg}
-                          </div>
-                          <div style="font-size: 12px; margin-bottom: 4px;">
-                            <strong>WGS84:</strong> [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]
-                          </div>
-                          <div style="font-size: 12px; margin-bottom: 4px;">
-                            <strong>Base:</strong> [${schema.base_point[0].toFixed(2)}, ${schema.base_point[1].toFixed(2)}]
-                          </div>
-                          <div style="font-size: 12px;">
-                            <strong>Grid:</strong><br>${gridInfoHtml}
-                          </div>
-                          ${schema.starred ? `<div style="margin-top: 6px;"><span style="color: #f59e0b; font-size: 12px;">★ Starred</span></div>` : ''}
-                        </div>`;
+                        <div id='${popupId}' style='max-width: 300px; color: black; padding: 10px; font-family: sans-serif;'>
+                            <h3 style='margin: 0 0 8px; font-size: 16px; font-weight: bold; color: #333;'>${schema.name}</h3>
+                            <div style='border-bottom: 1px solid #ccc; margin-bottom: 8px;'></div>
+                            <div style='font-size: 12px; margin-bottom: 4px;'>
+                                <strong>EPSG:</strong> ${schema.epsg}
+                            </div>
+                            <div style='font-size: 12px; margin-bottom: 4px;'>
+                                <strong>WGS84:</strong> [${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}]
+                            </div>
+                            <div style='font-size: 12px; margin-bottom: 4px;'>
+                                <strong>Base:</strong> [${schema.base_point[0].toFixed(2)}, ${schema.base_point[1].toFixed(2)}]
+                            </div>
+                            <div style='font-size: 12px;'>
+                                <strong>Grid:</strong><br>${gridInfoHtml}
+                            </div>
+                            ${schema.starred ? `<div style='margin-top: 6px;'><span style='color: #f59e0b; font-size: 12px;'>★ Starred</span></div>` : ''}
+                        </div>`
 
                     const popup = new mapboxgl.Popup({
                         offset: 25,
                         maxWidth: '320px',
                         className: 'custom-popup',
-                    }).setHTML(popupHtml);
+                    }).setHTML(popupHtml)
 
                     popup.on('open', () => {
                         setTimeout(() => {
-                            const closeButton = document.querySelector('.custom-popup .mapboxgl-popup-close-button');
+                            const closeButton = document.querySelector('.custom-popup .mapboxgl-popup-close-button')
                             if (closeButton) {
-                                const btn = closeButton as HTMLElement;
-                                btn.style.fontSize = '24px';
-                                btn.style.color = 'red';
-                                btn.style.lineHeight = '1';
-                                btn.style.padding = '4px 8px';
-                                btn.style.height = 'auto';
-                                btn.style.width = 'auto';
+                                const btn = closeButton as HTMLElement
+                                btn.style.fontSize = '24px'
+                                btn.style.color = 'red'
+                                btn.style.lineHeight = '1'
+                                btn.style.padding = '4px 8px'
+                                btn.style.height = 'auto'
+                                btn.style.width = 'auto'
                             }
-                        }, 10);
-                    });
+                        }, 10)
+                    })
 
                     const marker = new mapboxgl.Marker({ color: schema.starred ? '#f59e0b' : '#00FF00' })
                         .setLngLat(coordinates)
                         .setPopup(popup)
-                        .addTo(map);
+                        .addTo(map)
 
                     marker.getElement().addEventListener('click', () => {
-                        closeActivePopup();
-                        activePopupRef.current = marker;
-                    });
+                        closeActivePopup()
+                        activePopupRef.current = marker
+                    })
 
-                    newMarkers.push(marker);
+                    newMarkers.push(marker)
                     if (schema.name) {
-                        markerMapRef.current.set(schema.name, marker);
+                        markerMapRef.current.set(schema.name, marker)
                     }
                 }
             }
-        });
+        })
 
-        markersRef.current = newMarkers;
+        markersRef.current = newMarkers
     }
 
     const flyToSchema = (schema: GridSchema) => {
-        const map = store.get<mapboxgl.Map | null>('map');
-        if (!map || !schema.base_point || !schema.epsg) return;
+        const map = store.get<mapboxgl.Map | null>('map')
+        if (!map || !schema.base_point || !schema.epsg) return
 
-        const coordinates = convertToWGS84(schema.base_point, schema.epsg);
-        if (coordinates[0] === 0 && coordinates[1] === 0) return;
+        const coordinates = convertToWGS84(schema.base_point, schema.epsg)
+        if (coordinates[0] === 0 && coordinates[1] === 0) return
 
-        const marker = markerMapRef.current.get(schema.name);
+        const marker = markerMapRef.current.get(schema.name)
 
         if (marker) {
-            closeActivePopup();
+            closeActivePopup()
             map.flyTo({
                 center: marker.getLngLat(),
                 zoom: 16,
                 essential: true,
                 duration: 1000,
-            });
+            })
             setTimeout(() => {
-                activePopupRef.current = marker;
-                marker.togglePopup();
-            }, 1200);
+                activePopupRef.current = marker
+                marker.togglePopup()
+            }, 1200)
         } else {
-            showSchemaMarkerOnMap([schema]);
-            const newMarker = markerMapRef.current.get(schema.name);
+            showSchemaMarkerOnMap([schema])
+            const newMarker = markerMapRef.current.get(schema.name)
             if (newMarker) {
                 map.flyTo({
                     center: newMarker.getLngLat(),
                     zoom: 16,
                     essential: true,
                     duration: 1000,
-                });
+                })
                 setTimeout(() => {
-                    activePopupRef.current = newMarker;
-                    newMarker.togglePopup();
-                }, 1200);
+                    activePopupRef.current = newMarker
+                    newMarker.togglePopup()
+                }, 1200)
             }
         }
-    };
+    }
 
     const enableDrawMode = (callback: (lng: number, lat: number) => void) => {
-        const map = store.get<mapboxgl.Map | null>('map');
-        if (!map) return;
+        const map = store.get<mapboxgl.Map | null>('map')
+        if (!map) return
         
         if (map.getCanvas()) {
-            map.getCanvas().style.cursor = 'crosshair';
+            map.getCanvas().style.cursor = 'crosshair'
         }
         
-        return enableMapPointSelection(map, callback);
-    };
+        return enableMapPointSelection(map, callback)
+    }
     
     const disableDrawMode = () => {
-        const map = store.get<mapboxgl.Map | null>('map');
-        if (!map) return;
+        const map = store.get<mapboxgl.Map | null>('map')
+        if (!map) return
         
         if (map.getCanvas()) {
-            map.getCanvas().style.cursor = '';
+            map.getCanvas().style.cursor = ''
         }
-    };
+    }
 
     useImperativeHandle(ref, () => ({
         showSchemaMarkerOnMap,
@@ -225,15 +217,15 @@ const MapContainer = forwardRef<
     }))
 
     useEffect(() => {
-        if (!node) return;
+        if (!node) return
         
-        const _node = node as SceneNode;
-        const context = _node.pageContext as SchemasPageContext;
+        const _node = node as SceneNode
+        const context = _node.pageContext as SchemasPageContext
         
         if (context && context.mapState.isDrawingPoint) {
-            const map = store.get<mapboxgl.Map | null>('map');
+            const map = store.get<mapboxgl.Map | null>('map')
             if (map && map.getCanvas()) {
-                map.getCanvas().style.cursor = 'crosshair';
+                map.getCanvas().style.cursor = 'crosshair'
             }
         }
     }, [node])
@@ -247,7 +239,7 @@ const MapContainer = forwardRef<
         if (mapWrapperRef.current) {
             mapInstance = new mapboxgl.Map({
                 container: mapWrapperRef.current,
-                style: "mapbox://styles/mapbox/streets-v12",
+                style: 'mapbox://styles/mapbox/streets-v12',
                 projection: 'globe',
                 center: [initialLongitude, initialLatitude],
                 zoom: initialZoom,
@@ -271,20 +263,20 @@ const MapContainer = forwardRef<
                     })
                 }
 
-                const currentMapInstance = mapInstance;
+                const currentMapInstance = mapInstance
                 resizer = new ResizeObserver(
                     debounce(() => {
                         if (!isUnmountedRef.current) {
-                            currentMapInstance?.resize();
+                            currentMapInstance?.resize()
                         }
                     }, 100)
-                );
-                resizer.observe(mapWrapperRef.current);
+                )
+                resizer.observe(mapWrapperRef.current)
             }
         }
 
         return () => {
-            isUnmountedRef.current = true;
+            isUnmountedRef.current = true
             if (resizer && mapWrapperRef.current) {
                 resizer.unobserve(mapWrapperRef.current)
                 resizer.disconnect()
@@ -298,7 +290,7 @@ const MapContainer = forwardRef<
     }, [])
 
     return (
-        <div className="relative w-full h-full" ref={mapWrapperRef} />
+        <div className='relative w-full h-full' ref={mapWrapperRef} />
     )
 })
 

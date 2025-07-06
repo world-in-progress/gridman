@@ -1,6 +1,7 @@
 import { IScenarioNode } from '../scenario/iscenario'
 
 export interface ISceneNode {
+    id: string
     key: string
     name: string
     aligned: boolean 
@@ -13,7 +14,7 @@ export interface ISceneNode {
 
 export interface ISceneTree {
     root: ISceneNode
-    isRemote: boolean
+    isPublic: boolean
     scene: Map<string, ISceneNode>
 
     setRoot(root: ISceneNode): Promise<void>

@@ -32,8 +32,9 @@ const renderNodeTab = (
     }: renderNodeTabProps
 ) => {
     const tab = node.tab
+    const tabId = node.id
     return (
-        <Draggable key={tab.id} draggableId={tab.id} index={index}>
+        <Draggable key={tabId} draggableId={tabId} index={index}>
             {(providedDraggable, snapshot) => (
                 <div
                     onClick={() => {
@@ -68,7 +69,7 @@ const renderNodeTab = (
                                     )}
                                 >
                                     {tab.name}
-                                    {node.tree.isRemote && <Cloudy className='w-4 h-4 ml-2 text-gray-300' />}
+                                    {node.tree.isPublic && <Cloudy className='w-4 h-4 ml-2 text-gray-300' />}
                                 </span>
 
                                 <X
@@ -97,7 +98,7 @@ const renderNodeTabs = (
     console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
 
     const elements = Array.from(tabs).map((tab, index) => {
-        const [domain, path] = tab.id.split(':')
+        const [domain, path] = tab.node.id.split(':')
         const isPublic = domain === 'public'
         const node = isPublic ? (remoteTree?.scene.get(path)) : (localTree?.scene.get(path))
 

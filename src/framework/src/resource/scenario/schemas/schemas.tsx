@@ -1,4 +1,5 @@
 import store from '@/store'
+import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
 import { FilePlus2 } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
@@ -6,7 +7,6 @@ import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import MapContainer, { MapContainerHandles } from '@/components/mapContainer/mapContainer'
-import { addMapMarker, clearMapMarkers } from '@/components/mapContainer/utils'
 
 interface MapState {
     isDrawingPoint: boolean
@@ -15,12 +15,10 @@ interface MapState {
 export class SchemasPageContext extends DefaultPageContext {
     name: string
     epsg: number | null
-    starred: boolean
     description: string
-    base_point: number[]
-    grid_info: number[][]
+    gridLayers: GridLayerInfo[]
+    basePoint: [number | null, number | null]
 
-    // isDrawingPoint: boolean
     mapState: MapState
 
     constructor() {
@@ -28,10 +26,9 @@ export class SchemasPageContext extends DefaultPageContext {
 
         this.name = ''
         this.epsg = null
-        this.starred = false
         this.description = ''
-        this.base_point = []
-        this.grid_info = []
+        this.basePoint = [null, null]
+        this.gridLayers = []
 
         this.mapState = {
             isDrawingPoint: false,
@@ -78,20 +75,21 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         )
     }
 
-    freezeMap(nodeSelf: ISceneNode): void {
-        const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
-        const mapMethods = store.get<MapContainerHandles>('mapMethods')!
-        const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
+    // freezeMap(nodeSelf: ISceneNode): void {
+    //     const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
+    //     const mapMethods = store.get<MapContainerHandles>('mapMethods')!
+    //     const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
 
-        // clearMapMarkers()
-    }
+    //     // clearMapMarkers()
+    // }
 
-    meltMap(nodeSelf: ISceneNode): void {
-        const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
-        const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
+    // meltMap(nodeSelf: ISceneNode): void {
+    //     const map: mapboxgl.Map = store.get<mapboxgl.Map>('map')!
+    //     const context: SchemasPageContext = (nodeSelf as SceneNode).pageContext
 
-        clearMapMarkers()
+    //     clearMapMarkers()
 
-        addMapMarker(context.base_point)
-    }
+    //     const [lon, lat] = context.basePoint
+    //     if (lon !== null && lat !== null) addMapMarker([lon, lat])
+    // }
 }

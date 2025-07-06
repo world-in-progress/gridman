@@ -1,51 +1,44 @@
-import { Schema, GridLevel, ValidationResult } from './types';
+import store from '@/store'
+import mapboxgl from 'mapbox-gl'
+import { GridLayerInfo, ValidationResult } from './types'
 
-export const validateGridLayers = (
-    gridLevel: GridLevel[]
-): { errors: Record<number, string>; isValid: boolean } => {
-    const errors: Record<number, string> = {};
-    let isValid = true;
+export const validateGridLayers = (gridLayers: GridLayerInfo[]): { errors: Record<number, string>, isValid: boolean } => {
+    const errors: Record<number, string> = {}
+    let isValid = true
 
     const errorText = {
-        empty: 'Width and height cannot be empty',
-        notPositive: 'Width and height must be positive numbers',
-        notSmaller: (prevWidth: number, prevHeight: number) =>
-            `Cell dimensions should be smaller than previous level (${prevWidth}×${prevHeight})`,
-        notMultiple: (
-            prevWidth: number,
-            currentWidth: number,
-            prevHeight: number,
-            currentHeight: number
-        ) =>
-            `Previous level's dimensions (${prevWidth}×${prevHeight}) must be multiples of current level (${currentWidth}×${currentHeight})`,
-        widthNotSmaller: (prevWidth: number) =>
-            `Width must be smaller than previous level (${prevWidth})`,
-        widthNotMultiple: (prevWidth: number, currentWidth: number) =>
-            `Previous level's width (${prevWidth}) must be a multiple of current width (${currentWidth})`,
-        heightNotSmaller: (prevHeight: number) =>
-            `Height must be smaller than previous level (${prevHeight})`,
-        heightNotMultiple: (prevHeight: number, currentHeight: number) =>
-            `Previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`,
-        and: ` and `,
-    };
+        and: () => ` and `,
 
+        empty: () => 'Width and height cannot be empty',
 
-    const sortedLayers = [...gridLevel].sort((a, b) => a.id - b.id);
+        notPositive: () => 'Width and height must be positive numbers',
+        
+        notSmaller: (prevWidth: number, prevHeight: number) => `Cell dimensions should be smaller than previous level (${prevWidth}×${prevHeight})`,
 
-    sortedLayers.forEach((layer, index) => {
-        const width = String(layer.width).trim();
-        const height = String(layer.height).trim();
+        notMultiple: (prevWidth: number, currentWidth: number, prevHeight: number, currentHeight: number) => `Previous level's dimensions (${prevWidth}×${prevHeight}) must be multiples of current level (${currentWidth}×${currentHeight})`,
 
-        delete errors[layer.id];
+        widthNotSmaller: (prevWidth: number) => `Width must be smaller than previous level (${prevWidth})`,
+
+        widthNotMultiple: (prevWidth: number, currentWidth: number) => `Previous level's width (${prevWidth}) must be a multiple of current width (${currentWidth})`,
+
+        heightNotSmaller: (prevHeight: number) => `Height must be smaller than previous level (${prevHeight})`,
+
+        heightNotMultiple: (prevHeight: number, currentHeight: number) => `Previous level's height (${prevHeight}) must be a multiple of current height (${currentHeight})`,
+    }
+
+    gridLayers.forEach((layer, index) => {
+        delete errors[layer.id]
+        const width = String(layer.width).trim()
+        const height = String(layer.height).trim()
 
         if (width === '' || height === '') {
-            errors[layer.id] = errorText.empty;
-            isValid = false;
-            return;
+            errors[layer.id] = errorText.empty()
+            isValid = false
+            return
         }
 
-        const currentWidth = Number(width);
-        const currentHeight = Number(height);
+        const currentWidth = Number(width)
+        const currentHeight = Number(height)
 
         if (
             isNaN(currentWidth) ||
@@ -53,40 +46,40 @@ export const validateGridLayers = (
             currentWidth <= 0 ||
             currentHeight <= 0
         ) {
-            errors[layer.id] = errorText.notPositive;
-            isValid = false;
-            return;
+            errors[layer.id] = errorText.notPositive()
+            isValid = false
+            return
         }
 
         if (index > 0) {
-            const prevLayer = sortedLayers[index - 1];
-            const prevWidth = Number(String(prevLayer.width).trim());
-            const prevHeight = Number(String(prevLayer.height).trim());
+            const prevLayer = gridLayers[index - 1]
+            const prevWidth = Number(String(prevLayer.width).trim())
+            const prevHeight = Number(String(prevLayer.height).trim())
 
-            let hasWidthError = false;
+            let hasWidthError = false
             if (currentWidth >= prevWidth) {
-                errors[layer.id] = errorText.widthNotSmaller(prevWidth);
-                hasWidthError = true;
-                isValid = false;
+                errors[layer.id] = errorText.widthNotSmaller(prevWidth)
+                hasWidthError = true
+                isValid = false
             } else if (prevWidth % currentWidth !== 0) {
                 errors[layer.id] = errorText.widthNotMultiple(
                     prevWidth,
                     currentWidth
-                );
-                hasWidthError = true;
-                isValid = false;
+                )
+                hasWidthError = true
+                isValid = false
             }
 
             if (currentHeight >= prevHeight) {
                 if (hasWidthError) {
                     errors[layer.id] +=
                         errorText.and +
-                        errorText.heightNotSmaller(prevHeight);
+                        errorText.heightNotSmaller(prevHeight)
                 } else {
                     errors[layer.id] =
-                        errorText.heightNotSmaller(prevHeight);
+                        errorText.heightNotSmaller(prevHeight)
                 }
-                isValid = false;
+                isValid = false
             } else if (prevHeight % currentHeight !== 0) {
                 if (hasWidthError) {
                     errors[layer.id] +=
@@ -94,65 +87,67 @@ export const validateGridLayers = (
                         errorText.heightNotMultiple(
                             prevHeight,
                             currentHeight
-                        );
+                        )   
                 } else {
                     errors[layer.id] = errorText.heightNotMultiple(
                         prevHeight,
                         currentHeight
-                    );
+                    )   
                 }
-                isValid = false;
+                isValid = false 
             }
         }
-    });
+    })
 
-    return { errors, isValid };
-};
+    return { errors, isValid }
+}
 
 export const validateSchemaForm = (
     data: {
-        name: string;
-        epsg: string;
-        lon: string;
-        lat: string;
-        gridLevel: GridLevel[];
-        convertedCoord: { x: string; y: string } | null;
+        name: string
+        epsg: string
+        lon: string
+        lat: string
+        gridLayerInfos: GridLayerInfo[]
+        convertedCoord: { x: string, y: string } | null
     },
 ): ValidationResult => {
     const errors = {
         name: false,
+        epsg: false,
         description: false,
         coordinates: false,
-        epsg: false,
-    };
+    }
+    let generalError: string | null = null
 
-    let generalError: string | null = null;
-
+    // Validate name
     if (!data.name.trim()) {
+        errors.name = true
         generalError = 'Please enter schema name'
-        errors.name = true;
-        return { isValid: false, errors, generalError };
+        return { isValid: false, errors, generalError }
     }
 
+    // Validate EPSG code
     if (!data.epsg.trim() || isNaN(Number(data.epsg))) {
+        errors.epsg = true
         generalError = 'Please enter a valid EPSG code'
-        errors.epsg = true;
-        return { isValid: false, errors, generalError };
+        return { isValid: false, errors, generalError }
     }
 
-    if (!data.lon.trim() || !data.lat.trim()) {
-        generalError = 'Please enter coordinates'
-        errors.coordinates = true;
-        return { isValid: false, errors, generalError };
+    // Validate coordinates
+    if (!data.lon.trim() || !data.lat.trim() || isNaN(Number(data.lon)) || isNaN(Number(data.lat))) {
+        errors.coordinates = true
+        generalError = 'Please enter valid coordinates'
+        return { isValid: false, errors, generalError }
     }
 
-    if (data.gridLevel.length === 0) {
+    // Validate grid levels
+    if (data.gridLayerInfos.length === 0) {
         generalError = 'Please add at least one grid level'
-        return { isValid: false, errors, generalError };
+        return { isValid: false, errors, generalError }
     }
-
-    for (let i = 0; i < data.gridLevel.length; i++) {
-        const layer = data.gridLevel[i];
+    for (let i = 0; i < data.gridLayerInfos.length; i++) {
+        const layer = data.gridLayerInfos[i]
         if (
             !layer.width.toString().trim() ||
             !layer.height.toString().trim() ||
@@ -160,47 +155,52 @@ export const validateSchemaForm = (
             isNaN(parseInt(layer.height.toString()))
         ) {
             generalError = `Please enter valid width and height for grid level ${i + 1}`
-            return { isValid: false, errors, generalError };
+            return { isValid: false, errors, generalError }
         }
     }
-
-    const { errors: layerErrors, isValid: gridValid } = validateGridLayers(
-        data.gridLevel,
-    );
-    if (!gridValid) {
+    const { errors: layerErrors, isValid: gridInfoValid } = validateGridLayers(data.gridLayerInfos)
+    if (!gridInfoValid) {
         generalError = 'Please fix errors in grid levels'
-        return { isValid: false, errors, generalError };
+        return { isValid: false, errors, generalError }
     }
 
+    // Validate converted coordinates
     if (!data.convertedCoord) {
         generalError = 'Unable to get converted coordinates'
-        return { isValid: false, errors, generalError };
+        return { isValid: false, errors, generalError }
     }
 
-    return { isValid: true, errors, generalError: null };
-};
+    return { isValid: true, errors, generalError }
+}
 
-export const createSchemaData = (
-    name: string,
-    description: string,
-    epsg: string,
-    convertedCoord: { x: string; y: string } | null,
-    gridLevel: GridLevel[]
-): Schema | null => {
-    if (!convertedCoord) return null;
+export function pickingFromMap(options?: mapboxgl.MarkerOptions, callback?: (marker: mapboxgl.Marker) => void): () => void {
+    const map = store.get<mapboxgl.Map>('map')
+    if (!map) {
+        console.error('Map instance not found')
+        return () => {}
+    }
 
-    return {
-        name,
-        starred: false,
-        description,
-        epsg: parseInt(epsg),
-        base_point: [
-            parseFloat(convertedCoord.x),
-            parseFloat(convertedCoord.y),
-        ],
-        grid_info: gridLevel.map((layer) => [
-            parseInt(layer.width.toString()),
-            parseInt(layer.height.toString()),
-        ]),
-    };
-};
+    // Set cursor style
+    if (map.getCanvas()) map.getCanvas().style.cursor = 'crosshair'
+
+    // Set picking handler
+    const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
+        // Recover cursor style
+        if (map.getCanvas()) map.getCanvas().style.cursor = ''
+
+        // Create marker
+        const marker = new mapboxgl.Marker(options)
+            .setLngLat([e.lngLat.lng, e.lngLat.lat])
+            .addTo(map)
+
+        // Call the callback
+        callback && callback(marker)
+    }
+
+    map.once('click', handleMapClick)
+
+    return () => {
+        map.off('click', handleMapClick)
+        if (map.getCanvas()) map.getCanvas().style.cursor = ''
+    }
+}

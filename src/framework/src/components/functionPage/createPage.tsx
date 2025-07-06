@@ -40,7 +40,7 @@ export default function CreatePage({
 
     useEffect(() => {
         if (node && node.tree) {
-            (node.tree as SceneTree).mapContainerRef = mapContainerRef;
+            (node.tree as SceneTree).mapContainerRef = mapContainerRef
         }
     }, [node]);
 
