@@ -16,7 +16,7 @@ export const getSchemaInfo = async(node: SceneNode, isRemote: boolean) => {
 export const deleteSchema = async(schemaName: string, isRemote:boolean) => {
     try {
         const res = await apis.schema.deleteSchema.fetch(schemaName, isRemote)
-        console.log(res.success)
+        return res.success
     } catch (error) {
         console.error('Delete Schema failed: ', error)
         return false

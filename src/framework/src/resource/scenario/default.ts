@@ -26,12 +26,12 @@ export default class DefaultScenarioNode implements IScenarioNode {
         return this.children.length
     }
 
-    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return null
     }
 
     
-    handleMenuOpen(nodeSelf: ISceneNode): void {
+    handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
