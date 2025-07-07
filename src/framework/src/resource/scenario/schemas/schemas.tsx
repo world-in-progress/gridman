@@ -25,6 +25,26 @@ export class SchemasPageContext extends DefaultPageContext {
     static async create(): Promise<SchemasPageContext> {
         return new SchemasPageContext()
     }
+
+    serialize(): any {
+        return {
+            name: this.name,
+            epsg: this.epsg,
+            description: this.description,
+            basePoint: this.basePoint,
+            gridLayers: this.gridLayers,
+        }
+    }
+
+    static deserialize(input: any): SchemasPageContext {
+        const context = new SchemasPageContext()
+        context.name = input.name
+        context.epsg = input.epsg
+        context.description = input.description
+        context.basePoint = input.basePoint
+        context.gridLayers = input.gridLayers
+        return context
+    }
 }
 
 export default class SchemasScenarioNode extends DefaultScenarioNode {
