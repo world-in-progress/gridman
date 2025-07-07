@@ -2,7 +2,7 @@ import DefaultScenarioNode, { DefaultPageContext } from './scenario/default'
 import RootScenarioNode from './scenario/root'
 import TopoScenarioNode from './scenario/topo'
 import SchemasScenarioNode, { SchemasPageContext } from './scenario/schemas/schemas'
-import SchemaScenarioNode from './scenario/schema'
+import SchemaScenarioNode from './scenario/schema/schema'
 import PatchesScenarioNode, { PatchesPageContext } from './scenario/patches/patches'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
