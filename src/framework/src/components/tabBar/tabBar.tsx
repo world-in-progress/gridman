@@ -85,14 +85,14 @@ const renderNodeTab = ({
 }
 
 const renderNodeTabs = (
-    tabs: Set<Tab>,
+    tabs: Tab[],
     localTree: SceneTree | null | undefined,
     remoteTree: SceneTree | null | undefined,
     onTabClick: (tab: Tab) => void,
 ) => {
-    console.debug('Rendering tabs:', Array.from(tabs).map(tab => tab.name))
+    console.debug('Rendering tabs:', tabs.map(tab => tab.name))
 
-    const elements = Array.from(tabs).map((tab, index) => {
+    const elements = tabs.map((tab, index) => {
         const [domain, path] = tab.node.id.split(':')
         const isPublic = domain === 'public'
         const node = isPublic ? (remoteTree?.scene.get(path)) : (localTree?.scene.get(path))
@@ -145,8 +145,8 @@ export default function TabBar({
     // Handle focus node changes
     useEffect(() => {
         if (focusNode) {
-            for (let i = 0; i < tabs.size; i++) {
-                const tab = Array.from(tabs)[i]
+            for (let i = 0; i < tabs.length; i++) {
+                const tab = tabs[i]
                 if (tab.node.id === focusNode.id) {
                     tab.isActive = true
                     break
@@ -156,8 +156,8 @@ export default function TabBar({
 
         return () => {
             if (focusNode) {
-                for (let i = 0; i < tabs.size; i++) {
-                    const tab = Array.from(tabs)[i]
+                for (let i = 0; i < tabs.length; i++) {
+                    const tab = tabs[i]
                     if (tab.node.id === focusNode.id) {
                         tab.isActive = false
                         break

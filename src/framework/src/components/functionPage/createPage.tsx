@@ -1,6 +1,5 @@
 import MapContainer from '../mapContainer/mapContainer'
 import { CreatePageProps } from './types'
-import { ISceneNode } from '@/core/scene/iscene'
 
 export default function ResorucePage({ node }: CreatePageProps) {
     if (!node) {

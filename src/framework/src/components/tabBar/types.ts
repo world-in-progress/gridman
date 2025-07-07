@@ -11,7 +11,7 @@ export interface Tab {
 }
 
 export interface TabBarProps{
-    tabs: Set<Tab>
+    tabs: Tab[]
     focusNode: SceneNode | null
     localTree?: SceneTree | null
     remoteTree?: SceneTree | null

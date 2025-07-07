@@ -1,9 +1,9 @@
-import React, { 
+import { 
+    useRef,
     useState,
     useEffect,
-    useCallback,
     useReducer,
-    useRef,
+    useCallback,
 } from 'react'
 import TabBar from './tabBar/tabBar'
 import { Tab } from './tabBar/types'
@@ -11,24 +11,21 @@ import IconBar from './iconBar/iconBar'
 import { DropResult } from '@hello-pangea/dnd'
 import { ISceneNode } from '@/core/scene/iscene'
 import ResorucePage from './functionPage/createPage'
-import MapContainer from './mapContainer/mapContainer'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
 import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
 
 function FrameworkComponent() {
+    const nodeTabs = useRef<Tab[]>([])
     const nodeStack = useRef<ISceneNode[]>([])
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
-    const [triggerFocus, setTriggerFocus] = useState(0)
-    const [tabs, setTabs] = useState<Set<Tab>>(new Set())
+    const [triggerFocus, setTriggerFocus] = useState(0) // used to force re-render of ResourceTreeComponent when focusNode changes
     const [activeIconID, setActiveIconID] = useState('grid-editor')
-    const [getPublicTree, setGetPublicTree] = useState<boolean>(false)
-    const [getPrivateTree, setGetPrivateTree] = useState<boolean>(false)
+    const [focusNode, setFocusNode] = useState<ISceneNode | null>(null)
     const [publicTree, setPublicFileTree] = useState<SceneTree | null>(null)
     const [privateTree, setPrivateFileTree] = useState<SceneTree | null>(null)
-    const [focusNode, setFocusNode] = useState<ISceneNode | undefined>(undefined)
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -96,9 +93,7 @@ function FrameworkComponent() {
 
     // Handle menu open
     const handleNodeMenuOpen = useCallback((node: ISceneNode) => {
-        if (privateTree === null || publicTree === null) {
-            return
-        }
+        if (privateTree === null || publicTree === null) return
 
         const _privateTree = privateTree as SceneTree
         const _publicTree = publicTree as SceneTree
@@ -110,36 +105,43 @@ function FrameworkComponent() {
         _tree.selectedNode = node
 
         node.scenarioNode.handleMenuOpen(node)
+
     }, [privateTree, publicTree])
 
     // Handle open node editing tab
     const handleNodeStartEditing = useCallback((node: ISceneNode) => {
+        if (privateTree === null || publicTree === null) return
+
         console.debug('Opening node editing tab:', node)
         const _node = node as SceneNode
 
-        // Add the node tab to the tabs
-        if (tabs.has(_node.tab)) return
-
-        tabs.add(_node.tab)
-        nodeStack.current.push(_node)
+        // Add the node tab to the tabs and stack if it doesn't exist
+        const existingIndex = nodeStack.current.findIndex(n => n.id === _node.id)
+        if (existingIndex === -1) {
+            nodeStack.current.push(_node)
+            nodeTabs.current.push(_node.tab)
+        }
         
+        // Focus on this node
         setFocusNode(_node)
-        setTabs(new Set(tabs))
 
-    }, [tabs])
+    }, [privateTree, publicTree])
 
     // Handle close node editing tab
     const handleNodeStopEditing = useCallback((node: ISceneNode) => {
+        if (privateTree === null || publicTree === null) return
+
         console.debug('Closing node editing tab:', node)
-
         const _node = node as SceneNode
-        // _node.tab.isActive = false
 
-        // Remove the node tab from the tabs
-        tabs.delete(_node.tab)
+        // Remove the node tab from the tabs and stack
         nodeStack.current = nodeStack.current.filter(n => {
             const _n = n as SceneNode
             return _n.id != _node.id
+        })
+        nodeTabs.current = nodeTabs.current.filter(t => {
+            const _t = t as Tab
+            return _t.node.id != _node.id
         })
 
         // Activate the last picked node
@@ -147,13 +149,12 @@ function FrameworkComponent() {
             const lastNode = nodeStack.current[nodeStack.current.length - 1] as SceneNode
             setFocusNode(lastNode)
         } else {
-            setFocusNode(undefined)
+            privateTree.selectedNode = null
+            publicTree.selectedNode = null
+            setFocusNode(null)
         }
 
-        // Update state
-        setTabs(new Set(tabs))
-
-    }, [tabs])
+    }, [privateTree, publicTree])
 
     const handleTabClick = useCallback((tab: Tab) => {
         const node = tab.node as SceneNode
@@ -180,15 +181,13 @@ function FrameworkComponent() {
         if (!result.destination) {
             return
         }
+        
+        const [reorderedItem] = nodeTabs.current.splice(result.source.index, 1)
+        nodeTabs.current.splice(result.destination.index, 0, reorderedItem)
 
-        const prevTabs: Tab[] = [...tabs]
-        const [reorderedItem] = prevTabs.splice(result.source.index, 1)
-        prevTabs.splice(result.destination.index, 0, reorderedItem)
-
-        setTabs(new Set(prevTabs))
-
-        console.debug('Reordered tabs:', prevTabs.map(t => t.name))
-    }, [tabs])
+        console.debug('Reordered tabs:', nodeTabs.current.map(t => t.name))
+        
+    }, [])
 
     const handleNodeClickEnd = useCallback((node: ISceneNode) => {
         const _node = node as SceneNode
@@ -200,9 +199,9 @@ function FrameworkComponent() {
         })
 
         // If the node is already in the stack and not focused, focus on it
-        if (focusNode && existingIndex !== -1 && focusNode.id !== _node.id) {
+        if (focusNode && existingIndex !== -1 && focusNode.id !== _node.id)
             setFocusNode(_node)
-        }
+
     }, [focusNode])
 
     // Init DomResourceTree
@@ -216,10 +215,9 @@ function FrameworkComponent() {
                 _privateTree.subscribe(triggerRepaint)
                 _publicTree.subscribe(triggerRepaint)
 
+                // Update the state with the initialized trees
                 setPrivateFileTree(_privateTree)
                 setPublicFileTree(_publicTree)
-                setGetPrivateTree(true)
-                setGetPublicTree(true)
 
             } catch (error) {
                 console.error('Failed to initialize resource trees:', error)
@@ -229,7 +227,7 @@ function FrameworkComponent() {
     }, [])
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-red-900">
+        <div className="flex h-screen w-screen overflow-hidden bg-[#1E1E1E]">
             {/* Activity Bar */}
             <IconBar
                 currentActiveId={activeIconID}
@@ -241,8 +239,6 @@ function FrameworkComponent() {
                 triggerFocus={triggerFocus}
                 privateTree={privateTree}
                 publicTree={publicTree}
-                getPrivateTree={getPrivateTree}
-                getPublicTree={getPublicTree}
                 onOpenFile={handleOpenFile}
                 onPinFile={handlePinFile}
                 onDropDownMenuOpen={handleNodeMenuOpen}
@@ -255,7 +251,7 @@ function FrameworkComponent() {
                 {/* Tab Bar */}
                 <TabBar
                     focusNode={focusNode as SceneNode | null}
-                    tabs={tabs}
+                    tabs={nodeTabs.current}
                     localTree={privateTree}
                     remoteTree={publicTree}
                     onTabDragEnd={handleTabDragEnd}

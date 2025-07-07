@@ -31,11 +31,9 @@ interface TreeNodeProps {
 
 interface SceneTreeProps {
     triggerFocus: number
-    focusNode?: ISceneNode
-    privateTree: SceneTree | null
+    focusNode: ISceneNode | null
     publicTree: SceneTree | null
-    getPrivateTree: boolean
-    getPublicTree: boolean
+    privateTree: SceneTree | null
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
     onDropDownMenuOpen: (node: ISceneNode) => void
@@ -179,8 +177,6 @@ export default function ResourceTreeComponent({
     triggerFocus,
     privateTree,
     publicTree,
-    getPrivateTree,
-    getPublicTree,
     onOpenFile,
     onPinFile,
     onDropDownMenuOpen,
@@ -204,7 +200,10 @@ export default function ResourceTreeComponent({
                 handleNodeClickEnd: onNodeClickEnd,
             })
 
-            privateTree.subscribe(triggerRepaint)
+            const unsubscribe = privateTree.subscribe(triggerRepaint)
+            return () => {
+                unsubscribe()
+            }
         }
     }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
 
@@ -220,7 +219,10 @@ export default function ResourceTreeComponent({
                 handleNodeClickEnd: onNodeClickEnd,
             })
 
-            publicTree.subscribe(triggerRepaint)
+            const unsubscribe = publicTree.subscribe(triggerRepaint)
+            return () => {
+                unsubscribe()
+            }
         }
     }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
 
@@ -243,13 +245,13 @@ export default function ResourceTreeComponent({
                         Explorer
                     </div>
 
-                    {getPrivateTree && (
+                    {privateTree && (
                         <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} triggerFocus={triggerFocus} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
-                    {getPublicTree && (
+                    {publicTree && (
                         <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} triggerFocus={triggerFocus} />
                     )}
                 </div>
