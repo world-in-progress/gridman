@@ -5,7 +5,7 @@ import {
     ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { cn } from '@/utils/utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { Cloudy, FileText, User, X } from 'lucide-react'
 import { SceneNode, SceneTree } from '../resourceScene/scene'
 import { TabBarProps, Tab, renderNodeTabProps } from './types'
@@ -24,13 +24,11 @@ const getTabContextMenu = (tab: Tab) => (
     </ContextMenuContent>
 )
 
-const renderNodeTab = (
-    {
-        node,
-        index,
-        onTabClick,
-    }: renderNodeTabProps
-) => {
+const renderNodeTab = ({
+    node,
+    index,
+    onTabClick,
+}: renderNodeTabProps) => {
     const tab = node.tab
     const tabId = node.id
     return (
@@ -53,9 +51,6 @@ const renderNodeTab = (
                                     tab.isActive && 'bg-gray-900',
                                     snapshot.isDragging && 'bg-gray-600'
                                 )}
-                            // onDoubleClick={() => {
-                            //     onPinFile(tab.name, tab.path)
-                            // }}
                             >
                                 {tab.name === "user" ? (
                                     <User className="w-4 h-4 mr-2 flex-shrink-0 text-blue-400" />
@@ -116,35 +111,24 @@ const renderNodeTabs = (
 
 export default function TabBar({
     tabs,
+    focusNode,
     localTree,
     remoteTree,
     onTabDragEnd,
     onTabClick,
 }: TabBarProps) {
-    const [triggerTabBar, setTriggerTabBar] = useState(0)
-    const [localUnsubscribe, setLocalUnsubscribe] = useState<(() => void) | undefined>()
-    const [remoteUnsubscribe, setRemoteUnsubscribe] = useState<(() => void) | undefined>()
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
+    // Subscribe trigger repaint to local and remote trees
     useEffect(() => {
+        const unSubscribe: [() => void, () => void] = [() => {}, () => {}]
         const initTree = async () => {
             try {
                 if (!localTree || !remoteTree) return
 
                 // Subscribe to tree update
-                if (localUnsubscribe === undefined) {
-                    setLocalUnsubscribe(
-                        localTree.subscribe(() => {
-                            setTriggerTabBar(prev => prev + 1)
-                        })
-                    )
-                }
-                if (remoteUnsubscribe === undefined) {
-                    setRemoteUnsubscribe(
-                        remoteTree.subscribe(() => {
-                            setTriggerTabBar(prev => prev + 1)
-                        })
-                    )
-                }
+                unSubscribe[0] = localTree.subscribe(triggerRepaint)
+                unSubscribe[1] = remoteTree.subscribe(triggerRepaint)
 
             } catch (error) {
                 console.error('Failed to initialize resource trees:', error)
@@ -153,10 +137,35 @@ export default function TabBar({
         initTree()
 
         return () => {
-            if (localUnsubscribe) localUnsubscribe()
-            if (remoteUnsubscribe) remoteUnsubscribe()
+            unSubscribe[0]()
+            unSubscribe[1]()
         }
-    }, [localTree, remoteTree, localUnsubscribe, remoteUnsubscribe])
+    }, [localTree, remoteTree])
+
+    // Handle focus node changes
+    useEffect(() => {
+        if (focusNode) {
+            for (let i = 0; i < tabs.size; i++) {
+                const tab = Array.from(tabs)[i]
+                if (tab.node.id === focusNode.id) {
+                    tab.isActive = true
+                    break
+                }
+            }
+        }
+
+        return () => {
+            if (focusNode) {
+                for (let i = 0; i < tabs.size; i++) {
+                    const tab = Array.from(tabs)[i]
+                    if (tab.node.id === focusNode.id) {
+                        tab.isActive = false
+                        break
+                    }
+                }
+            }
+        }
+    }, [tabs, focusNode])
 
     const handleDragStart = (start: DragStart) => {
         const index = start.source.index
@@ -166,26 +175,6 @@ export default function TabBar({
 
     return (
         <>
-            {/* <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
-                <Droppable droppableId='tabs' direction='horizontal'>
-                    {(provided) => (
-                        <ScrollArea className='w-full'>
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className='bg-gray-800 border-b border-gray-700 flex h-[37px] min-w-max'
-                            >
-                                {
-                                    renderNodeTabs(tabs, localTree, remoteTree, onTabClick)
-                                }
-                                {provided.placeholder}
-                            </div>
-                            <ScrollBar orientation='horizontal' />
-                        </ScrollArea>
-                    )}
-
-                </Droppable> 
-            </DragDropContext> */}
             <div className='bg-gray-800 border-b border-gray-700 flex h-[4vh] w-[85vw]'>
                 <ScrollArea className='w-full'>
                     <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
@@ -205,48 +194,6 @@ export default function TabBar({
                     <ScrollBar orientation='horizontal' />
                 </ScrollArea>
             </div>
-            {/* <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
-                <Droppable droppableId='tabs' direction='horizontal'>
-                    {(provided) => (
-                        <ScrollArea className='w-full'>
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className='bg-gray-800 border-b border-gray-700 flex h-[37px] min-w-max'
-                            >
-                                {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
-                                {provided.placeholder}
-                            </div>
-                            <ScrollBar orientation='horizontal' />
-                        </ScrollArea>
-                    )}
-                </Droppable>
-            </DragDropContext> */}
-            {/* <ScrollArea className="w-96 rounded-md border whitespace-nowrap">
-                <div className="flex w-max space-x-4 p-4">
-                    {works.map((artwork) => (
-                        <figure key={artwork.artist} className="shrink-0">
-                            <div className="overflow-hidden rounded-md">
-                                <Image
-                                    src={artwork.art}
-                                    alt={`Photo by ${artwork.artist}`}
-                                    className="aspect-[3/4] h-fit w-fit object-cover"
-                                    width={300}
-                                    height={400}
-                                />
-                            </div>
-                            <figcaption className="text-muted-foreground pt-2 text-xs">
-                                Photo by{" "}
-                                <span className="text-foreground font-semibold">
-                                    {artwork.artist}
-                                </span>
-                            </figcaption>
-                        </figure>
-                    ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-            </ScrollArea> */}
         </>
-
     )
 }

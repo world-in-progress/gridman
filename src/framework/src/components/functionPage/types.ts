@@ -1,5 +1,5 @@
 import { ISceneNode } from '@/core/scene/iscene'
 
 export type CreatePageProps = {
-    node: ISceneNode
+    node: ISceneNode | undefined
 }

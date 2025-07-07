@@ -5,12 +5,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import {
     ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
-    ContextMenuSub,
-    ContextMenuSubContent,
-    ContextMenuSubTrigger,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import {
@@ -32,22 +26,22 @@ interface TreeNodeProps {
     privateTree: ISceneTree
     publicTree: ISceneTree
     depth: number
-    scrollTrigger: number
+    triggerFocus: number
 }
 
 interface SceneTreeProps {
+    triggerFocus: number
+    focusNode?: ISceneNode
     privateTree: SceneTree | null
     publicTree: SceneTree | null
     getPrivateTree: boolean
     getPublicTree: boolean
-    focusNode?: ISceneNode
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
     onDropDownMenuOpen: (node: ISceneNode) => void
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
     onNodeClickEnd: (node: ISceneNode) => void
-    onNodeFocused: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -55,10 +49,10 @@ interface TreeRendererProps {
     publicTree: SceneTree | null
     title: string
     isPublic: boolean
-    scrollTrigger: number
+    triggerFocus: number
 }
 
-export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth, scrollTrigger }) => {
+export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth, triggerFocus }) => {
     const _privateTree = privateTree as SceneTree
     const _publicTree = publicTree as SceneTree
 
@@ -101,7 +95,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                 block: 'center'
             })
         }
-    }, [isSelected, scrollTrigger])
+    }, [isSelected, triggerFocus])
 
     return (
         <div>
@@ -157,7 +151,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                             privateTree={privateTree}
                             publicTree={publicTree}
                             depth={depth + 1}
-                            scrollTrigger={scrollTrigger}
+                            triggerFocus={triggerFocus}
                         />
                     ))}
                 </div>
@@ -166,7 +160,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     )
 }
 
-const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic, scrollTrigger }) => {
+const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic, triggerFocus }) => {
     if (!privateTree && !publicTree) return null
     const tree = isPublic ? publicTree : privateTree
 
@@ -175,28 +169,27 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
             <div className=' z-10 bg-gray-800 text-sm font-semibold text-gray-200 ml-1'>
                 {title}
             </div>
-            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} scrollTrigger={scrollTrigger} />
+            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
         </>
     )
 }
 
 export default function ResourceTreeComponent({
+    focusNode,
+    triggerFocus,
     privateTree,
     publicTree,
     getPrivateTree,
     getPublicTree,
-    focusNode,
     onOpenFile,
     onPinFile,
     onDropDownMenuOpen,
     onNodeStartEditing,
     onNodeStopEditing,
     onNodeClickEnd,
-    onNodeFocused,
 }: SceneTreeProps) {
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
-    const [scrollTrigger, setScrollTrigger] = useState(0)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
     // Bind handlers to private tree
@@ -236,14 +229,11 @@ export default function ResourceTreeComponent({
             const tree = focusNode.tree as SceneTree
             const focus = async () => {
                 const success = await tree.focusToNode(focusNode)
-                if (success) {
-                    setScrollTrigger(prev => prev + 1)
-                    onNodeFocused(focusNode)
-                }
+                if (success) triggerRepaint()
             }
             focus()
         }
-    }, [focusNode, onNodeFocused])
+    }, [focusNode, triggerFocus])
 
     return (
         <ScrollArea className='h-full bg-gray-800 overflow-hidden'>
@@ -254,13 +244,13 @@ export default function ResourceTreeComponent({
                     </div>
 
                     {getPrivateTree && (
-                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} scrollTrigger={scrollTrigger} />
+                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} triggerFocus={triggerFocus} />
                     )}
 
                     <Separator className='my-2 bg-gray-700 w-full' />
 
                     {getPublicTree && (
-                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} scrollTrigger={scrollTrigger} />
+                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} triggerFocus={triggerFocus} />
                     )}
                 </div>
             </div>

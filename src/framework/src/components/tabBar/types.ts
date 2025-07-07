@@ -4,7 +4,6 @@ import { SceneNode, SceneTree } from '../resourceScene/scene'
 
 export interface Tab {
     name: string
-    // id: string
     node: ISceneNode
     isActive: boolean
     isPreview?: boolean
@@ -13,6 +12,7 @@ export interface Tab {
 
 export interface TabBarProps{
     tabs: Set<Tab>
+    focusNode: SceneNode | null
     localTree?: SceneTree | null
     remoteTree?: SceneTree | null
     onTabDragEnd: (result: DropResult) => void
