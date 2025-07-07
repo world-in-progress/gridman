@@ -94,7 +94,7 @@ function FrameworkComponent() {
     }, [])
 
     // Handle menu open
-    const handleNodeMenuOpen = useCallback((node: ISceneNode) => {
+    const handleNodeMenuOpen = useCallback((node: ISceneNode, menuItem: any) => {
         if (privateTree === null || publicTree === null) return
 
         const _privateTree = privateTree as SceneTree
@@ -106,7 +106,7 @@ function FrameworkComponent() {
         _publicTree.selectedNode = null
         _tree.selectedNode = node
 
-        node.scenarioNode.handleMenuOpen(node)
+        node.scenarioNode.handleMenuOpen(node, menuItem)
 
     }, [privateTree, publicTree])
 

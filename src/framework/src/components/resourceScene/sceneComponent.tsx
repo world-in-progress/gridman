@@ -36,7 +36,7 @@ interface SceneTreeProps {
     privateTree: SceneTree | null
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
-    onDropDownMenuOpen: (node: ISceneNode) => void
+    onDropDownMenuOpen: (node: ISceneNode, menuItem: any) => void
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
     onNodeClickEnd: (node: ISceneNode) => void
@@ -72,8 +72,8 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
         tree.handleNodeDoubleClick(node)
     }, [tree, node])
 
-    const handleNodeMenu = useCallback((node: ISceneNode) => {
-        return tree.getNodeMenuHandler()(node)
+    const handleNodeMenu = useCallback((node: ISceneNode, menuItem: any) => {
+        return tree.getNodeMenuHandler()(node, menuItem)
     }, [tree])
 
     const renderNodeMenu = useCallback(() => {

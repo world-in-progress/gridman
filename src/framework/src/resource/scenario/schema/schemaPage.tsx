@@ -1,5 +1,5 @@
 import { SchemaPageProps } from './types'
-import { useEffect, useRef } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { SchemaPageContext } from './schema'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Delete, MapPin, MapPinCheck, Pencil, X } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SceneNode } from '@/components/resourceScene/scene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { Separator } from '@/components/ui/separator'
@@ -36,9 +36,9 @@ export default function SchemaPage({ node }: SchemaPageProps) {
 
     const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
     const coordinateOn4326 = useRef<[number, number]>([0, 0])
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
     useEffect(() => {
-        console.log('nihao')
         const schemaContext = (node as SceneNode).pageContext
         if (schemaContext && schemaContext.schema) {
             pageContext.current = schemaContext
@@ -55,6 +55,13 @@ export default function SchemaPage({ node }: SchemaPageProps) {
         const response = await deleteSchema(pageContext.current.schema!.name, node.tree.isPublic)
         if (response) {
             toast.success(`Schema ${pageContext.current.schema!.name} deleted successfully`)
+            const parent = node.parent!
+            await parent.tree.alignNodeInfo(parent, true)
+
+            const tree = parent.tree as SceneTree
+            tree.stopEditingNode(node)
+        } else {
+            toast.error(`Failed to delete schema ${pageContext.current.schema!.name}`)
         }
     }
 

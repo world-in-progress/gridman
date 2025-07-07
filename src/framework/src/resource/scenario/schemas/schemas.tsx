@@ -47,6 +47,10 @@ export class SchemasPageContext extends DefaultPageContext {
     }
 }
 
+export enum SchemasMenuItem {
+    CREATE_NEW_SCHEMA = 'Create New Schema',
+}
+
 export default class SchemasScenarioNode extends DefaultScenarioNode {
     static classKey: string = 'root.topo.schemas'
     semanticPath: string = 'root.topo.schemas'
@@ -54,18 +58,22 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
         'schema',
     ]
 
-    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode) => void): React.JSX.Element | null {
+    renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
-                <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf); this.handleMenuOpen(nodeSelf) }}>
+                <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, SchemasMenuItem.CREATE_NEW_SCHEMA) }}>
                     <FilePlus2 className='w-4 h-4 ml-2' />Create New Schema
                 </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleMenuOpen(nodeSelf: ISceneNode): void {
-        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+    handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
+        switch (menuItem) {
+            case SchemasMenuItem.CREATE_NEW_SCHEMA:
+                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
+        }
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {

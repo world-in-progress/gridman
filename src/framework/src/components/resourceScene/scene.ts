@@ -75,7 +75,7 @@ export class SceneTree implements ISceneTree {
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
-    private handleNodeMenuOpen: (node: ISceneNode) => void = () => {}
+    private handleNodeMenuOpen: (node: ISceneNode, menuItem: any) => void = () => {}
     private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
     private handleNodeClickEnd: (node: ISceneNode) => void = () => {}
@@ -98,7 +98,7 @@ export class SceneTree implements ISceneTree {
     bindHandlers(handlers: {
         openFile: (fileName: string, filePath: string) => void
         pinFile: (fileName: string, filePath: string) => void
-        handleNodeMenuOpen: (node: ISceneNode) => void
+        handleNodeMenuOpen: (node: ISceneNode, menuItem: any) => void
         handleNodeStartEditing: (node: ISceneNode) => void
         handleNodeStopEditing: (node: ISceneNode) => void
         handleNodeClickEnd: (node: ISceneNode) => void
@@ -111,7 +111,7 @@ export class SceneTree implements ISceneTree {
         this.handleNodeClickEnd = handlers.handleNodeClickEnd
     }
 
-    getNodeMenuHandler(): (node: ISceneNode) => void {
+    getNodeMenuHandler(): (node: ISceneNode, menuItem: any) => void {
         return this.handleNodeMenuOpen
     }
     
@@ -126,18 +126,25 @@ export class SceneTree implements ISceneTree {
 
         // Fetch the latest metadata for the node
         const meta = await api.scene.getSceneNodeInfo.fetch({node_key: node.key}, this.isPublic)
+
+        const oldChildrenMap = node.children
+        node.children = new Map()
         
         // Update parent-child relationship
         if (meta.children && meta.children.length > 0) {
             for (const child of meta.children) {
-                if (node.children.has(child.node_key)) continue // skip if child node already exists
+                if (node.children.has(child.node_key)) {
+                    node.children.set(child.node_key, oldChildrenMap.get(child.node_key)!)
+                    continue // skip if child node already exists
+                }
 
                 const childNode = new SceneNode(this, child.node_key, node, new SCENARIO_NODE_REGISTRY[child.scenario_path]())
                 this.scene.set(childNode.key, childNode) // add child node to the scene map
             }
         }
-
-        // TODO: reorder scene
+        
+        // Release the old children map
+        oldChildrenMap.clear()
 
         // Mark as aligned after loading
         node.aligned = true
