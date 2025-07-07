@@ -1,8 +1,8 @@
 import DefaultScenarioNode, { DefaultPageContext } from './scenario/default'
 import RootScenarioNode from './scenario/root'
 import TopoScenarioNode from './scenario/topo'
+import SchemaScenarioNode, { SchemaPageContext } from './scenario/schema/schema'
 import SchemasScenarioNode, { SchemasPageContext } from './scenario/schemas/schemas'
-import SchemaScenarioNode from './scenario/schema'
 import PatchesScenarioNode, { PatchesPageContext } from './scenario/patches/patches'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
@@ -17,6 +17,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
 const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext> = {
     [DefaultScenarioNode.classKey]: DefaultPageContext,
     [SchemasScenarioNode.classKey]: SchemasPageContext,
+    [SchemaScenarioNode.classKey]: SchemaPageContext,
     [PatchesScenarioNode.classKey]: PatchesPageContext,
 }
 

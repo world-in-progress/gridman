@@ -45,12 +45,12 @@ export async function updateSchemaStarred(
         // Step 1: Get schema
         const getResponse = await api.schema.getSchema.fetch(schemaName)
 
-        if (!getResponse.project_schema) {
+        if (!getResponse.grid_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
         }
 
         // Step 2: Update starred status
-        const schema = getResponse.project_schema
+        const schema = getResponse.grid_schema
         schema.starred = starred
 
         // Step 3: Update schema
@@ -72,12 +72,12 @@ export async function updateSchemaDescription(
         // Step 1: Get schema
         const getResponse = await api.schema.getSchema.fetch(schemaName)
 
-        if (!getResponse.project_schema) {
+        if (!getResponse.grid_schema) {
             throw new Error(`模板 ${schemaName} 不存在或未找到`);
         }
 
         // Step 2: Update description
-        const schema = getResponse.project_schema
+        const schema = getResponse.grid_schema
         schema.description = description
 
         // Step 3: Update schema

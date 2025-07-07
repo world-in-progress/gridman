@@ -415,17 +415,17 @@ export function SubNavPanel({
                                     setIsLoading(false);
                                     setError(null);
                                     onCreateProject(
-                                        result.project_schema?.name ||
+                                        result.grid_schema?.name ||
                                             schema.name,
                                         (
-                                            result.project_schema?.epsg ||
+                                            result.grid_schema?.epsg ||
                                             schema.epsg
                                         ).toString(),
-                                        result.project_schema?.grid_info &&
-                                            result.project_schema.grid_info
+                                        result.grid_schema?.grid_info &&
+                                            result.grid_schema.grid_info
                                                 .length > 0
                                             ? JSON.stringify(
-                                                  result.project_schema
+                                                  result.grid_schema
                                                       .grid_info[0]
                                               )
                                             : '1'

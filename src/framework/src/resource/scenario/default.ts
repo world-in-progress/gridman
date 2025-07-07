@@ -2,7 +2,8 @@ import { IScenarioNode } from '@/core/scenario/iscenario'
 import { ISceneNode, ISceneTree } from '../../core/scene/iscene'
 
 export class DefaultPageContext {
-    static async create(): Promise<DefaultPageContext> {
+    static async create(node: ISceneNode): Promise<DefaultPageContext> {
+        console.log('触发了default')
         return new DefaultPageContext()
     }
 }

@@ -25,7 +25,7 @@ export interface GridSchema {
 }
 
 export interface ResponseWithGridSchema {
-  project_schema: GridSchema | null;
+  grid_schema: GridSchema | null;
 }
 
 export interface MultiGridSchema {

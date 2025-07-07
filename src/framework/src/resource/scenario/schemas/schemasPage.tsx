@@ -9,11 +9,11 @@ import { GridSchema } from '@/core/apis/types'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, MapPinHouse, Save, X } from 'lucide-react'
+import { MapPin, MapPinPlus, Save, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { convertCoordinate } from '@/components/mapContainer/utils'
-import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { validateGridLayers, validateSchemaForm, pickingFromMap } from './utils'
 
@@ -323,16 +323,16 @@ export default function SchemasPage({
                         {/* Page Avatar */}
                         {/* ------------*/}
                         <div className='w-1/3 h-full flex justify-center items-center'>
-                            <Avatar className='bg-[#007ACC] h-28 w-28 border-2 border-white'>
-                                <AvatarFallback>
-                                    <MapPinHouse className='h-15 w-15 text-white' />
+                            <Avatar className='bg-blue-500 h-28 w-28 border-2 border-white'>
+                                <AvatarFallback className='bg-blue-500'>
+                                    <MapPinPlus className='h-15 w-15 text-white' />
                                 </AvatarFallback>
                             </Avatar>
                         </div>
                         {/* -----------------*/}
                         {/* Page Description */}
                         {/* -----------------*/}
-                        <div className='w-2/3 h-full p-4 space-y-1 text-white'>
+                        <div className='w-2/3 h-full p-4 space-y-2 text-white'>
                             {/* -----------*/}
                             {/* Page Title */}
                             {/* -----------*/}
@@ -457,7 +457,7 @@ export default function SchemasPage({
                                     <Button
                                         type='button'
                                         onClick={handleBasePointPicking}
-                                        className={`w-[80px] h-[84px] ${isSelectingPoint
+                                        className={`w-[80px] h-[84px] shadow-sm ${isSelectingPoint
                                             ? 'bg-red-500 hover:bg-red-600'
                                             : 'bg-blue-500 hover:bg-blue-600'
                                             } text-white cursor-pointer`}
@@ -511,7 +511,7 @@ export default function SchemasPage({
                                     <h3 className='text-lg font-semibold'>{gridLevelText.title}</h3>
                                     <Button
                                         type='button'
-                                        className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm cursor-pointer'
+                                        className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm shadow-sm cursor-pointer'
                                         onClick={handleAddGridLayer}
                                     >
                                         <span className='text-lg'>+</span> {gridLevelText.addButton}

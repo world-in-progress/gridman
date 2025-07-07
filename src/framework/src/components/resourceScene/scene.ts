@@ -221,7 +221,7 @@ export class SceneTree implements ISceneTree {
         }
 
         this.editingNodes.add(node)
-        ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create()
+        ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create(node)
 
         this.handleNodeStartEditing(node)
 
