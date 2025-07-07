@@ -1,9 +1,14 @@
+import { ISceneNode } from '../../core/scene/iscene'
 import { IScenarioNode } from '@/core/scenario/iscenario'
-import { ISceneNode, ISceneTree } from '../../core/scene/iscene'
 
 export class DefaultPageContext {
+    serialize(): any {}
+
+    static deserialize(input: any): DefaultPageContext {
+        return new DefaultPageContext()
+    }
+
     static async create(node: ISceneNode): Promise<DefaultPageContext> {
-        console.log('触发了default')
         return new DefaultPageContext()
     }
 }

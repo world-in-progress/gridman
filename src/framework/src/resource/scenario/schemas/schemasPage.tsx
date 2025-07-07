@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MapPin, MapPinPlus, Save, X } from 'lucide-react'
+import ContextStorage from '@/core/context/contextStorage'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import MapContainer from '@/components/mapContainer/mapContainer'
@@ -84,9 +85,13 @@ export default function SchemasPage({
         borderColor = 'border-green-200'
     }
 
-    useEffect(() => {
-        const n = node as SceneNode
-        const context = n.pageContext as SchemasPageContext
+    const loadContext = async (node: SceneNode) => {
+        if (node.pageContext.serialized === true) {
+            const db = store.get<ContextStorage>('contextDB')!
+            await db.melt(node)
+        }
+
+        const context = node.pageContext as SchemasPageContext
 
         // Load page context if exists
         // Action 1: melt page context if exists
@@ -107,22 +112,29 @@ export default function SchemasPage({
         }
 
         triggerRepaint()
+    }
 
-        // Cleanup on unmount
-        // Action 1: freeze page context if editing is not stopped
-        // Action 2: remove picking marker if exists
+    const unloadContext = async (node: SceneNode) => {
+        picking.current.marker?.remove()
+        
+        const n = node as SceneNode
+        const context = n.pageContext as SchemasPageContext
+
+        if (context === undefined) return   // skip freezing if the node editing is stopped
+
+        const db = store.get<ContextStorage>('contextDB')!
+        await db.freeze(n)
+
+        triggerRepaint()
+    }
+
+    useEffect(() => {
+        loadContext(node as SceneNode)
+
         return () => {
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            picking.current.marker?.remove()
-            
-            const n = node as SceneNode
-            const context = n.pageContext as SchemasPageContext
-
-            if (!context) return    // skip freezing if the node editing is stopped
-            n.pageContext = pageContext.current
-
-            triggerRepaint()
+            unloadContext(node as SceneNode)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node])
 
     const handleSetName = (e: React.ChangeEvent<HTMLInputElement>) => {

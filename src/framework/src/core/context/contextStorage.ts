@@ -1,10 +1,15 @@
-import { Serialized } from '../types'
-import { serialize, deserialize } from '../util/transfer'
+import { ISceneNode } from '../scene/iscene'
+
+interface ContextClass {
+    new (): any
+    deserialize: (data: any) => ContextClass
+}
 
 export default class ContextStorage {
     private version = 1
     private storeName = 'contexts'
     private dbName = 'context_storage'
+    private constructorMap: Map<string, ContextClass> = new Map()
 
     constructor() {
         window.onbeforeunload = () => this.deleteDB()
@@ -32,23 +37,12 @@ export default class ContextStorage {
         request.onsuccess = () => console.log('Database deleted successfully')
     }
 
-    private serializeContext(context: any): Serialized {
-        return serialize(context)
-    }
-
-    private deserializeContext(data: any): unknown {
-        return deserialize(data)
-    }
-
-    async saveContext(id: string, context: any): Promise<void> {
+    async saveContext(id: string, contextData: any): Promise<void> {
         const db = await this.openDB()
         const transaction = db.transaction([this.storeName], 'readwrite')
         const store = transaction.objectStore(this.storeName)
 
-        // Convert class instance to plain object
-        const plainObject = this.serializeContext(context)
-
-        store.put({ id, data: plainObject, timestamp: Date.now() })
+        store.put({ id, data: contextData, timestamp: Date.now() })
         db.close()
     }
 
@@ -65,8 +59,7 @@ export default class ContextStorage {
             }
             request.onsuccess = () => {
                 if (request.result) {
-                    const deserialized = this.deserializeContext(request.result.data)
-                    resolve(deserialized)
+                    resolve(request.result.data)
                 } else {
                     resolve(null)
                 }
@@ -91,5 +84,42 @@ export default class ContextStorage {
                 resolve(true)
             }
         })
+    }
+
+    async freeze(node: ISceneNode): Promise<void> {
+        try {
+            this.constructorMap.set(node.id, node.pageContext.constructor as ContextClass)
+            await this.saveContext(node.id, node.pageContext.serialize())
+            node.pageContext = null // mark as serialized
+        } catch (error) {
+            console.error('Error freezing context:', error)
+        }
+    }
+
+    async melt(node: ISceneNode): Promise<void> {
+        try {
+            const contextData = await this.loadContext(node.id)
+            if (contextData) {
+                const ContextClass = this.constructorMap.get(node.id)
+                if (ContextClass && ContextClass.deserialize) {
+                    node.pageContext = ContextClass.deserialize(contextData)
+                    node.pageContext.serialized = false
+                } else {
+                    throw new Error(`No context class found for node: ${node.id}`)
+                }
+            }
+        } catch (error) {
+            console.error('Error melting context:', error)
+        }
+    }
+
+    async delete(node: ISceneNode): Promise<void> {
+        try {
+            node.pageContext = undefined // mark as deleted
+            await this.deleteContext(node.id)
+            this.constructorMap.delete(node.id)
+        } catch (error) {
+            console.error('Error deleting context:', error)
+        }
     }
 }

@@ -1,7 +1,9 @@
 import React from 'react'
+import store from '@/store'
 import { Tab } from '../tabBar/types'
 import * as api from '@/core/apis/apis'
 import { IScenarioNode } from '@/core/scenario/iscenario'
+import ContextStorage from '@/core/context/contextStorage'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
 
@@ -40,7 +42,7 @@ export class SceneNode implements ISceneNode {
     
     // Dom-related properties
     tab: Tab
-    pageContext: any = null
+    pageContext: any = undefined // undefined: not editing, null: editing paused, object: editing in progress
 
     constructor(tree: SceneTree, node_key: string, parent: ISceneNode | null, scenarioNode: IScenarioNode) {
         this.tree = tree
@@ -228,14 +230,16 @@ export class SceneTree implements ISceneTree {
         this.notifyDomUpdate()
     }
 
-    stopEditingNode(node: ISceneNode): void {
+    async stopEditingNode(node: ISceneNode): Promise<void> {
         // Do nothing if not editing
         if (!this.editingNodes.has(node)) {
             return
         }
 
         this.editingNodes.delete(node)
-        ;(node as SceneNode).pageContext = null
+        
+        const db: ContextStorage = store.get('contextDB')!
+        await db.delete(node)   // assign node.pageContext to undefined inside delete method
 
         this.handleNodeStopEditing(node)
 
