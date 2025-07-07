@@ -51,8 +51,8 @@ export default function SchemaPage({ node }: SchemaPageProps) {
         }
     })
 
-    const handleSchemaDelete = () => {
-        const response = deleteSchema(pageContext.current.schema!.name, node.tree.isPublic)
+    const handleSchemaDelete = async () => {
+        const response = await deleteSchema(pageContext.current.schema!.name, node.tree.isPublic)
         if (response) {
             toast.success(`Schema ${pageContext.current.schema!.name} deleted successfully`)
         }
