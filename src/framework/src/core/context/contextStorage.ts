@@ -103,7 +103,6 @@ export default class ContextStorage {
                 const ContextClass = this.constructorMap.get(node.id)
                 if (ContextClass && ContextClass.deserialize) {
                     node.pageContext = ContextClass.deserialize(contextData)
-                    node.pageContext.serialized = false
                 } else {
                     throw new Error(`No context class found for node: ${node.id}`)
                 }

@@ -86,7 +86,7 @@ export default function SchemasPage({
     }
 
     const loadContext = async (node: SceneNode) => {
-        if (node.pageContext.serialized === true) {
+        if (node.pageContext === null) {
             const db = store.get<ContextStorage>('contextDB')!
             await db.melt(node)
         }
