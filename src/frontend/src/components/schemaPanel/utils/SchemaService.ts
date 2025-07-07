@@ -117,8 +117,8 @@ export class SchemaService {
     public submitCloneSchema(schemaData: Schema, callback?: Callback<any>) {
         this._actor.send('createSchema', schemaData, (err, result) => {
             let createdSchema: Schema;
-            if (result && result.project_schema) {
-                createdSchema = result.project_schema;
+            if (result && result.grid_schema) {
+                createdSchema = result.grid_schema;
             } else {
                 createdSchema = result;
             }

@@ -70,7 +70,7 @@ export default function CreatePatchFunctionArea({ mapInstance, remountMap }: Cre
             <ScrollArea className="h-full">
                 <div className="h-50 w-full border-b border-gray-700 flex flex-row">
                     <div className="w-1/3 h-full flex justify-center items-center">
-                        <Avatar className="bg-[#007ACC] h-28 w-28 border-2 border-white">
+                        <Avatar className="bg-blue-500 h-28 w-28 border-2 border-white">
                             <AvatarFallback>
                                 <SquaresIntersect className="h-15 w-15 text-white" />
                             </AvatarFallback>

@@ -152,24 +152,24 @@ export default function CreatePatch({
                     console.error('获取schema详情失败:', err);
                     return;
                 }
-                if (result.project_schema && result.project_schema.base_point) {
+                if (result.grid_schema && result.grid_schema.base_point) {
                     setSchemaBasePoint(
-                        result.project_schema.base_point as [number, number]
+                        result.grid_schema.base_point as [number, number]
                     );
 
-                    if (result.project_schema.epsg) {
+                    if (result.grid_schema.epsg) {
                         const wgs84Point = convertToWGS84(
-                            result.project_schema.base_point,
-                            result.project_schema.epsg
+                            result.grid_schema.base_point,
+                            result.grid_schema.epsg
                         );
                         setSchemaBasePointWGS84(wgs84Point);
                         showSchemaMarkerOnMap(
                             wgs84Point,
-                            result.project_schema.name
+                            result.grid_schema.name
                         );
 
                         if (!initialEpsg) {
-                            setEpsg(result.project_schema.epsg.toString());
+                            setEpsg(result.grid_schema.epsg.toString());
                             setEpsgFromProps(true);
                         }
                     }

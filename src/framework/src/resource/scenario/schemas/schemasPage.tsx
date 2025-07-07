@@ -9,11 +9,11 @@ import { GridSchema } from '@/core/apis/types'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, MapPinHouse, Save, X } from 'lucide-react'
+import { MapPin, MapPinPlus, Save, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { convertCoordinate } from '@/components/mapContainer/utils'
-import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { validateGridLayers, validateSchemaForm, pickingFromMap } from './utils'
 
@@ -323,16 +323,16 @@ export default function SchemasPage({
                         {/* Page Avatar */}
                         {/* ------------*/}
                         <div className='w-1/3 h-full flex justify-center items-center'>
-                            <Avatar className='bg-[#007ACC] h-28 w-28 border-2 border-white'>
-                                <AvatarFallback>
-                                    <MapPinHouse className='h-15 w-15 text-white' />
+                            <Avatar className='bg-blue-500 h-28 w-28 border-2 border-white'>
+                                <AvatarFallback className='bg-blue-500'>
+                                    <MapPinPlus className='h-15 w-15 text-white' />
                                 </AvatarFallback>
                             </Avatar>
                         </div>
                         {/* -----------------*/}
                         {/* Page Description */}
                         {/* -----------------*/}
-                        <div className='w-2/3 h-full p-4 space-y-1 text-white'>
+                        <div className='w-2/3 h-full p-4 space-y-2 text-white'>
                             {/* -----------*/}
                             {/* Page Title */}
                             {/* -----------*/}

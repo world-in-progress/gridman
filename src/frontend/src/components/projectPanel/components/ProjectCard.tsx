@@ -164,11 +164,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     useEffect(() => {
         const schemaService = new SchemaService(language);
         schemaService.getSchemaByName(project.schema_name, (err, result) => {
-            if (!err && result?.project_schema?.epsg) {
-                setSchemaEpsg(result.project_schema.epsg.toString());
+            if (!err && result?.grid_schema?.epsg) {
+                setSchemaEpsg(result.grid_schema.epsg.toString());
             }
-            if (!err && result?.project_schema?.grid_info) {
-                setSchemaGridInfo(result.project_schema.grid_info);
+            if (!err && result?.grid_schema?.grid_info) {
+                setSchemaGridInfo(result.grid_schema.grid_info);
             }
         });
     }, [project.schema_name, language]);
@@ -278,11 +278,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     setLoadingSchema(false);
                     onAddPatch(
                         project,
-                        result.project_schema.name,
-                        result.project_schema.epsg.toString(),
-                        result.project_schema?.grid_info &&
-                            result.project_schema.grid_info.length > 0
-                            ? JSON.stringify(result.project_schema.grid_info[0])
+                        result.grid_schema.name,
+                        result.grid_schema.epsg.toString(),
+                        result.grid_schema?.grid_info &&
+                            result.grid_schema.grid_info.length > 0
+                            ? JSON.stringify(result.grid_schema.grid_info[0])
                             : '1'
                     );
                 }

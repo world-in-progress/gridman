@@ -79,7 +79,7 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             if (store.get("SchemaName")) {
                 const schemaName = store.get("SchemaName") as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
-                    store.set("SchemaGridInfo", result.project_schema.grid_info);
+                    store.set("SchemaGridInfo", result.grid_schema.grid_info);
                 });
             }
         });
@@ -116,8 +116,8 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             if (store.get("SchemaName")) {
                 const schemaName = store.get("SchemaName") as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
-                    store.set("SchemaGridInfo", result.project_schema.grid_info);
-                    store.set("CurrentPatchEPSG", result.project_schema.epsg);
+                    store.set("SchemaGridInfo", result.grid_schema.grid_info);
+                    store.set("CurrentPatchEPSG", result.grid_schema.epsg);
                     setActivePanelFromStore("raster");
                     handleDrawEditBounds();
                     isLoading.off();
@@ -139,8 +139,8 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             if (store.get("SchemaName")) {
                 const schemaName = store.get("SchemaName") as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
-                    store.set("SchemaGridInfo", result.project_schema.grid_info);
-                    store.set("CurrentPatchEPSG", result.project_schema.epsg);
+                    store.set("SchemaGridInfo", result.grid_schema.grid_info);
+                    store.set("CurrentPatchEPSG", result.grid_schema.epsg);
                     setActivePanelFromStore("feature");
                     handleDrawEditBounds();
                     isLoading.off();
@@ -166,8 +166,8 @@ export const PatchCard: React.FC<PatchCardProps> = ({
             if (store.get("SchemaName")) {
                 const schemaName = store.get("SchemaName") as string;
                 schemaService.getSchemaByName(schemaName, (err, result) => {
-                    store.set("SchemaGridInfo", result.project_schema.grid_info);
-                    store.set("CurrentPatchEPSG", result.project_schema.epsg);
+                    store.set("SchemaGridInfo", result.grid_schema.grid_info);
+                    store.set("CurrentPatchEPSG", result.grid_schema.epsg);
                     setActivePanelFromStore("aggregation");
                     isLoading.off();
                 });
