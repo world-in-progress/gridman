@@ -46,7 +46,6 @@ const gridItemText = {
 export default function SchemasPage({
     node,
 }: SchemasPageProps) {
-
     const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => {} })
     const pageContext = useRef<SchemasPageContext>(new SchemasPageContext())
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
