@@ -312,7 +312,7 @@ export default function SchemasPage({
     }
 
     return (
-        <div className='w-full h-full flex flex-row'>
+        <div className='w-full h-[96vh] flex flex-row'>
             <form onSubmit={handleSubmit} className='w-2/5 h-full flex flex-col'>
                 <div className='flex-1 overflow-hidden'>
                     {/* ----------------- */}
@@ -354,7 +354,7 @@ export default function SchemasPage({
                     {/* ---------------- */}
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
-                    <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]'>
+                    <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]' type='auto'>
                         <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4 pb-4'>
                             {/* ----------- */}
                             {/* Schema Name */}
