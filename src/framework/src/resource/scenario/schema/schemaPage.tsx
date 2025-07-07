@@ -1,15 +1,30 @@
-import React, { useEffect, useRef } from 'react'
 import { SchemaPageProps } from './types'
-import MapContainer from '@/components/mapContainer/mapContainer'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { MapPin, MapPinCheck, X } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@radix-ui/react-context-menu'
-import { Button } from '@/components/ui/button'
-import { SceneNode } from '@/components/resourceScene/scene'
+import { useEffect, useRef } from 'react'
 import { SchemaPageContext } from './schema'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Delete, MapPin, MapPinCheck, Pencil, X } from 'lucide-react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { SceneNode } from '@/components/resourceScene/scene'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { Separator } from '@/components/ui/separator'
+import { convertSinglePointCoordinate, flyToMarker } from '@/components/mapContainer/utils'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { deleteSchema } from './util'
+import { toast } from 'sonner'
 
 const schemaCheckTips = [
     { tip1: 'You can view the information of this Schema on this page.' },
@@ -20,17 +35,31 @@ const schemaCheckTips = [
 export default function SchemaPage({ node }: SchemaPageProps) {
 
     const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
+    const coordinateOn4326 = useRef<[number, number]>([0, 0])
 
     useEffect(() => {
         console.log('nihao')
         const schemaContext = (node as SceneNode).pageContext
         if (schemaContext && schemaContext.schema) {
             pageContext.current = schemaContext
+            const orginalCoordinates = schemaContext.schema?.base_point
+            const schemaEPSG = schemaContext.schema?.epsg
+            if (orginalCoordinates && schemaEPSG && schemaEPSG !== '4326') {
+                coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG, '4326')
+            }
+            flyToMarker(coordinateOn4326.current)
         }
     })
 
+    const handleSchemaDelete = async () => {
+        const response = await deleteSchema(pageContext.current.schema!.name, node.tree.isPublic)
+        if (response) {
+            toast.success(`Schema ${pageContext.current.schema!.name} deleted successfully`)
+        }
+    }
+
     return (
-        <div className='w-full h-full flex flex-row'>
+        <div className='w-full h-[96vh] flex flex-row'>
             <div className='w-2/5 h-full flex flex-col'>
                 <div className='flex-1 overflow-hidden'>
                     {/* ----------------- */}
@@ -67,8 +96,36 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                     ))}
                                 </ul>
                             </div>
-                            <div className='text-sm w-full flex flex-row space-x-2'>
-                                <Button variant='destructive' className='bg-red-500 hover:bg-red-400 text-white cursor-pointer w-16 h-8 rounded-sm flex'></Button>
+                            <div className='text-sm w-full flex flex-row space-x-2 px-4'>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant='destructive'
+                                            className='bg-red-500 hover:bg-red-400 h-8 text-white cursor-pointer rounded-sm flex'
+                                        >
+                                            <span>Delete</span>
+                                            <Separator orientation='vertical' className='h-4' />
+                                            <Delete className='w-4 h-4' />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure to delete this schema?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete this schema and all its data.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel className='cursor-pointer border border-gray-300'>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className='bg-red-500 hover:bg-red-600 cursor-pointer'
+                                                onClick={handleSchemaDelete}
+                                            >
+                                                Confirm
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </div>
                     </div>
@@ -108,22 +165,14 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                         Schema Description (Optional)
                                     </h2>
                                     <Button
-                                        className='bg-sky-600 hover:bg-sky-500 text-white cursor-pointer w-16 h-8 rounded-md ml-auto px-2 py-1 transition-colors text-sm shadow-sm'
-                                        // onClick={}
+                                        className='bg-blue-500 hover:bg-blue-600 text-white cursor-pointer h-8'
+                                    // onClick={}
                                     >
-                                        Edit
+                                        <span>Edit</span>
+                                        <Separator orientation='vertical' className='h-4' />
+                                        <Pencil className='w-4 h-4' />
                                     </Button>
                                 </div>
-                                {/* <div className='flex justify-between items-center mb-2'>
-                                    <h3 className='text-lg font-semibold'>{gridLevelText.title}</h3>
-                                    <Button
-                                        type='button'
-                                        className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm shadow-sm cursor-pointer'
-                                        onClick={handleAddGridLayer}
-                                    >
-                                        <span className='text-lg'>+</span> {gridLevelText.addButton}
-                                    </Button>
-                                </div> */}
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
@@ -152,7 +201,141 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                     />
                                 </div>
                             </div>
+                            {/* ----------------------- */}
+                            {/* Coordinates (EPSG:4326) */}
+                            {/* ----------------------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-black text-lg font-semibold mb-2'>
+                                    Coordinates (EPSG:4326)
+                                </h2>
+                                <div className='flex items-stretch gap-4'>
+                                    <div className='flex-1 flex flex-col justify-between text-black'>
+                                        <div className='flex items-center gap-2 mb-2'>
+                                            <Label htmlFor='lon' className='text-sm font-medium w-1/4'>
+                                                Longitude
+                                            </Label>
+                                            <Input
+                                                id='lon'
+                                                type='number'
+                                                step='0.000001'
+                                                value={coordinateOn4326.current?.[0].toString()}
+                                                // onChange={handleSetBasePointLon}
+                                                placeholder={'Enter longitude'}
+                                                className={`w-3/4 border-gray-300`}
+                                            />
+                                        </div>
+                                        <div className='flex items-center gap-2'>
+                                            <Label htmlFor='lat' className='text-sm font-medium w-1/4'>
+                                                Latitude
+                                            </Label>
+                                            <Input
+                                                id='lat'
+                                                type='number'
+                                                step='0.000001'
+                                                value={coordinateOn4326.current?.[1].toString()}
+                                                // onChange={handleSetBasePointLat}
+                                                placeholder={'Enter latitude'}
+                                                className={`w-3/4 border-gray-300`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {/* ---------------------- */}
+                                    {/* Base Point Map Picking */}
+                                    {/* ---------------------- */}
+                                    <Button
+                                        type='button'
+                                        onClick={() => flyToMarker(coordinateOn4326.current)}
+                                        className={`w-[80px] h-[84px] shadow-sm bg-blue-500 hover:bg-blue-600 text-white cursor-pointer`}
+                                    >
+                                        <div className='flex flex-col items-center'>
+                                            <MapPin className='mb-1 stroke-2' />
+                                            <span>Locate</span>
+                                        </div>
+                                    </Button>
+                                </div>
+                            </div>
+                            {/* --------------------- */}
+                            {/* Converted Coordinates */}
+                            {/* --------------------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-black'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    Converted Coordinate (EPSG:{pageContext.current.schema?.epsg.toString()}
+                                    )
+                                </h2>
+                                <div className='flex-1 flex flex-col justify-between'>
+                                    <div className='flex items-center gap-2 mb-2 '>
+                                        <Label className='text-sm font-medium w-1/4'>X</Label>
+                                        <div className='w-3/4 p-2 bg-gray-100 rounded border border-gray-300'>
+                                            {pageContext.current.schema?.base_point[0].toString()}
+                                        </div>
+                                    </div>
 
+                                    <div className='flex items-center gap-2'>
+                                        <Label className='text-sm font-medium w-1/4'>Y</Label>
+                                        <div className='w-3/4 p-2 bg-gray-100 rounded border border-gray-300'>
+                                            {pageContext.current.schema?.base_point[1].toString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className='p-3 bg-white text-black rounded-md shadow-sm border border-gray-200'>
+                                <div className='flex justify-between items-center mb-2'>
+                                    <h3 className='text-lg font-semibold'>Grid Level</h3>
+                                </div>
+                                {/* ---------- */}
+                                {/* Grid Layer */}
+                                {/* ---------- */}
+                                <div className='space-y-3'>
+                                    {pageContext.current.schema?.grid_info.map((layer, index) => (
+                                        <div key={index} className='p-2 bg-gray-50 rounded border border-gray-200'>
+                                            <div className='flex justify-between items-center mb-2'>
+                                                <h4 className='text-sm font-medium'>Level {index + 1}</h4>
+                                            </div>
+                                            <div className='grid grid-cols-2 gap-2'>
+                                                <div>
+                                                    <label className='block text-xs mb-1'>Width/m</label>
+                                                    <input
+                                                        type='number'
+                                                        className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
+                                                        value={layer[0]}
+                                                        // onChange={(e) => handleUpdateWidth(layer.id, e.target.value)}
+                                                        placeholder={'Width'}
+                                                        readOnly={true}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className='block text-xs mb-1'>Height/m</label>
+                                                    <input
+                                                        type='number'
+                                                        className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
+                                                        value={layer[1]}
+                                                        // onChange={(e) => handleUpdateHeight(layer.id, e.target.value)}
+                                                        placeholder={'Height'}
+                                                        readOnly={true}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* ----------------------- */}
+                                {/* Grid Layer Adding Rules */}
+                                {/* ----------------------- */}
+                                <div className='mt-2 p-2 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200'>
+                                    <p>Grid levels follow these rules:</p>
+                                    <ul className='list-disc pl-4 mt-1'>
+                                        <li>
+                                            Each level have smaller cell dimensions than the previous level
+                                        </li>
+                                        <li>
+                                            Previous level's width/height is a multiple of the current level's width/height
+                                        </li>
+                                        <li>
+                                            First level defines the base grid cell size, and higher levels define increasingly finer grids
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </ScrollArea>
                 </div>

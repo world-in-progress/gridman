@@ -1,5 +1,5 @@
 import store from '@/store';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from 'mapbox-gl'
 
 import proj4 from 'proj4';
 
@@ -9,8 +9,33 @@ export const clearMapMarkers = (): void => {
         Array.from(markers).forEach((marker) => {
             marker.remove()
         })
-        console.log('clearMapMarkers', markers)
     }
+}
+
+export const addMapMarker = (coord: [number, number], options?: mapboxgl.MarkerOptions): void => {
+    const map = store.get<mapboxgl.Map>('map')
+
+    if (!map || !map.getCanvas() || !coord || coord.length < 2) return
+
+    const marker = new mapboxgl.Marker(options)
+        .setLngLat([coord[0], coord[1]])
+        .addTo(map)
+}
+
+export const flyToMarker = (coord: [number, number]): void => {
+    const map = store.get<mapboxgl.Map>('map')
+
+    if (!map || !coord || coord.length < 2) return
+
+    clearMapMarkers()
+    addMapMarker(coord)
+
+    map.flyTo({
+        center: [coord[0], coord[1]],
+        zoom:14,
+        essential:true,
+        duration:1000
+    })
 }
 
 export const epsgDefinitions: Record<string, string> = {

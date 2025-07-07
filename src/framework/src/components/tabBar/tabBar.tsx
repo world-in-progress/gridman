@@ -121,7 +121,7 @@ export default function TabBar({
 
     // Subscribe trigger repaint to local and remote trees
     useEffect(() => {
-        const unSubscribe: [() => void, () => void] = [() => {}, () => {}]
+        const unSubscribe: [() => void, () => void] = [() => { }, () => { }]
         const initTree = async () => {
             try {
                 if (!localTree || !remoteTree) return
@@ -174,26 +174,24 @@ export default function TabBar({
     }
 
     return (
-        <>
-            <div className='bg-gray-800 border-b border-gray-700 flex h-[4vh] w-[85vw]'>
-                <ScrollArea className='w-full'>
-                    <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
-                        <Droppable droppableId='tabs' direction='horizontal'>
-                            {(provided) => (
-                                <div
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                    className='bg-gray-800 border-b border-gray-700 flex h-full min-w-max'
-                                >
-                                    {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
-                                    {provided.placeholder}
-                                </div>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
-                    <ScrollBar orientation='horizontal' />
-                </ScrollArea>
-            </div>
-        </>
+        <div className='bg-gray-800 flex h-[4vh] w-[85vw]'>
+            <ScrollArea className='w-full'>
+                <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
+                    <Droppable droppableId='tabs' direction='horizontal'>
+                        {(provided) => (
+                            <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className='bg-gray-800 border-b-2 border-gray-700 flex h-[4vh] min-w-max'
+                            >
+                                {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
+                                {provided.placeholder}
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+                <ScrollBar orientation='horizontal' />
+            </ScrollArea>
+        </div>
     )
 }
