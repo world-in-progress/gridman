@@ -16,7 +16,6 @@ export class SchemaPageContext extends DefaultPageContext {
     }
 
     static async create(node: ISceneNode): Promise<SchemaPageContext> {
-        console.log('触发了')
         const n = node as SceneNode
         const context = new SchemaPageContext()
         
@@ -24,7 +23,7 @@ export class SchemaPageContext extends DefaultPageContext {
             const schema = await getSchemaInfo(n, n.tree.isPublic)
             context.schema = schema
         } catch (error) {
-            console.error('处理schema信息失败:', error)
+            console.error('Process schema info failed:', error)
         }
         
         return context
