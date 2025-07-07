@@ -14,6 +14,21 @@ export class SchemaPageContext extends DefaultPageContext {
         super()
         this.schema = null
     }
+
+    static async create(node: ISceneNode): Promise<SchemaPageContext> {
+        console.log('触发了')
+        const n = node as SceneNode
+        const context = new SchemaPageContext()
+        
+        try {
+            const schema = await getSchemaInfo(n, n.tree.isPublic)
+            context.schema = schema
+        } catch (error) {
+            console.error('处理schema信息失败:', error)
+        }
+        
+        return context
+    }
 }
 
 export default class SchemaScenarioNode extends DefaultScenarioNode {
@@ -35,16 +50,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
     }
 
     handleMenuOpen(nodeSelf: ISceneNode): void {
-        console.log('Check Schema Info')
-        
-        getSchemaInfo(nodeSelf as SceneNode, nodeSelf.tree.isPublic)
-            .then(schema => {
-                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
-                console.log(nodeSelf.name, '的信息:', schema)
-            })
-            .catch(error => {
-                console.error('处理schema信息失败:', error)
-            })
+        (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {

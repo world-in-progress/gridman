@@ -457,7 +457,7 @@ export default function SchemasPage({
                                     <Button
                                         type='button'
                                         onClick={handleBasePointPicking}
-                                        className={`w-[80px] h-[84px] ${isSelectingPoint
+                                        className={`w-[80px] h-[84px] shadow-sm ${isSelectingPoint
                                             ? 'bg-red-500 hover:bg-red-600'
                                             : 'bg-blue-500 hover:bg-blue-600'
                                             } text-white cursor-pointer`}
@@ -511,7 +511,7 @@ export default function SchemasPage({
                                     <h3 className='text-lg font-semibold'>{gridLevelText.title}</h3>
                                     <Button
                                         type='button'
-                                        className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm cursor-pointer'
+                                        className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm shadow-sm cursor-pointer'
                                         onClick={handleAddGridLayer}
                                     >
                                         <span className='text-lg'>+</span> {gridLevelText.addButton}
