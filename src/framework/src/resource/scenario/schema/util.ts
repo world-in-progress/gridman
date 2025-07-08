@@ -1,4 +1,5 @@
 import * as apis from '@/core/apis/apis'
+import { SchemaInfo } from './types'
 import { SceneNode } from "@/components/resourceScene/scene"
 
 // Get Schema by name
@@ -19,6 +20,17 @@ export const deleteSchema = async(schemaName: string, isRemote:boolean) => {
         return res.success
     } catch (error) {
         console.error('Delete Schema failed: ', error)
+        return false
+    }
+}
+
+// Update Schema Info
+export const updateSchemaInfo = async(schemaName: string, schema: SchemaInfo, isRemote: boolean) => {
+    try {
+        const res = await apis.schema.updateSchema.fetch({schemaName, schema}, isRemote)
+        return res.success
+    } catch (error) {
+        console.error('Update Schema failed: ', error)
         return false
     }
 }

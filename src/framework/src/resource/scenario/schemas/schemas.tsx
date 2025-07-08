@@ -60,9 +60,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
-            <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
+            <ContextMenuContent >
                 <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, SchemasMenuItem.CREATE_NEW_SCHEMA) }}>
-                    <FilePlus2 className='w-4 h-4 ml-2' />Create New Schema
+                    <FilePlus2 className='w-4 h-4' />Create New Schema
                 </ContextMenuItem>
             </ContextMenuContent>
         )
