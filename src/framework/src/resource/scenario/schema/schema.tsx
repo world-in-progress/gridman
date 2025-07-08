@@ -46,12 +46,13 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
-            <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
+            <ContextMenuContent className=''>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.CHECK_INFO)}>
-                    <FilePlus2 className='w-4 h-4 ml-2' />Check Info
+                    <FilePlus2 className='w-4 h-4' />Check Info
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.DELETE)}>
-                    <Delete className='w-4 h-4 ml-2' />Delete
+                    <Delete className='w-4 h-4' />Delete
+                    
                 </ContextMenuItem>
             </ContextMenuContent>
         )
