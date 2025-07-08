@@ -101,7 +101,7 @@ function FrameworkComponent() {
         const _publicTree = publicTree as SceneTree
         const _tree = node.tree as SceneTree
 
-        // Set the selected node in the other tree as null
+        // Select the node
         _privateTree.selectedNode = null
         _publicTree.selectedNode = null
         _tree.selectedNode = node
@@ -146,9 +146,13 @@ function FrameworkComponent() {
             return _t.node.id != _node.id
         })
 
+        // Deselect the node
+        _node.tree.selectedNode = null
+
         // Activate the last picked node
         if (nodeStack.current.length > 0) {
             const lastNode = nodeStack.current[nodeStack.current.length - 1] as SceneNode
+            lastNode.tree.selectedNode = lastNode
             setFocusNode(lastNode)
         } else {
             privateTree.selectedNode = null
@@ -191,8 +195,30 @@ function FrameworkComponent() {
         
     }, [])
 
-    const handleNodeClickEnd = useCallback((node: ISceneNode) => {
+    const handleNodeClick = useCallback((node: ISceneNode) => {
         const _node = node as SceneNode
+
+        // Deselect all nodes in the trees
+        if (privateTree === null || publicTree === null) return
+        privateTree.selectedNode = null
+        publicTree.selectedNode = null
+        _node.tree.selectedNode = _node
+    }, [privateTree, publicTree])
+
+    /**
+     * Double click
+     * Focus on the clicked node, and force tabBar, page to re-render.
+     */
+    const handleNodeDoubleClick = useCallback((node: ISceneNode) => {
+        const _node = node as SceneNode
+
+        // Deselect all nodes in the trees
+        if (privateTree === null || publicTree === null) return
+        privateTree.selectedNode = null
+        publicTree.selectedNode = null
+
+        // Set the clicked node as the selected node
+        _node.tree.selectedNode = _node
         
         // Check if the node is already in the stack
         const existingIndex = nodeStack.current.findIndex(n => {
@@ -201,10 +227,12 @@ function FrameworkComponent() {
         })
 
         // If the node is already in the stack and not focused, focus on it
-        if (focusNode && existingIndex !== -1 && focusNode.id !== _node.id)
+        if (focusNode && existingIndex !== -1 && focusNode.id !== _node.id) {
             setFocusNode(_node)
+            setTriggerFocus(prev => prev + 1)
+        }
 
-    }, [focusNode])
+    }, [focusNode, privateTree, publicTree])
 
     // Init DomResourceTree
     useEffect(() => {
@@ -250,13 +278,15 @@ function FrameworkComponent() {
                 onDropDownMenuOpen={handleNodeMenuOpen}
                 onNodeStartEditing={handleNodeStartEditing}
                 onNodeStopEditing={handleNodeStopEditing}
-                onNodeClickEnd={handleNodeClickEnd}
+                onNodeClick={handleNodeClick}
+                onNodeDoubleClick={handleNodeDoubleClick}
             />
             {/* Main Content Area */}
             <div className='flex flex-col flex-1'>
                 {/* Tab Bar */}
                 <TabBar
                     focusNode={focusNode as SceneNode | null}
+                    triggerFocus={triggerFocus}
                     tabs={nodeTabs.current}
                     localTree={privateTree}
                     remoteTree={publicTree}

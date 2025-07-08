@@ -11,8 +11,9 @@ export interface Tab {
 }
 
 export interface TabBarProps{
-    tabs: Tab[]
     focusNode: SceneNode | null
+    triggerFocus: number
+    tabs: Tab[]
     localTree?: SceneTree | null
     remoteTree?: SceneTree | null
     onTabDragEnd: (result: DropResult) => void
@@ -22,6 +23,7 @@ export interface TabBarProps{
 export interface renderNodeTabProps {
     node: SceneNode,
     index: number,
+    triggerFocus: number,
     onTabClick: (tab: Tab) => void
 }
 

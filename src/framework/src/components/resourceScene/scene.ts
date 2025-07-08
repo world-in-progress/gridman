@@ -78,7 +78,8 @@ export class SceneTree implements ISceneTree {
     private handleNodeMenuOpen: (node: ISceneNode, menuItem: any) => void = () => {}
     private handleNodeStartEditing: (node: ISceneNode) => void = () => {}
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
-    private handleNodeClickEnd: (node: ISceneNode) => void = () => {}
+    private handleNodeDoubleClick: (node: ISceneNode) => void = () => {}
+    private handleNodeClick: (node: ISceneNode) => void = () => {}
 
     private updateCallbacks: Set<TreeUpdateCallback> = new Set()
     private expandedNodes: Set<string> = new Set()
@@ -101,14 +102,16 @@ export class SceneTree implements ISceneTree {
         handleNodeMenuOpen: (node: ISceneNode, menuItem: any) => void
         handleNodeStartEditing: (node: ISceneNode) => void
         handleNodeStopEditing: (node: ISceneNode) => void
-        handleNodeClickEnd: (node: ISceneNode) => void
+        handleNodeDoubleClick: (node: ISceneNode) => void
+        handleNodeClick: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
         this.handleNodeMenuOpen = handlers.handleNodeMenuOpen
         this.handleNodeStartEditing = handlers.handleNodeStartEditing
         this.handleNodeStopEditing = handlers.handleNodeStopEditing
-        this.handleNodeClickEnd = handlers.handleNodeClickEnd
+        this.handleNodeDoubleClick = handlers.handleNodeDoubleClick
+        this.handleNodeClick = handlers.handleNodeClick
     }
 
     getNodeMenuHandler(): (node: ISceneNode, menuItem: any) => void {
@@ -193,37 +196,45 @@ export class SceneTree implements ISceneTree {
         return this.expandedNodes.has(nodeKey)
     }
 
-    async toggleNodeExpansion(node: ISceneNode): Promise<void> {
-        if (this.expandedNodes.has(node.key)) {
-            this.expandedNodes.delete(node.key)
-        } else {
+    async toggleNodeExpansion(node: ISceneNode, forceOpen: boolean = false): Promise<void> {
+        if (forceOpen || !this.expandedNodes.has(node.key)) {
             this.expandedNodes.add(node.key)
-
-            if (!node.aligned) {
-                await this.alignNodeInfo(node)
-            }
+            if (!node.aligned) await this.alignNodeInfo(node)
+        } else {
+            this.expandedNodes.delete(node.key)
         }
     }
 
-    async handleNodeClick(node: ISceneNode): Promise<void> {
+    async clickNode(node: ISceneNode): Promise<void> {
         // If the node is a resource folder, toggle its expansion
-        // If the node is a file, open it
         if (node.scenarioNode.degree > 0) {
             await this.toggleNodeExpansion(node)
-        } else {    
-            this.handleOpenFile(node.name, node.key)
         }
 
-        // Select the node
-        this.selectedNode = node
-        this.handleNodeClickEnd(node)
+        this.handleNodeClick(node) // notify all trees that the node is currently selected
+        this.notifyDomUpdate()
+    }
 
+    // Node Double Click (Focusing) //////////////////////////////////////////////////
+
+    async doubleClickNode(node: ISceneNode): Promise<void> {
+        // If the node is a resource folder, force open its expansion
+        if (node.scenarioNode.degree > 0) {
+            await this.toggleNodeExpansion(node, true)
+        }
+
+        this.handleNodeDoubleClick(node) // notify all trees to focus on the node
         this.notifyDomUpdate()
     }
 
     // Node Editing //////////////////////////////////////////////////
 
     async startEditingNode(node: ISceneNode): Promise<void> {
+        // If the node is a resource folder, force open its expansion
+        if (node.scenarioNode.degree > 0) {
+            await this.toggleNodeExpansion(node, true)
+        }
+        
         // Add node to editing nodes if not already editing
         if (!this.editingNodes.has(node)) {
             this.editingNodes.add(node)
@@ -252,7 +263,7 @@ export class SceneTree implements ISceneTree {
     }
 
     // Node Tab Click //////////////////////////////////////////////////
-    async focusToNode(targetNode: ISceneNode): Promise<boolean> {
+    async expandNode(targetNode: ISceneNode): Promise<boolean> {
         if (!targetNode) return false
 
         // Get all parent nodes
@@ -273,17 +284,8 @@ export class SceneTree implements ISceneTree {
         }
 
         // Select the target node
-        this.selectedNode = targetNode
         this.notifyDomUpdate()
         return true
-    }
-
-    // Node Pinning //////////////////////////////////////////////////
-
-    handleNodeDoubleClick(node: ISceneNode): void {
-        if (node.scenarioNode.degree === 0) {
-            this.handlePinFile(node.name, node.key)
-        }
     }
 
     // Scene Tree Creation //////////////////////////////////////////////////

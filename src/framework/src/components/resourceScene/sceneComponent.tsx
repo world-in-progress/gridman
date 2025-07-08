@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, use, useRef, useReducer } from 'react'
-import { SceneTree, SceneNode } from './scene'
+import { SceneTree } from './scene'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -19,7 +19,7 @@ import {
     CloudCheck,
 } from 'lucide-react'
 import { cn } from '@/utils/utils'
-import store from '@/store'
+import { Button } from '../ui/button'
 
 interface TreeNodeProps {
     node: ISceneNode
@@ -39,7 +39,8 @@ interface SceneTreeProps {
     onDropDownMenuOpen: (node: ISceneNode, menuItem: any) => void
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
-    onNodeClickEnd: (node: ISceneNode) => void
+    onNodeDoubleClick: (node: ISceneNode) => void
+    onNodeClick: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -51,30 +52,51 @@ interface TreeRendererProps {
 }
 
 export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth, triggerFocus }) => {
-    const _privateTree = privateTree as SceneTree
-    const _publicTree = publicTree as SceneTree
-
     const tree = node.tree as SceneTree
-    const isSelected = tree.selectedNode?.key === node.key
-    const isExpanded = tree.isNodeExpanded(node.key)
     const isFolder = node.scenarioNode.degree > 0
+    const isExpanded = tree.isNodeExpanded(node.key)
+    const isSelected = tree.selectedNode?.key === node.key
 
     const nodeRef = useRef<HTMLDivElement>(null)
     const [isDownloaded, setIsDownloaded] = useState(false)
+    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    const handleClick = useCallback(() => {
-        // Set the selected node in the other tree as null
-        tree.isPublic ? (_privateTree.selectedNode = null) : (_publicTree.selectedNode = null)
-        tree.handleNodeClick(node)
-    }, [tree, node, _privateTree, _publicTree])
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        // Clear any existing timeout to prevent single click when double clicking
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current)
+            clickTimeoutRef.current = null
+            return
+        }
 
-    const handleDoubleClick = useCallback(() => {
-        tree.handleNodeDoubleClick(node)
-    }, [tree, node])
+        // Delay single click execution to allow double click detection
+        clickTimeoutRef.current = setTimeout(() => {
+            (node.tree as SceneTree).clickNode(node)
+            clickTimeoutRef.current = null
+        }, 150)
+    }, [node])
+
+    const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        // Clear single click timeout
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current)
+            clickTimeoutRef.current = null
+        }
+        
+        // Prevent text selection
+        if (window.getSelection) {
+            window.getSelection()?.removeAllRanges()
+        }
+        
+        (node.tree as SceneTree).doubleClickNode(node)
+    }, [node])
 
     const handleNodeMenu = useCallback((node: ISceneNode, menuItem: any) => {
-        return tree.getNodeMenuHandler()(node, menuItem)
-    }, [tree])
+        return (node.tree as SceneTree).getNodeMenuHandler()(node, menuItem)
+    }, [])
 
     const renderNodeMenu = useCallback(() => {
         return node.scenarioNode.renderMenu(node, handleNodeMenu)
@@ -95,6 +117,15 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
         }
     }, [isSelected, triggerFocus])
 
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (clickTimeoutRef.current) {
+                clearTimeout(clickTimeoutRef.current)
+            }
+        }
+    }, [])
+
     return (
         <div>
             <ContextMenu>
@@ -102,7 +133,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                     <div
                         ref={nodeRef}
                         className={cn(
-                            'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm w-full',
+                            'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm w-full select-none',
                             isSelected ? 'bg-gray-600 text-white' : 'text-gray-300',
                         )}
                         style={{ paddingLeft: `${depth * 16 + 2}px` }}
@@ -127,13 +158,14 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                         )}
                         <span>{node.name}</span>
                         {!isFolder && tree.isPublic &&
-                            <button
+                            <Button
+                                type='button'
                                 className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
                                 title='download'
                                 onClick={handleClickPublicDownload}
                             >
                                 {isDownloaded ? <CloudCheck className='w-4 h-4 text-green-500' /> : <CloudDownload className='w-4 h-4 text-white' />}
-                            </button>}
+                            </Button>}
                     </div>
                 </ContextMenuTrigger>
                 {renderNodeMenu()}
@@ -182,7 +214,8 @@ export default function ResourceTreeComponent({
     onDropDownMenuOpen,
     onNodeStartEditing,
     onNodeStopEditing,
-    onNodeClickEnd,
+    onNodeDoubleClick,
+    onNodeClick
 }: SceneTreeProps) {
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
@@ -197,7 +230,8 @@ export default function ResourceTreeComponent({
                 handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
-                handleNodeClickEnd: onNodeClickEnd,
+                handleNodeDoubleClick: onNodeDoubleClick,
+                handleNodeClick: onNodeClick,
             })
 
             const unsubscribe = privateTree.subscribe(triggerRepaint)
@@ -205,7 +239,7 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
+    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick])
 
     // Bind handlers to public tree
     useEffect(() => {
@@ -216,7 +250,8 @@ export default function ResourceTreeComponent({
                 handleNodeMenuOpen: onDropDownMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
-                handleNodeClickEnd: onNodeClickEnd,
+                handleNodeDoubleClick: onNodeDoubleClick,
+                handleNodeClick: onNodeClick,
             })
 
             const unsubscribe = publicTree.subscribe(triggerRepaint)
@@ -224,16 +259,16 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeClickEnd])
+    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick])
 
     useEffect(() => {
         if (focusNode) {
             const tree = focusNode.tree as SceneTree
-            const focus = async () => {
-                const success = await tree.focusToNode(focusNode)
+            const expand = async () => {
+                const success = await tree.expandNode(focusNode)
                 if (success) triggerRepaint()
             }
-            focus()
+            expand()
         }
     }, [focusNode, triggerFocus])
 

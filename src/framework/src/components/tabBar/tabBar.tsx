@@ -5,7 +5,7 @@ import {
     ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { cn } from '@/utils/utils'
-import { useEffect, useReducer } from 'react'
+import React, { useEffect, useReducer, useRef } from 'react'
 import { Cloudy, FileText, User, X } from 'lucide-react'
 import { SceneNode, SceneTree } from '../resourceScene/scene'
 import { TabBarProps, Tab, renderNodeTabProps } from './types'
@@ -24,13 +24,14 @@ const getTabContextMenu = (tab: Tab) => (
     </ContextMenuContent>
 )
 
-const renderNodeTab = ({
+const RenderNodeTab: React.FC<renderNodeTabProps> = ({
     node,
     index,
     onTabClick,
 }: renderNodeTabProps) => {
     const tab = node.tab
     const tabId = node.id
+
     return (
         <Draggable key={tabId} draggableId={tabId} index={index}>
             {(providedDraggable, snapshot) => (
@@ -41,6 +42,7 @@ const renderNodeTab = ({
                     ref={providedDraggable.innerRef}
                     {...providedDraggable.draggableProps}
                     {...providedDraggable.dragHandleProps}
+                    tab-id={node.id}
                 >
                     <ContextMenu>
                         <ContextMenuTrigger asChild>
@@ -76,7 +78,6 @@ const renderNodeTab = ({
                                 />
                             </div>
                         </ContextMenuTrigger>
-                        {getTabContextMenu(tab)}
                     </ContextMenu>
                 </div>
             )}
@@ -84,12 +85,13 @@ const renderNodeTab = ({
     )
 }
 
-const renderNodeTabs = (
-    tabs: Tab[],
-    localTree: SceneTree | null | undefined,
-    remoteTree: SceneTree | null | undefined,
-    onTabClick: (tab: Tab) => void,
-) => {
+const RenderNodeTabs: React.FC<{tabs: Tab[], localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined, onTabClick: (tab: Tab) => void, triggerFocus: number}> = ({
+    tabs,
+    localTree,
+    remoteTree,
+    onTabClick,
+    triggerFocus
+}) => {
     console.debug('Rendering tabs:', tabs.map(tab => tab.name))
 
     const elements = tabs.map((tab, index) => {
@@ -99,25 +101,28 @@ const renderNodeTabs = (
 
         if (!node) return null
 
-        return renderNodeTab({
+        return RenderNodeTab({
             node: (node as SceneNode),
             index,
             onTabClick,
+            triggerFocus
         })
     })
 
-    return elements
+    return <>{elements}</>
 }
 
 export default function TabBar({
-    tabs,
     focusNode,
+    triggerFocus,
+    tabs,
     localTree,
     remoteTree,
     onTabDragEnd,
     onTabClick,
 }: TabBarProps) {
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
+    const scrollAreaRef = useRef<HTMLDivElement>(null)
 
     // Subscribe trigger repaint to local and remote trees
     useEffect(() => {
@@ -144,28 +149,41 @@ export default function TabBar({
 
     // Handle focus node changes
     useEffect(() => {
-        if (focusNode) {
-            for (let i = 0; i < tabs.length; i++) {
-                const tab = tabs[i]
-                if (tab.node.id === focusNode.id) {
-                    tab.isActive = true
-                    break
-                }
+        if (!focusNode) return
+        
+        for (let i = 0; i < tabs.length; i++) {
+            const tab = tabs[i]
+            if (tab.node.id === focusNode.id) {
+                tab.isActive = true
+                break
             }
         }
 
         return () => {
-            if (focusNode) {
-                for (let i = 0; i < tabs.length; i++) {
-                    const tab = tabs[i]
-                    if (tab.node.id === focusNode.id) {
-                        tab.isActive = false
-                        break
-                    }
+            if (!focusNode) return
+        
+            for (let i = 0; i < tabs.length; i++) {
+                const tab = tabs[i]
+                if (tab.node.id === focusNode.id) {
+                    tab.isActive = false
+                    break
                 }
             }
         }
     }, [tabs, focusNode])
+
+    useEffect(() => {
+        if (!focusNode) return
+
+        const activeTab = scrollAreaRef.current?.querySelector(`[tab-id='${focusNode.id}']`)
+        if (activeTab) {
+            activeTab.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'center',
+                block: 'nearest',
+            })
+        }
+    }, [focusNode, triggerFocus])
 
     const handleDragStart = (start: DragStart) => {
         const index = start.source.index
@@ -175,7 +193,7 @@ export default function TabBar({
 
     return (
         <div className='bg-gray-800 flex h-[4vh] w-[85vw]'>
-            <ScrollArea className='w-full'>
+            <ScrollArea ref={scrollAreaRef} className='w-full'>
                 <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                     <Droppable droppableId='tabs' direction='horizontal'>
                         {(provided) => (
@@ -184,7 +202,7 @@ export default function TabBar({
                                 {...provided.droppableProps}
                                 className='bg-gray-800 border-b-2 border-gray-700 flex h-[4vh] min-w-max'
                             >
-                                {renderNodeTabs(tabs, localTree, remoteTree, onTabClick)}
+                                <RenderNodeTabs tabs={tabs} localTree={localTree} remoteTree={remoteTree} onTabClick={onTabClick} triggerFocus={triggerFocus} />
                                 {provided.placeholder}
                             </div>
                         )}
