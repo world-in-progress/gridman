@@ -116,6 +116,10 @@ export default function SchemasPage({
 
     const unloadContext = async (node: SceneNode) => {
         picking.current.marker?.remove()
+        picking.current.cancel()
+        picking.current.marker = null
+
+        setIsSelectingPoint(false)
         
         const n = node as SceneNode
         const context = n.pageContext as SchemasPageContext
@@ -330,11 +334,11 @@ export default function SchemasPage({
                     {/* ----------------- */}
                     {/* Page Introduction */}
                     {/* ----------------- */}
-                    <div className='h-50 w-full border-b border-gray-700 flex flex-row'>
+                    <div className='w-full border-b border-gray-700 flex flex-row'>
                         {/* ------------*/}
                         {/* Page Avatar */}
                         {/* ------------*/}
-                        <div className='w-1/3 h-full flex justify-center items-center'>
+                        <div className='w-1/3 h-full flex justify-center items-center my-auto'>
                             <Avatar className='bg-blue-500 h-28 w-28 border-2 border-white'>
                                 <AvatarFallback className='bg-blue-500'>
                                     <MapPinPlus className='h-15 w-15 text-white' />
@@ -366,7 +370,7 @@ export default function SchemasPage({
                     {/* ---------------- */}
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
-                    <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]' type='auto'>
+                    <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]'>
                         <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4 pb-4'>
                             {/* ----------- */}
                             {/* Schema Name */}
@@ -629,7 +633,7 @@ export default function SchemasPage({
                     </ScrollArea>
                 </div>
             </form>
-            <div className='w-3/5 h-full py-4'>
+            <div className='w-3/5 h-full py-4 pr-4'>
                 <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'/>
             </div>
         </div>

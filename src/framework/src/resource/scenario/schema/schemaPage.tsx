@@ -1,16 +1,18 @@
+import { useEffect, useReducer, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { deleteSchema, updateSchemaInfo } from './util'
 import { SchemaPageProps } from './types'
-import { useEffect, useReducer, useRef } from 'react'
 import { SchemaPageContext } from './schema'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Delete, MapPin, MapPinCheck, Pencil, X } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
-import { Separator } from '@/components/ui/separator'
+import { CheckCircle, Delete, MapPin, MapPinCheck, Pencil } from 'lucide-react'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { convertSinglePointCoordinate, flyToMarker } from '@/components/mapContainer/utils'
 import {
     AlertDialog,
@@ -23,8 +25,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { deleteSchema } from './util'
-import { toast } from 'sonner'
 
 const schemaCheckTips = [
     { tip1: 'You can view the information of this Schema on this page.' },
@@ -34,35 +34,88 @@ const schemaCheckTips = [
 
 export default function SchemaPage({ node }: SchemaPageProps) {
 
-    const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
-    const coordinateOn4326 = useRef<[number, number]>([0, 0])
+    // // const [isEditing, setIsEditing] = useState(false)
+    // const isEditingRef = useRef<boolean>(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
+    const coordinateOn4326 = useRef<[number, number]>([0, 0])
+    const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
 
     useEffect(() => {
         const schemaContext = (node as SceneNode).pageContext
         if (schemaContext && schemaContext.schema) {
+
             pageContext.current = schemaContext
             const orginalCoordinates = schemaContext.schema?.base_point
             const schemaEPSG = schemaContext.schema?.epsg
+
             if (orginalCoordinates && schemaEPSG && schemaEPSG !== '4326') {
                 coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG, '4326')
             }
-            flyToMarker(coordinateOn4326.current)
+
+            setTimeout(() => {
+                flyToMarker(coordinateOn4326.current)
+            }, 500)
         }
     })
 
+    useEffect(() => {
+        const n = node as SceneNode
+        loadContext(n)
+
+        return () => {
+            unloadContext(n)
+        }
+    }, [node])
+
+    const loadContext = (node: SceneNode) => {
+        const context = node.pageContext as SchemaPageContext
+
+        if (context) {
+            pageContext.current = context
+        }
+
+        triggerRepaint()
+    }
+
+    const unloadContext = (node: SceneNode) => {
+
+    }
+
     const handleSchemaDelete = async () => {
-        const response = await deleteSchema(pageContext.current.schema!.name, node.tree.isPublic)
+        const schemaName = pageContext.current.schema!.name
+        const response = await deleteSchema(schemaName, node.tree.isPublic)
         if (response) {
-            toast.success(`Schema ${pageContext.current.schema!.name} deleted successfully`)
+            toast.success(`Schema ${schemaName} deleted successfully`)
+
             const parent = node.parent!
             await parent.tree.alignNodeInfo(parent, true)
 
             const tree = parent.tree as SceneTree
             tree.stopEditingNode(node)
         } else {
-            toast.error(`Failed to delete schema ${pageContext.current.schema!.name}`)
+            toast.error(`Failed to delete schema ${schemaName}`)
         }
+    }
+
+    const handleEditButtonClick = () => {
+        // TODO: make textarea editable
+        // setIsEditing(true)
+        pageContext.current.isEditing = true
+        triggerRepaint()
+    }
+
+    const handleDoneButtonClick = async() => {
+        const schema = pageContext.current.schema!
+        const schemaName = schema.name
+        const response = await updateSchemaInfo(schemaName, schema, node.tree.isPublic)
+        if (response) {
+            toast.success(`Schema ${schemaName} updated successfully`)
+        } else {
+            toast.error(`Failed to update schema ${schemaName}`)
+        }
+        // setIsEditing(false)
+        pageContext.current.isEditing = false
+        triggerRepaint()
     }
 
     return (
@@ -72,11 +125,11 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                     {/* ----------------- */}
                     {/* Page Introduction */}
                     {/* ----------------- */}
-                    <div className='h-50 w-full border-b border-gray-700 flex flex-row'>
+                    <div className='w-full border-b border-gray-700 flex flex-row'>
                         {/* ------------*/}
                         {/* Page Avatar */}
                         {/* ------------*/}
-                        <div className='w-1/3 h-full flex justify-center items-center'>
+                        <div className='w-1/3 h-full flex justify-center items-center my-auto'>
                             <Avatar className='h-28 w-28 border-2 border-white'>
                                 <AvatarFallback className='bg-[#007ACC]'>
                                     <MapPinCheck className='h-15 w-15 text-white' />
@@ -152,13 +205,11 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                     <Input
                                         id='name'
                                         value={pageContext.current.schema?.name}
-                                        // onChange={handleSetName}
                                         placeholder={
                                             'Enter new schema name'
                                         }
                                         className={`w-full text-black border-gray-300 }`}
                                         readOnly={true}
-                                    // className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     />
                                 </div>
                             </div>
@@ -171,23 +222,38 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                     <h2 className='text-black text-lg font-semibold'>
                                         Schema Description (Optional)
                                     </h2>
-                                    <Button
-                                        className='bg-blue-500 hover:bg-blue-600 text-white cursor-pointer h-8'
-                                    // onClick={}
-                                    >
-                                        <span>Edit</span>
-                                        <Separator orientation='vertical' className='h-4' />
-                                        <Pencil className='w-4 h-4' />
-                                    </Button>
+                                    {pageContext.current.isEditing
+                                        ? (<Button
+                                            className='bg-green-500 hover:bg-green-600 text-white cursor-pointer h-8'
+                                            onClick={handleDoneButtonClick}
+                                        >
+                                            <span>Done</span>
+                                            <Separator orientation='vertical' className='h-4' />
+                                            <CheckCircle className='w-4 h-4' />
+                                        </Button>)
+                                        : (<Button
+                                            className='bg-blue-500 hover:bg-blue-600 text-white cursor-pointer h-8'
+                                            onClick={handleEditButtonClick}
+                                        >
+                                            <span>Edit</span>
+                                            <Separator orientation='vertical' className='h-4' />
+                                            <Pencil className='w-4 h-4' />
+                                        </Button>)}
+
                                 </div>
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
                                         value={pageContext.current.schema?.description}
-                                        // onChange={handleSetDescription}
-                                        readOnly={true}
+                                        readOnly={!pageContext.current.isEditing}
                                         placeholder={'Enter schema description'}
                                         className={`w-full text-black border-gray-300`}
+                                        onChange={(e) => {
+                                            if (pageContext.current.schema) {
+                                                pageContext.current.schema.description = e.target.value;
+                                                triggerRepaint();
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -204,7 +270,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                         placeholder='Enter EPSG code (e.g. 4326)'
                                         className={`text-black w-full border-gray-300}`}
                                         value={pageContext.current.schema?.epsg}
-                                    // onChange={handleSetEPSG}
+                                        readOnly={true}
                                     />
                                 </div>
                             </div>
@@ -226,7 +292,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                 type='number'
                                                 step='0.000001'
                                                 value={coordinateOn4326.current?.[0].toString()}
-                                                // onChange={handleSetBasePointLon}
+                                                readOnly={true}
                                                 placeholder={'Enter longitude'}
                                                 className={`w-3/4 border-gray-300`}
                                             />
@@ -240,7 +306,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                 type='number'
                                                 step='0.000001'
                                                 value={coordinateOn4326.current?.[1].toString()}
-                                                // onChange={handleSetBasePointLat}
+                                                readOnly={true}
                                                 placeholder={'Enter latitude'}
                                                 className={`w-3/4 border-gray-300`}
                                             />
@@ -305,7 +371,6 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                         type='number'
                                                         className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
                                                         value={layer[0]}
-                                                        // onChange={(e) => handleUpdateWidth(layer.id, e.target.value)}
                                                         placeholder={'Width'}
                                                         readOnly={true}
                                                     />
@@ -316,7 +381,6 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                         type='number'
                                                         className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
                                                         value={layer[1]}
-                                                        // onChange={(e) => handleUpdateHeight(layer.id, e.target.value)}
                                                         placeholder={'Height'}
                                                         readOnly={true}
                                                     />
@@ -347,7 +411,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                     </ScrollArea>
                 </div>
             </div>
-            <div className='w-3/5 h-full py-4 px-4'>
+            <div className='w-3/5 h-full py-4 pr-4'>
                 <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
         </div>

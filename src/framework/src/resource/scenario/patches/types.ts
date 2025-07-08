@@ -1,4 +1,9 @@
+import { ISceneNode } from "@/core/scene/iscene";
 import { FormErrors } from "@/resource/scenario/schemas/types"
+
+export interface PatchesPageProps {
+    node: ISceneNode
+}
 
 export interface RectangleCoordinates {
     northEast: [number, number];

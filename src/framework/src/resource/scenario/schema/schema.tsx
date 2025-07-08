@@ -1,32 +1,45 @@
-import { Delete, FilePlus2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { SchemaInfo } from './types'
 import SchemaPage from './schemaPage'
+import { ISceneNode } from '@/core/scene/iscene'
+import { Delete, FilePlus2 } from 'lucide-react'
 import { deleteSchema, getSchemaInfo } from './util'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
-import { toast } from 'sonner'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 export class SchemaPageContext extends DefaultPageContext {
     schema: SchemaInfo | null
+    isEditing: boolean
 
     constructor() {
         super()
         this.schema = null
+        this.isEditing = false
     }
 
     static async create(node: ISceneNode): Promise<SchemaPageContext> {
         const n = node as SceneNode
         const context = new SchemaPageContext()
-        
+
         try {
             const schema = await getSchemaInfo(n, n.tree.isPublic)
             context.schema = schema
         } catch (error) {
             console.error('Process schema info failed:', error)
         }
-        
+
         return context
     }
 }
@@ -46,12 +59,14 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
-            <ContextMenuContent className='w-50 bg-white text-gray-900 border-gray-200'>
+            <ContextMenuContent>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.CHECK_INFO)}>
-                    <FilePlus2 className='w-4 h-4 ml-2' />Check Info
+                    <FilePlus2 className='w-4 h-4' />
+                    <span>Check Info</span>
                 </ContextMenuItem>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.DELETE)}>
-                    <Delete className='w-4 h-4 ml-2' />Delete
+                <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.DELETE)}>
+                    <Delete className='w-4 h-4 text-white rotate-180' />
+                    <span className='text-white'>Delete</span>
                 </ContextMenuItem>
             </ContextMenuContent>
         )
@@ -63,6 +78,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
                 (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case SchemaMenuItem.DELETE: {
+                // TODO: add seconde confirm dialog
                 const response = await deleteSchema(nodeSelf.name, nodeSelf.tree.isPublic)
                 if (response) {
                     toast.success(`Schema ${nodeSelf.name} deleted successfully`)
