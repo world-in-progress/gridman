@@ -224,14 +224,12 @@ export class SceneTree implements ISceneTree {
     // Node Editing //////////////////////////////////////////////////
 
     async startEditingNode(node: ISceneNode): Promise<void> {
-        // Do nothing if already editing
-        if (this.editingNodes.has(node)) {
-            return
+        // Add node to editing nodes if not already editing
+        if (!this.editingNodes.has(node)) {
+            this.editingNodes.add(node)
+            ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create(node)
         }
-
-        this.editingNodes.add(node)
-        ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create(node)
-
+        
         this.handleNodeStartEditing(node)
 
         this.notifyDomUpdate()
