@@ -21,6 +21,7 @@ export interface TabBarProps{
 }
 
 export interface renderNodeTabProps {
+    focusNode: ISceneNode | null
     node: SceneNode,
     index: number,
     triggerFocus: number,

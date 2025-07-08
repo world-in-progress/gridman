@@ -86,12 +86,8 @@ export default function SchemaPage({ node }: SchemaPageProps) {
         const response = await deleteSchema(schemaName, node.tree.isPublic)
         if (response) {
             toast.success(`Schema ${schemaName} deleted successfully`)
-
-            const parent = node.parent!
-            await parent.tree.alignNodeInfo(parent, true)
-
-            const tree = parent.tree as SceneTree
-            tree.stopEditingNode(node)
+            const tree = node.tree as SceneTree
+            await tree.removeNode(node)
         } else {
             toast.error(`Failed to delete schema ${schemaName}`)
         }

@@ -82,13 +82,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
                 const response = await deleteSchema(nodeSelf.name, nodeSelf.tree.isPublic)
                 if (response) {
                     toast.success(`Schema ${nodeSelf.name} deleted successfully`)
-                    const parent = nodeSelf.parent!
-                    await parent.tree.alignNodeInfo(parent, true)
-                    const tree = parent.tree as SceneTree
-                    if (nodeSelf.pageContext !== undefined) {
-                        await tree.stopEditingNode(nodeSelf as SceneNode)
-                    }
-                    tree.notifyDomUpdate()
+                    await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
                 } else {
                     toast.error(`Failed to delete schema ${nodeSelf.name}`)
                 }

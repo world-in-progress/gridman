@@ -147,20 +147,50 @@ function FrameworkComponent() {
         })
 
         // Deselect the node
-        _node.tree.selectedNode = null
+        privateTree.selectedNode = null
+        publicTree.selectedNode = null
 
-        // Activate the last picked node
+        // Activate the last editing node
         if (nodeStack.current.length > 0) {
             const lastNode = nodeStack.current[nodeStack.current.length - 1] as SceneNode
             lastNode.tree.selectedNode = lastNode
             setFocusNode(lastNode)
         } else {
-            privateTree.selectedNode = null
-            publicTree.selectedNode = null
             setFocusNode(null)
         }
 
     }, [privateTree, publicTree])
+
+    const handleNodeRemove = useCallback((node: ISceneNode) => {
+        if (privateTree === null || publicTree === null) return
+
+        const _node = node as SceneNode
+        const tree = _node.tree as SceneTree
+
+        // Reselect:
+        publicTree.selectedNode = null
+        privateTree.selectedNode = null
+
+        // The node's parent or null
+        // - if the currently focused node is the removed one
+        if (focusNode && focusNode.id === _node.id) {
+            if (_node.parent) {
+                tree.selectedNode = _node.parent
+                tree.editingNodeIds.has(_node.parent.id) && setFocusNode(_node.parent)
+            }
+            else setFocusNode(null)
+            setTriggerFocus(prev => prev + 1)
+        }
+        // The currently focused node
+        // - if the currently focused node is not the removed one
+        else if (focusNode && focusNode.id !== _node.id) {
+            console.debug(`currently focused node ${focusNode.id} is not the removed node ${_node.id}, reselecting it`);
+            (focusNode.tree as SceneTree).selectedNode = focusNode
+            setFocusNode(focusNode)
+            setTriggerFocus(prev => prev + 1)
+        }
+
+    }, [focusNode, publicTree, privateTree])
 
     const handleTabClick = useCallback((tab: Tab) => {
         const node = tab.node as SceneNode
@@ -280,6 +310,7 @@ function FrameworkComponent() {
                 onNodeStopEditing={handleNodeStopEditing}
                 onNodeClick={handleNodeClick}
                 onNodeDoubleClick={handleNodeDoubleClick}
+                onNodeRemove={handleNodeRemove}
             />
             {/* Main Content Area */}
             <div className='flex flex-col flex-1'>

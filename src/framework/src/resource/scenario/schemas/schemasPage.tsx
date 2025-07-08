@@ -268,6 +268,9 @@ export default function SchemasPage({
     }
 
     const resetForm = () => {
+        const db = store.get<ContextStorage>('contextDB')!
+        db.delete(node)
+
         pageContext.current = new SchemasPageContext()
         picking.current.marker?.remove()
 
