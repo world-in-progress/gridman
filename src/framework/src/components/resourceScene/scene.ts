@@ -29,14 +29,6 @@ export class SceneNode implements ISceneNode {
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
 
-    // SceneNode state
-    private _state: SceneNodeState = {
-        isExpanded: false,
-        isSelected: false,
-        isLoading: false,
-        contextMenuOpen: false
-    }
-
     // SceneNode actions
     actions: SceneNodeActions | null = null
     
@@ -49,7 +41,7 @@ export class SceneNode implements ISceneNode {
         this.key = node_key
         this.parent = parent
         this.scenarioNode = scenarioNode
-        if (this.parent !== null) this.parent.children.set(this.name, this) // bind self to parent
+        if (this.parent !== null) this.parent.children.set(this.id, this) // bind self to parent
 
         // Set tab (not active, not preview)
         this.tab = {
@@ -80,10 +72,11 @@ export class SceneTree implements ISceneTree {
     private handleNodeStopEditing: (node: ISceneNode) => void = () => {}
     private handleNodeDoubleClick: (node: ISceneNode) => void = () => {}
     private handleNodeClick: (node: ISceneNode) => void = () => {}
+    private handleNodeRemove: (node: ISceneNode) => void = () => {}
 
     private updateCallbacks: Set<TreeUpdateCallback> = new Set()
     private expandedNodes: Set<string> = new Set()
-    editingNodes: Set<ISceneNode> = new Set()
+    editingNodeIds: Set<string> = new Set()
     selectedNode: ISceneNode | null = null
 
     constructor(isRemote: boolean) {
@@ -104,6 +97,7 @@ export class SceneTree implements ISceneTree {
         handleNodeStopEditing: (node: ISceneNode) => void
         handleNodeDoubleClick: (node: ISceneNode) => void
         handleNodeClick: (node: ISceneNode) => void
+        handleNodeRemove: (node: ISceneNode) => void
     }): void {
         this.handleOpenFile = handlers.openFile
         this.handlePinFile = handlers.pinFile
@@ -112,6 +106,7 @@ export class SceneTree implements ISceneTree {
         this.handleNodeStopEditing = handlers.handleNodeStopEditing
         this.handleNodeDoubleClick = handlers.handleNodeDoubleClick
         this.handleNodeClick = handlers.handleNodeClick
+        this.handleNodeRemove = handlers.handleNodeRemove
     }
 
     getNodeMenuHandler(): (node: ISceneNode, menuItem: any) => void {
@@ -134,15 +129,16 @@ export class SceneTree implements ISceneTree {
         node.children = new Map()
         
         // Update parent-child relationship
+        const idPrefix = this.isPublic ? 'public:' : 'private:'
         if (meta.children && meta.children.length > 0) {
             for (const child of meta.children) {
-                if (node.children.has(child.node_key)) {
-                    node.children.set(child.node_key, oldChildrenMap.get(child.node_key)!)
+                if (oldChildrenMap.has(idPrefix + child.node_key)) {
+                    node.children.set(idPrefix + child.node_key, oldChildrenMap.get(idPrefix + child.node_key)!)
                     continue // skip if child node already exists
                 }
 
                 const childNode = new SceneNode(this, child.node_key, node, new SCENARIO_NODE_REGISTRY[child.scenario_path]())
-                this.scene.set(childNode.key, childNode) // add child node to the scene map
+                this.scene.set(childNode.id, childNode) // add child node to the scene map
             }
         }
         
@@ -165,9 +161,9 @@ export class SceneTree implements ISceneTree {
         }
 
         this.root = root
-        this.scene.set(root.key, root)      // add root node to the scene map
+        this.scene.set(root.id, root)      // add root node to the scene map
         await this.alignNodeInfo(root)      // align the root node information
-        this.expandedNodes.add(root.key)    // ensure root is expanded by default
+        this.expandedNodes.add(root.id)    // ensure root is expanded by default
     }
 
     /**
@@ -190,18 +186,34 @@ export class SceneTree implements ISceneTree {
         this.updateCallbacks.forEach(callback => callback())
     }
 
+    // Node Remove //////////////////////////////////////////////////
+
+    async removeNode(node: ISceneNode): Promise<void> {
+        const parent = node.parent as SceneNode
+        parent.children.delete(node.id)
+
+        this.scene.delete(node.id)
+        await this.alignNodeInfo(parent, true)
+
+        if (this.editingNodeIds.has(node.id))
+            await this.stopEditingNode(node)
+
+        this.handleNodeRemove(node) // notify all trees that the node has been removed
+        this.notifyDomUpdate()
+    }
+
     // Node Click //////////////////////////////////////////////////
 
-    isNodeExpanded(nodeKey: string): boolean {
-        return this.expandedNodes.has(nodeKey)
+    isNodeExpanded(nodeId: string): boolean {
+        return this.expandedNodes.has(nodeId)
     }
 
     async toggleNodeExpansion(node: ISceneNode, forceOpen: boolean = false): Promise<void> {
-        if (forceOpen || !this.expandedNodes.has(node.key)) {
-            this.expandedNodes.add(node.key)
+        if (forceOpen || !this.expandedNodes.has(node.id)) {
+            this.expandedNodes.add(node.id)
             if (!node.aligned) await this.alignNodeInfo(node)
         } else {
-            this.expandedNodes.delete(node.key)
+            this.expandedNodes.delete(node.id)
         }
     }
 
@@ -236,8 +248,8 @@ export class SceneTree implements ISceneTree {
         }
         
         // Add node to editing nodes if not already editing
-        if (!this.editingNodes.has(node)) {
-            this.editingNodes.add(node)
+        if (!this.editingNodeIds.has(node.id)) {
+            this.editingNodeIds.add(node.id)
             ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create(node)
         }
         
@@ -248,11 +260,11 @@ export class SceneTree implements ISceneTree {
 
     async stopEditingNode(node: ISceneNode): Promise<void> {
         // Do nothing if not editing
-        if (!this.editingNodes.has(node)) {
+        if (!this.editingNodeIds.has(node.id)) {
             return
         }
 
-        this.editingNodes.delete(node)
+        this.editingNodeIds.delete(node.id)
         
         const db: ContextStorage = store.get('contextDB')!
         await db.delete(node)   // assign node.pageContext to undefined inside delete method
@@ -277,9 +289,9 @@ export class SceneTree implements ISceneTree {
         // Expand all parent nodes
         for (let i = 0; i < path.length - 1; i++) {
             const node = path[i]
-            if (!this.expandedNodes.has(node.key)) {
+            if (!this.expandedNodes.has(node.id)) {
                 await this.alignNodeInfo(node)
-                this.expandedNodes.add(node.key)
+                this.expandedNodes.add(node.id)
             }
         }
 

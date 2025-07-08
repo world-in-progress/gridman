@@ -41,6 +41,7 @@ interface SceneTreeProps {
     onNodeStopEditing: (node: ISceneNode) => void
     onNodeDoubleClick: (node: ISceneNode) => void
     onNodeClick: (node: ISceneNode) => void
+    onNodeRemove: (node: ISceneNode) => void
 }
 
 interface TreeRendererProps {
@@ -54,8 +55,8 @@ interface TreeRendererProps {
 export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publicTree, depth, triggerFocus }) => {
     const tree = node.tree as SceneTree
     const isFolder = node.scenarioNode.degree > 0
-    const isExpanded = tree.isNodeExpanded(node.key)
-    const isSelected = tree.selectedNode?.key === node.key
+    const isExpanded = tree.isNodeExpanded(node.id)
+    const isSelected = tree.selectedNode?.id === node.id
 
     const nodeRef = useRef<HTMLDivElement>(null)
     const [isDownloaded, setIsDownloaded] = useState(false)
@@ -105,7 +106,6 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     const handleClickPublicDownload = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         setIsDownloaded(true)
-        console.log('Download public resource')
     }
 
     useEffect(() => {
@@ -176,7 +176,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                 <div>
                     {Array.from(node.children.values()).map(childNode => (
                         <NodeRenderer
-                            key={childNode.key}
+                            key={childNode.id}
                             node={childNode}
                             privateTree={privateTree}
                             publicTree={publicTree}
@@ -199,7 +199,7 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
             <div className=' z-10 bg-gray-800 text-sm font-semibold text-gray-200 ml-1'>
                 {title}
             </div>
-            <NodeRenderer node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
+            <NodeRenderer key={tree!.root.id} node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
         </>
     )
 }
@@ -215,7 +215,8 @@ export default function ResourceTreeComponent({
     onNodeStartEditing,
     onNodeStopEditing,
     onNodeDoubleClick,
-    onNodeClick
+    onNodeClick,
+    onNodeRemove,
 }: SceneTreeProps) {
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
@@ -232,6 +233,7 @@ export default function ResourceTreeComponent({
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeDoubleClick: onNodeDoubleClick,
                 handleNodeClick: onNodeClick,
+                handleNodeRemove: onNodeRemove,
             })
 
             const unsubscribe = privateTree.subscribe(triggerRepaint)
@@ -239,7 +241,7 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick])
+    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
 
     // Bind handlers to public tree
     useEffect(() => {
@@ -252,6 +254,7 @@ export default function ResourceTreeComponent({
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeDoubleClick: onNodeDoubleClick,
                 handleNodeClick: onNodeClick,
+                handleNodeRemove: onNodeRemove,
             })
 
             const unsubscribe = publicTree.subscribe(triggerRepaint)
@@ -259,7 +262,7 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick])
+    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
 
     useEffect(() => {
         if (focusNode) {
