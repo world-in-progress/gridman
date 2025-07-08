@@ -62,7 +62,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
             case SchemaMenuItem.CHECK_INFO:
                 (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
-            case SchemaMenuItem.DELETE:
+            case SchemaMenuItem.DELETE: {
                 const response = await deleteSchema(nodeSelf.name, nodeSelf.tree.isPublic)
                 if (response) {
                     toast.success(`Schema ${nodeSelf.name} deleted successfully`)
@@ -77,6 +77,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
                     toast.error(`Failed to delete schema ${nodeSelf.name}`)
                 }
                 break
+            }
         }
     }
 
