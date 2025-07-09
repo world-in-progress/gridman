@@ -1,15 +1,28 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Save, SquaresExclude, SquaresIntersect } from "lucide-react";
-import { useCallback, useState } from "react";
-import { ExtendedFormErrors, PatchesPageProps, RectangleCoordinates } from "./types";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { PatchesPageContext } from "./patches";
 import { Button } from "@/components/ui/button";
-import CoordinateBox from "./coordinateBox";
-import { formatCoordinate } from "./utils";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, SquaresIntersect } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import MapContainer from "@/components/mapContainer/mapContainer";
+import { PatchesPageProps, RectangleCoordinates } from "./types";
+import { SceneNode } from "@/components/resourceScene/scene";
+import {
+    addMapLineBetweenPoints,
+    addMapMarker,
+    addMapPatchBounds,
+    adjustPatchBounds,
+    calculateGridCounts,
+    clearDrawPatchBounds,
+    convertSinglePointCoordinate,
+    flyToMarker,
+    getDrawnRectangleCoordinates,
+    startDrawingRectangle,
+    stopDrawingRectangle
+} from "@/components/mapContainer/utils";
 
 const patchTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -18,98 +31,160 @@ const patchTips = [
     { tip4: 'Set the grid size for each level.' },
 ]
 
-const drawPatchTips = {
-    drawing: 'Click to cancel rectangle drawing',
-    redraw: 'Delete rectangle and redraw',
-    draw: 'Click to draw rectangle',
-    instructions: {
-        title: 'Drawing method:',
-        step1: 'Click on the map to set starting point',
-        step2: 'Move the mouse to desired location',
-        step3: 'Click again to complete drawing'
-    }
-};
-
 export default function PatchesPage({
     node
 }: PatchesPageProps) {
 
-    let bgColor = 'bg-red-50';
-    let textColor = 'text-red-700';
-    let borderColor = 'border-red-200';
-
-    const [name, setName] = useState('');
-    const [epsg, setEpsg] = useState('');
-    const [description, setDescription] = useState('');
-    const [epsgFromProps, setEpsgFromProps] = useState<boolean>(false);
-    const [generalError, setGeneralError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<ExtendedFormErrors>({
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
+    const pageContext = useRef<PatchesPageContext>(new PatchesPageContext())
+    const adjustedBounds = useRef<[number, number, number, number] | null>(null)
+    const [generalMessage, setGeneralMessage] = useState<string | null>(null)
+    const [formErrors, setFormErrors] = useState<{
+        name: boolean
+        description: boolean
+        bounds: boolean
+    }>({
         name: false,
-        schemaName: false,
         description: false,
-        coordinates: false,
-        epsg: false,
-    });
+        bounds: false,
+    })
+    const [isDrawingBounds, setIsDrawingBounds] = useState(false)
 
-    const [expandedRectangle, setExpandedRectangle] = useState<RectangleCoordinates | null>(null);
-    const [convertedRectangle, setConvertedRectangle] = useState<RectangleCoordinates | null>(null);
+    const convertedRectangle = useRef<RectangleCoordinates | null>(null);
+    const adjustedRectangle = useRef<RectangleCoordinates | null>(null);
 
-    const [isError, setIsError] = useState<boolean>(false);
+    const schemaEPSG = useRef<string>('')
+    const schemaBasePoint = useRef<[number, number]>([0, 0])
+    const schemaGridLevel = useRef<[number, number]>([0, 0])
+    const schemaMarkerPoint = useRef<[number, number]>([0, 0])
+    const drawCoordinates = useRef<RectangleCoordinates | null>(null)
+
     const [eastValue, setEastValue] = useState<string>('');
     const [westValue, setWestValue] = useState<string>('');
     const [northValue, setNorthValue] = useState<string>('');
     const [southValue, setSouthValue] = useState<string>('');
     const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
 
-    const formatSingleValue = (value: number): string => value.toFixed(6);
+    const [isError, setIsError] = useState<boolean>(false);
 
-    const coordinateBoxTexts = {
-        drawButton: {
-            start: 'Draw Rectangle',
-            cancel: 'Cancel Drawing',
-        },
-        coordinates: {
-            wgs84: `Original Bounds (EPSG:${epsg})`,
-            expanded: `Adjusted Coordinates (EPSG:${epsg})`,
-        },
-    };
 
-    if (
-        generalError?.includes('正在提交数据') ||
-        generalError?.includes('Submitting data')
-    ) {
-        bgColor = 'bg-orange-50';
-        textColor = 'text-orange-700';
-        borderColor = 'border-orange-200';
-    } else if (
-        generalError?.includes('创建成功') ||
-        generalError?.includes('created successfully') ||
-        generalError?.includes('Created successfully')
-    ) {
-        bgColor = 'bg-green-50';
-        textColor = 'text-green-700';
-        borderColor = 'border-green-200';
+
+    ///////////////////////////////////////////////////////////////////////////////
+    
+    // Style variables for general message
+    let bgColor = 'bg-red-50'
+    let textColor = 'text-red-700'
+    let borderColor = 'border-red-200'
+    if (generalMessage?.includes('Submitting data')) {
+        bgColor = 'bg-orange-50'
+        textColor = 'text-orange-700'
+        borderColor = 'border-orange-200'
+    }
+    else if (generalMessage?.includes('Created successfully')) {
+        bgColor = 'bg-green-50'
+        textColor = 'text-green-700'
+        borderColor = 'border-green-200'
+    }
+    
+    useEffect(() => {
+        loadContext(node as SceneNode)
+
+        return () => {
+            unloadContext(node as SceneNode)
+        }
+    }, [node])
+
+    const loadContext = (node: SceneNode) => {
+        pageContext.current = node.pageContext as PatchesPageContext
+        schemaEPSG.current = pageContext.current.schema!.epsg.toString()
+        schemaGridLevel.current = pageContext.current.schema!.grid_info[0]
+        schemaBasePoint.current = pageContext.current.schema!.base_point
+        schemaMarkerPoint.current = convertSinglePointCoordinate(schemaBasePoint.current, schemaEPSG.current, '4326')
+        flyToMarker(schemaMarkerPoint.current, 11)
+
+        if (pageContext.current.bounds) {
+            addMapPatchBounds(pageContext.current.bounds, pageContext.current.schema!.epsg.toString())
+        }
     }
 
-    // const handleButtonClick = () => {
-    //     handleDrawRectangle(!isDrawing);
-    // };
+    const unloadContext = (node: SceneNode) => {
+        clearDrawPatchBounds()
+    }
 
+    
+    // Draw adjusted bounds, aligned LB marker and grid counts line on map after drawing original bounds
+    useEffect(() => {
+        if (drawCoordinates.current !== null) {
+            const coords = drawCoordinates.current
+            pageContext.current.bounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]
 
-    const drawExpandedRectangleOnMap = useCallback(() => {
-        console.log('drawExpandedRectangleOnMap')
-    }, [])
+            const drawBounds = [coords?.southWest[0], coords?.southWest[1], coords?.northEast[0], coords?.northEast[1]] as [number, number, number, number]
+            if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
+                const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
+                console.log('convertedBounds', convertedBounds)
+                console.log('alignedBounds', alignedBounds)
+                console.log('expandedBounds', expandedBounds)
+                convertedRectangle.current = convertedBounds
+                adjustedRectangle.current = expandedBounds
+                
+                setWestValue(convertedBounds!.southWest[0].toString());
+                setSouthValue(convertedBounds!.southWest[1].toString());
+                setEastValue(convertedBounds!.northEast[0].toString());
+                setNorthValue(convertedBounds!.northEast[1].toString());
+                setCenter({ x: convertedBounds!.center[0], y: convertedBounds!.center[1] });
 
-    const handleAdjustAndDraw = useCallback(() => {
-        console.log('handleAdjustAndDraw')
-    }, [])
+                const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
+                addMapMarker(alignedSWPoint)
+                const { widthCount, heightCount} = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
+                addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount, pageContext.current.name)
+            }
+        }
+    }, [drawCoordinates.current])
+    
+    const formatSingleValue = (value: number): string => value.toFixed(6);
 
-    const handleDrawRectangle = useCallback(() => {
-        console.log('handleDrawRectangle')
+    const handleDrawBounds = () => {
+        if (isDrawingBounds) {
+            console.log('停止绘制')
+            setIsDrawingBounds(false)
+            stopDrawingRectangle()
+            return
+        } else {
+            console.log('开始绘制')
+            setIsDrawingBounds(true)
+            clearDrawPatchBounds()
+            startDrawingRectangle()
+        }
+    };
+
+    useEffect(() => {
+        const onDrawComplete = () => {
+            handleDrawComplete();
+        };
+        document.addEventListener('rectangle-draw-complete', onDrawComplete);
+        return () => {
+            console.log('移除事件')
+            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
+        };
     }, []);
 
-    const handleSubmit = () => {
+    const handleDrawComplete = () => {
+        const coords = getDrawnRectangleCoordinates();
+        if (coords) {
+            console.log('Drawn rectangle coordinates:', coords);
+            drawCoordinates.current = coords
+            addMapPatchBounds([coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]], '4326')
+            triggerRepaint()
+        }
+        setIsDrawingBounds(false);
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
         console.log('点击了submit')
+        e.preventDefault()
+
+        const pc = pageContext.current
+        // const validation = validatePatchForm({
     };
 
     return (
@@ -124,9 +199,9 @@ export default function PatchesPage({
                         {/* Page Avatar */}
                         {/* ------------*/}
                         <div className='w-1/3 h-full flex justify-center items-center my-auto'>
-                            <Avatar className='bg-blue-500 h-28 w-28 border-2 border-white'>
-                                <AvatarFallback className='bg-blue-500'>
-                                    <SquaresExclude className='h-15 w-15 text-white' />
+                            <Avatar className=' h-28 w-28 border-2 border-white'>
+                                <AvatarFallback className='bg-[#007ACC]'>
+                                    <SquaresIntersect className='h-15 w-15 text-white' />
                                 </AvatarFallback>
                             </Avatar>
                         </div>
@@ -151,267 +226,374 @@ export default function PatchesPage({
                                 </ul>
                             </div>
                         </div>
-                        {/* ---------------- */}
-                        {/* Grid Schema Form */}
-                        {/* ---------------- */}
-                        <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]'>
-                            <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4 pb-4'>
-                                {/* ----------- */}
-                                {/* Patch Name */}
-                                {/* ----------- */}
-                                <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
-                                    <h2 className='text-lg font-semibold mb-2'>
-                                        New Patch Name
-                                    </h2>
-                                    <div className='space-y-2'>
-                                        <Input
-                                            id='name'
-                                            // value={pageContext.current.name}
-                                            // onChange={handleSetName}
-                                            placeholder={'Enter new patch name'}
-                                            className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                        />
-                                    </div>
-                                </div>
-                                {/* ------------------ */}
-                                {/* Patch Description */}
-                                {/* ------------------ */}
-                                <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
-                                    <h2 className='text-lg font-semibold mb-2'>
-                                        Patch Description (Optional)
-                                    </h2>
-                                    <div className='space-y-2'>
-                                        <Textarea
-                                            id='description'
-                                            // value={pageContext.current.description}
-                                            // onChange={handleSetDescription}
-                                            placeholder={'Enter patch description'}
-                                            className={`w-full text-black border-gray-300 ${formErrors.description ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                        />
-                                    </div>
-                                </div>
-                                {/* --------- */}
-                                {/* EPSG Code */}
-                                {/* --------- */}
-                                <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
-                                    <h2 className='text-lg font-semibold mb-2'>
-                                        EPSG Code
-                                    </h2>
-                                    <div className='space-y-2'>
-                                        <Input
-                                            id='epsg'
-                                            // value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
-                                            // onChange={handleSetEPSG}
-                                            placeholder='EPSG Code'
-                                            className={`text-black w-full border-gray-300 ${formErrors.epsg ? 'border-red-500 focus:ring-red-500' : ''}`}
-                                        />
-                                    </div>
-                                </div>
-                                {/* ----------------------- */}
-                                {/* Coordinates (EPSG:4326) */}
-                                {/* ----------------------- */}
-                                <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
-                                    <h2 className='text-black text-lg font-semibold mb-2'>
-                                        Coordinates (EPSG:4326)
-                                    </h2>
-                                    <div className='flex items-stretch gap-4'>
-                                        <div className='flex-1 flex flex-col justify-between text-black'>
-                                            <div className='flex items-center gap-2 mb-2'>
-                                                <Label htmlFor='lon' className='text-sm font-medium w-1/4'>
-                                                    Longitude
-                                                </Label>
-                                                <Input
-                                                    id='lon'
-                                                    type='number'
-                                                    step='0.000001'
-                                                    value={pageContext.current.basePoint[0] || ''}
-                                                    onChange={handleSetBasePointLon}
-                                                    placeholder={'Enter longitude'}
-                                                    className={`w-3/4 border-gray-300 ${formErrors.coordinates ? 'border-red-500 focus:ring-red-500' : ''
-                                                        }`}
-                                                />
-                                            </div>
-                                            <div className='flex items-center gap-2'>
-                                                <Label htmlFor='lat' className='text-sm font-medium w-1/4'>
-                                                    Latitude
-                                                </Label>
-                                                <Input
-                                                    id='lat'
-                                                    type='number'
-                                                    step='0.000001'
-                                                    value={pageContext.current.basePoint[1] || ''}
-                                                    onChange={handleSetBasePointLat}
-                                                    placeholder={'Enter latitude'}
-                                                    className={`w-3/4 border-gray-300 ${formErrors.coordinates ? 'border-red-500 focus:ring-red-500' : ''
-                                                        }`}
-                                                />
-                                            </div>
-                                        </div>
-                                        {/* ---------------------- */}
-                                        {/* Base Point Map Picking */}
-                                        {/* ---------------------- */}
-                                        <Button
-                                            type='button'
-                                            onClick={handleBasePointPicking}
-                                            className={`w-[80px] h-[84px] shadow-sm ${isSelectingPoint
-                                                ? 'bg-red-500 hover:bg-red-600'
-                                                : 'bg-blue-500 hover:bg-blue-600'
-                                                } text-white cursor-pointer`}
-                                        >
-                                            <div className='flex flex-col items-center'>
-                                                {isSelectingPoint ? (
-                                                    <X className='h-8 w-8 mb-1 font-bold stroke-6' />
-                                                ) : (
-                                                    <MapPin className='h-8 w-8 mb-1 stroke-2' />
-                                                )}
-                                                <span>
-                                                    {isSelectingPoint
-                                                        ? 'Cancel'
-                                                        : 'Draw'
-                                                    }
-                                                </span>
-                                            </div>
-                                        </Button>
-                                    </div>
-                                </div>
-                                {/* --------------------- */}
-                                {/* Converted Coordinates */}
-                                {/* --------------------- */}
-                                {convertedCoord &&
-                                    <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-black'>
-                                        <h2 className='text-lg font-semibold mb-2'>
-                                            Converted Coordinate (EPSG:{pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
-                                            )
-                                        </h2>
-                                        <div className='flex-1 flex flex-col justify-between'>
-                                            <div className='flex items-center gap-2 mb-2 '>
-                                                <Label className='text-sm font-medium w-1/4'>X</Label>
-                                                <div className='w-3/4 p-2 bg-gray-100 rounded border border-gray-300'>
-                                                    {convertedCoord.x}
-                                                </div>
-                                            </div>
-
-                                            <div className='flex items-center gap-2'>
-                                                <Label className='text-sm font-medium w-1/4'>Y</Label>
-                                                <div className='w-3/4 p-2 bg-gray-100 rounded border border-gray-300'>
-                                                    {convertedCoord.y}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>}
-                                {/* ----------- */}
-                                {/* Grid Layers */}
-                                {/* ----------- */}
-                                <div className='p-3 bg-white text-black rounded-md shadow-sm border border-gray-200'>
-                                    <div className='flex justify-between items-center mb-2'>
-                                        <h3 className='text-lg font-semibold'>{gridLevelText.title}</h3>
-                                        <Button
-                                            type='button'
-                                            className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm shadow-sm cursor-pointer'
-                                            onClick={handleAddGridLayer}
-                                        >
-                                            <span className='text-lg'>+</span> {gridLevelText.addButton}
-                                        </Button>
-                                    </div>
-                                    {/* ---------- */}
-                                    {/* Grid Layer */}
-                                    {/* ---------- */}
-                                    {pageContext.current.gridLayers.length > 0 ? (
-                                        <div className='space-y-3'>
-                                            {pageContext.current.gridLayers.map(layer => (
-                                                <div key={layer.id} className='p-2 bg-gray-50 rounded border border-gray-200'>
-                                                    <div className='flex justify-between items-center mb-2'>
-                                                        <h4 className='text-sm font-medium'>{gridItemText.level} {layer.id + 1}</h4>
-                                                        <Button
-                                                            type='button'
-                                                            className='px-2 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs cursor-pointer'
-                                                            onClick={() => handleRemoveLayer(layer.id)}
-                                                        >
-                                                            {gridItemText.remove}
-                                                        </Button>
-                                                    </div>
-                                                    <div className='grid grid-cols-2 gap-2'>
-                                                        <div>
-                                                            <label className='block text-xs mb-1'>{gridItemText.width}</label>
-                                                            <input
-                                                                type='number'
-                                                                className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
-                                                                value={layer.width}
-                                                                onChange={(e) => handleUpdateWidth(layer.id, e.target.value)}
-                                                                placeholder={gridItemText.widthPlaceholder}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className='block text-xs mb-1'>{gridItemText.height}</label>
-                                                            <input
-                                                                type='number'
-                                                                className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
-                                                                value={layer.height}
-                                                                onChange={(e) => handleUpdateHeight(layer.id, e.target.value)}
-                                                                placeholder={gridItemText.heightPlaceholder}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    {layerErrors[layer.id] && (
-                                                        <div className='mt-2 p-1 bg-red-50 text-red-700 text-xs rounded-md border border-red-200'>
-                                                            {layerErrors[layer.id]}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className='text-sm text-gray-500 text-center py-2'>
-                                            {gridLevelText.noLayers}
-                                        </div>
-                                    )}
-                                    {/* ----------------------- */}
-                                    {/* Grid Layer Adding Rules */}
-                                    {/* ----------------------- */}
-                                    {pageContext.current.gridLayers.length > 0 && (
-                                        <div className='mt-2 p-2 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200'>
-                                            <p>{gridLevelText.rulesTitle}</p>
-                                            <ul className='list-disc pl-4 mt-1'>
-                                                <li>
-                                                    {gridLevelText.rule1}
-                                                </li>
-                                                <li>
-                                                    {gridLevelText.rule2}
-                                                </li>
-                                                <li>
-                                                    {gridLevelText.rule3}
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                                {/* --------------- */}
-                                {/* General Message */}
-                                {/* --------------- */}
-                                {generalMessage &&
-                                    <>
-                                        <div
-                                            className={`p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
-                                        >
-                                            {generalMessage}
-                                        </div>
-                                    </>
-                                }
-                                {/* ------ */}
-                                {/* Submit */}
-                                {/* ------ */}
-                                <div className='mt-4'>
-                                    <Button
-                                        type='submit'
-                                        className='w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer'
-                                    >
-                                        <Save className='h-4 w-4 mr-2' />
-                                        Create and Back
-                                    </Button>
+                    </div>
+                    {/* ---------------- */}
+                    {/* Grid Schema Form */}
+                    {/* ---------------- */}
+                    <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]'>
+                        <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4 pb-4'>
+                            {/* ----------- */}
+                            {/* Patch Name */}
+                            {/* ----------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    New Patch Name
+                                </h2>
+                                <div className='space-y-2'>
+                                    <Input
+                                        id='name'
+                                        // value={pageContext.current.name}
+                                        // onChange={handleSetName}
+                                        placeholder={'Enter new patch name'}
+                                        className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
+                                    />
                                 </div>
                             </div>
-                        </ScrollArea>
-                    </div>
+                            {/* ------------------ */}
+                            {/* Patch Description */}
+                            {/* ------------------ */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    Patch Description (Optional)
+                                </h2>
+                                <div className='space-y-2'>
+                                    <Textarea
+                                        id='description'
+                                        // value={pageContext.current.description}
+                                        // onChange={handleSetDescription}
+                                        placeholder={'Enter patch description'}
+                                        className={`w-full text-black border-gray-300 ${formErrors.description ? 'border-red-500 focus:ring-red-500' : ''}`}
+                                    />
+                                </div>
+                            </div>
+                            {/* --------- */}
+                            {/* Belong To Schema */}
+                            {/* --------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    Belong To Schema
+                                </h2>
+                                <div className='space-y-2'>
+                                    <Input
+                                        id='schema'
+                                        // value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
+                                        // onChange={handleSetEPSG}
+                                        placeholder='Schema Name'
+                                        className={`text-black w-full border-gray-300`}
+                                    />
+                                </div>
+                            </div>
+                            {/* --------- */}
+                            {/* EPSG Code */}
+                            {/* --------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    EPSG Code
+                                </h2>
+                                <div className='space-y-2'>
+                                    <Input
+                                        id='epsg'
+                                        // value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
+                                        readOnly={true}
+                                        placeholder='EPSG Code'
+                                        className={`text-black w-full border-gray-300`}
+                                    />
+                                </div>
+                            </div>
+                            {/* --------- */}
+                            {/* Patch Bounds */}
+                            {/* --------- */}
+                            <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                                <h2 className="text-lg font-semibold mb-2">
+                                    Patch Bounds
+                                </h2>
+                                <div className="space-y-2">
+                                    <div className="p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                                        <div className="font-bold text-md mb-2">
+                                            Method One: Draw to generate
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleDrawBounds}
+                                            className={`w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer ${isDrawingBounds
+                                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                        >
+                                            {isDrawingBounds
+                                                ? 'Click to cancel rectangle drawing'
+                                                : 'Click to draw rectangle'}
+                                        </button>
+                                        {isDrawingBounds && (
+                                            <div className="mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200 text-xs text-yellow-800">
+                                                <p>Drawing method:</p>
+                                                <ul className="list-disc pl-4 mt-1">
+                                                    <li>
+                                                        Click on the map to set starting point
+                                                    </li>
+                                                    <li>
+                                                        Move the mouse to desired location
+                                                    </li>
+                                                    <li>
+                                                        Click again to complete drawing
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Separator className="h-px mb-2 bg-gray-300" />
+                                    <div className=" p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                                        <div className="mb-2 font-bold text-md">
+                                            Method Two: Input parameters to generate
+                                        </div>
+                                        <div className="grid grid-cols-3 mb-2 gap-1 text-xs">
+                                            {/* Top Left Corner */}
+                                            <div className="relative h-12 flex items-center justify-center">
+                                                <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                            </div>
+                                            {/* North/Top - northEast[1] */}
+                                            <div className="text-center -mt-2">
+                                                <span className="font-bold text-blue-600 text-xl">
+                                                    N
+                                                </span>
+                                                {/* Input for North */}
+                                                <input
+                                                    type="number"
+                                                    value={northValue}
+                                                    onChange={(e) => {
+                                                        setNorthValue(e.target.value);
+                                                        const n = parseFloat(e.target.value);
+                                                        const s = parseFloat(southValue);
+                                                        const eVal = parseFloat(eastValue);
+                                                        const w = parseFloat(westValue);
+                                                        if (!isNaN(n) && !isNaN(s) && !isNaN(eVal) && !isNaN(w)) {
+                                                            convertedRectangle.current = {
+                                                                northEast: [eVal, n],
+                                                                southWest: [w, s],
+                                                                southEast: [eVal, s],
+                                                                northWest: [w, n],
+                                                                center: [(w + eVal) / 2, (s + n) / 2],
+                                                            };
+                                                        }
+                                                    }}
+                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter max Y'}
+                                                    step="any"
+                                                />
+                                            </div>
+                                            {/* Top Right Corner */}
+                                            <div className="relative h-12 flex items-center justify-center">
+                                                <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                            </div>
+                                            {/* West/Left - southWest[0] */}
+                                            <div className="text-center">
+                                                <span className="font-bold text-green-600 text-xl">
+                                                    W
+                                                </span>
+                                                {/* Input for West */}
+                                                <input
+                                                    type="number"
+                                                    value={westValue}
+                                                    onChange={(e) => setWestValue(e.target.value)}
+                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter mix X'}
+                                                    step="any"
+                                                />
+                                            </div>
+                                            {/* Center */}
+                                            <div className="text-center">
+                                                <span className="font-bold text-[#FF8F2E] text-xl">Center</span>
+                                                <div
+                                                    className={`text-[10px] mt-1 ${isError ? 'text-red-600' : ''
+                                                        }`}
+                                                >
+                                                    {isError
+                                                        ? 'Coordinate Error'
+                                                        : center
+                                                            ? `${formatSingleValue(
+                                                                center.x
+                                                            )}, ${formatSingleValue(center.y)}`
+                                                            : 'Enter bounds'}
+                                                </div>
+                                            </div>
+                                            {/* East/Right - southEast[0] */}
+                                            <div className="text-center">
+                                                <span className="font-bold text-red-600 text-xl">
+                                                    E
+                                                </span>
+                                                {/* Input for East */}
+                                                <input
+                                                    type="number"
+                                                    value={eastValue}
+                                                    onChange={(e) => setEastValue(e.target.value)}
+                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter max X'}
+                                                    step="any"
+                                                />
+                                            </div>
+                                            {/* Bottom Left Corner */}
+                                            <div className="relative h-12 flex items-center justify-center">
+                                                <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                            </div>
+                                            {/* South/Bottom - southWest[1] */}
+                                            <div className="text-center mt-2">
+                                                <span className="font-bold text-purple-600 text-xl">
+                                                    S
+                                                </span>
+                                                {/* Input for South */}
+                                                <input
+                                                    type="number"
+                                                    value={southValue}
+                                                    onChange={(e) => setSouthValue(e.target.value)}
+                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter max X'}
+                                                    step="any"
+                                                />
+                                            </div>
+                                            {/* Bottom Right Corner */}
+                                            <div className="relative h-12 flex items-center justify-center">
+                                                <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
+                                        // onClick={() => {
+                                        //     onAdjustAndDraw(northValue, southValue, eastValue, westValue);
+                                        //     if (drawExpandedRectangleOnMap) {
+                                        //         drawExpandedRectangleOnMap();
+                                        //     }
+                                        // }}
+                                        >
+                                            Click to adjust and draw bounds
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* --------------- */}
+                            {/* Original Coordinates */}
+                            {/* --------------- */}
+                            {convertedRectangle &&
+                                <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
+                                    <h3 className="font-semibold text-lg mb-2">Original Bounds (EPSG:{schemaEPSG.current})</h3>
+                                    <div className="grid grid-cols-3 gap-1 text-xs">
+                                        {/* Top Left Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                        </div>
+                                        {/* North/Top - northEast[1] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-blue-600 text-xl">N</span>
+                                            {/* <div>[{formatSingleValue(northValue)}]</div> */}
+                                        </div>
+                                        {/* Top Right Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                        </div>
+                                        {/* West/Left - southWest[0] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-green-600 text-xl">W</span>
+                                            {/* <div>[{formatSingleValue(westValue)}]</div> */}
+                                        </div>
+                                        {/* Center */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-xl">Center</span>
+                                            {/* <div>{formatCoordinate(coordinates.center)}</div> */}
+                                        </div>
+                                        {/* East/Right - southEast[0] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-red-600 text-xl">E</span>
+                                            {/* <div>[{formatSingleValue(eastValue)}]</div> */}
+                                        </div>
+                                        {/* Bottom Left Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                        </div>
+                                        {/* South/Bottom - southWest[1] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-purple-600 text-xl">S</span>
+                                            {/* <div>[{formatSingleValue(southValue)}]</div> */}
+                                        </div>
+                                        {/* Bottom Right Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            {/* --------------- */}
+                            {/* Adjusted Coordinates */}
+                            {/* --------------- */}
+                            {adjustedRectangle &&
+                                <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
+                                    <h3 className="font-semibold text-lg mb-2">Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
+                                    <div className="grid grid-cols-3 gap-1 text-xs">
+                                        {/* Top Left Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                        </div>
+                                        {/* North/Top - northEast[1] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-blue-600 text-xl">N</span>
+                                            {/* <div>[{formatSingleValue(northValue)}]</div> */}
+                                        </div>
+                                        {/* Top Right Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                        </div>
+                                        {/* West/Left - southWest[0] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-green-600 text-xl">W</span>
+                                            {/* <div>[{formatSingleValue(westValue)}]</div> */}
+                                        </div>
+                                        {/* Center */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-xl">Center</span>
+                                            {/* <div>{formatCoordinate(coordinates.center)}</div> */}
+                                        </div>
+                                        {/* East/Right - southEast[0] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-red-600 text-xl">E</span>
+                                            {/* <div>[{formatSingleValue(eastValue)}]</div> */}
+                                        </div>
+                                        {/* Bottom Left Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                        </div>
+                                        {/* South/Bottom - southWest[1] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-purple-600 text-xl">S</span>
+                                            {/* <div>[{formatSingleValue(southValue)}]</div> */}
+                                        </div>
+                                        {/* Bottom Right Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            {/* --------------- */}
+                            {/* General Message */}
+                            {/* --------------- */}
+                            {generalMessage &&
+                                <div
+                                    className={`p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
+                                >
+                                    {generalMessage}
+                                </div>
+                            }
+                            {/* ------ */}
+                            {/* Submit */}
+                            {/* ------ */}
+                            <div className='mt-4'>
+                                <Button
+                                    type='submit'
+                                    className='w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                                >
+                                    <Save className='h-4 w-4 mr-2' />
+                                    Create and Back
+                                </Button>
+                            </div>
+                        </div>
+                    </ScrollArea>
                 </div>
             </form>
             <div className='w-3/5 h-full py-4 pr-4'>

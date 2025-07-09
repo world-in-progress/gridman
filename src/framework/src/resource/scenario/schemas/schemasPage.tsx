@@ -47,19 +47,19 @@ const gridItemText = {
 export default function SchemasPage({
     node,
 }: SchemasPageProps) {
-    const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => {} })
+    const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => { } })
     const pageContext = useRef<SchemasPageContext>(new SchemasPageContext())
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
     const [isSelectingPoint, setIsSelectingPoint] = useState(false)
     const [generalMessage, setGeneralMessage] = useState<string | null>(null)
     const [layerErrors, setLayerErrors] = useState<Record<number, string>>({})
-    const [convertedCoord, setConvertedCoord] = useState<{x: string, y: string} | null>(null)
+    const [convertedCoord, setConvertedCoord] = useState<{ x: string, y: string } | null>(null)
     const [formErrors, setFormErrors] = useState<{
-            name: boolean
-            epsg: boolean
-            description: boolean
-            coordinates: boolean
+        name: boolean
+        epsg: boolean
+        description: boolean
+        coordinates: boolean
     }>({
         name: false,
         epsg: false,
@@ -71,15 +71,12 @@ export default function SchemasPage({
     let bgColor = 'bg-red-50'
     let textColor = 'text-red-700'
     let borderColor = 'border-red-200'
-    if (generalMessage?.includes('正在提交数据') || generalMessage?.includes('Submitting data')) {
+    if (generalMessage?.includes('Submitting data')) {
         bgColor = 'bg-orange-50'
         textColor = 'text-orange-700'
         borderColor = 'border-orange-200'
     }
-    else if (
-        generalMessage?.includes('创建成功') ||
-        generalMessage?.includes('Created successfully')
-    ) {
+    else if (generalMessage?.includes('Created successfully')) {
         bgColor = 'bg-green-50'
         textColor = 'text-green-700'
         borderColor = 'border-green-200'
@@ -99,7 +96,7 @@ export default function SchemasPage({
         // Action 3: add picking marker if exists
         if (context) {
             pageContext.current = context
-            
+
             updateCoords()
 
             if (context.basePoint[0] && context.basePoint[1]) {
@@ -120,7 +117,7 @@ export default function SchemasPage({
         picking.current.marker = null
 
         setIsSelectingPoint(false)
-        
+
         const n = node as SceneNode
         const context = n.pageContext as SchemasPageContext
 
@@ -138,7 +135,7 @@ export default function SchemasPage({
         return () => {
             unloadContext(node as SceneNode)
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node])
 
     const handleSetName = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,7 +193,7 @@ export default function SchemasPage({
         if (isSelectingPoint) {
             setIsSelectingPoint(false)
             picking.current.cancel()
-            picking.current.cancel = () => {}
+            picking.current.cancel = () => { }
             return
         }
 
@@ -231,7 +228,7 @@ export default function SchemasPage({
 
         const gridLayers = pc.gridLayers
         if (id >= gridLayers.length) gridLayers[id] = { id, width: '', height: '' }
-        
+
         gridLayers[id].width = width
         const { errors } = validateGridLayers(gridLayers)
         setLayerErrors(errors)
@@ -310,7 +307,7 @@ export default function SchemasPage({
             epsg: pc.epsg!,
             starred: false,
             description: pc.description,
-            base_point: [ parseFloat(convertedCoord!.x), parseFloat(convertedCoord!.y) ],
+            base_point: [parseFloat(convertedCoord!.x), parseFloat(convertedCoord!.y)],
             grid_info: pc.gridLayers.map(layer => [parseFloat(layer.width), parseFloat(layer.height)]),
         }
 
@@ -322,11 +319,15 @@ export default function SchemasPage({
             setGeneralMessage(`Failed to create schema: ${res.message}`)
         }
         else {
+            setGeneralMessage('Created successfully')
+
             const tree = node.tree as SceneTree
             await tree.alignNodeInfo(node, true)
 
-            resetForm()
-            tree.notifyDomUpdate()
+            setTimeout(() => {
+                resetForm()
+                tree.notifyDomUpdate()
+            }, 500)
         }
     }
 
@@ -342,8 +343,8 @@ export default function SchemasPage({
                         {/* Page Avatar */}
                         {/* ------------*/}
                         <div className='w-1/3 h-full flex justify-center items-center my-auto'>
-                            <Avatar className='bg-blue-500 h-28 w-28 border-2 border-white'>
-                                <AvatarFallback className='bg-blue-500'>
+                            <Avatar className='h-28 w-28 border-2 border-white'>
+                                <AvatarFallback className='bg-[#007ACC]'>
                                     <MapPinPlus className='h-15 w-15 text-white' />
                                 </AvatarFallback>
                             </Avatar>
@@ -612,13 +613,11 @@ export default function SchemasPage({
                             {/* General Message */}
                             {/* --------------- */}
                             {generalMessage &&
-                                <>
-                                    <div
-                                        className={`p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
-                                    >
-                                        {generalMessage}
-                                    </div>
-                                </>
+                                <div
+                                    className={`p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
+                                >
+                                    {generalMessage}
+                                </div>
                             }
                             {/* ------ */}
                             {/* Submit */}
@@ -637,7 +636,7 @@ export default function SchemasPage({
                 </div>
             </form>
             <div className='w-3/5 h-full py-4 pr-4'>
-                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2'/>
+                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
         </div>
     )
