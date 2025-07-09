@@ -1,7 +1,9 @@
 import store from '@/store';
 import mapboxgl from 'mapbox-gl'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import proj4 from 'proj4';
+import { RectangleCoordinates } from '../patches/types';
 import { RectangleCoordinates } from '../patches/types';
 
 export const clearMapMarkers = (): void => {

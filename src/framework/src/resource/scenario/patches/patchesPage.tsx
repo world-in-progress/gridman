@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { PatchesPageContext } from "./patches";
+import { Button } from "@/components/ui/button";
 import { PatchesPageContext } from "./patches";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, SquaresIntersect } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import MapContainer from "@/components/mapContainer/mapContainer";
@@ -35,6 +40,15 @@ export default function PatchesPage({
     node
 }: PatchesPageProps) {
 
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
+    const pageContext = useRef<PatchesPageContext>(new PatchesPageContext())
+    const adjustedBounds = useRef<[number, number, number, number] | null>(null)
+    const [generalMessage, setGeneralMessage] = useState<string | null>(null)
+    const [formErrors, setFormErrors] = useState<{
+        name: boolean
+        description: boolean
+        bounds: boolean
+    }>({
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<PatchesPageContext>(new PatchesPageContext())
     const adjustedBounds = useRef<[number, number, number, number] | null>(null)
@@ -181,6 +195,10 @@ export default function PatchesPage({
 
     const handleSubmit = async (e: React.FormEvent) => {
         console.log('点击了submit')
+        e.preventDefault()
+
+        const pc = pageContext.current
+        // const validation = validatePatchForm({
         e.preventDefault()
 
         const pc = pageContext.current
@@ -562,7 +580,14 @@ export default function PatchesPage({
                                         <div className="text-center">
                                             <span className="font-bold text-purple-600 text-xl">S</span>
                                             {/* <div>[{formatSingleValue(southValue)}]</div> */}
+                                        {/* South/Bottom - southWest[1] */}
+                                        <div className="text-center">
+                                            <span className="font-bold text-purple-600 text-xl">S</span>
+                                            {/* <div>[{formatSingleValue(southValue)}]</div> */}
                                         </div>
+                                        {/* Bottom Right Corner */}
+                                        <div className="relative h-12 flex items-center justify-center">
+                                            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
                                         {/* Bottom Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
                                             <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
