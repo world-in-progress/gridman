@@ -23,12 +23,13 @@ export const addMapMarker = (coord: [number, number], options?: mapboxgl.MarkerO
         .addTo(map)
 }
 
-export const addMapLineBetweenPoints = (start: [number, number], end: [number, number], widthCount: number, heightCount: number, id: string) => {
+export const addMapLineBetweenPoints = (start: [number, number], end: [number, number], widthCount: number, heightCount: number) => {
     const map = store.get<mapboxgl.Map>('map')
 
     if (!map || !map.getCanvas()) return
 
-    map.addSource(id, {
+    const lineId = `grid-line-${Date.now()}`;
+    map.addSource(lineId, {
         type: 'geojson',
         data: {
             type: 'Feature',
@@ -41,9 +42,9 @@ export const addMapLineBetweenPoints = (start: [number, number], end: [number, n
     })
 
     map.addLayer({
-        id: id,
+        id: lineId,
         type: 'line',
-        source: id,
+        source: lineId,
         layout: {
             'line-join': 'round',
             'line-cap': 'round',
@@ -84,6 +85,35 @@ export const addMapLineBetweenPoints = (start: [number, number], end: [number, n
     })
         .setLngLat(midPoint)
         .addTo(map);
+}
+
+export const clearGridLines = () => {
+    const map = store.get<mapboxgl.Map>('map')
+    if (!map || !map.getCanvas()) return
+
+    const style = map.getStyle()
+    style.layers.forEach(layer => {
+        if (layer.id.startsWith('grid-line-')) {
+            map.removeLayer(layer.id)
+        }
+    })
+    
+    Object.keys(style.sources).forEach(sourceId => {
+        if (sourceId.startsWith('grid-line-')) {
+            map.removeSource(sourceId)
+        }
+    })
+
+    const labels = document.getElementsByClassName('grid-count-label')
+    if (labels.length > 0) {
+
+        Array.from(labels).forEach(label => {
+            const markerElement = label.closest('.mapboxgl-marker')
+            if (markerElement) {
+                markerElement.remove()
+            }
+        })
+    }
 }
 
 export const flyToMarker = (coord: [number, number], zoom?: number): void => {
@@ -239,7 +269,6 @@ export const clearDrawPatchBounds = (id?: string) => {
 // Add patch bounds to map
 export const addMapPatchBounds = (bounds: [number, number, number, number], id?: string) => {
     const map = store.get<mapboxgl.Map>('map')
-
     if (!map) return
 
     const sourceId = id ? `bounds-source-${id}` : 'bounds-source';
@@ -272,6 +301,11 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
             data: boundsData as GeoJSON.Feature<GeoJSON.Polygon>
         })
 
+        // 根据id设置不同的颜色
+        const fillColor = id === 'adjusted-bounds' ? '#00FF00' : '#00A8C2';
+        const lineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#FFFF00';
+        const opacity = id === 'adjusted-bounds' ? 0.1 : 0.5
+
         // Inner filled layer
         map.addLayer({
             id: fillLayerId,
@@ -279,8 +313,8 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
             source: sourceId,
             layout: {},
             paint: {
-                'fill-color': '#00F8FF',
-                'fill-opacity': 0.5
+                'fill-color': fillColor,
+                'fill-opacity': opacity
             }
         });
 
@@ -291,7 +325,7 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
             source: sourceId,
             layout: {},
             paint: {
-                'line-color': '#FFFF00',
+                'line-color': lineColor,
                 'line-width': 3
             }
         });
@@ -304,9 +338,16 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
     }
 
     if (map.isStyleLoaded()) {
-        addBounds()
+        addBounds();
     } else {
-        map.once('style.load', addBounds)
+        const timeoutId = setTimeout(() => {
+            addBounds();
+        }, 0);
+        
+        map.once('style.load', () => {
+            clearTimeout(timeoutId);
+            addBounds();
+        });
     }
 }
 
@@ -339,6 +380,7 @@ export const stopDrawingRectangle = () => {
 
     try {
         draw.changeMode('simple_select');
+        console.log('停止绘图')
     } catch (error) {
         console.error('停止绘图出错:', error);
     }
@@ -462,7 +504,7 @@ export const adjustPatchBounds = (
     const expandedHeight = Math.ceil(rectHeight / gridHeight) * gridHeight
 
     // Expand bounds to fit grid level
-    const expandedSW = alignedSE as [number, number]
+    const expandedSW = alignedSW as [number, number]
     const expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
     const expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
     const expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
@@ -492,3 +534,40 @@ export function calculateGridCounts(
     const heightCount = Math.abs((swY - baseY) / gridHeight);
     return { widthCount, heightCount };
 }
+
+
+export const calculateRectangleCoordinates = (
+    feature: any
+): RectangleCoordinates => {
+    const coordinates = feature.geometry.coordinates[0];
+
+    let minLng = Infinity,
+        maxLng = -Infinity,
+        minLat = Infinity,
+        maxLat = -Infinity;
+
+    coordinates.forEach((coord: [number, number]) => {
+        if (coord[0] < minLng) minLng = coord[0];
+        if (coord[0] > maxLng) maxLng = coord[0];
+        if (coord[1] < minLat) minLat = coord[1];
+        if (coord[1] > maxLat) maxLat = coord[1];
+    });
+
+    const northEast: [number, number] = [maxLng, maxLat];
+    const southEast: [number, number] = [maxLng, minLat];
+    const southWest: [number, number] = [minLng, minLat];
+    const northWest: [number, number] = [minLng, maxLat];
+    const center: [number, number] = [
+        (minLng + maxLng) / 2,
+        (minLat + maxLat) / 2,
+    ];
+
+    return {
+        northEast,
+        southEast,
+        southWest,
+        northWest,
+        center,
+    };
+};
+

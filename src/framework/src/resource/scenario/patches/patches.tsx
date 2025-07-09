@@ -9,20 +9,25 @@ import { getSchemaInfo } from '../schema/util'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
-    bounds: [number, number, number, number] | null
+    originBounds: [number, number, number, number] | null
+    adjustedBounds: [number, number, number, number] | null
     starred: boolean
     description: string
     schema: SchemaInfo | null
+    widthCount: number
+    heightCount: number 
 
     constructor() {
         super()
 
         this.name = ''
-        this.bounds = null
-        this.bounds = null
+        this.originBounds = null
+        this.adjustedBounds = null
         this.starred = false
         this.description = ''
         this.schema = null
+        this.widthCount = 0
+        this.heightCount = 0
     }
 
     static async create(node: ISceneNode): Promise<PatchesPageContext> {
