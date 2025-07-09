@@ -10,6 +10,7 @@ import { getSchemaInfo } from '../schema/util'
 export class PatchesPageContext extends DefaultPageContext {
     name: string
     bounds: [number, number, number, number] | null
+    bounds: [number, number, number, number] | null
     starred: boolean
     description: string
     schema: SchemaInfo | null
@@ -18,6 +19,7 @@ export class PatchesPageContext extends DefaultPageContext {
         super()
 
         this.name = ''
+        this.bounds = null
         this.bounds = null
         this.starred = false
         this.description = ''
