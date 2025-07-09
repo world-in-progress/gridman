@@ -2,6 +2,8 @@ import IAPI, { BaseResponse, PatchMeta } from './types'
 
 const API_PREFIX = '/local/api/patch'
 
+
+// TODO：Change input param [projectName] to [SchemaName]
 export const createPatch: IAPI<{ projectName: string, patchMeta: PatchMeta }, BaseResponse> = {
     api: `${API_PREFIX}`,
     fetch: async (patchData: { projectName: string, patchMeta: PatchMeta }): Promise<BaseResponse> => {

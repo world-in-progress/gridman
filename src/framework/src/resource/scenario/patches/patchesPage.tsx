@@ -8,8 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import MapContainer from "@/components/mapContainer/mapContainer";
-import { PatchesPageProps, RectangleCoordinates } from "./types";
-import { SceneNode } from "@/components/resourceScene/scene";
+import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types";
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
+import * as apis from '@/core/apis/apis'
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -17,6 +18,8 @@ import {
     adjustPatchBounds,
     calculateGridCounts,
     clearDrawPatchBounds,
+    clearGridLines,
+    clearMapMarkers,
     convertSinglePointCoordinate,
     flyToMarker,
     getDrawnRectangleCoordinates,
@@ -37,7 +40,6 @@ export default function PatchesPage({
 
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<PatchesPageContext>(new PatchesPageContext())
-    const adjustedBounds = useRef<[number, number, number, number] | null>(null)
     const [generalMessage, setGeneralMessage] = useState<string | null>(null)
     const [formErrors, setFormErrors] = useState<{
         name: boolean
@@ -70,7 +72,7 @@ export default function PatchesPage({
 
 
     ///////////////////////////////////////////////////////////////////////////////
-    
+
     // Style variables for general message
     let bgColor = 'bg-red-50'
     let textColor = 'text-red-700'
@@ -85,7 +87,7 @@ export default function PatchesPage({
         textColor = 'text-green-700'
         borderColor = 'border-green-200'
     }
-    
+
     useEffect(() => {
         loadContext(node as SceneNode)
 
@@ -96,37 +98,44 @@ export default function PatchesPage({
 
     const loadContext = (node: SceneNode) => {
         pageContext.current = node.pageContext as PatchesPageContext
-        schemaEPSG.current = pageContext.current.schema!.epsg.toString()
-        schemaGridLevel.current = pageContext.current.schema!.grid_info[0]
-        schemaBasePoint.current = pageContext.current.schema!.base_point
+        const pc = pageContext.current
+
+        schemaEPSG.current = pc.schema!.epsg.toString()
+        schemaGridLevel.current = pc.schema!.grid_info[0]
+        schemaBasePoint.current = pc.schema!.base_point
         schemaMarkerPoint.current = convertSinglePointCoordinate(schemaBasePoint.current, schemaEPSG.current, '4326')
         flyToMarker(schemaMarkerPoint.current, 11)
 
-        if (pageContext.current.bounds) {
-            addMapPatchBounds(pageContext.current.bounds, pageContext.current.schema!.epsg.toString())
+        console.log('pc.originBounds', pc.originBounds)
+        console.log('pc.adjustedBounds', pc.adjustedBounds)
+
+        if (pc.originBounds && pc.adjustedBounds) {
+            addMapPatchBounds(pc.originBounds)
+            addMapPatchBounds(pc.adjustedBounds, 'adjusted-bounds')
+            const adjustedSWPoint = [pc.adjustedBounds[0], pc.adjustedBounds[1]] as [number, number]
+            addMapLineBetweenPoints(schemaMarkerPoint.current, adjustedSWPoint, pageContext.current.widthCount, pageContext.current.heightCount)
+            addMapMarker(adjustedSWPoint, { color: 'red', draggable: false })
         }
     }
 
     const unloadContext = (node: SceneNode) => {
         clearDrawPatchBounds()
+        clearMapMarkers()
+        clearGridLines()
     }
 
-    
     // Draw adjusted bounds, aligned LB marker and grid counts line on map after drawing original bounds
     useEffect(() => {
         if (drawCoordinates.current !== null) {
             const coords = drawCoordinates.current
-            pageContext.current.bounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]
+            pageContext.current.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]
 
             const drawBounds = [coords?.southWest[0], coords?.southWest[1], coords?.northEast[0], coords?.northEast[1]] as [number, number, number, number]
             if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
                 const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
-                console.log('convertedBounds', convertedBounds)
-                console.log('alignedBounds', alignedBounds)
-                console.log('expandedBounds', expandedBounds)
                 convertedRectangle.current = convertedBounds
                 adjustedRectangle.current = expandedBounds
-                
+
                 setWestValue(convertedBounds!.southWest[0].toString());
                 setSouthValue(convertedBounds!.southWest[1].toString());
                 setEastValue(convertedBounds!.northEast[0].toString());
@@ -134,49 +143,97 @@ export default function PatchesPage({
                 setCenter({ x: convertedBounds!.center[0], y: convertedBounds!.center[1] });
 
                 const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
-                addMapMarker(alignedSWPoint)
-                const { widthCount, heightCount} = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
-                addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount, pageContext.current.name)
+                const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, schemaEPSG.current, '4326')
+                pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
+                addMapMarker(alignedSWPoint, { color: 'red', draggable: false })
+                const adjustedDrawBoundsOn4326 = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]] as [number, number, number, number]
+                addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
+                const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
+                pageContext.current.widthCount = widthCount
+                pageContext.current.heightCount = heightCount
+                addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount)
+                triggerRepaint()
             }
         }
     }, [drawCoordinates.current])
-    
+
     const formatSingleValue = (value: number): string => value.toFixed(6);
+
+    const formatCoordinate = (coord: [number, number] | undefined) => {
+        if (!coord) return '---';
+        return `[${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}]`;
+    };
+
+    const handleSetName = (e: React.ChangeEvent<HTMLInputElement>) => {
+        pageContext.current.name = e.target.value
+        triggerRepaint()
+    }
+
+    const handleSetDescription = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        pageContext.current.description = e.target.value
+        triggerRepaint()
+    }
 
     const handleDrawBounds = () => {
         if (isDrawingBounds) {
-            console.log('停止绘制')
             setIsDrawingBounds(false)
             stopDrawingRectangle()
+            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
             return
         } else {
-            console.log('开始绘制')
             setIsDrawingBounds(true)
+            clearMapMarkers()
+            addMapMarker(schemaMarkerPoint.current)
+            clearGridLines()
             clearDrawPatchBounds()
             startDrawingRectangle()
+            document.addEventListener('rectangle-draw-complete', onDrawComplete);
         }
     };
 
-    useEffect(() => {
-        const onDrawComplete = () => {
-            handleDrawComplete();
-        };
-        document.addEventListener('rectangle-draw-complete', onDrawComplete);
-        return () => {
-            console.log('移除事件')
-            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
-        };
-    }, []);
+    const onDrawComplete = (event: Event) => {
+        const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>;
+        handleDrawComplete(customEvent.detail.coordinates);
+    };
 
-    const handleDrawComplete = () => {
-        const coords = getDrawnRectangleCoordinates();
+
+
+    const handleDrawComplete = (coords: RectangleCoordinates | null) => {
         if (coords) {
-            console.log('Drawn rectangle coordinates:', coords);
             drawCoordinates.current = coords
             addMapPatchBounds([coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]], '4326')
-            triggerRepaint()
         }
+        document.removeEventListener('rectangle-draw-complete', onDrawComplete);
         setIsDrawingBounds(false);
+        stopDrawingRectangle()
+        triggerRepaint()
+    }
+    
+    const drawBoundsByParams = () => {
+        clearMapMarkers()
+        addMapMarker(schemaMarkerPoint.current)
+        // addMapPatchBounds()
+        // addMapPatchBounds()
+    }
+
+    const resetForm = () => {
+        console.log('我要清空表单')
+        // const db = store.get<ContextStorage>('contextDB')!
+        // db.delete(node)
+
+        // pageContext.current = new SchemasPageContext()
+        // picking.current.marker?.remove()
+
+        // setFormErrors({
+        //     name: false,
+        //     epsg: false,
+        //     description: false,
+        //     coordinates: false,
+        // })
+        // setLayerErrors({})
+        // setGeneralMessage(null)
+        // setConvertedCoord(null)
+        // setIsSelectingPoint(false)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -184,7 +241,32 @@ export default function PatchesPage({
         e.preventDefault()
 
         const pc = pageContext.current
-        // const validation = validatePatchForm({
+        const validation = validatePatchForm({})
+
+        const patchData: PatchMeta = {
+            name: pc.name!,
+            starred: false,
+            description: pc.description,
+            bounds: pc.adjustedBounds!
+        }
+
+        setGeneralMessage('Submitting data...')
+
+        const res = await apis.patch.createPatch.fetch({projectName: pc.schema!.name, patchMeta: patchData}, node.tree.isPublic)
+        if (res.success === false) {
+            console.error(res.message)
+            setGeneralMessage(`Failed to create patch: ${res.message}`)
+        } else {
+            setGeneralMessage('Created successfully')
+
+            const tree = node.tree as SceneTree
+            await tree.alignNodeInfo(node, true)
+
+            setTimeout(() => {
+                resetForm()
+                tree.notifyDomUpdate()
+            }, 500)
+        }
     };
 
     return (
@@ -212,7 +294,11 @@ export default function PatchesPage({
                             {/* -----------*/}
                             {/* Page Title */}
                             {/* -----------*/}
-                            <h1 className='font-bold text-[25px]'>Create New Schema {node.tree.isPublic ? '(Public)' : '(Private)'}</h1>
+                            <h1 className='font-bold text-[25px] relative flex items-center'>
+                                Create New Schema
+                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                <span>[{node.parent?.name}]</span>
+                            </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
                             {/* ----------*/}
@@ -242,8 +328,8 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Input
                                         id='name'
-                                        // value={pageContext.current.name}
-                                        // onChange={handleSetName}
+                                        value={pageContext.current.name}
+                                        onChange={handleSetName}
                                         placeholder={'Enter new patch name'}
                                         className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     />
@@ -259,8 +345,8 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
-                                        // value={pageContext.current.description}
-                                        // onChange={handleSetDescription}
+                                        value={pageContext.current.description}
+                                        onChange={handleSetDescription}
                                         placeholder={'Enter patch description'}
                                         className={`w-full text-black border-gray-300 ${formErrors.description ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     />
@@ -276,7 +362,7 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Input
                                         id='schema'
-                                        // value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
+                                        value={pageContext.current.schema?.name}
                                         // onChange={handleSetEPSG}
                                         placeholder='Schema Name'
                                         className={`text-black w-full border-gray-300`}
@@ -293,7 +379,7 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Input
                                         id='epsg'
-                                        // value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
+                                        value={pageContext.current.schema?.epsg.toString()}
                                         readOnly={true}
                                         placeholder='EPSG Code'
                                         className={`text-black w-full border-gray-300`}
@@ -456,12 +542,7 @@ export default function PatchesPage({
                                         </div>
                                         <button
                                             className="w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
-                                        // onClick={() => {
-                                        //     onAdjustAndDraw(northValue, southValue, eastValue, westValue);
-                                        //     if (drawExpandedRectangleOnMap) {
-                                        //         drawExpandedRectangleOnMap();
-                                        //     }
-                                        // }}
+                                        onClick={drawBoundsByParams}
                                         >
                                             Click to adjust and draw bounds
                                         </button>
@@ -471,7 +552,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {/* Original Coordinates */}
                             {/* --------------- */}
-                            {convertedRectangle &&
+                            {convertedRectangle.current &&
                                 <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
                                     <h3 className="font-semibold text-lg mb-2">Original Bounds (EPSG:{schemaEPSG.current})</h3>
                                     <div className="grid grid-cols-3 gap-1 text-xs">
@@ -482,7 +563,7 @@ export default function PatchesPage({
                                         {/* North/Top - northEast[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-blue-600 text-xl">N</span>
-                                            {/* <div>[{formatSingleValue(northValue)}]</div> */}
+                                            <div>[{formatSingleValue(convertedRectangle.current.northEast[1])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -491,17 +572,17 @@ export default function PatchesPage({
                                         {/* West/Left - southWest[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-green-600 text-xl">W</span>
-                                            {/* <div>[{formatSingleValue(westValue)}]</div> */}
+                                            <div>[{formatSingleValue(convertedRectangle.current.southWest[0])}]</div>
                                         </div>
                                         {/* Center */}
                                         <div className="text-center">
                                             <span className="font-bold text-xl">Center</span>
-                                            {/* <div>{formatCoordinate(coordinates.center)}</div> */}
+                                            <div>{formatCoordinate(convertedRectangle.current.center)}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-red-600 text-xl">E</span>
-                                            {/* <div>[{formatSingleValue(eastValue)}]</div> */}
+                                            <div>[{formatSingleValue(convertedRectangle.current.northEast[0])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -510,7 +591,7 @@ export default function PatchesPage({
                                         {/* South/Bottom - southWest[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-purple-600 text-xl">S</span>
-                                            {/* <div>[{formatSingleValue(southValue)}]</div> */}
+                                            <div>[{formatSingleValue(convertedRectangle.current.southWest[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -522,7 +603,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {/* Adjusted Coordinates */}
                             {/* --------------- */}
-                            {adjustedRectangle &&
+                            {adjustedRectangle.current &&
                                 <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
                                     <h3 className="font-semibold text-lg mb-2">Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
                                     <div className="grid grid-cols-3 gap-1 text-xs">
@@ -533,7 +614,7 @@ export default function PatchesPage({
                                         {/* North/Top - northEast[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-blue-600 text-xl">N</span>
-                                            {/* <div>[{formatSingleValue(northValue)}]</div> */}
+                                            <div>[{formatSingleValue(adjustedRectangle.current.northEast[1])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -542,17 +623,17 @@ export default function PatchesPage({
                                         {/* West/Left - southWest[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-green-600 text-xl">W</span>
-                                            {/* <div>[{formatSingleValue(westValue)}]</div> */}
+                                            <div>[{formatSingleValue(adjustedRectangle.current.southWest[0])}]</div>
                                         </div>
                                         {/* Center */}
                                         <div className="text-center">
                                             <span className="font-bold text-xl">Center</span>
-                                            {/* <div>{formatCoordinate(coordinates.center)}</div> */}
+                                            <div>{formatCoordinate(adjustedRectangle.current.center)}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-red-600 text-xl">E</span>
-                                            {/* <div>[{formatSingleValue(eastValue)}]</div> */}
+                                            <div>[{formatSingleValue(adjustedRectangle.current.northEast[0])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -561,7 +642,7 @@ export default function PatchesPage({
                                         {/* South/Bottom - southWest[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-purple-600 text-xl">S</span>
-                                            {/* <div>[{formatSingleValue(southValue)}]</div> */}
+                                            <div>[{formatSingleValue(adjustedRectangle.current.southWest[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">

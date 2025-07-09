@@ -8,6 +8,7 @@ import { useEffect, useRef, forwardRef } from 'react'
 // Import rectangle drawing mode
 // @ts-ignore
 import DrawRectangle from "mapbox-gl-draw-rectangle-mode";
+import { calculateRectangleCoordinates } from './utils'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -57,47 +58,56 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
             })
             store.set('map', mapInstance)
 
-            const modes = MapboxDraw.modes as any;
-            modes.draw_rectangle = DrawRectangle;
-
             drawInstance = new MapboxDraw({
                 displayControlsDefault: false,
-                modes: modes,
+                boxSelect: false,
+                modes: {
+                    ...MapboxDraw.modes,
+                    draw_rectangle: DrawRectangle,
+                }
             });
-            
+
             mapInstance.addControl(drawInstance);
             store.set('mapDraw', drawInstance);
 
-            if (mapWrapperRef.current) {
-                if (mapInstance) {
-                    mapInstance.on('style.load', () => {
-                        mapInstance!.setFog({})
-                    })
-                    
-                    mapInstance.on('draw.create', (e: DrawCreateEvent) => {
-                        const data = e.features[0];
-                        if (data && data.geometry.type === 'Polygon') {
+            mapInstance.on('style.load', () => {
+                mapInstance!.setFog({})
+            })
 
+            let isProcessingDrawEvent = false;
+
+            mapInstance.on('draw.create', (e: any) => {
+
+
+                if (isProcessingDrawEvent) return;
+                
+                isProcessingDrawEvent = true;
+                try {
+                    if (e.features && e.features.length > 0) {
+                        const feature = e.features[0];
+                        if (feature.geometry.type === 'Polygon') {
+                            const coordinates = calculateRectangleCoordinates(feature);
                             const drawCompleteEvent = new CustomEvent('rectangle-draw-complete', {
-                                detail: data
+                                detail: { coordinates }
                             });
                             document.dispatchEvent(drawCompleteEvent);
-                            
                             if (drawInstance) {
                                 drawInstance.changeMode('simple_select');
                             }
                         }
-                    });
+                    }
+                } finally {
+                    isProcessingDrawEvent = false;
                 }
+            });
 
-                const currentMapInstance = mapInstance
-                resizer = new ResizeObserver(
-                    debounce(() => {
-                        currentMapInstance?.resize()
-                    }, 100)
-                )
-                resizer.observe(mapWrapperRef.current)
-            }
+            const currentMapInstance = mapInstance
+            resizer = new ResizeObserver(
+                debounce(() => {
+                    currentMapInstance?.resize()
+                }, 100)
+            )
+            resizer.observe(mapWrapperRef.current)
         }
 
         return () => {

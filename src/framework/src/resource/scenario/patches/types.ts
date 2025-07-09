@@ -1,8 +1,14 @@
 import { ISceneNode } from "@/core/scene/iscene";
-import { FormErrors } from "@/resource/scenario/schemas/types"
 
 export interface PatchesPageProps {
     node: ISceneNode
+}
+
+export interface PatchMeta {
+    name: string
+    starred: boolean
+    description: string
+    bounds: [number, number, number, number]
 }
 
 export interface RectangleCoordinates {
@@ -13,3 +19,14 @@ export interface RectangleCoordinates {
     center: [number, number];
 }
 
+export interface FormErrors {
+    name: boolean
+    description: boolean
+    bounds: boolean
+}
+
+export interface ValidationResult {
+    isValid: boolean
+    errors: FormErrors
+    generalError: string | null
+}
