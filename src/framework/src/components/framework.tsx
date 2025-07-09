@@ -556,7 +556,7 @@ function FrameworkComponent() {
                     className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
                 >
                     {/* <div className='flex flex-col flex-1'> */}
-                    <div className='content-canvas' style={{ width: 'calc(100vw - 2.5vw)' }}>
+                    <div className='content-canvas' style={{ width: 'calc(100vw-40px)' }}>
                         {/* ResourcePage */}
                         <ResourcePage node={focusNode} />
                     </div>

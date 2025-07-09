@@ -5,7 +5,7 @@ import { ICON_REGISTRY } from '../../resource/iconRegistry'
 
 export default function IconBar({ currentActiveId, clickHandlers }: IconBarResourceBinding) {
     return (
-        <div className='w-[2.5vw] bg-slate-900 flex flex-col items-center py-2'>
+        <div className='w-[40px] bg-slate-900 flex flex-col items-center py-2'>
             {ICON_REGISTRY.map(item => (
                 <Button
                     id={item.id}
