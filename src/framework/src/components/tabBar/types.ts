@@ -18,6 +18,7 @@ export interface TabBarProps{
     remoteTree?: SceneTree | null
     onTabDragEnd: (result: DropResult) => void
     onTabClick: (tab: Tab) => void
+    width?: number
 }
 
 export interface renderNodeTabProps {

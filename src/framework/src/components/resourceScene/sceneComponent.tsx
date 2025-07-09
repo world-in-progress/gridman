@@ -277,7 +277,7 @@ export default function ResourceTreeComponent({
 
     return (
         <ScrollArea className='h-full bg-gray-800 overflow-hidden'>
-            <div className='w-[12.5vw] bg-gray-800 border-r border-gray-700'>
+            <div className='w-full bg-gray-800'>
                 <div className='p-2'>
                     <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>
                         Explorer

@@ -28,6 +28,13 @@ function FrameworkComponent() {
     const [focusNode, setFocusNode] = useState<ISceneNode | null>(null)
     const [publicTree, setPublicFileTree] = useState<SceneTree | null>(null)
     const [privateTree, setPrivateFileTree] = useState<SceneTree | null>(null)
+    
+    // Resizable ResourceTree state
+    const iconBarWidth = 40
+    const [resourceTreeWidth, setResourceTreeWidth] = useState(200) // default 200px
+    const [isResizing, setIsResizing] = useState(false)
+    const [screenWidth, setScreenWidth] = useState(1600) // default screen width
+    const resizeRef = useRef<HTMLDivElement>(null)
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
@@ -264,6 +271,70 @@ function FrameworkComponent() {
 
     }, [focusNode, privateTree, publicTree])
 
+    // Resizable functionality
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        setIsResizing(true)
+        e.preventDefault()
+        // Add visual feedback for better UX
+        document.body.classList.add('resizing')
+    }, [])
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!isResizing) return
+        
+        const containerRect = resizeRef.current?.getBoundingClientRect()
+        if (!containerRect) return
+        
+        const newWidth = e.clientX - containerRect.left - iconBarWidth
+        const minWidth = 150 // minimum width
+        const maxWidth = screenWidth * 0.8 // maximum 80% of screen width
+        
+        const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth))
+        setResourceTreeWidth(clampedWidth)
+    }, [isResizing, screenWidth, iconBarWidth])
+
+    const handleMouseUp = useCallback(() => {
+        setIsResizing(false)
+        document.body.classList.remove('resizing')
+    }, [])
+
+    useEffect(() => {
+        if (isResizing) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+            document.body.style.cursor = 'col-resize'
+            document.body.style.userSelect = 'none'
+        } else {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+        }
+    }, [isResizing, handleMouseMove, handleMouseUp])
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setScreenWidth(window.innerWidth)
+            
+            const handleResize = () => {
+                setScreenWidth(window.innerWidth)
+            }
+            
+            window.addEventListener('resize', handleResize)
+            return () => window.removeEventListener('resize', handleResize)
+        }
+    }, [setScreenWidth])
+    
+    const tabBarWidth = screenWidth - iconBarWidth - resourceTreeWidth
+    const contentWidth = tabBarWidth
+
     // Init DomResourceTree
     useEffect(() => {
         const initTree = async () => {
@@ -291,27 +362,44 @@ function FrameworkComponent() {
     }, [])
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-[#1E1E1E]">
+        <div ref={resizeRef} className='flex h-screen w-screen overflow-hidden bg-[#1E1E1E]'>
             {/* Activity Bar */}
             <IconBar
                 currentActiveId={activeIconID}
                 clickHandlers={iconClickHandlers}
             />
-            {/* Resource Tree Panel */}
-            <ResourceTreeComponent
-                focusNode={focusNode}
-                triggerFocus={triggerFocus}
-                privateTree={privateTree}
-                publicTree={publicTree}
-                onOpenFile={handleOpenFile}
-                onPinFile={handlePinFile}
-                onDropDownMenuOpen={handleNodeMenuOpen}
-                onNodeStartEditing={handleNodeStartEditing}
-                onNodeStopEditing={handleNodeStopEditing}
-                onNodeClick={handleNodeClick}
-                onNodeDoubleClick={handleNodeDoubleClick}
-                onNodeRemove={handleNodeRemove}
-            />
+            {/* Resource Tree Panel - Resizable */}
+            <div
+                className='relative bg-gray-800 border-r border-gray-700 flex-shrink-0'
+                style={{ width: `${resourceTreeWidth}px` }}
+            >
+                <ResourceTreeComponent
+                    focusNode={focusNode}
+                    triggerFocus={triggerFocus}
+                    privateTree={privateTree}
+                    publicTree={publicTree}
+                    onOpenFile={handleOpenFile}
+                    onPinFile={handlePinFile}
+                    onDropDownMenuOpen={handleNodeMenuOpen}
+                    onNodeStartEditing={handleNodeStartEditing}
+                    onNodeStopEditing={handleNodeStopEditing}
+                    onNodeClick={handleNodeClick}
+                    onNodeDoubleClick={handleNodeDoubleClick}
+                    onNodeRemove={handleNodeRemove}
+                />
+                {/* Resize Handle */}
+                <div
+                    className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${
+                        isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
+                    } group`}
+                    onMouseDown={handleMouseDown}
+                >
+                    {/* Visible handle indicator */}
+                    <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+                        isResizing ? 'opacity-100 bg-blue-500' : ''
+                    }`} />
+                </div>
+            </div>
             {/* Main Content Area */}
             <div className='flex flex-col flex-1'>
                 {/* Tab Bar */}
@@ -323,6 +411,7 @@ function FrameworkComponent() {
                     remoteTree={publicTree}
                     onTabDragEnd={handleTabDragEnd}
                     onTabClick={handleTabClick}
+                    width={contentWidth}
                 />
                 {/* ResourcePage */}
                 <ResorucePage node={focusNode} />
