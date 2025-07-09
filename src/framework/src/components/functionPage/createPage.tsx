@@ -1,7 +1,7 @@
 import MapContainer from '../mapContainer/mapContainer'
 import { CreatePageProps } from './types'
 
-export default function ResorucePage({ node }: CreatePageProps) {
+export default function ResourcePage({ node }: CreatePageProps) {
     if (!node) {
         console.debug('Rendering MapContainer for null node')
         return <MapContainer node={null} />

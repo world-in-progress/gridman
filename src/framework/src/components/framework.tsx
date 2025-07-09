@@ -11,7 +11,7 @@ import { Tab } from './tabBar/types'
 import IconBar from './iconBar/iconBar'
 import { DropResult } from '@hello-pangea/dnd'
 import { ISceneNode } from '@/core/scene/iscene'
-import ResorucePage from './functionPage/createPage'
+import ResourcePage from './functionPage/createPage'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
 import ContextStorage from '@/core/context/contextStorage'
 import { SceneNode, SceneTree } from './resourceScene/scene'
@@ -23,6 +23,7 @@ function FrameworkComponent() {
     const nodeStack = useRef<ISceneNode[]>([])
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
+    const [scrollLeft, setScrollLeft] = useState(0)
     const [triggerFocus, setTriggerFocus] = useState(0) // used to force re-render of ResourceTreeComponent when focusNode changes
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [focusNode, setFocusNode] = useState<ISceneNode | null>(null)
@@ -34,14 +35,48 @@ function FrameworkComponent() {
     const [resourceTreeWidth, setResourceTreeWidth] = useState(200) // default 200px
     const [isResizing, setIsResizing] = useState(false)
     const [screenWidth, setScreenWidth] = useState(1600) // default screen width
+    const [isResourceTreeCollapsed, setIsResourceTreeCollapsed] = useState(false)
+    const [lastResourceTreeWidth, setLastResourceTreeWidth] = useState(200) // record last width
+
     const resizeRef = useRef<HTMLDivElement>(null)
+    const throttledWheelHandlerRef = useRef<any>(null)
+
+    // Calculate actual width based on collapse state
+    const actualResourceTreeWidth = isResourceTreeCollapsed ? 0 : resourceTreeWidth
+
+    // Viewport size (visible area)
+    const viewportWidth = screenWidth - iconBarWidth - actualResourceTreeWidth    
+
+    // Content size (rendering area)
+    const contentWidth = screenWidth // always full screen width
+
+    // Enable horizontal scroll when content exceeds viewport
+    const needsHorizontalScroll = contentWidth > viewportWidth
 
     // Default icon click handlers: all icon have the same clicking behavior
     const iconClickHandlers: IconBarClickHandlers = {}
     ICON_REGISTRY.forEach(icon => {
         iconClickHandlers[icon.id] = (iconID: string) => {
-            console.debug('Clicked icon:', icon.id, 'with activityId:', iconID)
-            setActiveIconID(iconID)
+
+            if (icon.id === 'grid-editor') {
+                if (activeIconID === 'grid-editor') {
+                    if (isResourceTreeCollapsed) {
+                        setIsResourceTreeCollapsed(false)
+                        setResourceTreeWidth(lastResourceTreeWidth)
+                    } else {
+                        setLastResourceTreeWidth(resourceTreeWidth)
+                        setIsResourceTreeCollapsed(true)
+                    }
+                } else {
+                    setActiveIconID(iconID)
+                    if (isResourceTreeCollapsed) {
+                        setIsResourceTreeCollapsed(false)
+                        setResourceTreeWidth(lastResourceTreeWidth || 200)
+                    }
+                }
+            } else {
+                setActiveIconID(iconID)
+            }
         }
     })
 
@@ -288,10 +323,31 @@ function FrameworkComponent() {
         const newWidth = e.clientX - containerRect.left - iconBarWidth
         const minWidth = 150 // minimum width
         const maxWidth = screenWidth * 0.8 // maximum 80% of screen width
-        
-        const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth))
-        setResourceTreeWidth(clampedWidth)
-    }, [isResizing, screenWidth, iconBarWidth])
+        const collapseThreshold = 50 // threshold to collapse the tree
+
+        // Check if the tree explorer should be collapsed
+        if (newWidth < minWidth - collapseThreshold) {
+            if (!isResourceTreeCollapsed) {
+                setLastResourceTreeWidth(resourceTreeWidth) // save current width before collapsing
+                setIsResourceTreeCollapsed(true)
+            }
+            return
+        }
+
+        // Check if the tree explorer should be expanded
+        if (isResourceTreeCollapsed && newWidth > minWidth) {
+            setIsResourceTreeCollapsed(false)
+            setResourceTreeWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)))
+            return
+        }
+
+        // Normal width adjustment (only when not collapsed)
+        if (!isResourceTreeCollapsed) {
+            const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth))
+            setResourceTreeWidth(clampedWidth)
+        }
+
+    }, [isResizing, screenWidth, iconBarWidth, resourceTreeWidth, isResourceTreeCollapsed])
 
     const handleMouseUp = useCallback(() => {
         setIsResizing(false)
@@ -318,6 +374,27 @@ function FrameworkComponent() {
             document.body.style.userSelect = ''
         }
     }, [isResizing, handleMouseMove, handleMouseUp])
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        // Ctrl/Cmd + B to toggle resource tree
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault()
+                if (isResourceTreeCollapsed) {
+                    setIsResourceTreeCollapsed(false)
+                    setResourceTreeWidth(lastResourceTreeWidth || 200)
+                } else {
+                    setLastResourceTreeWidth(resourceTreeWidth)
+                    setIsResourceTreeCollapsed(true)
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+
+    }, [isResourceTreeCollapsed, resourceTreeWidth, lastResourceTreeWidth])
     
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -332,8 +409,64 @@ function FrameworkComponent() {
         }
     }, [setScreenWidth])
     
-    const tabBarWidth = screenWidth - iconBarWidth - resourceTreeWidth
-    const contentWidth = tabBarWidth
+    const throttle = (func: Function, delay: number) => {
+        let timeoutId: NodeJS.Timeout | null = null
+        let lastExecTime = 0
+        
+        return function (...args: any[]) {
+            const currentTime = Date.now()
+            
+            if (currentTime - lastExecTime > delay) {
+                func.apply(func, args)
+                lastExecTime = currentTime
+            } else {
+                if (timeoutId) clearTimeout(timeoutId)
+                timeoutId = setTimeout(() => {
+                    func.apply(func, args)
+                    lastExecTime = Date.now()
+                }, delay - (currentTime - lastExecTime))
+            }
+        }
+    }
+
+    useEffect(() => {
+        throttledWheelHandlerRef.current = throttle((e: WheelEvent, viewport: HTMLElement) => {
+            const isHorizontalIntent = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)
+            
+            if (isHorizontalIntent) {
+                e.preventDefault()
+                const scrollAmount = e.shiftKey ? e.deltaY : e.deltaX
+                viewport.scrollLeft += scrollAmount
+            }
+        }, 16)
+    }, [])
+
+    useEffect(() => {
+        if (needsHorizontalScroll) {
+            const viewport = document.querySelector('.content-viewport')
+
+            // Existing scroll handler
+            const handleScroll = (e: Event) => {
+                if (e.target instanceof HTMLElement) {
+                    setScrollLeft(e.target.scrollLeft as number)
+                }
+            }
+
+            const handleWheel = (e: Event) => {
+                if (e instanceof WheelEvent) {
+                    throttledWheelHandlerRef.current(e, viewport)
+                }
+            }
+            
+            viewport?.addEventListener('scroll', handleScroll)
+            viewport?.addEventListener('wheel', handleWheel, { passive: false })
+            
+            return () => {
+                viewport?.removeEventListener('scroll', handleScroll)
+                viewport?.removeEventListener('wheel', handleWheel)
+            }
+        }
+    }, [needsHorizontalScroll])
 
     // Init DomResourceTree
     useEffect(() => {
@@ -369,52 +502,65 @@ function FrameworkComponent() {
                 clickHandlers={iconClickHandlers}
             />
             {/* Resource Tree Panel - Resizable */}
-            <div
-                className='relative bg-gray-800 border-r border-gray-700 flex-shrink-0'
-                style={{ width: `${resourceTreeWidth}px` }}
-            >
-                <ResourceTreeComponent
-                    focusNode={focusNode}
-                    triggerFocus={triggerFocus}
-                    privateTree={privateTree}
-                    publicTree={publicTree}
-                    onOpenFile={handleOpenFile}
-                    onPinFile={handlePinFile}
-                    onDropDownMenuOpen={handleNodeMenuOpen}
-                    onNodeStartEditing={handleNodeStartEditing}
-                    onNodeStopEditing={handleNodeStopEditing}
-                    onNodeClick={handleNodeClick}
-                    onNodeDoubleClick={handleNodeDoubleClick}
-                    onNodeRemove={handleNodeRemove}
-                />
-                {/* Resize Handle */}
+            {!isResourceTreeCollapsed && (
                 <div
-                    className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${
-                        isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
-                    } group`}
-                    onMouseDown={handleMouseDown}
+                    className='relative bg-gray-800 border-r border-gray-700 flex-shrink-0'
+                    style={{ width: `${resourceTreeWidth}px` }}
                 >
-                    {/* Visible handle indicator */}
-                    <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                        isResizing ? 'opacity-100 bg-blue-500' : ''
-                    }`} />
+                    <ResourceTreeComponent
+                        focusNode={focusNode}
+                        triggerFocus={triggerFocus}
+                        privateTree={privateTree}
+                        publicTree={publicTree}
+                        onOpenFile={handleOpenFile}
+                        onPinFile={handlePinFile}
+                        onDropDownMenuOpen={handleNodeMenuOpen}
+                        onNodeStartEditing={handleNodeStartEditing}
+                        onNodeStopEditing={handleNodeStopEditing}
+                        onNodeClick={handleNodeClick}
+                        onNodeDoubleClick={handleNodeDoubleClick}
+                        onNodeRemove={handleNodeRemove}
+                    />
+                    {/* Resize Handle */}
+                    <div
+                        className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${
+                            isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
+                        } group`}
+                        onMouseDown={handleMouseDown}
+                    >
+                        {/* Visible handle indicator */}
+                        <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+                            isResizing ? 'opacity-100 bg-blue-500' : ''
+                        }`} />
+                    </div>
                 </div>
-            </div>
+            )}
             {/* Main Content Area */}
-            <div className='flex flex-col flex-1'>
-                {/* Tab Bar */}
-                <TabBar
-                    focusNode={focusNode as SceneNode | null}
-                    triggerFocus={triggerFocus}
-                    tabs={nodeTabs.current}
-                    localTree={privateTree}
-                    remoteTree={publicTree}
-                    onTabDragEnd={handleTabDragEnd}
-                    onTabClick={handleTabClick}
-                    width={contentWidth}
-                />
-                {/* ResourcePage */}
-                <ResorucePage node={focusNode} />
+            <div className='main-content-area'>
+                {/* Fixed TabBar - no horizontal scroll */}
+                <div className='tab-bar-container'>
+                    <TabBar
+                        focusNode={focusNode as SceneNode | null}
+                        triggerFocus={triggerFocus}
+                        tabs={nodeTabs.current}
+                        localTree={privateTree}
+                        remoteTree={publicTree}
+                        onTabDragEnd={handleTabDragEnd}
+                        onTabClick={handleTabClick}
+                        width={viewportWidth}
+                    />
+                </div>
+                
+                {/* Scrollable content area */}
+                <div
+                    className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
+                >
+                    {/* <div className='flex flex-col flex-1'> */}
+                    <div className='content-canvas' style={{ width: 'calc(100vw - 2.5vw)' }}>
+                        {/* ResourcePage */}
+                        <ResourcePage node={focusNode} />
+                    </div>
+                </div>
             </div>
         </div >
     )
