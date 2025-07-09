@@ -389,7 +389,7 @@ function FrameworkComponent() {
         }
     }, [isResizing, handleMouseMove, handleMouseUp])
 
-    // Keyboard shortcuts
+    // Set up keyboard shortcuts
     useEffect(() => {
         // Ctrl/Cmd + B to toggle resource tree
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -410,6 +410,7 @@ function FrameworkComponent() {
 
     }, [isResourceTreeCollapsed, resourceTreeWidth, lastResourceTreeWidth])
     
+    // Set initial screen width and handle resize events
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setScreenWidth(window.innerWidth)
@@ -422,28 +423,30 @@ function FrameworkComponent() {
             return () => window.removeEventListener('resize', handleResize)
         }
     }, [setScreenWidth])
-    
-    const throttle = (func: Function, delay: number) => {
-        let timeoutId: NodeJS.Timeout | null = null
-        let lastExecTime = 0
-        
-        return function (...args: any[]) {
-            const currentTime = Date.now()
+
+    // Throttle function for horizontal scroll handling
+    // This will prevent excessive scroll events from causing performance issues
+    useEffect(() => {
+        const throttle = (func: Function, delay: number) => {
+            let timeoutId: NodeJS.Timeout | null = null
+            let lastExecTime = 0
             
-            if (currentTime - lastExecTime > delay) {
-                func.apply(func, args)
-                lastExecTime = currentTime
-            } else {
-                if (timeoutId) clearTimeout(timeoutId)
-                timeoutId = setTimeout(() => {
+            return function (...args: any[]) {
+                const currentTime = Date.now()
+                
+                if (currentTime - lastExecTime > delay) {
                     func.apply(func, args)
-                    lastExecTime = Date.now()
-                }, delay - (currentTime - lastExecTime))
+                    lastExecTime = currentTime
+                } else {
+                    if (timeoutId) clearTimeout(timeoutId)
+                    timeoutId = setTimeout(() => {
+                        func.apply(func, args)
+                        lastExecTime = Date.now()
+                    }, delay - (currentTime - lastExecTime))
+                }
             }
         }
-    }
 
-    useEffect(() => {
         throttledWheelHandlerRef.current = throttle((e: WheelEvent, viewport: HTMLElement) => {
             const isHorizontalIntent = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)
             
@@ -455,6 +458,9 @@ function FrameworkComponent() {
         }, 16)
     }, [])
 
+    // Add horizontal scroll handling to the content viewport
+    // This will allow horizontal scrolling when the content exceeds the viewport width
+    // and the user scrolls with the mouse wheel while holding Shift key
     useEffect(() => {
         if (needsHorizontalScroll) {
             const viewport = document.querySelector('.content-viewport')
@@ -473,7 +479,7 @@ function FrameworkComponent() {
         }
     }, [needsHorizontalScroll])
 
-    // Init DomResourceTree
+    // Init Resource Trees
     useEffect(() => {
         const initTree = async () => {
             try {
@@ -509,7 +515,7 @@ function FrameworkComponent() {
             {/* Resource Tree Panel - Resizable */}
             {!isResourceTreeCollapsed && (
                 <div
-                    className='relative bg-gray-800 border-r border-gray-700 flex-shrink-0'
+                    className='relative border-r border-gray-700 flex-shrink-0'
                     style={{ width: `${resourceTreeWidth}px` }}
                 >
                     <ResourceTreeComponent
@@ -519,7 +525,7 @@ function FrameworkComponent() {
                         publicTree={publicTree}
                         onOpenFile={handleOpenFile}
                         onPinFile={handlePinFile}
-                        onDropDownMenuOpen={handleNodeMenuOpen}
+                        onNodeMenuOpen={handleNodeMenuOpen}
                         onNodeStartEditing={handleNodeStartEditing}
                         onNodeStopEditing={handleNodeStopEditing}
                         onNodeClick={handleNodeClick}
