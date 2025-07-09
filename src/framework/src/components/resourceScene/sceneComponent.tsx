@@ -158,14 +158,14 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                         )}
                         <span>{node.name}</span>
                         {!isFolder && tree.isPublic &&
-                            <Button
+                            <button
                                 type='button'
                                 className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
                                 title='download'
                                 onClick={handleClickPublicDownload}
                             >
                                 {isDownloaded ? <CloudCheck className='w-4 h-4 text-green-500' /> : <CloudDownload className='w-4 h-4 text-white' />}
-                            </Button>}
+                            </button>}
                     </div>
                 </ContextMenuTrigger>
                 {renderNodeMenu()}
