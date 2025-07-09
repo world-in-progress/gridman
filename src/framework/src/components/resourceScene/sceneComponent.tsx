@@ -36,7 +36,7 @@ interface SceneTreeProps {
     privateTree: SceneTree | null
     onOpenFile: (fileName: string, filePath: string) => void
     onPinFile: (fileName: string, filePath: string) => void
-    onDropDownMenuOpen: (node: ISceneNode, menuItem: any) => void
+    onNodeMenuOpen: (node: ISceneNode, menuItem: any) => void
     onNodeStartEditing: (node: ISceneNode) => void
     onNodeStopEditing: (node: ISceneNode) => void
     onNodeDoubleClick: (node: ISceneNode) => void
@@ -196,7 +196,7 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
 
     return (
         <>
-            <div className=' z-10 bg-gray-800 text-sm font-semibold text-gray-200 ml-1'>
+            <div className=' z-10 bg-[#2a2c33] py-1 pl-1 text-sm font-semibold text-gray-200 ml-1'>
                 {title}
             </div>
             <NodeRenderer key={tree!.root.id} node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
@@ -211,7 +211,7 @@ export default function ResourceTreeComponent({
     publicTree,
     onOpenFile,
     onPinFile,
-    onDropDownMenuOpen,
+    onNodeMenuOpen,
     onNodeStartEditing,
     onNodeStopEditing,
     onNodeDoubleClick,
@@ -228,7 +228,7 @@ export default function ResourceTreeComponent({
             privateTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
-                handleNodeMenuOpen: onDropDownMenuOpen,
+                handleNodeMenuOpen: onNodeMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeDoubleClick: onNodeDoubleClick,
@@ -241,7 +241,7 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [privateTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
+    }, [privateTree, onOpenFile, onPinFile, onNodeMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
 
     // Bind handlers to public tree
     useEffect(() => {
@@ -249,7 +249,7 @@ export default function ResourceTreeComponent({
             publicTree.bindHandlers({
                 openFile: onOpenFile,
                 pinFile: onPinFile,
-                handleNodeMenuOpen: onDropDownMenuOpen,
+                handleNodeMenuOpen: onNodeMenuOpen,
                 handleNodeStartEditing: onNodeStartEditing,
                 handleNodeStopEditing: onNodeStopEditing,
                 handleNodeDoubleClick: onNodeDoubleClick,
@@ -262,7 +262,7 @@ export default function ResourceTreeComponent({
                 unsubscribe()
             }
         }
-    }, [publicTree, onOpenFile, onPinFile, onDropDownMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
+    }, [publicTree, onOpenFile, onPinFile, onNodeMenuOpen, onNodeStartEditing, onNodeStopEditing, onNodeDoubleClick, onNodeClick, onNodeRemove])
 
     useEffect(() => {
         if (focusNode) {
@@ -276,8 +276,8 @@ export default function ResourceTreeComponent({
     }, [focusNode, triggerFocus])
 
     return (
-        <ScrollArea className='h-full bg-gray-800 overflow-hidden'>
-            <div className='w-full bg-gray-800'>
+        <ScrollArea className='h-full bg-[#22222B] overflow-hidden'>
+            <div className='w-full bg-[#22222B]'>
                 <div className='p-2'>
                     <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>
                         Explorer

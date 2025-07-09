@@ -149,31 +149,6 @@ export default function TabBar({
         }
     }, [localTree, remoteTree])
 
-    // Handle focus node changes
-    // useEffect(() => {
-    //     if (!focusNode) return
-        
-    //     for (let i = 0; i < tabs.length; i++) {
-    //         const tab = tabs[i]
-    //         if (tab.node.id === focusNode.id) {
-    //             tab.isActive = true
-    //             break
-    //         }
-    //     }
-
-    //     return () => {
-    //         if (!focusNode) return
-        
-    //         for (let i = 0; i < tabs.length; i++) {
-    //             const tab = tabs[i]
-    //             if (tab.node.id === focusNode.id) {
-    //                 tab.isActive = false
-    //                 break
-    //             }
-    //         }
-    //     }
-    // }, [tabs, focusNode])
-
     useEffect(() => {
         if (!focusNode) return
 
