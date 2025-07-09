@@ -121,6 +121,7 @@ export default function TabBar({
     remoteTree,
     onTabDragEnd,
     onTabClick,
+    width,
 }: TabBarProps) {
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -194,7 +195,10 @@ export default function TabBar({
     }
 
     return (
-        <div className='bg-gray-800 flex h-[4vh] w-[85vw]'>
+        <div 
+            className='bg-gray-800 flex h-[4vh]'
+            style={{ width: width ? `${width}px` : '85vw' }}
+        >
             <ScrollArea ref={scrollAreaRef} className='w-full'>
                 <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                     <Droppable droppableId='tabs' direction='horizontal'>
