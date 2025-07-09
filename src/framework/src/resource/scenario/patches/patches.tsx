@@ -4,10 +4,11 @@ import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import PatchesPage from './patchesPage'
+import { RectangleCoordinates } from './types'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
-    bounds: number[]
+    bounds: [number, number, number, number] | null
     starred: boolean
     description: string
 
@@ -15,7 +16,7 @@ export class PatchesPageContext extends DefaultPageContext {
         super()
 
         this.name = ''
-        this.bounds = []
+        this.bounds = null
         this.starred = false
         this.description = ''
     }

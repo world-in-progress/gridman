@@ -1,7 +1,8 @@
 import store from '@/store';
 import mapboxgl from 'mapbox-gl'
-
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import proj4 from 'proj4';
+import { RectangleCoordinates } from '../patches/types';
 
 export const clearMapMarkers = (): void => {
     const markers = document.getElementsByClassName('mapboxgl-marker')
@@ -32,9 +33,9 @@ export const flyToMarker = (coord: [number, number]): void => {
 
     map.flyTo({
         center: [coord[0], coord[1]],
-        zoom:14,
-        essential:true,
-        duration:1000
+        zoom: 14,
+        essential: true,
+        duration: 1000
     })
 }
 
@@ -123,3 +124,263 @@ export const convertToWGS84 = (
         return [0, 0];
     }
 };
+
+
+// Clear drawing patch bounds
+export const clearDrawPatchBounds = () => {
+    const map = store.get<mapboxgl.Map>('map')
+    if (!map) return
+
+    if (map.getSource('bounds-source')) {
+        map.removeLayer('bounds-fill')
+        map.removeLayer('bounds-outline')
+        map.removeSource('bounds-source')
+    }
+
+    const draw = store.get<MapboxDraw>('mapDraw');
+    if (draw) {
+        draw.deleteAll();
+    }
+}
+
+// Add patch bounds to map
+export const addMapPatchBounds = (bounds: [number, number, number, number]) => {
+    const map = store.get<mapboxgl.Map>('map')
+
+    if (!map) return
+
+    const addBounds = () => {
+        clearDrawPatchBounds()
+
+        const boundsData = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[
+                    [bounds[0], bounds[1]],
+                    [bounds[2], bounds[1]],
+                    [bounds[2], bounds[3]],
+                    [bounds[0], bounds[3]],
+                    [bounds[0], bounds[1]]
+                ]]
+            }
+        }
+
+        map.addSource('bounds-source', {
+            type: 'geojson',
+            data: boundsData as GeoJSON.Feature<GeoJSON.Polygon>
+        })
+
+        // Inner filled layer
+        map.addLayer({
+            id: 'bounds-fill',
+            type: 'fill',
+            source: 'bounds-source',
+            layout: {},
+            paint: {
+                'fill-color': '#00F8FF',
+                'fill-opacity': 0.5
+            }
+        });
+
+        // Outline layer
+        map.addLayer({
+            id: 'bounds-outline',
+            type: 'line',
+            source: 'bounds-source',
+            layout: {},
+            paint: {
+                'line-color': '#FFFF00',
+                'line-width': 3
+            }
+        });
+
+        // Fly to bounds
+        map.fitBounds([
+            [bounds[0], bounds[1]],
+            [bounds[2], bounds[3]]
+        ], { padding: 50 });
+    }
+
+    if (map.isStyleLoaded()) {
+        addBounds()
+    } else {
+        map.once('style.load', addBounds)
+    }
+}
+
+// Start drawing rectangle
+export const startDrawingRectangle = () => {
+    const map = store.get<mapboxgl.Map>('map')
+    const draw = store.get<MapboxDraw>('mapDraw')
+
+    if (!map || !draw) {
+        console.error('地图或绘图工具未初始化')
+        return false;
+    }
+
+    try {
+        draw.deleteAll()
+        draw.changeMode('draw_rectangle')
+        return true;
+    } catch (error) {
+        console.error('启动绘图出错:', error)
+        return false;
+    }
+}
+
+// Stop drawing rectangle
+export const stopDrawingRectangle = () => {
+    const map = store.get<mapboxgl.Map>('map');
+    const draw = store.get<MapboxDraw>('mapDraw');
+
+    if (!map || !draw) return;
+
+    try {
+        draw.changeMode('simple_select');
+    } catch (error) {
+        console.error('停止绘图出错:', error);
+    }
+}
+
+// Get drawn rectangle coordinates
+export const getDrawnRectangleCoordinates = (): {
+    northEast: [number, number],
+    southWest: [number, number],
+    southEast: [number, number],
+    northWest: [number, number],
+    center: [number, number]
+} | null => {
+    const draw = store.get<MapboxDraw>('mapDraw');
+
+    if (!draw) return null;
+
+    const features = draw.getAll().features;
+    if (features.length === 0) return null;
+
+    const polygon = features[0];
+    if (polygon.geometry.type !== 'Polygon') return null;
+
+    const coords = polygon.geometry.coordinates[0];
+    if (coords.length < 4) return null;
+
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (const [x, y] of coords) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+    }
+
+    return {
+        northEast: [maxX, maxY],
+        southWest: [minX, minY],
+        southEast: [maxX, minY],
+        northWest: [minX, maxY],
+        center: [(minX + maxX) / 2, (minY + maxY) / 2]
+    };
+}
+
+// Align and Expand bounds to fit grid level
+export const adjustPatchBounds = (
+    bounds: [number, number, number, number],
+    gridLevel: [number, number],
+    epsg: string,
+    schemaBasePoint: [number, number]
+): {
+    convertedBounds: RectangleCoordinates | null
+    alignedBounds: RectangleCoordinates | null;
+    expandedBounds: RectangleCoordinates | null;
+} => {
+    if (!bounds || !gridLevel || !epsg || !schemaBasePoint || gridLevel.length < 2) {
+        return {
+            convertedBounds: null,
+            alignedBounds: null,
+            expandedBounds: null
+        }
+    }
+
+    const convertedSW: [number, number] = [bounds[0], bounds[1]];
+    const convertedSE: [number, number] = [bounds[2], bounds[1]];
+    const convertedNE: [number, number] = [bounds[2], bounds[3]];
+    const convertedNW: [number, number] = [bounds[0], bounds[3]];
+    const convertedCenter: [number, number] = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2];
+
+    const convertedBounds: RectangleCoordinates = {
+        northEast: convertedNE,
+        southEast: convertedSE,
+        southWest: convertedSW,
+        northWest: convertedNW,
+        center: convertedCenter,
+    };
+
+    const gridWidth = gridLevel[0];
+    const gridHeight = gridLevel[1];
+
+    const [swX, swY] = convertedBounds.southWest;
+    const [baseX, baseY] = schemaBasePoint;
+
+    const dX = swX - baseX
+    const dY = swY - baseY
+
+    const disX = Math.floor(dX / gridWidth) * gridWidth
+    const disY = Math.floor(dY / gridHeight) * gridHeight
+
+    const offsetX = disX - dX
+    const offsetY = disY - dY
+
+    const rectWidth = bounds[2] - bounds[0]
+    const rectHeight = bounds[3] - bounds[1]
+
+    const alignedSW = [bounds[0] + offsetX, bounds[1] + offsetY] as [number, number]
+    const alignedSE = [alignedSW[0] + rectWidth, alignedSW[1]] as [number, number]
+    const alignedNE = [alignedSW[0] + rectWidth, alignedSW[1] + rectHeight] as [number, number]
+    const alignedNW = [bounds[0] + offsetX, bounds[1] + offsetY] as [number, number]
+    const alignedCenter = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
+
+    const alignedBounds: RectangleCoordinates = {
+        southWest: alignedSW,
+        southEast: alignedSE,
+        northEast: alignedNE,
+        northWest: alignedNW,
+        center: alignedCenter
+    };
+
+    const expandedWidth = Math.ceil(rectWidth / gridWidth) * gridWidth
+    const expandedHeight = Math.ceil(rectHeight / gridHeight) * gridHeight
+
+    const expandedSW = alignedSE as [number, number]
+    const expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
+    const expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
+    const expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
+    const expandedCenter = [expandedSW[0] + expandedWidth / 2, expandedSW[1] + expandedHeight / 2] as [number, number]
+
+
+
+    const expandedBounds: RectangleCoordinates = {
+        southWest: expandedSW,
+        southEast: expandedSE,
+        northEast: expandedNE,
+        northWest: expandedNW,
+        center: expandedCenter,
+    };
+
+    return { convertedBounds, alignedBounds, expandedBounds };
+}
+
+export function calculateGridCounts(
+    southWest: [number, number],
+    basePoint: [number, number],
+    gridLevel: [number, number]
+): { widthCount: number; heightCount: number } {
+    const gridWidth = gridLevel[0];
+    const gridHeight = gridLevel[1];
+    const [swX, swY] = southWest;
+    const [baseX, baseY] = basePoint;
+    const widthCount = Math.abs((swX - baseX) / gridWidth);
+    const heightCount = Math.abs((swY - baseY) / gridHeight);
+    return { widthCount, heightCount };
+}
