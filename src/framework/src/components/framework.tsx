@@ -19,27 +19,28 @@ import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
 
 function FrameworkComponent() {
+    // Framework-related ref and state
     const nodeTabs = useRef<Tab[]>([])
     const nodeStack = useRef<ISceneNode[]>([])
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
-    const [scrollLeft, setScrollLeft] = useState(0)
     const [triggerFocus, setTriggerFocus] = useState(0) // used to force re-render of ResourceTreeComponent when focusNode changes
     const [activeIconID, setActiveIconID] = useState('grid-editor')
     const [focusNode, setFocusNode] = useState<ISceneNode | null>(null)
     const [publicTree, setPublicFileTree] = useState<SceneTree | null>(null)
     const [privateTree, setPrivateFileTree] = useState<SceneTree | null>(null)
     
-    // Resizable ResourceTree state
-    const iconBarWidth = 40
-    const [resourceTreeWidth, setResourceTreeWidth] = useState(200) // default 200px
-    const [isResizing, setIsResizing] = useState(false)
-    const [screenWidth, setScreenWidth] = useState(1600) // default screen width
-    const [isResourceTreeCollapsed, setIsResourceTreeCollapsed] = useState(false)
-    const [lastResourceTreeWidth, setLastResourceTreeWidth] = useState(200) // record last width
-
+    // Resizing-related ref and state
     const resizeRef = useRef<HTMLDivElement>(null)
     const throttledWheelHandlerRef = useRef<any>(null)
+
+    const [isResizing, setIsResizing] = useState(false)
+    const [screenWidth, setScreenWidth] = useState(1600) // default screen width
+    const [resourceTreeWidth, setResourceTreeWidth] = useState(200) // default 200px
+    const [lastResourceTreeWidth, setLastResourceTreeWidth] = useState(200) // record last width
+    const [isResourceTreeCollapsed, setIsResourceTreeCollapsed] = useState(false)
+
+    const iconBarWidth = 40
 
     // Calculate actual width based on collapse state
     const actualResourceTreeWidth = isResourceTreeCollapsed ? 0 : resourceTreeWidth
@@ -47,8 +48,8 @@ function FrameworkComponent() {
     // Viewport size (visible area)
     const viewportWidth = screenWidth - iconBarWidth - actualResourceTreeWidth    
 
-    // Content size (rendering area)
-    const contentWidth = screenWidth // always full screen width
+    // Content size (page rendering area)
+    const contentWidth = screenWidth - iconBarWidth // always full screen width
 
     // Enable horizontal scroll when content exceeds viewport
     const needsHorizontalScroll = contentWidth > viewportWidth
@@ -79,6 +80,10 @@ function FrameworkComponent() {
             }
         }
     })
+
+    //////////////////////////////////////////////////////////////
+    // Handlers //////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 
     // File processing handlers
     const handleOpenFile = useCallback((fileName: string, filePath: string) => {
@@ -135,7 +140,7 @@ function FrameworkComponent() {
         // })
     }, [])
 
-    // Handle menu open
+    // Handle opening menu
     const handleNodeMenuOpen = useCallback((node: ISceneNode, menuItem: any) => {
         if (privateTree === null || publicTree === null) return
 
@@ -152,7 +157,7 @@ function FrameworkComponent() {
 
     }, [privateTree, publicTree])
 
-    // Handle open node editing tab
+    // Handle opening node editing tab
     const handleNodeStartEditing = useCallback((node: ISceneNode) => {
         if (privateTree === null || publicTree === null) return
 
@@ -171,7 +176,7 @@ function FrameworkComponent() {
 
     }, [privateTree, publicTree])
 
-    // Handle close node editing tab
+    // Handle closing node editing tab
     const handleNodeStopEditing = useCallback((node: ISceneNode) => {
         if (privateTree === null || publicTree === null) return
 
@@ -203,6 +208,7 @@ function FrameworkComponent() {
 
     }, [privateTree, publicTree])
 
+    // Handle removing node from its parent
     const handleNodeRemove = useCallback((node: ISceneNode) => {
         if (privateTree === null || publicTree === null) return
 
@@ -234,6 +240,7 @@ function FrameworkComponent() {
 
     }, [focusNode, publicTree, privateTree])
 
+    // Handle clicking tab
     const handleTabClick = useCallback((tab: Tab) => {
         const node = tab.node as SceneNode
         const isPublic = node.tree.isPublic
@@ -254,7 +261,7 @@ function FrameworkComponent() {
 
     }, [publicTree, privateTree])
 
-    // Handle drag tag on tabBar
+    // Handle action after dragging tab on tabBar
     const handleTabDragEnd = useCallback((result: DropResult) => {
         if (!result.destination) {
             return
@@ -267,6 +274,7 @@ function FrameworkComponent() {
         
     }, [])
 
+    // Handle clicking node
     const handleNodeClick = useCallback((node: ISceneNode) => {
         const _node = node as SceneNode
 
@@ -278,7 +286,7 @@ function FrameworkComponent() {
     }, [privateTree, publicTree])
 
     /**
-     * Double click
+     * Handle double clicking node
      * Focus on the clicked node, and force tabBar, page to re-render.
      */
     const handleNodeDoubleClick = useCallback((node: ISceneNode) => {
@@ -306,7 +314,7 @@ function FrameworkComponent() {
 
     }, [focusNode, privateTree, publicTree])
 
-    // Resizable functionality
+    // Handle mouse down for resizing
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         setIsResizing(true)
         e.preventDefault()
@@ -314,6 +322,7 @@ function FrameworkComponent() {
         document.body.classList.add('resizing')
     }, [])
 
+    // Handle mouse move for resizing
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isResizing) return
         
@@ -349,10 +358,15 @@ function FrameworkComponent() {
 
     }, [isResizing, screenWidth, iconBarWidth, resourceTreeWidth, isResourceTreeCollapsed])
 
+    // Handle mouse up for resizing
     const handleMouseUp = useCallback(() => {
         setIsResizing(false)
         document.body.classList.remove('resizing')
     }, [])
+
+    //////////////////////////////////////////////////////////////
+    // Effects ///////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 
     useEffect(() => {
         if (isResizing) {
@@ -445,24 +459,15 @@ function FrameworkComponent() {
         if (needsHorizontalScroll) {
             const viewport = document.querySelector('.content-viewport')
 
-            // Existing scroll handler
-            const handleScroll = (e: Event) => {
-                if (e.target instanceof HTMLElement) {
-                    setScrollLeft(e.target.scrollLeft as number)
-                }
-            }
-
             const handleWheel = (e: Event) => {
                 if (e instanceof WheelEvent) {
                     throttledWheelHandlerRef.current(e, viewport)
                 }
             }
             
-            viewport?.addEventListener('scroll', handleScroll)
             viewport?.addEventListener('wheel', handleWheel, { passive: false })
             
             return () => {
-                viewport?.removeEventListener('scroll', handleScroll)
                 viewport?.removeEventListener('wheel', handleWheel)
             }
         }
@@ -556,7 +561,7 @@ function FrameworkComponent() {
                     className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
                 >
                     {/* <div className='flex flex-col flex-1'> */}
-                    <div className='content-canvas' style={{ width: 'calc(100vw-40px)' }}>
+                    <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
                         {/* ResourcePage */}
                         <ResourcePage node={focusNode} />
                     </div>
