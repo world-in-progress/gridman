@@ -4,13 +4,15 @@ import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 import PatchesPage from './patchesPage'
-import { RectangleCoordinates } from './types'
+import { SchemaInfo } from '../schema/types'
+import { getSchemaInfo } from '../schema/util'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
     bounds: [number, number, number, number] | null
     starred: boolean
     description: string
+    schema: SchemaInfo | null
 
     constructor() {
         super()
@@ -19,10 +21,20 @@ export class PatchesPageContext extends DefaultPageContext {
         this.bounds = null
         this.starred = false
         this.description = ''
+        this.schema = null
     }
 
-    static async create(): Promise<PatchesPageContext> {
-        return new PatchesPageContext()
+    static async create(node: ISceneNode): Promise<PatchesPageContext> {
+        const n = node as SceneNode
+        const context = new PatchesPageContext()
+
+        try {
+            const schema = await getSchemaInfo(n.parent as SceneNode, n.tree.isPublic)
+            context.schema = schema
+        } catch (error) {
+            console.error('Process schema info failed:', error)
+        }
+        return context
     }
 }
 
@@ -48,10 +60,6 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     }
 
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
-        // const _node = nodeSelf as SceneNode
-        // const _tree = nodeSelf.tree as SceneTree
-
-        // _tree.startEditingNode(_node)
         switch (menuItem) {
             case PatchesMenuItem.CREATE_NEW_PATCH:
                 (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)

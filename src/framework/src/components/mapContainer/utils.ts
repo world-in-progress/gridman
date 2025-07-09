@@ -23,7 +23,70 @@ export const addMapMarker = (coord: [number, number], options?: mapboxgl.MarkerO
         .addTo(map)
 }
 
-export const flyToMarker = (coord: [number, number]): void => {
+export const addMapLineBetweenPoints = (start: [number, number], end: [number, number], widthCount: number, heightCount: number, id: string) => {
+    const map = store.get<mapboxgl.Map>('map')
+
+    if (!map || !map.getCanvas()) return
+
+    map.addSource(id, {
+        type: 'geojson',
+        data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'LineString',
+                coordinates: [start, end]
+            }
+        }
+    })
+
+    map.addLayer({
+        id: id,
+        type: 'line',
+        source: id,
+        layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+        },
+        paint: {
+            'line-color': '#0088FF',
+            'line-width': 2,
+            'line-dasharray': [2, 1],
+        },
+    })
+
+    const midPoint: [number, number] = [
+        (start[0] + end[0]) / 2,
+        (start[1] + end[1]) / 2,
+    ];
+
+    const labelText = `W: ${widthCount} × H: ${heightCount}`;
+    const el = document.createElement('div');
+
+    el.className = 'grid-count-label';
+    el.style.backgroundColor = 'rgba(0, 136, 255, 0.85)';
+    el.style.color = 'white';
+    el.style.padding = '6px 10px';
+    el.style.borderRadius = '6px';
+    el.style.fontSize = '12px';
+    el.style.fontWeight = 'bold';
+    el.style.whiteSpace = 'nowrap';
+    el.style.pointerEvents = 'none';
+    el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+    el.style.fontFamily = 'Arial, sans-serif';
+    el.style.letterSpacing = '0.5px';
+    el.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+    el.textContent = labelText;
+
+    const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'center',
+    })
+        .setLngLat(midPoint)
+        .addTo(map);
+}
+
+export const flyToMarker = (coord: [number, number], zoom?: number): void => {
     const map = store.get<mapboxgl.Map>('map')
 
     if (!map || !coord || coord.length < 2) return
@@ -33,7 +96,7 @@ export const flyToMarker = (coord: [number, number]): void => {
 
     map.flyTo({
         center: [coord[0], coord[1]],
-        zoom: 14,
+        zoom: zoom || 14,
         essential: true,
         duration: 1000
     })
@@ -106,35 +169,65 @@ export const convertCoordinate = (
 };
 
 export const convertToWGS84 = (
-    coordinates: number[],
-    fromEpsg: number
-): [number, number] => {
-    if (!coordinates || coordinates.length < 2 || !fromEpsg) {
-        return [0, 0];
+    coordinates: [number, number, number, number],
+    fromEpsg: string
+): [number, number, number, number] => {
+    if (!coordinates || coordinates.length < 4 || !fromEpsg) {
+        return [0, 0, 0, 0];
     }
 
     try {
-        return convertSinglePointCoordinate(
+        const sw = convertSinglePointCoordinate(
             [coordinates[0], coordinates[1]],
             fromEpsg.toString(),
             '4326'
         );
+        const ne = convertSinglePointCoordinate(
+            [coordinates[2], coordinates[3]],
+            fromEpsg.toString(),
+            '4326'
+        );
+        return [sw[0], sw[1], ne[0], ne[1]];
     } catch (error) {
         console.error('坐标转换错误:', error);
-        return [0, 0];
+        return [0, 0, 0, 0];
     }
 };
 
 
 // Clear drawing patch bounds
-export const clearDrawPatchBounds = () => {
+export const clearDrawPatchBounds = (id?: string) => {
     const map = store.get<mapboxgl.Map>('map')
-    if (!map) return
+    if (!map || !map.isStyleLoaded()) return
 
-    if (map.getSource('bounds-source')) {
-        map.removeLayer('bounds-fill')
-        map.removeLayer('bounds-outline')
-        map.removeSource('bounds-source')
+    if (id) {
+        // If an ID is provided, remove the specific source and its layers
+        const sourceId = `bounds-source-${id}`;
+        const fillLayerId = `bounds-fill-${id}`;
+        const outlineLayerId = `bounds-outline-${id}`;
+
+        if (map.getLayer(fillLayerId)) {
+            map.removeLayer(fillLayerId);
+        }
+        if (map.getLayer(outlineLayerId)) {
+            map.removeLayer(outlineLayerId);
+        }
+        if (map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+        }
+    } else {
+        // If no ID is provided, remove all layers and sources related to patch bounds
+        const style = map.getStyle();
+        style.layers.forEach(layer => {
+            if (layer.id.startsWith('bounds-fill') || layer.id.startsWith('bounds-outline')) {
+                map.removeLayer(layer.id);
+            }
+        });
+        Object.keys(style.sources).forEach(sourceId => {
+            if (sourceId.startsWith('bounds-source')) {
+                map.removeSource(sourceId);
+            }
+        });
     }
 
     const draw = store.get<MapboxDraw>('mapDraw');
@@ -144,13 +237,20 @@ export const clearDrawPatchBounds = () => {
 }
 
 // Add patch bounds to map
-export const addMapPatchBounds = (bounds: [number, number, number, number]) => {
+export const addMapPatchBounds = (bounds: [number, number, number, number], id?: string) => {
     const map = store.get<mapboxgl.Map>('map')
 
     if (!map) return
 
+    const sourceId = id ? `bounds-source-${id}` : 'bounds-source';
+    const fillLayerId = id ? `bounds-fill-${id}` : 'bounds-fill';
+    const outlineLayerId = id ? `bounds-outline-${id}` : 'bounds-outline';
+
     const addBounds = () => {
-        clearDrawPatchBounds()
+        // Remove existing layers/source with the same ID before adding new ones
+        if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
+        if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
 
         const boundsData = {
             type: 'Feature',
@@ -167,16 +267,16 @@ export const addMapPatchBounds = (bounds: [number, number, number, number]) => {
             }
         }
 
-        map.addSource('bounds-source', {
+        map.addSource(sourceId, {
             type: 'geojson',
             data: boundsData as GeoJSON.Feature<GeoJSON.Polygon>
         })
 
         // Inner filled layer
         map.addLayer({
-            id: 'bounds-fill',
+            id: fillLayerId,
             type: 'fill',
-            source: 'bounds-source',
+            source: sourceId,
             layout: {},
             paint: {
                 'fill-color': '#00F8FF',
@@ -186,9 +286,9 @@ export const addMapPatchBounds = (bounds: [number, number, number, number]) => {
 
         // Outline layer
         map.addLayer({
-            id: 'bounds-outline',
+            id: outlineLayerId,
             type: 'line',
-            source: 'bounds-source',
+            source: sourceId,
             layout: {},
             paint: {
                 'line-color': '#FFFF00',
@@ -303,11 +403,19 @@ export const adjustPatchBounds = (
         }
     }
 
-    const convertedSW: [number, number] = [bounds[0], bounds[1]];
-    const convertedSE: [number, number] = [bounds[2], bounds[1]];
-    const convertedNE: [number, number] = [bounds[2], bounds[3]];
-    const convertedNW: [number, number] = [bounds[0], bounds[3]];
-    const convertedCenter: [number, number] = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2];
+    // Original bounds coordinates on EPSG: 4326
+    const originalSW: [number, number] = [bounds[0], bounds[1]];
+    const originalSE: [number, number] = [bounds[2], bounds[1]];
+    const originalNE: [number, number] = [bounds[2], bounds[3]];
+    const originalNW: [number, number] = [bounds[0], bounds[3]];
+    const originalCenter: [number, number] = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2];
+
+    // Convert original bounds coordinates to target EPSG
+    const convertedSW = convertSinglePointCoordinate(originalSW, '4326', epsg) as [number, number]
+    const convertedSE = convertSinglePointCoordinate(originalSE, '4326', epsg) as [number, number]
+    const convertedNE = convertSinglePointCoordinate(originalNE, '4326', epsg) as [number, number]
+    const convertedNW = convertSinglePointCoordinate(originalNW, '4326', epsg) as [number, number]
+    const convertedCenter = convertSinglePointCoordinate(originalCenter, '4326', epsg) as [number, number]
 
     const convertedBounds: RectangleCoordinates = {
         northEast: convertedNE,
@@ -332,13 +440,14 @@ export const adjustPatchBounds = (
     const offsetX = disX - dX
     const offsetY = disY - dY
 
-    const rectWidth = bounds[2] - bounds[0]
-    const rectHeight = bounds[3] - bounds[1]
+    const rectWidth = convertedNE[0] - convertedSW[0]
+    const rectHeight = convertedNE[1] - convertedSW[1]
 
-    const alignedSW = [bounds[0] + offsetX, bounds[1] + offsetY] as [number, number]
+    // Align bounds to base point
+    const alignedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
     const alignedSE = [alignedSW[0] + rectWidth, alignedSW[1]] as [number, number]
     const alignedNE = [alignedSW[0] + rectWidth, alignedSW[1] + rectHeight] as [number, number]
-    const alignedNW = [bounds[0] + offsetX, bounds[1] + offsetY] as [number, number]
+    const alignedNW = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
     const alignedCenter = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
 
     const alignedBounds: RectangleCoordinates = {
@@ -352,13 +461,12 @@ export const adjustPatchBounds = (
     const expandedWidth = Math.ceil(rectWidth / gridWidth) * gridWidth
     const expandedHeight = Math.ceil(rectHeight / gridHeight) * gridHeight
 
+    // Expand bounds to fit grid level
     const expandedSW = alignedSE as [number, number]
     const expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
     const expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
     const expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
     const expandedCenter = [expandedSW[0] + expandedWidth / 2, expandedSW[1] + expandedHeight / 2] as [number, number]
-
-
 
     const expandedBounds: RectangleCoordinates = {
         southWest: expandedSW,
