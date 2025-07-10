@@ -5,8 +5,9 @@ import { CreatePageProps } from './types'
 export default function ResourcePage({ node }: CreatePageProps) {
     if (!node) {
         console.debug('Rendering MapContainer for null node')
-        return <MapContainer node={null} />
-        // return <PatchPage node={node} />
+        // return <MapContainer node={null} />
+        return <PatchPage />
+
     } else {
         console.debug('Rendering page for valid node:', node.id)
         return (
