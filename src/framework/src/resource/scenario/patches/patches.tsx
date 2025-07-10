@@ -9,10 +9,11 @@ import { getSchemaInfo } from '../schema/util'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
-    originBounds: [number, number, number, number] | null
-    adjustedBounds: [number, number, number, number] | null
-    starred: boolean
     description: string
+    originBounds: [number, number, number, number] | null       // EPSG: 4326
+    adjustedBounds: [number, number, number, number] | null     // EPSG: 4326
+    inputBounds: [number, number, number, number] | null        // EPSG: schema
+    starred: boolean 
     schema: SchemaInfo | null
     widthCount: number
     heightCount: number 
@@ -23,6 +24,7 @@ export class PatchesPageContext extends DefaultPageContext {
         this.name = ''
         this.originBounds = null
         this.adjustedBounds = null
+        this.inputBounds = null
         this.starred = false
         this.description = ''
         this.schema = null
