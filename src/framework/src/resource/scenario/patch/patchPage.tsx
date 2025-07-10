@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PatchPageProps } from "./types";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -75,7 +76,7 @@ const topologyOperations = [
 ];
 
 export default function PatchPage(
-    // {node}: PatchesPageProps
+    // {node}: PatchPageProps
 ) {
     const handlePatchDelete = async () => {
         console.log('delete patch')
@@ -161,12 +162,12 @@ export default function PatchPage(
                     {/* ---------------- */}
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
-                    <ScrollArea className='h-full max-h-[calc(100vh-11.5rem)]'>
+                    <ScrollArea className='h-full max-h-[calc(100vh-12.5rem)]'>
                         <div className="mt-4">
                             <div className='w-2/3 mx-auto'>
-                                <div className="bg-blue-50 p-3 rounded-md shadow-sm">
-                                    <h2 className="text-xl font-bold text-blue-900">Current Editing Information</h2>
-                                    <div className="text-sm text-blue-800 mt-1 grid gap-1">
+                                <div className="p-3 rounded-md shadow-sm">
+                                    <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
+                                    <div className="text-sm text-white mt-1 grid gap-1">
                                         <div>
                                             <span className="font-bold">Schema Name: </span>
                                             '占位'
@@ -207,7 +208,7 @@ export default function PatchPage(
                                             BoundingBox:
                                             {/* {bounds ? ( */}
                                             {true ? (
-                                                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600 mt-1">
+                                                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600 mt-4">
                                                     {/* Top Left Corner */}
                                                     <div className="relative h-8 flex items-center justify-center">
                                                         <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t border-l border-gray-300 rounded-tl"></div>
@@ -340,8 +341,8 @@ export default function PatchPage(
                                     </div>
                                 </div>
                             </div>
-                            <div className='w-full flex flex-row'>
-                                <div className="w-2/3 mx-auto space-y-4 pl-4 pr-1 mt-4 border-r border-[#414141]">
+                            <div className='w-full flex flex-row border-t-2 border-[#414141]'>
+                                <div className="w-2/3 mx-auto space-y-4 pl-4 pr-1 border-r border-[#414141]">
                                     <div className="space-y-2 p-2">
                                         {/* 框选全部网格 */}
                                         <AlertDialog>
@@ -498,7 +499,6 @@ export default function PatchPage(
                                         </AlertDialog>
                                         <div className="space-y-2">
                                             <h1 className="text-2xl font-bold text-white">Picking</h1>
-                                            <Separator className="mb-1 mt-1 bg-[#414141]" />
 
                                             <div className="mt-2 px-2">
                                                 <h3 className="text-md mb-1 font-bold text-white">Operation</h3>
@@ -713,10 +713,9 @@ export default function PatchPage(
                                 {/* ////////////////////////////////////////////////////////////////// */}
                                 {/* ////////////////////////////////////////////////////////////////// */}
 
-                                <div className="w-1/3 mx-auto space-y-4 pr-4 pl-1 mt-4 border-l border-[#414141]">
+                                <div className="w-1/3 mx-auto space-y-4 pr-4 pl-1 border-l border-[#414141]">
                                     <div className="space-y-2 p-2 mb-4">
                                         <h1 className="text-2xl font-bold text-white">Checking</h1>
-                                        <Separator className="mb-1 mt-1 bg-[#414141]" />
                                         <div className="text-md p-1 space-y-2 mt-2 text-white">
                                             <div>
                                                 <span className="font-bold">level: </span>

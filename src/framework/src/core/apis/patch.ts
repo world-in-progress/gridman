@@ -1,16 +1,17 @@
 import getPrefix from './prefix'
 import IAPI, { BaseResponse, PatchMeta, ResponseWithPatchMeta } from './types'
 
-const API_PREFIX = '/local/api/patch'
+const API_PREFIX = '/api/patch'
 
 
 // TODO：Change input param [projectName] to [SchemaName]
-export const createPatch: IAPI<{ projectName: string, patchMeta: PatchMeta }, BaseResponse> = {
+export const createPatch: IAPI<{schemaName: string, patchMeta: PatchMeta}, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (patchData: { projectName: string, patchMeta: PatchMeta }): Promise<BaseResponse> => {
+    fetch: async (query: {schemaName: string, patchMeta: PatchMeta}, isRemote:boolean): Promise<BaseResponse> => {
         try {
-            const { projectName, patchMeta } = patchData
-            const response = await fetch(`${createPatch.api}/${projectName}`, {
+            const {schemaName, patchMeta} = query
+            const api = getPrefix(isRemote) + createPatch.api
+            const response = await fetch(`${api}/${schemaName}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

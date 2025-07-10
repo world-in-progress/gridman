@@ -270,7 +270,7 @@ export default function PatchesPage({
 
         setGeneralMessage('Submitting data...')
 
-        const res = await apis.patch.createPatch.fetch({ projectName: pc.schema!.name, patchMeta: patchData }, node.tree.isPublic)
+        const res = await apis.patch.createPatch.fetch({ schemaName: pc.schema!.name, patchMeta: patchData }, node.tree.isPublic)
         if (res.success === false) {
             console.error(res.message)
             setGeneralMessage(`Failed to create patch: ${res.message}`)
