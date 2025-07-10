@@ -90,8 +90,9 @@ export default function PatchesPage({
         }
     }, [node])
 
-    const loadContext = async (node: SceneNode) => {
-        pageContext.current = await node.getPageContext() as PatchesPageContext
+    const loadContext = (node: SceneNode) => {
+        pageContext.current = node.pageContext as PatchesPageContext
+        console.log(pageContext.current)
         const pc = pageContext.current
 
         schemaEPSG.current = pc.schema!.epsg.toString()
@@ -130,6 +131,10 @@ export default function PatchesPage({
     // Draw adjusted bounds, aligned LB marker and grid counts line on map after drawing original bounds
     useEffect(() => {
         if (drawCoordinates.current !== null) {
+            clearMapMarkers()
+            addMapMarker(schemaMarkerPoint.current)
+            clearGridLines()
+            clearDrawPatchBounds()
             clearMapMarkers()
             addMapMarker(schemaMarkerPoint.current)
             clearGridLines()
@@ -193,6 +198,15 @@ export default function PatchesPage({
         triggerRepaint();
     }
 
+    const handleSetInputBounds = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        if (!pageContext.current.inputBounds) {
+            pageContext.current.inputBounds = [0, 0, 0, 0];
+        }
+        const value = parseFloat(e.target.value) || 0;
+        pageContext.current.inputBounds[index] = value;
+        triggerRepaint();
+    }
+
     const handleDrawBounds = () => {
         if (isDrawingBounds) {
             setIsDrawingBounds(false)
@@ -201,6 +215,7 @@ export default function PatchesPage({
             return
         } else {
             setIsDrawingBounds(true)
+
 
             startDrawingRectangle()
             document.addEventListener('rectangle-draw-complete', onDrawComplete);
@@ -227,13 +242,25 @@ export default function PatchesPage({
             clearDrawPatchBounds()
             clearGridLines()
             const inputBoundsOn4326 = convertToWGS84(inputBounds!, schemaEPSG.current)
+            clearMapMarkers()
+            addMapMarker(schemaMarkerPoint.current)
+            clearDrawPatchBounds()
+            clearGridLines()
+            const inputBoundsOn4326 = convertToWGS84(inputBounds!, schemaEPSG.current)
             drawCoordinates.current = {
                 southWest: [inputBoundsOn4326[0], inputBoundsOn4326[1]],
                 southEast: [inputBoundsOn4326[2], inputBoundsOn4326[1]],
                 northEast: [inputBoundsOn4326[2], inputBoundsOn4326[3]],
                 northWest: [inputBoundsOn4326[0], inputBoundsOn4326[3]],
                 center: [(inputBoundsOn4326[0] + inputBoundsOn4326[2]) / 2, (inputBoundsOn4326[1] + inputBoundsOn4326[3]) / 2],
+                southWest: [inputBoundsOn4326[0], inputBoundsOn4326[1]],
+                southEast: [inputBoundsOn4326[2], inputBoundsOn4326[1]],
+                northEast: [inputBoundsOn4326[2], inputBoundsOn4326[3]],
+                northWest: [inputBoundsOn4326[0], inputBoundsOn4326[3]],
+                center: [(inputBoundsOn4326[0] + inputBoundsOn4326[2]) / 2, (inputBoundsOn4326[1] + inputBoundsOn4326[3]) / 2],
             }
+            triggerRepaint()
+            addMapPatchBounds(inputBoundsOn4326, '4326')
             triggerRepaint()
             addMapPatchBounds(inputBoundsOn4326, '4326')
         }
@@ -259,6 +286,10 @@ export default function PatchesPage({
 
         console.log(pageContext.current)
 
+        node.pageContext = pageContext.current;
+
+        console.log(pageContext.current)
+
         setConvertCoordinate(null)
         setAdjustedCoordinate(null)
 
@@ -267,6 +298,8 @@ export default function PatchesPage({
             description: false,
             bounds: false,
         })
+
+        setGeneralMessage(null)
 
         setGeneralMessage(null)
 
@@ -280,6 +313,16 @@ export default function PatchesPage({
         e.preventDefault()
 
         const pc = pageContext.current
+        const validation = validatePatchForm({
+            name: pc.name!,
+            bounds: pc.adjustedBounds!
+        })
+
+        if (!validation.isValid) {
+            setFormErrors(validation.errors)
+            setGeneralMessage(validation.generalError)
+            return
+        }
         const validation = validatePatchForm({
             name: pc.name!,
             bounds: pc.adjustedBounds!
@@ -412,6 +455,7 @@ export default function PatchesPage({
                                         id='schema'
                                         value={pageContext.current.schema?.name}
                                         readOnly={true}
+                                        readOnly={true}
                                         placeholder='Schema Name'
                                         className={`text-black w-full border-gray-300`}
                                     />
@@ -494,6 +538,7 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[3] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 3)}
+                                                    onChange={(e) => handleSetInputBounds(e, 3)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max Y'}
                                                     step="any"
@@ -512,6 +557,7 @@ export default function PatchesPage({
                                                 <input
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[0] ?? ''}
+                                                    onChange={(e) => handleSetInputBounds(e, 0)}
                                                     onChange={(e) => handleSetInputBounds(e, 0)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter mix X'}
@@ -546,6 +592,7 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[2] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 2)}
+                                                    onChange={(e) => handleSetInputBounds(e, 2)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max X'}
                                                     step="any"
@@ -565,7 +612,9 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[1] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 1)}
+                                                    onChange={(e) => handleSetInputBounds(e, 1)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter min Y'}
                                                     placeholder={'Enter min Y'}
                                                     step="any"
                                                 />
