@@ -1,4 +1,5 @@
-import IAPI, { BaseResponse, PatchMeta } from './types'
+import getPrefix from './prefix'
+import IAPI, { BaseResponse, PatchMeta, ResponseWithPatchMeta } from './types'
 
 const API_PREFIX = '/local/api/patch'
 
@@ -53,6 +54,46 @@ export const updatePatch: IAPI<{ projectName: string, patchName: string, meta: P
 
         } catch (error) {
             throw new Error(`Failed to update patch: ${error}`)
+        }
+    }
+}
+
+export const getPatch: IAPI<{ schemaName: string, patchName: string}, ResponseWithPatchMeta> = {
+    api: `${API_PREFIX}`,
+    fetch: async (query: { schemaName: string, patchName: string}, isRemote: boolean): Promise<ResponseWithPatchMeta> => {
+        try {
+            const { schemaName, patchName } = query
+            const api = getPrefix(isRemote) + getPatch.api
+            const response = await fetch(`${api}/${schemaName}/${patchName}`, { method: 'GET' })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const patch: ResponseWithPatchMeta = await response.json()
+            return patch
+        } catch (error) {
+            throw new Error(`Failed to get patch: ${error}`)
+        }
+    }
+}
+
+export const deletePatch: IAPI<{ schemaName: string, patchName: string }, BaseResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (query: { schemaName: string, patchName: string }, isRemote: boolean): Promise<BaseResponse> => {
+        try {
+            const { schemaName, patchName } = query
+            const api = getPrefix(isRemote) + deletePatch.api
+            const response = await fetch(`${api}/${schemaName}/${patchName}`, { method: 'DELETE' })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: BaseResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to delete patch: ${error}`)
         }
     }
 }
