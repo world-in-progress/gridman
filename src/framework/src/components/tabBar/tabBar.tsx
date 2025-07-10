@@ -50,10 +50,10 @@ const RenderNodeTab: React.FC<renderNodeTabProps> = ({
                     <ContextMenu>
                         <ContextMenuTrigger asChild>
                             <div
+                                title={`${node.key} · ${node.tree.isPublic ? 'PUBLIC' : 'PRIVATE'}`}
                                 className={cn(
-                                    'flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer',
-                                    'hover:bg-gray-700 h-[4vh]',
-                                    isFocused && 'bg-gray-900',
+                                    'group flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer h-[4vh]',
+                                    isFocused && 'bg-[#2A2C33]',
                                     snapshot.isDragging && 'bg-gray-600'
                                 )}
                             >
@@ -73,7 +73,12 @@ const RenderNodeTab: React.FC<renderNodeTabProps> = ({
                                 </span>
 
                                 <X
-                                    className="w-4 h-4 ml-2 text-gray-500 hover:text-white"
+                                    className={cn(
+                                        'w-4 h-4 ml-2',
+                                        isFocused 
+                                        ? 'text-white hover:text-amber-400' 
+                                        : 'text-gray-500 hover:text-white invisible group-hover:visible'
+                                    )}
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         node.tree.stopEditingNode(node)
@@ -88,16 +93,12 @@ const RenderNodeTab: React.FC<renderNodeTabProps> = ({
     )
 }
 
-const RenderNodeTabs: React.FC<{focusNode: ISceneNode | null, tabs: Tab[], localTree: SceneTree | null | undefined, remoteTree: SceneTree | null | undefined, onTabClick: (tab: Tab) => void, triggerFocus: number}> = ({
+const RenderNodeTabs: React.FC<{focusNode: ISceneNode | null, tabs: Tab[], onTabClick: (tab: Tab) => void, triggerFocus: number}> = ({
     focusNode,
     tabs,
-    localTree,
-    remoteTree,
     onTabClick,
     triggerFocus
 }) => {
-    console.debug('Rendering tabs:', tabs.map(tab => tab.name))
-
     const elements = tabs.map((tab, index) => {
         const node = tab.node
 
@@ -171,7 +172,7 @@ export default function TabBar({
 
     return (
         <div 
-            className='bg-gray-800 flex h-[4vh]'
+            className='bg-[#22222B] flex h-[4vh]'
             style={{ width: width ? `${width}px` : '85vw' }}
         >
             <ScrollArea ref={scrollAreaRef} className='w-full'>
@@ -181,9 +182,9 @@ export default function TabBar({
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className='bg-gray-800 border-b-2 border-gray-700 flex h-[4vh] min-w-max'
+                                className='bg-[#22222B] border-gray-700 flex h-[4vh] min-w-max'
                             >
-                                <RenderNodeTabs focusNode={focusNode} tabs={tabs} localTree={localTree} remoteTree={remoteTree} onTabClick={onTabClick} triggerFocus={triggerFocus} />
+                                <RenderNodeTabs focusNode={focusNode} tabs={tabs} onTabClick={onTabClick} triggerFocus={triggerFocus} />
                                 {provided.placeholder}
                             </div>
                         )}

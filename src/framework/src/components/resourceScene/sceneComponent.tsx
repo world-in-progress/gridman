@@ -196,7 +196,7 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
 
     return (
         <>
-            <div className=' z-10 bg-[#2a2c33] py-1 pl-1 text-sm font-semibold text-gray-200 ml-1'>
+            <div className=' z-10 bg-[#2A2C33] py-1 pl-1 text-sm font-semibold text-gray-200 ml-1'>
                 {title}
             </div>
             <NodeRenderer key={tree!.root.id} node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
@@ -278,8 +278,8 @@ export default function ResourceTreeComponent({
     return (
         <ScrollArea className='h-full bg-[#22222B] overflow-hidden'>
             <div className='w-full bg-[#22222B]'>
-                <div className='p-2'>
-                    <div className='text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wide'>
+                <div className='pl-2'>
+                    <div className='text-sm font-semibold text-gray-400 py-2 uppercase tracking-wide'>
                         Explorer
                     </div>
 

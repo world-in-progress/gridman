@@ -17,6 +17,7 @@ import ContextStorage from '@/core/context/contextStorage'
 import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
+import Hello from './hello/hello'
 
 function FrameworkComponent() {
     // Framework-related ref and state
@@ -561,17 +562,21 @@ function FrameworkComponent() {
                         width={viewportWidth}
                     />
                 </div>
-                
+
                 {/* Scrollable content area */}
-                <div
-                    className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
-                >
-                    {/* <div className='flex flex-col flex-1'> */}
-                    <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
-                        {/* ResourcePage */}
-                        <ResourcePage node={focusNode} />
+                {nodeStack.current.length > 0 && (
+                    <div
+                        className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
+                    >
+                        <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
+                            {/* ResourcePage */}
+                            <ResourcePage node={focusNode!} />
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Hello Page */}
+                {nodeStack.current.length === 0 && <Hello/>}
             </div>
         </div >
     )
