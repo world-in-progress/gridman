@@ -81,9 +81,7 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
         return (
-            <PatchPage 
-            // node={nodeSelf}
-             />
+            <PatchPage node={nodeSelf}/>
         )
     }
 }

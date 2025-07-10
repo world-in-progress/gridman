@@ -38,7 +38,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { PatchPageProps } from "./types";
+import { PatchPageProps, TopologyOperationType } from "./types";
+import { useCallback, useEffect, useState } from "react";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -76,11 +77,44 @@ const topologyOperations = [
 ];
 
 export default function PatchPage(
-    // {node}: PatchPageProps
+    { node }: PatchPageProps
 ) {
+
+    const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>('picking');
+    const [activeSelectTab, setActiveSelectTab] = useState<'brush' | 'box' | 'feature'>('brush');
+
+    const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
+
+    useEffect(() => {
+    })
+
     const handlePatchDelete = async () => {
         console.log('delete patch')
     }
+
+    const handleConfirmTopologyAction = useCallback(() => {
+        switch (activeTopologyOperation) {
+            case 'subdivide':
+                // topologyLayer.executeSubdivideGrids();
+                console.log('subdivide')
+                break;
+            case 'merge':
+                // topologyLayer.executeMergeGrids();
+                console.log('merge')
+                break;
+            case 'delete':
+                // topologyLayer.executeDeleteGrids();
+                console.log('delete')
+                break;
+            case 'recover':
+                // topologyLayer.executeRecoverGrids();
+                console.log('recover')
+                break;
+            default:
+                console.warn('No active topology operation to confirm.');
+        }
+        setActiveTopologyOperation(null);
+    }, [activeTopologyOperation, topologyLayer]);
 
     return (
         <div className='w-full h-[96vh] flex flex-row'>
@@ -109,10 +143,8 @@ export default function PatchPage(
                             {/* -----------*/}
                             <h1 className='font-bold text-[25px] relative flex items-center'>
                                 Create New Schema
-                                {/* <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span> */}
-                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">Private</span>
-                                {/* <span>[{node.parent?.name}]</span> */}
-                                <span>[你好]</span>
+                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                <span>[{node.name}]</span>
                             </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
@@ -170,37 +202,37 @@ export default function PatchPage(
                                     <div className="text-sm text-white mt-1 grid gap-1">
                                         <div>
                                             <span className="font-bold">Schema Name: </span>
-                                            '占位'
+                                            {node.pageContext?.schema?.name}
                                         </div>
                                         <div>
-                                            <span className="font-bold">Patch: </span>
-                                            '占位'
+                                            <span className="font-bold">Patch Name: </span>
+                                            {node.pageContext?.patch?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">EPSG: </span>
-                                            '占位'
+                                            {node.pageContext?.schema?.epsg}
                                         </div>
                                         <div className="flex items-start flex-row">
-                                            <div className={`font-bold w-[35%]`}>Grid Levels(m): </div>
+                                            <div className={`font-bold w-[25%]`}>Grid Levels(m): </div>
                                             <div className="space-y-1">
-                                                {/* {schemaGridInfo ? (
-                                                schemaGridInfo.map(
-                                                    (level: number[], index: number) => {
-                                                        const color = paletteColorList ?
-                                                            [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :
-                                                            null;
-                                                        const colorStyle = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : undefined;
+                                                {node.pageContext?.schema?.grid_info && (
+                                                    node.pageContext?.schema?.grid_info.map(
+                                                        (level: number[], index: number) => {
+                                                            // const color = paletteColorList ?
+                                                            //     [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :
+                                                            //     null;
+                                                            // const colorStyle = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : undefined;
 
-                                                        return (
-                                                            <div key={index} className="text-sm" style={{ color: colorStyle }}>
-                                                                level {index + 1}: [{level.join(', ')}]
-                                                            </div>
-                                                        );
-                                                    }
-                                                )
-                                            ) : (
-                                                <span>-</span>
-                                            )} */}
+                                                            return (
+                                                                <div key={index} className="text-sm"
+                                                                // style={{ color: colorStyle }}
+                                                                >
+                                                                    level {index + 1}: [{level.join(', ')}]
+                                                                </div>
+                                                            );
+                                                        }
+                                                    )
+                                                )}
                                             </div>
                                         </div>
 
@@ -358,10 +390,9 @@ export default function PatchPage(
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel
                                                         className="cursor-pointer"
-                                                    // onClick={() => {
-                                                    //     setPickingTab('picking');
-                                                    //     store.set('pickingSelect', true);
-                                                    // }}
+                                                    onClick={() => {
+                                                        setPickingTab('picking');
+                                                    }}
                                                     >
                                                         Cancel
                                                     </AlertDialogCancel>
@@ -389,10 +420,9 @@ export default function PatchPage(
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel
                                                         className="cursor-pointer"
-                                                    // onClick={() => {
-                                                    //     setPickingTab('picking');
-                                                    //     store.set('pickingSelect', true);
-                                                    // }}
+                                                    onClick={() => {
+                                                        setPickingTab('picking');
+                                                    }}
                                                     >
                                                         Cancel
                                                     </AlertDialogCancel>
@@ -408,10 +438,10 @@ export default function PatchPage(
 
                                         {/* 通用的拓扑操作确认对话框 */}
                                         <AlertDialog
-                                            // open={activeTopologyOperation !== null}
+                                            open={activeTopologyOperation !== null}
                                             onOpenChange={(open) => {
                                                 if (!open) {
-                                                    // setActiveTopologyOperation(null);
+                                                    setActiveTopologyOperation(null);
                                                 }
                                             }}
                                         >
@@ -421,21 +451,7 @@ export default function PatchPage(
                                                         Operation Confirm
                                                     </AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        {/* {language === 'zh'
-                                                            ? activeTopologyOperation ===
-                                                                'subdivide'
-                                                                ? '是否确认细分选中的网格？'
-                                                                : activeTopologyOperation ===
-                                                                    'merge'
-                                                                    ? '是否确认合并选中的网格？'
-                                                                    : activeTopologyOperation ===
-                                                                        'delete'
-                                                                        ? '是否确认删除选中的网格？'
-                                                                        : activeTopologyOperation ===
-                                                                            'recover'
-                                                                            ? '是否确认恢复选中的网格？'
-                                                                            : '' // Fallback in case activeTopologyOperation is unexpectedly null
-                                                            : activeTopologyOperation ===
+                                                        {activeTopologyOperation ===
                                                                 'subdivide'
                                                                 ? 'Are you sure you want to subdivide the selected grids?'
                                                                 : activeTopologyOperation === 'merge'
@@ -444,7 +460,7 @@ export default function PatchPage(
                                                                         ? 'Are you sure you want to delete the selected grids?'
                                                                         : activeTopologyOperation === 'recover'
                                                                             ? 'Are you sure you want to recover the selected grids?'
-                                                                            : ''} */}
+                                                                            : ''}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -452,7 +468,7 @@ export default function PatchPage(
                                                         Cancel
                                                     </AlertDialogCancel>
                                                     <AlertDialogAction
-                                                    // onClick={handleConfirmTopologyAction}
+                                                        onClick={handleConfirmTopologyAction}
                                                     // className={
                                                     //     activeTopologyOperation === 'subdivide'
                                                     //         ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
@@ -504,51 +520,47 @@ export default function PatchPage(
                                                 <h3 className="text-md mb-1 font-bold text-white">Operation</h3>
                                                 <div className="flex items-center p-1 h-[64px] bg-gray-200 rounded-lg">
                                                     <button
-                                                        // className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${pickingTab === 'picking'
-                                                        //     ? 'bg-[#4d4d4d] text-white'
-                                                        //     : 'bg-transparent hover:bg-gray-300'
-                                                        //     }`}
                                                         className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
-                                                    // onClick={() => {
-                                                    //     setPickingTab('picking');
-                                                    //     store.set('pickingSelect', true);
-                                                    // }}
+                                                            ${pickingTab === 'picking'
+                                                                ? 'bg-[#4d4d4d] text-white'
+                                                                : 'bg-transparent hover:bg-gray-300'
+                                                            }`}
+
+                                                        onClick={() => {
+                                                            setPickingTab('picking');
+                                                        }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <SquareMousePointer className="h-4 w-4" />
                                                             Picking
                                                         </div>
                                                         <div
-                                                        // className={`text-xs ${pickingTab === 'picking' &&
-                                                        //     ' text-white'
-                                                        //     }`}
+                                                            className={`text-xs ${pickingTab === 'picking' &&
+                                                                ' text-white'
+                                                                }`}
                                                         >
                                                             [ Ctrl+P ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        // className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${pickingTab === 'unpicking'
-                                                        //     ? 'bg-[#4d4d4d] text-white'
-                                                        //     : 'bg-transparent hover:bg-gray-300'
-                                                        //     }`}
                                                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
-                                                    // onClick={() => {
-                                                    //     setPickingTab('unpicking');
-                                                    //     store.set('pickingSelect', false);
-                                                    // }}
+                                                            ${pickingTab === 'unpicking'
+                                                                ? 'bg-[#4d4d4d] text-white'
+                                                                : 'bg-transparent hover:bg-gray-300'
+                                                            }`}
+                                                        // 
+                                                        onClick={() => {
+                                                            setPickingTab('unpicking');
+                                                        }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <SquareDashedMousePointer className="h-4 w-4" />
                                                             Unpicking
                                                         </div>
                                                         <div
-                                                        // className={`text-xs ${pickingTab === 'unpicking' &&
-                                                        //     ' text-white'
-                                                        //     }`}
+                                                            className={`text-xs ${pickingTab === 'unpicking' &&
+                                                                ' text-white'
+                                                                }`}
                                                         >
                                                             [Ctrl+U]
                                                         </div>
@@ -605,15 +617,13 @@ export default function PatchPage(
                                                 </h3>
                                                 <div className="flex items-center h-[64px] mb-1 p-1 bg-gray-200 rounded-lg shadow-md">
                                                     <button
-                                                        // className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${activeSelectTab === 'brush'
-                                                        //     ? 'bg-[#FF8F2E] text-white'
-                                                        //     : 'bg-transparent hover:bg-gray-300'
-                                                        //     }`}
                                                         className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
+                                                            ${activeSelectTab === 'brush'
+                                                                ? 'bg-[#FF8F2E] text-white'
+                                                                : 'bg-transparent hover:bg-gray-300'
+                                                            }`}
                                                         onClick={() => {
-                                                            // setActiveSelectTab('brush');
+                                                            setActiveSelectTab('brush');
                                                         }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
@@ -621,23 +631,21 @@ export default function PatchPage(
                                                             Brush
                                                         </div>
                                                         <div
-                                                        // className={`text-xs ${activeSelectTab === 'brush' &&
-                                                        //     'text-white'
-                                                        //     } `}
+                                                            className={`text-xs ${activeSelectTab === 'brush' &&
+                                                                'text-white'
+                                                                } `}
                                                         >
                                                             [ Ctrl+1 ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        // className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${activeSelectTab === 'box'
-                                                        //     ? 'bg-[#FF8F2E] text-white'
-                                                        //     : 'bg-transparent hover:bg-gray-300'
-                                                        //     }`}
                                                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
+                                                            ${activeSelectTab === 'box'
+                                                                ? 'bg-[#FF8F2E] text-white'
+                                                                : 'bg-transparent hover:bg-gray-300'
+                                                            }`}
                                                         onClick={() => {
-                                                            // setActiveSelectTab('box');
+                                                            setActiveSelectTab('box');
                                                         }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
@@ -645,21 +653,19 @@ export default function PatchPage(
                                                             Box
                                                         </div>
                                                         <div
-                                                        // className={`text-xs ${activeSelectTab === 'box' &&
-                                                        //     'text-white'
-                                                        //     } `}
+                                                            className={`text-xs ${activeSelectTab === 'box' &&
+                                                                'text-white'
+                                                                } `}
                                                         >
                                                             [ Ctrl+2 ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        // className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${activeSelectTab === 'feature'
-                                                        //     ? 'bg-[#FF8F2E] text-white'
-                                                        //     : 'bg-transparent hover:bg-gray-300'
-                                                        //     }`}
                                                         className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
+                                                            ${activeSelectTab === 'feature'
+                                                                ? 'bg-[#FF8F2E] text-white'
+                                                                : 'bg-transparent hover:bg-gray-300'
+                                                            }`}
                                                     // onClick={handleFeatureClick}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
@@ -684,12 +690,12 @@ export default function PatchPage(
                                                 {topologyOperations.map((operation) => (
                                                     <button
                                                         key={operation.type}
-                                                        // className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
-                                                        //     ${activeTopologyOperation === operation.type
-                                                        //     ? operation.activeColor
-                                                        //     : `bg-gray-600 ${operation.hoverColor}`
-                                                        //     }
-                                                        //     `}
+                                                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
+                                                            ${activeTopologyOperation === operation.type
+                                                                ? operation.activeColor
+                                                                : `bg-gray-600 ${operation.hoverColor}`
+                                                            }
+                                                            `}
                                                         className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
                                                         
                                                         `}
