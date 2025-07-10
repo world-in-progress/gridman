@@ -5,7 +5,6 @@ import {
     useReducer,
     useCallback,
 } from 'react'
-import store from '@/store'
 import TabBar from './tabBar/tabBar'
 import { Tab } from './tabBar/types'
 import IconBar from './iconBar/iconBar'
@@ -13,7 +12,6 @@ import { DropResult } from '@hello-pangea/dnd'
 import { ISceneNode } from '@/core/scene/iscene'
 import ResourcePage from './functionPage/createPage'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
-import ContextStorage from '@/core/context/contextStorage'
 import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
