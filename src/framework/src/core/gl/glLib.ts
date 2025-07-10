@@ -80,7 +80,7 @@ function updateArrayBufferByArray(gl: WebGL2RenderingContext, buffer: WebGLBuffe
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
 }
 
-function createFrameBuffer(gl: WebGL2RenderingContext, textures: WebGLTexture[], depthTexture: WebGLTexture, renderBuffer: WebGLRenderbuffer) {
+function createFrameBuffer(gl: WebGL2RenderingContext, textures: WebGLTexture[], depthTexture?: WebGLTexture, renderBuffer?: WebGLRenderbuffer) {
 
     const frameBuffer = gl.createFramebuffer()
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
@@ -108,7 +108,7 @@ function createFrameBuffer(gl: WebGL2RenderingContext, textures: WebGLTexture[],
     return frameBuffer
 }
 
-function createTexture2D(gl: WebGL2RenderingContext, level: number, width: number, height: number, internalFormat: number, format?: number, type?: number, resource?: ArrayBufferView | ImageBitmap, generateMips = false): WebGLTexture {
+function createTexture2D(gl: WebGL2RenderingContext, level: number, width: number, height: number, internalFormat: number, format: number, type: number, resource?: ArrayBufferView | ImageBitmap, generateMips = false): WebGLTexture {
     
     const texture = gl.createTexture()!
     gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -119,14 +119,14 @@ function createTexture2D(gl: WebGL2RenderingContext, level: number, width: numbe
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, generateMips ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-    resource ? 
-    (
+    if (resource) {
         resource instanceof ImageBitmap 
         ? gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
         : gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
-    )
-    : 
-    gl.texStorage2D(gl.TEXTURE_2D, level, internalFormat, width, height) 
+    }
+    else {
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format, type, null)
+    }
 
     gl.bindTexture(gl.TEXTURE_2D, null)
 
