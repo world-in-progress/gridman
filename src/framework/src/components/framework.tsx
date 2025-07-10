@@ -1,4 +1,4 @@
-import { 
+import {
     useRef,
     useState,
     useEffect,
@@ -30,7 +30,7 @@ function FrameworkComponent() {
     const [focusNode, setFocusNode] = useState<ISceneNode | null>(null)
     const [publicTree, setPublicFileTree] = useState<SceneTree | null>(null)
     const [privateTree, setPrivateFileTree] = useState<SceneTree | null>(null)
-    
+
     // Resizing-related ref and state
     const resizeRef = useRef<HTMLDivElement>(null)
     const throttledWheelHandlerRef = useRef<any>(null)
@@ -47,7 +47,7 @@ function FrameworkComponent() {
     const actualResourceTreeWidth = isResourceTreeCollapsed ? 0 : resourceTreeWidth
 
     // Viewport size (visible area)
-    const viewportWidth = screenWidth - iconBarWidth - actualResourceTreeWidth    
+    const viewportWidth = screenWidth - iconBarWidth - actualResourceTreeWidth
 
     // Content size (page rendering area)
     const contentWidth = screenWidth - iconBarWidth // always full screen width
@@ -171,7 +171,7 @@ function FrameworkComponent() {
             nodeStack.current.push(_node)
             nodeTabs.current.push(_node.tab)
         }
-        
+
         // Focus on this node
         setFocusNode(_node)
 
@@ -267,12 +267,12 @@ function FrameworkComponent() {
         if (!result.destination) {
             return
         }
-        
+
         const [reorderedItem] = nodeTabs.current.splice(result.source.index, 1)
         nodeTabs.current.splice(result.destination.index, 0, reorderedItem)
 
         console.debug('Reordered tabs:', nodeTabs.current.map(t => t.name))
-        
+
     }, [])
 
     // Handle clicking node
@@ -300,7 +300,7 @@ function FrameworkComponent() {
 
         // Set the clicked node as the selected node
         _node.tree.selectedNode = _node
-        
+
         // Check if the node is already in the stack
         const existingIndex = nodeStack.current.findIndex(n => {
             const _n = n as SceneNode
@@ -326,10 +326,10 @@ function FrameworkComponent() {
     // Handle mouse move for resizing
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isResizing) return
-        
+
         const containerRect = resizeRef.current?.getBoundingClientRect()
         if (!containerRect) return
-        
+
         const newWidth = e.clientX - containerRect.left - iconBarWidth
         const minWidth = 150 // minimum width
         const maxWidth = screenWidth * 0.8 // maximum 80% of screen width
@@ -410,16 +410,16 @@ function FrameworkComponent() {
         return () => window.removeEventListener('keydown', handleKeyDown)
 
     }, [isResourceTreeCollapsed, resourceTreeWidth, lastResourceTreeWidth])
-    
+
     // Set initial screen width and handle resize events
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setScreenWidth(window.innerWidth)
-            
+
             const handleResize = () => {
                 setScreenWidth(window.innerWidth)
             }
-            
+
             window.addEventListener('resize', handleResize)
             return () => window.removeEventListener('resize', handleResize)
         }
@@ -431,10 +431,10 @@ function FrameworkComponent() {
         const throttle = (func: Function, delay: number) => {
             let timeoutId: NodeJS.Timeout | null = null
             let lastExecTime = 0
-            
+
             return function (...args: any[]) {
                 const currentTime = Date.now()
-                
+
                 if (currentTime - lastExecTime > delay) {
                     func.apply(func, args)
                     lastExecTime = currentTime
@@ -450,7 +450,7 @@ function FrameworkComponent() {
 
         throttledWheelHandlerRef.current = throttle((e: WheelEvent, viewport: HTMLElement) => {
             const isHorizontalIntent = e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)
-            
+
             if (isHorizontalIntent) {
                 e.preventDefault()
                 const scrollAmount = e.shiftKey ? e.deltaY : e.deltaX
@@ -471,9 +471,9 @@ function FrameworkComponent() {
                     throttledWheelHandlerRef.current(e, viewport)
                 }
             }
-            
+
             viewport?.addEventListener('wheel', handleWheel, { passive: false })
-            
+
             return () => {
                 viewport?.removeEventListener('wheel', handleWheel)
             }
@@ -535,15 +535,13 @@ function FrameworkComponent() {
                     />
                     {/* Resize Handle */}
                     <div
-                        className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${
-                            isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
-                        } group`}
+                        className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
+                            } group`}
                         onMouseDown={handleMouseDown}
                     >
                         {/* Visible handle indicator */}
-                        <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                            isResizing ? 'opacity-100 bg-blue-500' : ''
-                        }`} />
+                        <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isResizing ? 'opacity-100 bg-blue-500' : ''
+                            }`} />
                     </div>
                 </div>
             )}
@@ -576,7 +574,7 @@ function FrameworkComponent() {
                 )}
 
                 {/* Hello Page */}
-                {nodeStack.current.length === 0 && <Hello/>}
+                {nodeStack.current.length === 0 && <Hello />}
             </div>
         </div >
     )

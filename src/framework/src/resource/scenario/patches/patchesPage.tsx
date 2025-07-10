@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
+import * as apis from '@/core/apis/apis'
 import { Input } from "@/components/ui/input";
 import { PatchesPageContext } from "./patches";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import MapContainer from "@/components/mapContainer/mapContainer";
-import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types";
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
-import * as apis from '@/core/apis/apis'
+import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types";
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -21,11 +21,13 @@ import {
     clearGridLines,
     clearMapMarkers,
     convertSinglePointCoordinate,
+    convertToWGS84,
     flyToMarker,
     getDrawnRectangleCoordinates,
     startDrawingRectangle,
     stopDrawingRectangle
 } from "@/components/mapContainer/utils";
+import store from "@/store";
 
 const patchTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -52,8 +54,8 @@ export default function PatchesPage({
     })
     const [isDrawingBounds, setIsDrawingBounds] = useState(false)
 
-    const convertedRectangle = useRef<RectangleCoordinates | null>(null);
-    const adjustedRectangle = useRef<RectangleCoordinates | null>(null);
+    const [convertCoordinate, setConvertCoordinate] = useState<[number, number, number, number] | null>(null)
+    const [adjustedCoordinate, setAdjustedCoordinate] = useState<[number, number, number, number] | null>(null)
 
     const schemaEPSG = useRef<string>('')
     const schemaBasePoint = useRef<[number, number]>([0, 0])
@@ -61,15 +63,7 @@ export default function PatchesPage({
     const schemaMarkerPoint = useRef<[number, number]>([0, 0])
     const drawCoordinates = useRef<RectangleCoordinates | null>(null)
 
-    const [eastValue, setEastValue] = useState<string>('');
-    const [westValue, setWestValue] = useState<string>('');
-    const [northValue, setNorthValue] = useState<string>('');
-    const [southValue, setSouthValue] = useState<string>('');
-    const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
-
     const [isError, setIsError] = useState<boolean>(false);
-
-
 
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -90,7 +84,6 @@ export default function PatchesPage({
 
     useEffect(() => {
         loadContext(node as SceneNode)
-
         return () => {
             unloadContext(node as SceneNode)
         }
@@ -103,18 +96,23 @@ export default function PatchesPage({
         schemaEPSG.current = pc.schema!.epsg.toString()
         schemaGridLevel.current = pc.schema!.grid_info[0]
         schemaBasePoint.current = pc.schema!.base_point
+
         schemaMarkerPoint.current = convertSinglePointCoordinate(schemaBasePoint.current, schemaEPSG.current, '4326')
         flyToMarker(schemaMarkerPoint.current, 11)
 
-        console.log('pc.originBounds', pc.originBounds)
-        console.log('pc.adjustedBounds', pc.adjustedBounds)
-
         if (pc.originBounds && pc.adjustedBounds) {
-            addMapPatchBounds(pc.originBounds)
-            addMapPatchBounds(pc.adjustedBounds, 'adjusted-bounds')
+            console.log('切换')
+            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(pc.originBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
             const adjustedSWPoint = [pc.adjustedBounds[0], pc.adjustedBounds[1]] as [number, number]
+            setConvertCoordinate([convertedBounds!.southWest[0], convertedBounds!.southWest[1], convertedBounds!.northEast[0], convertedBounds!.northEast[1]])
+            setAdjustedCoordinate([expandedBounds!.southWest[0], expandedBounds!.southWest[1], expandedBounds!.northEast[0], expandedBounds!.northEast[1]])
+            addMapPatchBounds(pc.originBounds!)
+            addMapPatchBounds(pc.adjustedBounds!, 'adjusted-bounds')
             addMapLineBetweenPoints(schemaMarkerPoint.current, adjustedSWPoint, pageContext.current.widthCount, pageContext.current.heightCount)
             addMapMarker(adjustedSWPoint, { color: 'red', draggable: false })
+        } else {
+            setConvertCoordinate(null)
+            setAdjustedCoordinate(null)
         }
     }
 
@@ -122,30 +120,37 @@ export default function PatchesPage({
         clearDrawPatchBounds()
         clearMapMarkers()
         clearGridLines()
+        document.removeEventListener('rectangle-draw-complete', onDrawComplete);
+        setIsDrawingBounds(false);
+        stopDrawingRectangle()
+        triggerRepaint()
     }
 
     // Draw adjusted bounds, aligned LB marker and grid counts line on map after drawing original bounds
     useEffect(() => {
         if (drawCoordinates.current !== null) {
             const coords = drawCoordinates.current
-            pageContext.current.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]
+            pageContext.current.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
+            const drawBounds = pageContext.current.originBounds                                                                          // EPSG: 4326
 
-            const drawBounds = [coords?.southWest[0], coords?.southWest[1], coords?.northEast[0], coords?.northEast[1]] as [number, number, number, number]
             if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
-                const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
-                convertedRectangle.current = convertedBounds
-                adjustedRectangle.current = expandedBounds
+                const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
 
-                setWestValue(convertedBounds!.southWest[0].toString());
-                setSouthValue(convertedBounds!.southWest[1].toString());
-                setEastValue(convertedBounds!.northEast[0].toString());
-                setNorthValue(convertedBounds!.northEast[1].toString());
-                setCenter({ x: convertedBounds!.center[0], y: convertedBounds!.center[1] });
+                const convertedSWOnTarget = convertedBounds!.southWest              // EPSG: Schema
+                const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
+                setConvertCoordinate([convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]])
+
+                const adjustedSWOnTarget = alignedBounds!.southWest                 // EPSG: Schema
+                const adjustedNEOnTarget = alignedBounds!.northEast                 // EPSG: Schema
+                setAdjustedCoordinate([adjustedSWOnTarget[0], adjustedSWOnTarget[1], adjustedNEOnTarget[0], adjustedNEOnTarget[1]])
+
+                pageContext.current.inputBounds = [convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]]  // EPSG: Schema
+
 
                 const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
                 const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, schemaEPSG.current, '4326')
-                pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
                 addMapMarker(alignedSWPoint, { color: 'red', draggable: false })
+                pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
                 const adjustedDrawBoundsOn4326 = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]] as [number, number, number, number]
                 addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
                 const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
@@ -193,47 +198,60 @@ export default function PatchesPage({
 
     const onDrawComplete = (event: Event) => {
         const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>;
-        handleDrawComplete(customEvent.detail.coordinates);
-    };
-
-
-
-    const handleDrawComplete = (coords: RectangleCoordinates | null) => {
-        if (coords) {
-            drawCoordinates.current = coords
-            addMapPatchBounds([coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]], '4326')
+        if (customEvent.detail.coordinates) {
+            drawCoordinates.current = customEvent.detail.coordinates
+            addMapPatchBounds([customEvent.detail.coordinates.southWest[0], customEvent.detail.coordinates.southWest[1], customEvent.detail.coordinates.northEast[0], customEvent.detail.coordinates.northEast[1]], '4326')
         }
         document.removeEventListener('rectangle-draw-complete', onDrawComplete);
         setIsDrawingBounds(false);
         stopDrawingRectangle()
         triggerRepaint()
-    }
-    
+    };
+
     const drawBoundsByParams = () => {
         clearMapMarkers()
         addMapMarker(schemaMarkerPoint.current)
-        // addMapPatchBounds()
-        // addMapPatchBounds()
+        const inputBounds = pageContext.current.inputBounds
+        if (inputBounds && inputBounds.length === 4) {
+            drawCoordinates.current = {
+                northEast: [inputBounds[2], inputBounds[3]],
+                southEast: [inputBounds[2], inputBounds[1]],
+                southWest: [inputBounds[0], inputBounds[1]],
+                northWest: [inputBounds[0], inputBounds[3]],
+                center: [(inputBounds[0] + inputBounds[2]) / 2, (inputBounds[1] + inputBounds[3]) / 2],
+            }
+            addMapPatchBounds([inputBounds[0], inputBounds[1], inputBounds[2], inputBounds[3]], '4326')
+        }
     }
 
     const resetForm = () => {
         console.log('我要清空表单')
-        // const db = store.get<ContextStorage>('contextDB')!
-        // db.delete(node)
+        if (isDrawingBounds) {
+            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
+            setIsDrawingBounds(false);
+            stopDrawingRectangle()
+            triggerRepaint()
+        }
 
-        // pageContext.current = new SchemasPageContext()
-        // picking.current.marker?.remove()
+        // Store the current schema before resetting
+        const currentSchema = pageContext.current.schema;
 
-        // setFormErrors({
-        //     name: false,
-        //     epsg: false,
-        //     description: false,
-        //     coordinates: false,
-        // })
-        // setLayerErrors({})
-        // setGeneralMessage(null)
-        // setConvertedCoord(null)
-        // setIsSelectingPoint(false)
+        // Create new context and preserve the schema
+        pageContext.current = new PatchesPageContext()
+        pageContext.current.schema = currentSchema;
+
+        setConvertCoordinate(null)
+        setAdjustedCoordinate(null)
+
+        setFormErrors({
+            name: false,
+            description: false,
+            bounds: false,
+        })
+
+        clearMapMarkers()
+        clearGridLines()
+        clearDrawPatchBounds()
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -241,7 +259,7 @@ export default function PatchesPage({
         e.preventDefault()
 
         const pc = pageContext.current
-        const validation = validatePatchForm({})
+        // const validation = validatePatchForm({})
 
         const patchData: PatchMeta = {
             name: pc.name!,
@@ -252,7 +270,7 @@ export default function PatchesPage({
 
         setGeneralMessage('Submitting data...')
 
-        const res = await apis.patch.createPatch.fetch({projectName: pc.schema!.name, patchMeta: patchData}, node.tree.isPublic)
+        const res = await apis.patch.createPatch.fetch({ schemaName: pc.schema!.name, patchMeta: patchData }, node.tree.isPublic)
         if (res.success === false) {
             console.error(res.message)
             setGeneralMessage(`Failed to create patch: ${res.message}`)
@@ -444,23 +462,23 @@ export default function PatchesPage({
                                                 {/* Input for North */}
                                                 <input
                                                     type="number"
-                                                    value={northValue}
-                                                    onChange={(e) => {
-                                                        setNorthValue(e.target.value);
-                                                        const n = parseFloat(e.target.value);
-                                                        const s = parseFloat(southValue);
-                                                        const eVal = parseFloat(eastValue);
-                                                        const w = parseFloat(westValue);
-                                                        if (!isNaN(n) && !isNaN(s) && !isNaN(eVal) && !isNaN(w)) {
-                                                            convertedRectangle.current = {
-                                                                northEast: [eVal, n],
-                                                                southWest: [w, s],
-                                                                southEast: [eVal, s],
-                                                                northWest: [w, n],
-                                                                center: [(w + eVal) / 2, (s + n) / 2],
-                                                            };
-                                                        }
-                                                    }}
+                                                    value={pageContext.current.inputBounds?.[3] ?? ''}
+                                                    // onChange={(e) => {
+                                                    //     setNorthValue(e.target.value);
+                                                    //     const n = parseFloat(e.target.value);
+                                                    //     const s = parseFloat(southValue);
+                                                    //     const eVal = parseFloat(eastValue);
+                                                    //     const w = parseFloat(westValue);
+                                                    //     if (!isNaN(n) && !isNaN(s) && !isNaN(eVal) && !isNaN(w)) {
+                                                    //         convertedRectangle.current = {
+                                                    //             northEast: [eVal, n],
+                                                    //             southWest: [w, s],
+                                                    //             southEast: [eVal, s],
+                                                    //             northWest: [w, n],
+                                                    //             center: [(w + eVal) / 2, (s + n) / 2],
+                                                    //         };
+                                                    //     }
+                                                    // }}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max Y'}
                                                     step="any"
@@ -478,8 +496,8 @@ export default function PatchesPage({
                                                 {/* Input for West */}
                                                 <input
                                                     type="number"
-                                                    value={westValue}
-                                                    onChange={(e) => setWestValue(e.target.value)}
+                                                    value={pageContext.current.inputBounds?.[0] ?? ''}
+                                                    // onChange={(e) => setWestValue(e.target.value)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter mix X'}
                                                     step="any"
@@ -494,10 +512,12 @@ export default function PatchesPage({
                                                 >
                                                     {isError
                                                         ? 'Coordinate Error'
-                                                        : center
+                                                        : pageContext.current.inputBounds
                                                             ? `${formatSingleValue(
-                                                                center.x
-                                                            )}, ${formatSingleValue(center.y)}`
+                                                                (pageContext.current.inputBounds[0] + pageContext.current.inputBounds[2]) / 2
+                                                            )}, ${formatSingleValue(
+                                                                (pageContext.current.inputBounds[1] + pageContext.current.inputBounds[3]) / 2
+                                                            )}`
                                                             : 'Enter bounds'}
                                                 </div>
                                             </div>
@@ -509,8 +529,8 @@ export default function PatchesPage({
                                                 {/* Input for East */}
                                                 <input
                                                     type="number"
-                                                    value={eastValue}
-                                                    onChange={(e) => setEastValue(e.target.value)}
+                                                    value={pageContext.current.inputBounds?.[2] ?? ''}
+                                                    // onChange={(e) => setEastValue(e.target.value)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max X'}
                                                     step="any"
@@ -528,8 +548,8 @@ export default function PatchesPage({
                                                 {/* Input for South */}
                                                 <input
                                                     type="number"
-                                                    value={southValue}
-                                                    onChange={(e) => setSouthValue(e.target.value)}
+                                                    value={pageContext.current.inputBounds?.[1] ?? ''}
+                                                    // onChange={(e) => setSouthValue(e.target.value)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max X'}
                                                     step="any"
@@ -542,7 +562,7 @@ export default function PatchesPage({
                                         </div>
                                         <button
                                             className="w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
-                                        onClick={drawBoundsByParams}
+                                            onClick={drawBoundsByParams}
                                         >
                                             Click to adjust and draw bounds
                                         </button>
@@ -552,7 +572,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {/* Original Coordinates */}
                             {/* --------------- */}
-                            {convertedRectangle.current &&
+                            {convertCoordinate &&
                                 <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
                                     <h3 className="font-semibold text-lg mb-2">Original Bounds (EPSG:{schemaEPSG.current})</h3>
                                     <div className="grid grid-cols-3 gap-1 text-xs">
@@ -563,7 +583,7 @@ export default function PatchesPage({
                                         {/* North/Top - northEast[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-blue-600 text-xl">N</span>
-                                            <div>[{formatSingleValue(convertedRectangle.current.northEast[1])}]</div>
+                                            <div>[{formatSingleValue(convertCoordinate[3])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -572,17 +592,17 @@ export default function PatchesPage({
                                         {/* West/Left - southWest[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-green-600 text-xl">W</span>
-                                            <div>[{formatSingleValue(convertedRectangle.current.southWest[0])}]</div>
+                                            <div>[{formatSingleValue(convertCoordinate[0])}]</div>
                                         </div>
                                         {/* Center */}
                                         <div className="text-center">
                                             <span className="font-bold text-xl">Center</span>
-                                            <div>{formatCoordinate(convertedRectangle.current.center)}</div>
+                                            <div>{formatCoordinate([(convertCoordinate[0] + convertCoordinate[2]) / 2, (convertCoordinate[1] + convertCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-red-600 text-xl">E</span>
-                                            <div>[{formatSingleValue(convertedRectangle.current.northEast[0])}]</div>
+                                            <div>[{formatSingleValue(convertCoordinate[2])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -591,7 +611,7 @@ export default function PatchesPage({
                                         {/* South/Bottom - southWest[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-purple-600 text-xl">S</span>
-                                            <div>[{formatSingleValue(convertedRectangle.current.southWest[1])}]</div>
+                                            <div>[{formatSingleValue(convertCoordinate[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -603,7 +623,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {/* Adjusted Coordinates */}
                             {/* --------------- */}
-                            {adjustedRectangle.current &&
+                            {adjustedCoordinate &&
                                 <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
                                     <h3 className="font-semibold text-lg mb-2">Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
                                     <div className="grid grid-cols-3 gap-1 text-xs">
@@ -614,7 +634,7 @@ export default function PatchesPage({
                                         {/* North/Top - northEast[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-blue-600 text-xl">N</span>
-                                            <div>[{formatSingleValue(adjustedRectangle.current.northEast[1])}]</div>
+                                            <div>[{formatSingleValue(adjustedCoordinate[3])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -623,17 +643,17 @@ export default function PatchesPage({
                                         {/* West/Left - southWest[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-green-600 text-xl">W</span>
-                                            <div>[{formatSingleValue(adjustedRectangle.current.southWest[0])}]</div>
+                                            <div>[{formatSingleValue(adjustedCoordinate[0])}]</div>
                                         </div>
                                         {/* Center */}
                                         <div className="text-center">
                                             <span className="font-bold text-xl">Center</span>
-                                            <div>{formatCoordinate(adjustedRectangle.current.center)}</div>
+                                            <div>{formatCoordinate([(adjustedCoordinate[0] + adjustedCoordinate[2]) / 2, (adjustedCoordinate[1] + adjustedCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
                                         <div className="text-center">
                                             <span className="font-bold text-red-600 text-xl">E</span>
-                                            <div>[{formatSingleValue(adjustedRectangle.current.northEast[0])}]</div>
+                                            <div>[{formatSingleValue(adjustedCoordinate[2])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
                                         <div className="relative h-12 flex items-center justify-center">
@@ -642,7 +662,7 @@ export default function PatchesPage({
                                         {/* South/Bottom - southWest[1] */}
                                         <div className="text-center">
                                             <span className="font-bold text-purple-600 text-xl">S</span>
-                                            <div>[{formatSingleValue(adjustedRectangle.current.southWest[1])}]</div>
+                                            <div>[{formatSingleValue(adjustedCoordinate[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
                                         <div className="relative h-12 flex items-center justify-center">

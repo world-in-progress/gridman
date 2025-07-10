@@ -4,6 +4,7 @@ import TopoScenarioNode from './scenario/topo'
 import SchemaScenarioNode, { SchemaPageContext } from './scenario/schema/schema'
 import SchemasScenarioNode, { SchemasPageContext } from './scenario/schemas/schemas'
 import PatchesScenarioNode, { PatchesPageContext } from './scenario/patches/patches'
+import PatchScenarioNode, { PatchPageContext } from './scenario/patch/patch'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -12,6 +13,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [SchemasScenarioNode.classKey]: SchemasScenarioNode,
     [SchemaScenarioNode.classKey]: SchemaScenarioNode,
     [PatchesScenarioNode.classKey]: PatchesScenarioNode,
+    [PatchScenarioNode.classKey]: PatchScenarioNode,
 }
 
 const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext> = {
@@ -19,6 +21,7 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [SchemasScenarioNode.classKey]: SchemasPageContext,
     [SchemaScenarioNode.classKey]: SchemaPageContext,
     [PatchesScenarioNode.classKey]: PatchesPageContext,
+    [PatchScenarioNode.classKey]: PatchPageContext,
 }
 
 export const SCENARIO_NODE_REGISTRY = new Proxy(_SCENARIO_NODE_REGISTRY, {
