@@ -2,9 +2,10 @@ import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
 import { FilePlus2 } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
+import DefaultPageContext from '@/core/context/default'
+import DefaultScenarioNode from '@/core/scenario/default'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
-import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 
 export class SchemasPageContext extends DefaultPageContext {
     name: string

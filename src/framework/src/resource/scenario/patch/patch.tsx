@@ -2,7 +2,8 @@ import { deletepatch, getPatchInfo } from "./util"
 import { PatchMeta } from "../patches/types"
 import { SchemaInfo } from "../schema/types"
 import { getSchemaInfo } from "../schema/util"
-import DefaultScenarioNode, { DefaultPageContext } from "../default"
+import DefaultPageContext from '@/core/context/default'
+import DefaultScenarioNode from '@/core/scenario/default'
 import { ISceneNode } from "@/core/scene/iscene"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"

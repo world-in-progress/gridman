@@ -1,4 +1,3 @@
-import React from 'react'
 import store from '@/store'
 import { Tab } from '../tabBar/types'
 import * as api from '@/core/apis/apis'
@@ -6,20 +5,7 @@ import { IScenarioNode } from '@/core/scenario/iscenario'
 import ContextStorage from '@/core/context/contextStorage'
 import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
 import { SCENARIO_NODE_REGISTRY, SCENARIO_PAGE_CONTEXT_REGISTRY } from '@/resource/scenarioRegistry'
-
-export interface SceneNodeState {
-    isLoading: boolean
-    isExpanded: boolean
-    isSelected: boolean
-    contextMenuOpen: boolean
-}
-
-export interface SceneNodeActions {
-    onSelect: () => void
-    onOpenFile: () => void
-    onToggleExpand: () => void
-    onContextMenu: (e: React.MouseEvent) => void
-}
+import DefaultPageContext from '@/core/context/default'
 
 export class SceneNode implements ISceneNode {
     key: string
@@ -28,13 +14,10 @@ export class SceneNode implements ISceneNode {
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode> = new Map()
-
-    // SceneNode actions
-    actions: SceneNodeActions | null = null
     
     // Dom-related properties
     tab: Tab
-    pageContext: any = undefined // undefined: not editing, null: editing paused, object: editing in progress
+    private _pageContext: DefaultPageContext | undefined | null = undefined // undefined: not editing, null: editing paused, object: editing in progress
 
     constructor(tree: SceneTree, node_key: string, parent: ISceneNode | null, scenarioNode: IScenarioNode) {
         this.tree = tree
@@ -54,6 +37,67 @@ export class SceneNode implements ISceneNode {
 
     get name(): string { return this.key.split('.').pop() || '' }
     get id(): string { return (this.tree.isPublic ? 'public' : 'private') + ':' + this.key }
+
+    async createPageContext(): Promise<void> {
+        this._pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[this.scenarioNode.semanticPath].create(this)
+    }
+
+    async deletePageContext(): Promise<void> {
+        const db = this.tree.cs
+        this._pageContext = undefined // mark as deleted
+        await db.deleteContext(this.id)
+        db.constructorMap.delete(this.id)
+    }
+    
+    async getPageContext(): Promise<DefaultPageContext> {
+        if (this._pageContext === undefined) {
+            throw new Error('Page context is not initialized. Something must be wrong.')
+        }
+
+        // Case 1: Editing started or not using context storage to store the context
+        if (this._pageContext !== null) {
+            if (this._pageContext instanceof DefaultPageContext)
+                return this._pageContext
+            else
+                throw new Error('Page context is not a DefaultPageContext instance. Something must be wrong.')
+        }
+
+        // Case 2: Editing resumed (using context storage)
+        const db = this.tree.cs
+        const contextData = await db.loadContext(this.id)
+        if (contextData) {
+            const ContextClass = db.constructorMap.get(this.id)
+            if (ContextClass && ContextClass.deserialize !== DefaultPageContext.deserialize) {
+                this._pageContext = ContextClass.deserialize(contextData)
+                return this._pageContext
+            } else {
+                throw new Error(`No context class found for node: ${this.id}. Something must be wrong.`)
+            }
+        }
+
+        // Case 3 (Error): No context data found
+        throw new Error(`No context data found for node: ${this.id}. Something must be wrong.`)
+    }
+
+    async freezePageContext(): Promise<void> {
+        if (this._pageContext === undefined) return // do nothing if not editing
+
+        if (this._pageContext === null) throw new Error('Page context is null. Cannot freeze context while editing is paused.')
+
+        if (this._pageContext
+            && this._pageContext instanceof DefaultPageContext
+        ) {
+            if (this._pageContext.serialize !== DefaultPageContext.prototype.serialize) {
+                const db = this.tree.cs
+                db.constructorMap.set(this.id, this._pageContext.constructor as any)
+                await db.saveContext(this.id, this._pageContext.serialize())
+                this._pageContext = null // mark as serialized
+                
+            } else {
+                // Do nothing for not using context storage to store the context
+            }
+        }
+    }
 }
 
 export interface TreeUpdateCallback {
@@ -64,6 +108,7 @@ export class SceneTree implements ISceneTree {
     isPublic: boolean
     root!: ISceneNode
     scene: Map<string, ISceneNode> = new Map()
+    cs: ContextStorage = ContextStorage.getInstance()   // cs: context storage
 
     private handleOpenFile: (fileName: string, filePath: string) => void = () => {}
     private handlePinFile: (fileName: string, filePath: string) => void = () => {}
@@ -250,7 +295,7 @@ export class SceneTree implements ISceneTree {
         // Add node to editing nodes if not already editing
         if (!this.editingNodeIds.has(node.id)) {
             this.editingNodeIds.add(node.id)
-            ;(node as SceneNode).pageContext = await SCENARIO_PAGE_CONTEXT_REGISTRY[node.scenarioNode.semanticPath].create(node)
+            await (node as SceneNode).createPageContext()
         }
         
         this.handleNodeStartEditing(node)
@@ -266,8 +311,7 @@ export class SceneTree implements ISceneTree {
 
         this.editingNodeIds.delete(node.id)
         
-        const db: ContextStorage = store.get('contextDB')!
-        await db.delete(node)   // assign node.pageContext to undefined inside delete method
+        await (node as SceneNode).deletePageContext()
 
         this.handleNodeStopEditing(node)
 

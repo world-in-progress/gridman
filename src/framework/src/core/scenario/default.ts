@@ -1,17 +1,5 @@
-import { ISceneNode } from '../../core/scene/iscene'
+import { ISceneNode } from '@/core/scene/iscene'
 import { IScenarioNode } from '@/core/scenario/iscenario'
-
-export class DefaultPageContext {
-    serialize(): any {}
-
-    static deserialize(input: any): DefaultPageContext {
-        return new DefaultPageContext()
-    }
-
-    static async create(node: ISceneNode): Promise<DefaultPageContext> {
-        return new DefaultPageContext()
-    }
-}
 
 export default class DefaultScenarioNode implements IScenarioNode {
     static classKey: string = 'default'
