@@ -90,7 +90,7 @@ export default function PatchesPage({
         }
     }, [node])
 
-    const loadContext = async (node: SceneNode) => {
+    const loadContext = (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchesPageContext
         const pc = pageContext.current
 
