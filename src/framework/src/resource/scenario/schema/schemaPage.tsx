@@ -33,29 +33,29 @@ const schemaCheckTips = [
 ]
 
 export default function SchemaPage({ node }: SchemaPageProps) {
-
-    // // const [isEditing, setIsEditing] = useState(false)
-    // const isEditingRef = useRef<boolean>(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const coordinateOn4326 = useRef<[number, number]>([0, 0])
     const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
 
     useEffect(() => {
-        const schemaContext = (node as SceneNode).pageContext
-        if (schemaContext && schemaContext.schema) {
+        (node as SceneNode).getPageContext()
+        .then(context => {
+            const schemaContext = context as SchemaPageContext
+            if (schemaContext && schemaContext.schema) {
 
-            pageContext.current = schemaContext
-            const orginalCoordinates = schemaContext.schema?.base_point
-            const schemaEPSG = schemaContext.schema?.epsg
+                pageContext.current = schemaContext
+                const orginalCoordinates = schemaContext.schema?.base_point
+                const schemaEPSG = schemaContext.schema?.epsg
 
-            if (orginalCoordinates && schemaEPSG && schemaEPSG !== '4326') {
-                coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG, '4326')
+                if (orginalCoordinates && schemaEPSG && schemaEPSG !== 4326) {
+                    coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG.toString(), '4326')
+                }
+
+                setTimeout(() => {
+                    flyToMarker(coordinateOn4326.current)
+                }, 500)
             }
-
-            setTimeout(() => {
-                flyToMarker(coordinateOn4326.current)
-            }, 500)
-        }
+        })
     })
 
     useEffect(() => {
@@ -67,8 +67,8 @@ export default function SchemaPage({ node }: SchemaPageProps) {
         }
     }, [node])
 
-    const loadContext = (node: SceneNode) => {
-        const context = node.pageContext as SchemaPageContext
+    const loadContext = async (node: SceneNode) => {
+        const context = await node.getPageContext() as SchemaPageContext
 
         if (context) {
             pageContext.current = context

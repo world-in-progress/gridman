@@ -1,19 +1,31 @@
-import { ISceneNode } from '../scene/iscene'
+import DefaultPageContext from './default'
 
-interface ContextClass {
+interface ContextClass extends DefaultPageContext {
     new (): any
-    deserialize: (data: any) => ContextClass
+    deserialize: (data: any) => DefaultPageContext
 }
 
 export default class ContextStorage {
+    // Static instance holder
+    private static instance: ContextStorage | null = null
+
+    // Private constructor to prevent instantiation
+    private constructor() {
+        window.onbeforeunload = () => this.deleteDB()
+    }
+
+    // Static method to get the singleton instance
+    public static getInstance(): ContextStorage {
+        if (!ContextStorage.instance) {
+            ContextStorage.instance = new ContextStorage()
+        }
+        return ContextStorage.instance
+    }
+    
     private version = 1
     private storeName = 'contexts'
     private dbName = 'context_storage'
-    private constructorMap: Map<string, ContextClass> = new Map()
-
-    constructor() {
-        window.onbeforeunload = () => this.deleteDB()
-    }
+    constructorMap: Map<string, ContextClass> = new Map()
 
     async openDB(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
@@ -84,41 +96,5 @@ export default class ContextStorage {
                 resolve(true)
             }
         })
-    }
-
-    async freeze(node: ISceneNode): Promise<void> {
-        try {
-            this.constructorMap.set(node.id, node.pageContext.constructor as ContextClass)
-            await this.saveContext(node.id, node.pageContext.serialize())
-            node.pageContext = null // mark as serialized
-        } catch (error) {
-            console.error('Error freezing context:', error)
-        }
-    }
-
-    async melt(node: ISceneNode): Promise<void> {
-        try {
-            const contextData = await this.loadContext(node.id)
-            if (contextData) {
-                const ContextClass = this.constructorMap.get(node.id)
-                if (ContextClass && ContextClass.deserialize) {
-                    node.pageContext = ContextClass.deserialize(contextData)
-                } else {
-                    throw new Error(`No context class found for node: ${node.id}`)
-                }
-            }
-        } catch (error) {
-            console.error('Error melting context:', error)
-        }
-    }
-
-    async delete(node: ISceneNode): Promise<void> {
-        try {
-            node.pageContext = undefined // mark as deleted
-            await this.deleteContext(node.id)
-            this.constructorMap.delete(node.id)
-        } catch (error) {
-            console.error('Error deleting context:', error)
-        }
     }
 }

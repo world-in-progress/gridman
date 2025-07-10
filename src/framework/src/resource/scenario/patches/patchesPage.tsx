@@ -89,8 +89,8 @@ export default function PatchesPage({
         }
     }, [node])
 
-    const loadContext = (node: SceneNode) => {
-        pageContext.current = node.pageContext as PatchesPageContext
+    const loadContext = async (node: SceneNode) => {
+        pageContext.current = await node.getPageContext() as PatchesPageContext
         const pc = pageContext.current
 
         schemaEPSG.current = pc.schema!.epsg.toString()

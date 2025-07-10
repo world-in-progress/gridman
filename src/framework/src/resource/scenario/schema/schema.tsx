@@ -4,9 +4,10 @@ import SchemaPage from './schemaPage'
 import { ISceneNode } from '@/core/scene/iscene'
 import { Delete, FilePlus2 } from 'lucide-react'
 import { deleteSchema, getSchemaInfo } from './util'
+import DefaultPageContext from '@/core/context/default'
+import DefaultScenarioNode from '@/core/scenario/default'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
-import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
 
 export class SchemaPageContext extends DefaultPageContext {
     schema: SchemaInfo | null

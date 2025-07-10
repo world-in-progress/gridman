@@ -500,10 +500,6 @@ function FrameworkComponent() {
             }
         }
         initTree()
-
-        // Init contextDB
-        const contextDB = new ContextStorage()
-        store.set('contextDB', contextDB)
     }, [])
 
     return (

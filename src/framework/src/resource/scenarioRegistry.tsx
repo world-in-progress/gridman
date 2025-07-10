@@ -1,6 +1,7 @@
-import DefaultScenarioNode, { DefaultPageContext } from './scenario/default'
 import RootScenarioNode from './scenario/root'
 import TopoScenarioNode from './scenario/topo'
+import DefaultPageContext from '@/core/context/default'
+import DefaultScenarioNode from '@/core/scenario/default'
 import SchemaScenarioNode, { SchemaPageContext } from './scenario/schema/schema'
 import SchemasScenarioNode, { SchemasPageContext } from './scenario/schemas/schemas'
 import PatchesScenarioNode, { PatchesPageContext } from './scenario/patches/patches'

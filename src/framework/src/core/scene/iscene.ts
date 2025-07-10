@@ -6,7 +6,7 @@ export interface ISceneNode {
     name: string
     aligned: boolean 
     tree: ISceneTree
-    pageContext: any
+    // pageContext: any
     parent: ISceneNode | null
     scenarioNode: IScenarioNode
     children: Map<string, ISceneNode>

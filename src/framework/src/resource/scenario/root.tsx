@@ -1,4 +1,4 @@
-import DefaultScenarioNode from '@/resource/scenario/default'
+import DefaultScenarioNode from '@/core/scenario/default'
 
 export default class RootScenarioNode extends DefaultScenarioNode {
     static classKey: string = 'root'

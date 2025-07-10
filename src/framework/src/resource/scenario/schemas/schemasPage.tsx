@@ -83,12 +83,7 @@ export default function SchemasPage({
     }
 
     const loadContext = async (node: SceneNode) => {
-        if (node.pageContext === null) {
-            const db = store.get<ContextStorage>('contextDB')!
-            await db.melt(node)
-        }
-
-        const context = node.pageContext as SchemasPageContext
+        const context = await node.getPageContext() as SchemasPageContext
 
         // Load page context if exists
         // Action 1: melt page context if exists
@@ -117,14 +112,8 @@ export default function SchemasPage({
         picking.current.marker = null
 
         setIsSelectingPoint(false)
-
-        const n = node as SceneNode
-        const context = n.pageContext as SchemasPageContext
-
-        if (context === undefined) return   // skip freezing if the node editing is stopped
-
-        const db = store.get<ContextStorage>('contextDB')!
-        await db.freeze(n)
+        
+        node.freezePageContext()
 
         triggerRepaint()
     }
@@ -264,9 +253,8 @@ export default function SchemasPage({
         triggerRepaint()
     }
 
-    const resetForm = () => {
-        const db = store.get<ContextStorage>('contextDB')!
-        db.delete(node)
+    const resetForm = async () => {
+        await (node as SceneNode).deletePageContext()
 
         pageContext.current = new SchemasPageContext()
         picking.current.marker?.remove()
@@ -324,8 +312,8 @@ export default function SchemasPage({
             const tree = node.tree as SceneTree
             await tree.alignNodeInfo(node, true)
 
-            setTimeout(() => {
-                resetForm()
+            setTimeout(async () => {
+                await resetForm()
                 tree.notifyDomUpdate()
             }, 500)
         }
