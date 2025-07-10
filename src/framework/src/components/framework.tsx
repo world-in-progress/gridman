@@ -561,30 +561,20 @@ function FrameworkComponent() {
                     />
                 </div>
 
-
-                {/* Scrollable content area
+                {/* Scrollable content area */}
                 {nodeStack.current.length > 0 && (
                     <div
                         className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
                     >
                         <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
-                            ResourcePage
+                            {/* ResourcePage */}
                             <ResourcePage node={focusNode!} />
                         </div>
                     </div>
                 )}
 
-                Hello Page
-                {nodeStack.current.length === 0 && <Hello />} */}
-                <div
-                    className={`content-viewport ${needsHorizontalScroll ? 'scrollable' : 'no-scroll'}`}
-                >
-                    <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
-                        {/* ResourcePage */}
-                        <ResourcePage node={focusNode!} />
-                    </div>
-                </div>
-
+                {/* Hello Page */}
+                {nodeStack.current.length === 0 && <Hello />}
             </div>
         </div >
     )
