@@ -7,17 +7,6 @@ import { deleteSchema, getSchemaInfo } from './util'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import DefaultScenarioNode, { DefaultPageContext } from '@/resource/scenario/default'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 
 export class SchemaPageContext extends DefaultPageContext {
     schema: SchemaInfo | null
@@ -78,7 +67,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
                 (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case SchemaMenuItem.DELETE: {
-                // TODO: add seconde confirm dialog
+                // TODO: add second confirm dialog
                 const response = await deleteSchema(nodeSelf.name, nodeSelf.tree.isPublic)
                 if (response) {
                     toast.success(`Schema ${nodeSelf.name} deleted successfully`)

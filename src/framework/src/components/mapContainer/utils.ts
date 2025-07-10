@@ -28,63 +28,85 @@ export const addMapLineBetweenPoints = (start: [number, number], end: [number, n
 
     if (!map || !map.getCanvas()) return
 
-    const lineId = `grid-line-${Date.now()}`;
-    map.addSource(lineId, {
-        type: 'geojson',
-        data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: [start, end]
+    const addFactors = () => {
+        const lineId = `grid-line-${Date.now()}`;
+        map.addSource(lineId, {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [start, end]
+                }
             }
-        }
-    })
+        })
 
-    map.addLayer({
-        id: lineId,
-        type: 'line',
-        source: lineId,
-        layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-        },
-        paint: {
-            'line-color': '#0088FF',
-            'line-width': 2,
-            'line-dasharray': [2, 1],
-        },
-    })
+        map.addLayer({
+            id: lineId,
+            type: 'line',
+            source: lineId,
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+            },
+            paint: {
+                'line-color': '#0088FF',
+                'line-width': 2,
+                'line-dasharray': [2, 1],
+            },
+        })
 
-    const midPoint: [number, number] = [
-        (start[0] + end[0]) / 2,
-        (start[1] + end[1]) / 2,
-    ];
+        const midPoint: [number, number] = [
+            (start[0] + end[0]) / 2,
+            (start[1] + end[1]) / 2,
+        ];
 
-    const labelText = `W: ${widthCount} × H: ${heightCount}`;
-    const el = document.createElement('div');
+        const labelText = `W: ${widthCount} × H: ${heightCount}`;
+        const el = document.createElement('div');
 
-    el.className = 'grid-count-label';
-    el.style.backgroundColor = 'rgba(0, 136, 255, 0.85)';
-    el.style.color = 'white';
-    el.style.padding = '6px 10px';
-    el.style.borderRadius = '6px';
-    el.style.fontSize = '12px';
-    el.style.fontWeight = 'bold';
-    el.style.whiteSpace = 'nowrap';
-    el.style.pointerEvents = 'none';
-    el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
-    el.style.fontFamily = 'Arial, sans-serif';
-    el.style.letterSpacing = '0.5px';
-    el.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-    el.textContent = labelText;
+        el.className = 'grid-count-label';
+        el.style.backgroundColor = 'rgba(0, 136, 255, 0.85)';
+        el.style.color = 'white';
+        el.style.padding = '6px 10px';
+        el.style.borderRadius = '6px';
+        el.style.fontSize = '12px';
+        el.style.fontWeight = 'bold';
+        el.style.whiteSpace = 'nowrap';
+        el.style.pointerEvents = 'none';
+        el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
+        el.style.fontFamily = 'Arial, sans-serif';
+        el.style.letterSpacing = '0.5px';
+        el.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+        el.textContent = labelText;
 
-    const marker = new mapboxgl.Marker({
-        element: el,
-        anchor: 'center',
-    })
-        .setLngLat(midPoint)
-        .addTo(map);
+        const marker = new mapboxgl.Marker({
+            element: el,
+            anchor: 'center',
+        })
+            .setLngLat(midPoint)
+            .addTo(map);
+    }
+
+
+    if (map.isStyleLoaded()) {
+        addFactors();
+    } else {
+        const timeoutId = setTimeout(() => {
+            if (map.isStyleLoaded()) {
+                addFactors();
+            } else {
+                // Try again with a longer delay
+                const retryId = setTimeout(() => {
+                    addFactors();
+                }, 100);
+                map.once('style.load', () => {
+                    clearTimeout(retryId);
+                    addFactors();
+                });
+            }
+        }, 100);
+    }
 }
 
 export const clearGridLines = () => {
@@ -97,7 +119,7 @@ export const clearGridLines = () => {
             map.removeLayer(layer.id)
         }
     })
-    
+
     Object.keys(style.sources).forEach(sourceId => {
         if (sourceId.startsWith('grid-line-')) {
             map.removeSource(sourceId)
@@ -301,7 +323,6 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
             data: boundsData as GeoJSON.Feature<GeoJSON.Polygon>
         })
 
-        // 根据id设置不同的颜色
         const fillColor = id === 'adjusted-bounds' ? '#00FF00' : '#00A8C2';
         const lineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#FFFF00';
         const opacity = id === 'adjusted-bounds' ? 0.1 : 0.5
@@ -341,13 +362,19 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
         addBounds();
     } else {
         const timeoutId = setTimeout(() => {
-            addBounds();
-        }, 0);
-        
-        map.once('style.load', () => {
-            clearTimeout(timeoutId);
-            addBounds();
-        });
+            if (map.isStyleLoaded()) {
+                addBounds();
+            } else {
+                // Try again with a longer delay
+                const retryId = setTimeout(() => {
+                    addBounds();
+                }, 100);
+                map.once('style.load', () => {
+                    clearTimeout(retryId);
+                    addBounds();
+                });
+            }
+        }, 100);
     }
 }
 

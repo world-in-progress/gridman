@@ -84,3 +84,7 @@ export interface SceneMeta {
     scenario_path: string
     children: SceneMeta[] | null
 }
+
+export interface ResponseWithPatchMeta {
+    patch_meta: PatchMeta | null
+}
