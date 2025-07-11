@@ -42,9 +42,8 @@ import { TopologyEditorProps, TopologyOperationType } from "./types";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { SceneNode } from "@/components/resourceScene/scene";
 import { PatchPageContext } from "./patch";
-import { SchemaInfo } from "../schema/types";
-import { PatchMeta } from "../patches/types";
 import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils";
+import { GridMeta } from "@/core/apis/types";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -94,8 +93,7 @@ export default function TopologyEditor(
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
-    const schemaRef = useRef<SchemaInfo | null>(null)
-    const patchRef = useRef<PatchMeta | null>(null)
+    const patchRef = useRef<GridMeta | null>(null)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -108,16 +106,13 @@ export default function TopologyEditor(
         pageContext.current = await node.getPageContext() as PatchPageContext
         const pc = pageContext.current
 
-        schemaRef.current = pc.schema
         patchRef.current = pc.patch
 
-        console.log(schemaRef.current)
         console.log(patchRef.current)
 
-        if (patchRef.current && schemaRef.current) {
+        if (patchRef.current) {
             console.log('执行了')
-            const patchBoundsOn4326 = convertToWGS84(patchRef.current.bounds, schemaRef.current.epsg.toString())
-            addMapPatchBounds(patchBoundsOn4326, undefined, {
+            addMapPatchBounds(patchRef.current.bounds, undefined, {
                 fillColor: 'rgba(255, 0, 0, 0.5)',
                 lineColor: '#FFFFFF',
                 opacity: 0.8,
@@ -453,22 +448,18 @@ export default function TopologyEditor(
                                     <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
                                     <div className="text-sm text-white mt-1 grid gap-1">
                                         <div>
-                                            <span className="font-bold">Schema Name: </span>
-                                            {schemaRef.current?.name}
-                                        </div>
-                                        <div>
                                             <span className="font-bold">Patch Name: </span>
                                             {patchRef.current?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">EPSG: </span>
-                                            {schemaRef.current?.epsg}
+                                            {patchRef.current?.epsg}
                                         </div>
                                         <div className="flex items-start flex-row">
                                             <div className={`font-bold w-[25%]`}>Grid Levels(m): </div>
                                             <div className="space-y-1">
-                                                {schemaRef.current?.grid_info && (
-                                                    schemaRef.current?.grid_info.map(
+                                                {patchRef.current?.subdivide_rules && (
+                                                    patchRef.current?.subdivide_rules.map(
                                                         (level: number[], index: number) => {
                                                             // const color = paletteColorList ?
                                                             //     [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :

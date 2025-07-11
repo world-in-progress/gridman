@@ -249,6 +249,7 @@ export const convertToWGS84 = (
 
 // Clear drawing patch bounds
 export const clearDrawPatchBounds = (id?: string) => {
+    console.log('清除')
     const map = store.get<mapboxgl.Map>('map')
     if (!map || !map.isStyleLoaded()) return
 

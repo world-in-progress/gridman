@@ -276,6 +276,8 @@ export default function PatchesPage({
         clearMapMarkers()
         clearGridLines()
         clearDrawPatchBounds()
+
+        triggerRepaint()
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -284,7 +286,7 @@ export default function PatchesPage({
         const pc = pageContext.current
         const validation = validatePatchForm({
             name: pc.name!,
-            bounds: pc.adjustedBounds!
+            bounds: adjustedCoordinate!
         })
 
         if (!validation.isValid) {
@@ -298,7 +300,7 @@ export default function PatchesPage({
             name: pc.name!,
             starred: false,
             description: pc.description,
-            bounds: pc.adjustedBounds!
+            bounds: adjustedCoordinate!
         }
 
         setGeneralMessage('Submitting data...')
