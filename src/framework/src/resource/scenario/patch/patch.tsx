@@ -7,9 +7,9 @@ import DefaultScenarioNode from '@/core/scenario/default'
 import { ISceneNode } from "@/core/scene/iscene"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
-import { Delete, Grid3x3 } from "lucide-react"
+import { Delete, Grid3x3, Info } from "lucide-react"
 import { toast } from "sonner"
-import PatchPage from "./patchPage"
+import TopologyEditor from "./topologyEditor"
 
 export class PatchPageContext extends DefaultPageContext {
     patch: PatchMeta | null
@@ -39,6 +39,7 @@ export class PatchPageContext extends DefaultPageContext {
 }
 
 export enum PatchMenuItem {
+    CHECK_INFO = 'Check Info',
     TOPOLOGY_EDITOR = 'Topology Editor',
     DELETE = 'Delete'
 }
@@ -51,6 +52,10 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent>
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchMenuItem.CHECK_INFO)}>
+                    <Info className="w-4 h-4" />
+                    <span>Check Info</span>
+                </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchMenuItem.TOPOLOGY_EDITOR)}>
                     <Grid3x3 className="w-4 h-4" />
                     <span>Topology Editor</span>
@@ -82,7 +87,7 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
         return (
-            <PatchPage node={nodeSelf}/>
+            <TopologyEditor node={nodeSelf}/>
         )
     }
 }

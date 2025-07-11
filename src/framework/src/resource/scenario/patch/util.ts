@@ -15,7 +15,7 @@ export const getPatchInfo = async(node: SceneNode, isRemote: boolean) => {
 // Delete Patch by schemaName and patchName
 export const deletepatch = async(node: SceneNode, isRemote: boolean) => {
     try {
-        const res = await apis.patch.deletePatch.fetch({schemaName: node.parent!.name, patchName: node.name}, isRemote)
+        const res = await apis.patch.deletePatch.fetch({schemaName: node.parent!.parent!.name, patchName: node.name}, isRemote)
         return res.success
     } catch (error) {
         console.error('Delete patch failed: ', error)
