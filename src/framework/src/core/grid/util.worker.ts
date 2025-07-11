@@ -1,7 +1,7 @@
-import { Callback, WorkerSelf } from '../types'
-import GridManager from './NHGridManager'
-import { GridContext, MultiGridBaseInfo } from './types'
 import * as apis from '../apis/apis'
+import GridManager from './NHGridManager'
+import { Callback, WorkerSelf } from '../types'
+import { GridContext, MultiGridBaseInfo } from './types'
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -19,56 +19,56 @@ export function setGridManager(
 
 export async function subdivideGrids(
     this: WorkerContext,
-    gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+    gridInfo: { levels: Uint8Array, globalIds: Uint32Array, isRemote: boolean },
     callback: Callback<any>
 ) {
-    const renderInfo = await apis.topo.subdivideGrids.fetch(gridInfo)
+    const renderInfo = await apis.topo.subdivideGrids.fetch(gridInfo, gridInfo.isRemote)
     callback(null, renderInfo)
 }
 
 export async function mergeGrids(
     this: WorkerContext,
-    gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+    gridInfo: { levels: Uint8Array, globalIds: Uint32Array, isRemote: boolean },
     callback: Callback<any>
 ) {
-    const renderInfo = await apis.topo.mergeGrids.fetch(gridInfo)
+    const renderInfo = await apis.topo.mergeGrids.fetch(gridInfo, gridInfo.isRemote)
     callback(null, renderInfo)
 }
 
-export async function removeGrids(
-    gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+export async function deleteGrids(
+    gridInfo: { levels: Uint8Array, globalIds: Uint32Array, isRemote: boolean },
     callback: Callback<any>
 ) {
-    await apis.topo.removeGrids.fetch(gridInfo)
+    await apis.topo.deleteGrids.fetch(gridInfo, gridInfo.isRemote)
     callback()
 }
 
 export async function recoverGrids(
-    gridInfo: { levels: Uint8Array; globalIds: Uint32Array },
+    gridInfo: { levels: Uint8Array, globalIds: Uint32Array, isRemote: boolean },
     callback: Callback<any>
 ) {
-    await apis.topo.recoverGrids.fetch(gridInfo)
+    await apis.topo.recoverGrids.fetch(gridInfo, gridInfo.isRemote)
     callback()
 }
 
 export async function getGridInfoByFeature(
-    path: string,
+    pickInfo: { path: string, isRemote: boolean },
     callback: Callback<any>
 ) {
-    const result = await apis.topo.pickGridsByFeature.fetch(path)
+    const result = await apis.topo.pickGridsByFeature.fetch(pickInfo.path, pickInfo.isRemote)
     callback(null, {
         levels: result.levels,
         globalIds: result.globalIds
     })
 }
 
-export async function saveGrids(_: any, callback: Callback<any>) {
-    const result = await apis.topo.saveGrids.fetch()
+export async function saveGrids(isRemote: boolean, callback: Callback<any>) {
+    const result = await apis.topo.saveGrids.fetch(apis.VOID_VALUE, isRemote)
     callback(null, result)
 }
 
 export async function getMultiGridRenderVertices(
-    this: WorkerSelf & Record<"gridManager", GridManager>,
+    this: WorkerSelf & Record<'gridManager', GridManager>,
     gridInfo: MultiGridBaseInfo, 
     callback: Callback<any>
 ) {
@@ -77,13 +77,13 @@ export async function getMultiGridRenderVertices(
 }
 
 export async function getGridInfo(
-    this: WorkerSelf & Record<"gridManager", GridManager>,
-    _: any,
+    this: WorkerSelf & Record<'gridManager', GridManager>,
+    isRemote: boolean,
     callback: Callback<any>
 ) {
     const [activateInfoResponse, deletedInfoResponse] = await Promise.all([
-        apis.topo.getActivateGridInfo.fetch(),
-        apis.topo.getDeletedGridInfo.fetch()
+        apis.topo.getActivateGridInfo.fetch(apis.VOID_VALUE, isRemote),
+        apis.topo.getDeletedGridInfo.fetch(apis.VOID_VALUE, isRemote)
     ])
 
     // Create combined levels for activate and deleted grids

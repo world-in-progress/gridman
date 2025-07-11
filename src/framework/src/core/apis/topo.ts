@@ -1,57 +1,55 @@
-import { BaseResponse, CRMStatus } from './types'
-import IAPI, { GridMeta } from './types'
+import IAPI from './types'
+import getPrefix from './prefix'
 import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../grid/types'
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
-const API_PREFIX = '/local/api/topo'
+const API_PREFIX = '/api/patch/topo'
 
-export const isPatchTopoReady: IAPI<void, boolean> = {
-    api: `${API_PREFIX}`,
-    fetch: async (): Promise<boolean> => {
+export const getActivateGridInfo: IAPI<void, MultiGridBaseInfo> = {
+    api: `${API_PREFIX}/activate-info`,
+    fetch: async (_: void, isRemote: boolean): Promise<MultiGridBaseInfo> => {
         try {
-            const response = await fetch(isPatchTopoReady.api, { method: 'GET' })
+            const api = getPrefix(isRemote) + getActivateGridInfo.api
+            const response = await fetch(api, { method: 'GET' })
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
-
-            const responseData: CRMStatus = await response.json()
-            return responseData.is_ready
+            const buffer = await response.arrayBuffer()
+            return MultiGridInfoParser.fromBuffer(buffer)
 
         } catch (error) {
-            throw new Error(`Failed to check patch readiness: ${error}`)
+            throw new Error(`Failed to get activated grid info: ${error}`)
         }
     }
 }
 
-export const setCurrentPatchTopo: IAPI<{ projectName: string, patchName: string }, void> = {
-    api: `${API_PREFIX}/`,
-    fetch: async (query: { projectName: string; patchName: string }): Promise<void> => {
+export const getDeletedGridInfo: IAPI<void, MultiGridBaseInfo> = {
+    api: `${API_PREFIX}/deleted-info`,
+    fetch: async (_: void, isRemote: boolean): Promise<MultiGridBaseInfo> => {
         try {
-            const { projectName, patchName } = query
-
-            const response = await fetch(`${setCurrentPatchTopo.api}/${projectName}/${patchName}`, { method: 'GET' })
+            const api = getPrefix(isRemote) + getDeletedGridInfo.api
+            const response = await fetch(api, { method: 'GET' })
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
-
-            const responseData: BaseResponse = await response.json()
-            if (!responseData.success) {
-                throw new Error(`Failed to set current patch: ${responseData.message}`)
-            }
+            const buffer = await response.arrayBuffer()
+            const deletedInfo = MultiGridInfoParser.fromBuffer(buffer)
+            return deletedInfo
 
         } catch (error) {
-            throw new Error(`Failed to set current patch: ${error}`)
-        } 
+            throw new Error(`Failed to get deleted grid info: ${error}`)
+        }
     }
 }
 
 export const subdivideGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/subdivide`,
-    fetch: async (query: MultiGridBaseInfo): Promise<MultiGridBaseInfo> => {
+    fetch: async (query: MultiGridBaseInfo, isRemote: boolean): Promise<MultiGridBaseInfo> => {
         try {
+            const api = getPrefix(isRemote) + subdivideGrids.api
             const buffer = MultiGridInfoParser.toBuffer(query)
-            const response = await fetch(subdivideGrids.api, {
+            const response = await fetch(api, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },
                 body: buffer,
@@ -72,10 +70,11 @@ export const subdivideGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
 
 export const mergeGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/merge`,
-    fetch: async (query: MultiGridBaseInfo): Promise<MultiGridBaseInfo> => {
+    fetch: async (query: MultiGridBaseInfo, isRemote: boolean): Promise<MultiGridBaseInfo> => {
         try {
+            const api = getPrefix(isRemote) + mergeGrids.api
             const buffer = MultiGridInfoParser.toBuffer(query)
-            const response = await fetch(mergeGrids.api, {
+            const response = await fetch(api, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },
                 body: buffer,
@@ -96,12 +95,13 @@ export const mergeGrids: IAPI<MultiGridBaseInfo, MultiGridBaseInfo> = {
     }
 }
 
-export const removeGrids: IAPI<MultiGridBaseInfo, void> = {
+export const deleteGrids: IAPI<MultiGridBaseInfo, void> = {
     api: `${API_PREFIX}/delete`,
-    fetch: async (query: MultiGridBaseInfo): Promise<void> => {
+    fetch: async (query: MultiGridBaseInfo, isRemote: boolean): Promise<void> => {
         try {
+            const api = getPrefix(isRemote) + deleteGrids.api
             const buffer = MultiGridInfoParser.toBuffer(query)
-            const response = await fetch(removeGrids.api, {
+            const response = await fetch(api, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },
                 body: buffer,
@@ -119,10 +119,11 @@ export const removeGrids: IAPI<MultiGridBaseInfo, void> = {
 
 export const recoverGrids: IAPI<MultiGridBaseInfo, void> = {
     api: `${API_PREFIX}/recover`,
-    fetch: async (query: MultiGridBaseInfo): Promise<void> => {
+    fetch: async (query: MultiGridBaseInfo, isRemote: boolean): Promise<void> => {
         try {
+            const api = getPrefix(isRemote) + recoverGrids.api
             const buffer = MultiGridInfoParser.toBuffer(query)
-            const response = await fetch(recoverGrids.api, {
+            const response = await fetch(api, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },
                 body: buffer,
@@ -139,10 +140,11 @@ export const recoverGrids: IAPI<MultiGridBaseInfo, void> = {
 
 export const pickGridsByFeature: IAPI<string, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/pick`,
-    fetch: async (featureDir: string): Promise<MultiGridBaseInfo> => {
+    fetch: async (featureDir: string, isRemote: boolean): Promise<MultiGridBaseInfo> => {
 
         try {
-            const response = await fetch(`${pickGridsByFeature.api}?feature_dir=${featureDir}`, { method: 'GET' })
+            const api = getPrefix(isRemote) + pickGridsByFeature.api
+            const response = await fetch(`${api}?feature_dir=${featureDir}`, { method: 'GET' })
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
@@ -159,9 +161,10 @@ export const pickGridsByFeature: IAPI<string, MultiGridBaseInfo> = {
 
 export const saveGrids: IAPI<void, GridSaveInfo> = {
     api: `${API_PREFIX}/save`,
-    fetch: async (): Promise<GridSaveInfo> => {
+    fetch: async (_: void, isRemote: boolean): Promise<GridSaveInfo> => {
         try {
-            const response = await fetch(saveGrids.api, { method: 'GET' })
+            const api = getPrefix(isRemote) + saveGrids.api
+            const response = await fetch(api, { method: 'GET' })
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
@@ -170,54 +173,6 @@ export const saveGrids: IAPI<void, GridSaveInfo> = {
 
         } catch (error) {
             throw new Error(`Failed to save grids: ${error}`)
-        }
-    }
-}
-
-export const getGridMeta: IAPI<void, GridMeta> = {
-    api: `${API_PREFIX}/meta`,
-    fetch: async (): Promise<GridMeta> => {
-        const response = await fetch(getGridMeta.api, { method: 'GET' })
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`)
-        }
-
-        const responseData: GridMeta = await response.json()
-        return responseData
-    }
-}
-
-export const getActivateGridInfo: IAPI<void, MultiGridBaseInfo> = {
-    api: `${API_PREFIX}/activate-info`,
-    fetch: async (): Promise<MultiGridBaseInfo> => {
-        try {
-            const response = await fetch(getActivateGridInfo.api, { method: 'GET' })
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`)
-            }
-            const buffer = await response.arrayBuffer()
-            return MultiGridInfoParser.fromBuffer(buffer)
-
-        } catch (error) {
-            throw new Error(`Failed to get activated grid info: ${error}`)
-        }
-    }
-}
-
-export const getDeletedGridInfo: IAPI<void, MultiGridBaseInfo> = {
-    api: `${API_PREFIX}/deleted-info`,
-    fetch: async (): Promise<MultiGridBaseInfo> => {
-        try {
-            const response = await fetch(getDeletedGridInfo.api, { method: 'GET' })
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`)
-            }
-            const buffer = await response.arrayBuffer()
-            const deletedInfo = MultiGridInfoParser.fromBuffer(buffer)
-            return deletedInfo
-
-        } catch (error) {
-            throw new Error(`Failed to get deleted grid info: ${error}`)
         }
     }
 }
