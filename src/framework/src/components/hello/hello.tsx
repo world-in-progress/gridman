@@ -35,15 +35,6 @@ export default function Hello() {
                 start: startRenderLoop,
                 stop: stopRenderLoop
             }
-
-            // const render = () => {
-            //     if (rendererRef.current) {
-            //         rendererRef.current.render()
-            //         requestAnimationFrame(render)
-            //     }
-            // }
-
-            // render()
         }
 
         return () => {

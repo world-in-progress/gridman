@@ -209,7 +209,6 @@ export default class HelloRenderer {
 
     private handleMouseMove = (event: MouseEvent) => {
         if (!this.isReady) return
-        // Convert mouse coordinates to normalized coordinates [0,1]
         const rect = this.canvas.getBoundingClientRect()
         const x = (event.clientX - rect.left) / rect.width
         const y = 1.0 - (event.clientY - rect.top) / rect.height  // flip Y coordinate
