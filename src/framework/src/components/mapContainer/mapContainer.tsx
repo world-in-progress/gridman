@@ -9,7 +9,6 @@ import { useEffect, useRef, forwardRef } from 'react'
 import DrawRectangle from 'mapbox-gl-draw-rectangle-mode'
 import { calculateRectangleCoordinates } from './utils'
 import NHLayerGroup from './NHLayerGroup'
-import NHLayerGroup from './NHLayerGroup'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
