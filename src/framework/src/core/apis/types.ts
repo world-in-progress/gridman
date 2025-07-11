@@ -32,7 +32,7 @@ export interface MultiGridSchema {
     project_schemas: GridSchema[] | null
 }
 
-export interface PatchTopoStatus {
+export interface CRMStatus {
     is_ready: boolean
     status: "ACTIVATED" | "DEACTIVATED"
 }
