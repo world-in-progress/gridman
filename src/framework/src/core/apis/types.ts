@@ -60,6 +60,7 @@ export interface MultiPatchMeta {
 export interface GridMeta {
     name: string
     epsg: number
+    description?: string
     subdivide_rules: [number, number][]
     bounds: [number, number, number, number]
 }
