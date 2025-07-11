@@ -1,4 +1,4 @@
-import { BaseResponse, PatchTopoStatus } from './types'
+import { BaseResponse, CRMStatus } from './types'
 import IAPI, { GridMeta } from './types'
 import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../grid/types'
 
@@ -15,7 +15,7 @@ export const isPatchTopoReady: IAPI<void, boolean> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: PatchTopoStatus = await response.json()
+            const responseData: CRMStatus = await response.json()
             return responseData.is_ready
 
         } catch (error) {
