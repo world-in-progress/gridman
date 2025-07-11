@@ -1,7 +1,7 @@
 import MapContainer from '../mapContainer/mapContainer'
 import { CreatePageProps } from './types'
 
-export default function ResourcePage({ node }: CreatePageProps) {
+export default function ResourcePage({ node, menuItem }: CreatePageProps) {
     if (!node) {
         console.debug('Rendering MapContainer for null node')
         return <MapContainer node={null} />
@@ -10,7 +10,7 @@ export default function ResourcePage({ node }: CreatePageProps) {
         console.debug('Rendering page for valid node:', node.id)
         return (
             <div className='w-full h-full flex flex-row bg-[#1E1E1E]'>
-                {node.scenarioNode.renderPage(node)}
+                {node.scenarioNode.renderPage(node, menuItem)}
             </div>
         )
     }
