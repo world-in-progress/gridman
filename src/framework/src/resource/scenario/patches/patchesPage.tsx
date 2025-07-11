@@ -166,6 +166,7 @@ export default function PatchesPage({
                 addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount)
                 triggerRepaint()
             }
+            triggerRepaint()
         }
     }, [drawCoordinates.current])
 

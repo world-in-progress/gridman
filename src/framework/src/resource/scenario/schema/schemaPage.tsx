@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { CheckCircle, Delete, MapPin, MapPinCheck, Pencil } from 'lucide-react'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
-import { convertSinglePointCoordinate, flyToMarker } from '@/components/mapContainer/utils'
+import { clearMapMarkers, convertSinglePointCoordinate, flyToMarker } from '@/components/mapContainer/utils'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,26 +37,26 @@ export default function SchemaPage({ node }: SchemaPageProps) {
     const coordinateOn4326 = useRef<[number, number]>([0, 0])
     const pageContext = useRef<SchemaPageContext>(new SchemaPageContext())
 
-    useEffect(() => {
-        (node as SceneNode).getPageContext()
-        .then(context => {
-            const schemaContext = context as SchemaPageContext
-            if (schemaContext && schemaContext.schema) {
+    // useEffect(() => {
+    //     (node as SceneNode).getPageContext()
+    //     .then(context => {
+    //         const schemaContext = context as SchemaPageContext
+    //         if (schemaContext && schemaContext.schema) {
 
-                pageContext.current = schemaContext
-                const orginalCoordinates = schemaContext.schema?.base_point
-                const schemaEPSG = schemaContext.schema?.epsg
+    //             pageContext.current = schemaContext
+    //             const orginalCoordinates = schemaContext.schema?.base_point
+    //             const schemaEPSG = schemaContext.schema?.epsg
 
-                if (orginalCoordinates && schemaEPSG && schemaEPSG !== 4326) {
-                    coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG.toString(), '4326')
-                }
+    //             if (orginalCoordinates && schemaEPSG && schemaEPSG !== 4326) {
+    //                 coordinateOn4326.current = convertSinglePointCoordinate(orginalCoordinates, schemaEPSG.toString(), '4326')
+    //             }
 
-                setTimeout(() => {
-                    flyToMarker(coordinateOn4326.current)
-                }, 500)
-            }
-        })
-    })
+    //             setTimeout(() => {
+    //                 flyToMarker(coordinateOn4326.current)
+    //             }, 500)
+    //         }
+    //     })
+    // })
 
     useEffect(() => {
         const n = node as SceneNode
@@ -70,15 +70,23 @@ export default function SchemaPage({ node }: SchemaPageProps) {
     const loadContext = async (node: SceneNode) => {
         const context = await node.getPageContext() as SchemaPageContext
 
-        if (context) {
+        if (context && context.schema) {
             pageContext.current = context
+            const originalCoordinates = context.schema.base_point
+            const schemaEPSG = context.schema.epsg
+
+            if (originalCoordinates && schemaEPSG && schemaEPSG !== 4326) {
+                coordinateOn4326.current = convertSinglePointCoordinate(originalCoordinates, schemaEPSG.toString(), '4326')
+                flyToMarker(coordinateOn4326.current)
+            }
         }
 
         triggerRepaint()
     }
 
     const unloadContext = (node: SceneNode) => {
-
+        clearMapMarkers()
+        triggerRepaint
     }
 
     const handleSchemaDelete = async () => {
@@ -98,7 +106,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
         triggerRepaint()
     }
 
-    const handleDoneButtonClick = async() => {
+    const handleDoneButtonClick = async () => {
         const schema = pageContext.current.schema!
         const schemaName = schema.name
         const response = await updateSchemaInfo(schemaName, schema, node.tree.isPublic)
@@ -141,7 +149,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                 Check Schema Info
                                 <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
                                 <span>[{node.name}]</span>
-                                </h1>
+                            </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
                             {/* ----------*/}

@@ -12,10 +12,12 @@ import { GridMeta } from "@/core/apis/types"
 
 export class PatchPageContext extends DefaultPageContext {
     patch: GridMeta | null
+    isEditing: boolean
 
     constructor() {
         super()
         this.patch = null
+        this.isEditing = false
     }
 
     static async create(node: ISceneNode): Promise<PatchPageContext> {
