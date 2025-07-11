@@ -529,13 +529,9 @@ function FrameworkComponent() {
                     />
                     {/* Resize Handle */}
                     <div
-                        className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'
-                            } group`}
+                        className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 ${isResizing ? 'bg-blue-500 w-1' : 'bg-transparent hover:bg-blue-400'}`}
                         onMouseDown={handleMouseDown}
                     >
-                        {/* Visible handle indicator */}
-                        <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isResizing ? 'opacity-100 bg-blue-500' : ''
-                            }`} />
                     </div>
                 </div>
             )}

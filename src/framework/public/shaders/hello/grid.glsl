@@ -2,56 +2,87 @@
 
 precision highp float;
 
-uniform vec2 uGridDim;
-
 out vec2 v_uv;
-out vec2 v_global_uv;
 
 // X, Y, U, V
-vec4[] hardCodedGridPosition = vec4[4](
-    vec4(0.0, 0.0, 0.0, 0.0),   // Bottom left
-    vec4(0.0, 1.0, 0.0, 1.0),    // Top left
-    vec4(1.0, 0.0, 1.0, 0.0),    // Bottom right
-    vec4(1.0, 1.0, 1.0, 1.0)     // Top right
+vec4[] hardCodedCanvasPosition = vec4[4](
+    vec4(-1.0, -1.0, 0.0, 0.0),     // Bottom left
+    vec4(-1.0, 1.0, 0.0, 1.0),      // Top left
+    vec4(1.0, -1.0, 1.0, 0.0),      // Bottom right
+    vec4(1.0, 1.0, 1.0, 1.0)        // Top right
 );
 
 void main() {
-    vec2 gridBL = vec2(gl_InstanceID % int(uGridDim.x), gl_InstanceID / int(uGridDim.x));
-    vec2 gridTR = vec2(gl_InstanceID % int(uGridDim.x) + 1, gl_InstanceID / int(uGridDim.x) + 1);
-
-    vec2 position = hardCodedGridPosition[gl_VertexID].xy;
-    position.x = mix(gridBL.x, gridTR.x, position.x);
-    position.y = mix(gridBL.y, gridTR.y, position.y);
-
-    gl_Position = vec4(position / uGridDim * 2.0 - 1.0, 0.0, 1.0);
-    v_uv = hardCodedGridPosition[gl_VertexID].zw * 2.0 - 1.0;
-    v_global_uv = position / uGridDim;
+    vec2 position = hardCodedCanvasPosition[gl_VertexID].xy;
+    gl_Position = vec4(position, 0.0, 1.0);
+    v_uv = hardCodedCanvasPosition[gl_VertexID].zw;
 }
 
 #endif
 
 #ifdef FRAGMENT_SHADER
 
+precision highp int;
 precision highp float;
 
 in vec2 v_uv;
-in vec2 v_global_uv;
 
-uniform sampler2D uTexture;
+uniform vec2 uResolution;
+uniform int uGridDimFactor;
+uniform int uGridResolution;
+
+uniform float uTime;
+uniform float uPulseSpeed;
+uniform float uPulseRadius;
+uniform vec2 uPulseCenter;
+
+uniform sampler2D uHello;
+uniform sampler2D uCooperation;
 
 out vec4 fragColor;
 
 void main() {
-    vec4 color = texture(uTexture, v_global_uv);
+    // Calculate dynamic grid factor based on pulse history
+    int dynamicGridFactor = uGridDimFactor;
+
+    // Check if this area has been hit by pulse
+    float distanceFromCenter = length(v_uv - uPulseCenter);
+    float pulsePhase = fract(uTime * uPulseSpeed);
+    float pulseDistance = pulsePhase * uPulseRadius;
+
+    // If this pixel has been swept by the pulse
+    if (distanceFromCenter <= pulseDistance) {
+        dynamicGridFactor += 1;
+    }
+
+    // Self Grid Index
+    ivec2 pixelCoord = ivec2(v_uv * uResolution);
+    int gridSize = uGridResolution / (1 << dynamicGridFactor);
+    ivec2 gridId = pixelCoord / gridSize;
+    ivec2 pixelInGrid = ivec2(pixelCoord) % gridSize;
+
+    // Check if pixel is on grid edge
+    bool isOnEdge = (pixelInGrid.x <= 1 || pixelInGrid.x >= (gridSize - 2) ||
+                    pixelInGrid.y <= 1 || pixelInGrid.y >= (gridSize - 2));
+
+    vec4 color = vec4(0.0);
+    if (dynamicGridFactor % 2 == 0) {
+        color = texture(uHello, v_uv);
+    } else {
+        color = texture(uCooperation, v_uv);
+    }
     if (color.a == 0.0) {
         discard;
     }
 
-    if (abs(v_uv.x) > 0.90 || abs(v_uv.y) > 0.90) {
+    // Draw edges
+    if (isOnEdge) {
         vec4 gridColor = vec4(0.71, 0.17, 0.06, 0.1);
         fragColor = mix(gridColor, color, 0.4);
-        
-    } else {
+
+    } 
+    // Draw filling
+    else {
         fragColor = color;
     }
 }
