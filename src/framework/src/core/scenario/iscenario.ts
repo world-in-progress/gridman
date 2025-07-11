@@ -1,5 +1,6 @@
 import React from 'react'
-import { ISceneNode, ISceneTree } from '../scene/iscene'
+import { ISceneNode } from '../scene/iscene'
+import NHLayerGroup from '@/components/mapContainer/NHLayerGroup'
 
 export interface ScenarioNodeDescription {
     children: string[]
@@ -31,4 +32,12 @@ export interface IScenarioNode extends ScenarioNodeDescription {
      * @returns The rendered tab page or null.
      */
     renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null
+
+    /**
+     * Handles the addition of the scenario node to the map.
+     * @param nodeSelf The scene node being rendered.
+     * @param map The map instance to add the layer to.
+     * @param layerGroup The layer group to add the layer to.
+     */
+    handleMapAdd(nodeSelf: ISceneNode, map: mapboxgl.Map, layerGroup: NHLayerGroup): Promise<void>
 }

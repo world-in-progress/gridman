@@ -1,4 +1,5 @@
 import proj4 from 'proj4';
+import type { Converter } from 'proj4/dist/lib/core'
 
 import {
     GridNode,
@@ -584,7 +585,7 @@ export default class GridManager {
     private _center: [number, number]
     private _levelInfos: GridLevelInfo[];
     private _context: GridContext;
-    private _projConverter: proj4.Converter;
+    private _projConverter: Converter;
 
     constructor(context: GridContext) {
         this._projConverter = proj4(

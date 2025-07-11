@@ -5,9 +5,8 @@ import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { ISceneNode } from '@/core/scene/iscene'
 import { useEffect, useRef, forwardRef } from 'react'
-// Import rectangle drawing mode
-// @ts-ignore
-import DrawRectangle from "mapbox-gl-draw-rectangle-mode";
+// @ts-expect-error no declare file for rectangle mode
+import DrawRectangle from 'mapbox-gl-draw-rectangle-mode'
 import { calculateRectangleCoordinates } from './utils'
 import NHLayerGroup from './NHLayerGroup'
 
@@ -42,9 +41,33 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
 
     useEffect(() => {
         mapboxgl.accessToken = import.meta.env.VITE_MAP_TOKEN
-        let mapInstance: mapboxgl.Map | null = null
+        let mapInstance: mapboxgl.Map
         let resizer: ResizeObserver | null = null
         let drawInstance: MapboxDraw | null = null
+
+        let isProcessingDrawEvent = false
+        const handleDrawCreate = (e: any) => {
+            if (isProcessingDrawEvent) return
+            
+            isProcessingDrawEvent = true
+            try {
+                if (e.features && e.features.length > 0) {
+                    const feature = e.features[0];
+                    if (feature.geometry.type === 'Polygon') {
+                        const coordinates = calculateRectangleCoordinates(feature)
+                        const drawCompleteEvent = new CustomEvent('rectangle-draw-complete', {
+                            detail: { coordinates }
+                        })
+                        document.dispatchEvent(drawCompleteEvent)
+                        if (drawInstance) {
+                            drawInstance.changeMode('simple_select')
+                        }
+                    }
+                }
+            } finally {
+                isProcessingDrawEvent = false
+            }
+        }
 
         if (mapWrapperRef.current) {
             mapInstance = new mapboxgl.Map({
@@ -57,7 +80,17 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 attributionControl: false,
                 boxZoom: false,
             })
+            mapInstance.on('load', async() => {
+                const layerGroup = new NHLayerGroup()
+                layerGroup.id = 'gridman-custom-layer-group'
+                node && await node.scenarioNode.handleMapAdd(node, mapInstance, layerGroup)
+                mapInstance.addLayer(layerGroup)
+            })
             store.set('map', mapInstance)
+
+            mapInstance.on('style.load', () => {
+                mapInstance.setFog({})
+            })
 
             drawInstance = new MapboxDraw({
                 displayControlsDefault: false,
@@ -66,48 +99,11 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                     ...MapboxDraw.modes,
                     draw_rectangle: DrawRectangle,
                 }
-            });
-
-            mapInstance.addControl(drawInstance);
-            store.set('mapDraw', drawInstance);
-
-            mapInstance.on('style.load', () => {
-                mapInstance!.setFog({})
             })
+            store.set('mapDraw', drawInstance)
 
-            mapInstance.on('load', () => {
-                if (!mapInstance) return
-
-                const layerGroup = new NHLayerGroup()
-                layerGroup.id = 'gridman-custom-layer-group'
-                mapInstance.addLayer(layerGroup)
-                store.set('clg', layerGroup)
-            })
-
-            let isProcessingDrawEvent = false;
-
-            mapInstance.on('draw.create', (e: any) => {
-                if (isProcessingDrawEvent) return;
-                
-                isProcessingDrawEvent = true;
-                try {
-                    if (e.features && e.features.length > 0) {
-                        const feature = e.features[0];
-                        if (feature.geometry.type === 'Polygon') {
-                            const coordinates = calculateRectangleCoordinates(feature);
-                            const drawCompleteEvent = new CustomEvent('rectangle-draw-complete', {
-                                detail: { coordinates }
-                            });
-                            document.dispatchEvent(drawCompleteEvent);
-                            if (drawInstance) {
-                                drawInstance.changeMode('simple_select');
-                            }
-                        }
-                    }
-                } finally {
-                    isProcessingDrawEvent = false;
-                }
-            });
+            mapInstance.addControl(drawInstance)
+            mapInstance.on('draw.create', handleDrawCreate)
 
             const currentMapInstance = mapInstance
             resizer = new ResizeObserver(
@@ -120,18 +116,21 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
 
         return () => {
             if (resizer && mapWrapperRef.current) {
+                // eslint-disable-next-line react-hooks/exhaustive-deps
                 resizer.unobserve(mapWrapperRef.current)
                 resizer.disconnect()
             }
             if (mapInstance) {
                 if (drawInstance) {
-                    mapInstance.removeControl(drawInstance);
+                    mapInstance.removeControl(drawInstance)
+                    mapInstance.off('draw.create', handleDrawCreate)
                 }
                 mapInstance.remove()
                 store.set('map', null)
-                store.set('mapDraw', null);
+                store.set('mapDraw', null)
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     return (
