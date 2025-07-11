@@ -95,6 +95,7 @@ export default class HelloRenderer {
         gl.clear(gl.COLOR_BUFFER_BIT)
 
         gl.useProgram(this.fitShader)
+        gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, sourceTexture)
 
         gl.uniform1i(gl.getUniformLocation(this.fitShader, 'uTexture'), 0)
@@ -170,6 +171,7 @@ export default class HelloRenderer {
         if (!this.isReady) return
 
         this.helloTexture = this.fitTexture(this.helloImageTexture, this.helloTexture)
+        this.cooperationTexture = this.fitTexture(this.cooperationImageTexture, this.cooperationTexture)
 
         this.render()
     }
@@ -189,10 +191,10 @@ export default class HelloRenderer {
         gl.clear(gl.COLOR_BUFFER_BIT)
 
         gl.useProgram(this.gridShader)
-        gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.cooperationTexture)
+        gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
         gl.activeTexture(gl.TEXTURE1)
+        gl.bindTexture(gl.TEXTURE_2D, this.cooperationTexture)
 
         gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uHello'), 0)
         gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uCooperation'), 1)
