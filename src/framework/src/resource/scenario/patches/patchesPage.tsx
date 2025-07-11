@@ -1,16 +1,17 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import * as apis from '@/core/apis/apis'
-import { Input } from "@/components/ui/input";
-import { PatchesPageContext } from "./patches";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Save, SquaresIntersect } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import MapContainer from "@/components/mapContainer/mapContainer";
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
-import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types";
+import { validatePatchForm } from "./utils"
+import { Input } from "@/components/ui/input"
+import { PatchesPageContext } from "./patches"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Save, SquaresIntersect } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import MapContainer from "@/components/mapContainer/mapContainer"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types"
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -23,12 +24,9 @@ import {
     convertSinglePointCoordinate,
     convertToWGS84,
     flyToMarker,
-    getDrawnRectangleCoordinates,
     startDrawingRectangle,
     stopDrawingRectangle
-} from "@/components/mapContainer/utils";
-import store from "@/store";
-import { validatePatchForm } from "./utils";
+} from "@/components/mapContainer/utils"
 
 const patchTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -278,6 +276,8 @@ export default function PatchesPage({
         clearMapMarkers()
         clearGridLines()
         clearDrawPatchBounds()
+
+        triggerRepaint()
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -286,7 +286,7 @@ export default function PatchesPage({
         const pc = pageContext.current
         const validation = validatePatchForm({
             name: pc.name!,
-            bounds: pc.adjustedBounds!
+            bounds: adjustedCoordinate!
         })
 
         if (!validation.isValid) {
@@ -300,7 +300,7 @@ export default function PatchesPage({
             name: pc.name!,
             starred: false,
             description: pc.description,
-            bounds: pc.adjustedBounds!
+            bounds: adjustedCoordinate!
         }
 
         setGeneralMessage('Submitting data...')

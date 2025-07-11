@@ -94,8 +94,6 @@ export default function SchemaPage({ node }: SchemaPageProps) {
     }
 
     const handleEditButtonClick = () => {
-        // TODO: make textarea editable
-        // setIsEditing(true)
         pageContext.current.isEditing = true
         triggerRepaint()
     }
