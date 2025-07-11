@@ -17,6 +17,7 @@ export class SceneNode implements ISceneNode {
     
     // Dom-related properties
     tab: Tab
+    pageId: string | null = null
     private _pageContext: DefaultPageContext | undefined | null = undefined // undefined: not editing, null: editing paused, object: editing in progress
 
     constructor(tree: SceneTree, node_key: string, parent: ISceneNode | null, scenarioNode: IScenarioNode) {
@@ -309,7 +310,9 @@ export class SceneTree implements ISceneTree {
 
         this.editingNodeIds.delete(node.id)
         
-        await (node as SceneNode).deletePageContext()
+        const _node = node as SceneNode
+        _node.pageId = null
+        await _node.deletePageContext()
 
         this.handleNodeStopEditing(node)
 
