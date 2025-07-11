@@ -38,10 +38,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { PatchPageProps, TopologyOperationType } from "./types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { TopologyEditorProps, TopologyOperationType } from "./types";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { SceneNode } from "@/components/resourceScene/scene";
 import { PatchPageContext } from "./patch";
+import { SchemaInfo } from "../schema/types";
+import { PatchMeta } from "../patches/types";
+import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -78,10 +81,10 @@ const topologyOperations = [
     },
 ];
 
-export default function PatchPage(
-    { node }: PatchPageProps
+export default function TopologyEditor(
+    { node }: TopologyEditorProps
 ) {
-
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>('picking');
     const [checkSwitchOn, setCheckSwitchOn] = useState(false);
     const [activeSelectTab, setActiveSelectTab] = useState<'brush' | 'box' | 'feature'>('brush');
@@ -91,6 +94,8 @@ export default function PatchPage(
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
+    const schemaRef = useRef<SchemaInfo | null>(null)
+    const patchRef = useRef<PatchMeta | null>(null)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -102,6 +107,23 @@ export default function PatchPage(
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchPageContext
         const pc = pageContext.current
+
+        schemaRef.current = pc.schema
+        patchRef.current = pc.patch
+
+        if (patchRef.current && schemaRef.current) {
+            console.log('执行了')
+            const patchBoundsOn4326 = convertToWGS84(patchRef.current.bounds, schemaRef.current.epsg.toString())
+            addMapPatchBounds(patchBoundsOn4326, undefined, {
+                fillColor: 'rgba(255, 0, 0, 0.5)',
+                lineColor: '#FFFFFF',
+                opacity: 1.0,
+            })
+        }
+
+        // TODO: Set Patch
+
+        triggerRepaint()
     }
 
     const unloadContext = (node: SceneNode) => {
@@ -377,7 +399,7 @@ export default function PatchPage(
                                     <AlertDialogTrigger asChild>
                                         <Button
                                             variant='destructive'
-                                            className='bg-red-500 hover:bg-red-400 h-8 text-white cursor-pointer rounded-sm flex'
+                                            className='bg-red-500 hover:bg-red-600 h-8 text-white cursor-pointer rounded-sm flex'
                                         >
                                             <span>Delete</span>
                                             <Separator orientation='vertical' className='h-4' />
@@ -428,21 +450,21 @@ export default function PatchPage(
                                     <div className="text-sm text-white mt-1 grid gap-1">
                                         <div>
                                             <span className="font-bold">Schema Name: </span>
-                                            {pageContext.current?.schema?.name}
+                                            {schemaRef.current?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">Patch Name: </span>
-                                            {pageContext.current?.patch?.name}
+                                            {patchRef.current?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">EPSG: </span>
-                                            {pageContext.current?.schema?.epsg}
+                                            {schemaRef.current?.epsg}
                                         </div>
                                         <div className="flex items-start flex-row">
                                             <div className={`font-bold w-[25%]`}>Grid Levels(m): </div>
                                             <div className="space-y-1">
-                                                {pageContext.current?.schema?.grid_info && (
-                                                    pageContext.current?.schema?.grid_info.map(
+                                                {schemaRef.current?.grid_info && (
+                                                    schemaRef.current?.grid_info.map(
                                                         (level: number[], index: number) => {
                                                             // const color = paletteColorList ?
                                                             //     [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :
@@ -483,7 +505,7 @@ export default function PatchPage(
                                                             <TooltipContent>
                                                                 <div className="text-[12px] space-y-1">
                                                                     <p className="font-bold text-blue-500">North</p>
-                                                                    <p>{pageContext.current?.patch?.bounds[3].toFixed(6)}</p>
+                                                                    <p>{patchRef.current?.bounds[3].toFixed(6)}</p>
                                                                 </div>
                                                             </TooltipContent>
                                                         </Tooltip>
@@ -506,7 +528,7 @@ export default function PatchPage(
                                                             <TooltipContent>
                                                                 <div className="text-[12px]">
                                                                     <p className="font-bold mb-1 text-green-500">West</p>
-                                                                    <p>{pageContext.current?.patch?.bounds[0].toFixed(6)}</p>
+                                                                    <p>{patchRef.current?.bounds[0].toFixed(6)}</p>
                                                                 </div>
                                                             </TooltipContent>
                                                         </Tooltip>
@@ -516,8 +538,8 @@ export default function PatchPage(
                                                 <div className="text-center">
                                                     <span className="font-bold text-[14px] text-orange-500">Center</span>
                                                     <div className="text-[12px]">
-                                                        <div>{pageContext.current?.patch?.bounds ? ((pageContext.current.patch.bounds[0] + pageContext.current.patch.bounds[2]) / 2).toFixed(6) : '-'}</div>
-                                                        <div>{pageContext.current?.patch?.bounds ? ((pageContext.current.patch.bounds[1] + pageContext.current.patch.bounds[3]) / 2).toFixed(6) : '-'}</div>
+                                                        <div>{patchRef.current && ((patchRef.current?.bounds[0] + patchRef.current?.bounds[2]) / 2).toFixed(6)}</div>
+                                                        <div>{patchRef.current && ((patchRef.current?.bounds[1] + patchRef.current?.bounds[3]) / 2).toFixed(6)}</div>
                                                     </div>
                                                 </div>
                                                 {/* East/Right */}
@@ -533,7 +555,7 @@ export default function PatchPage(
                                                             <TooltipContent>
                                                                 <div className="text-[12px]">
                                                                     <p className="font-bold mb-1 text-red-500">East</p>
-                                                                    <p>{pageContext.current?.patch?.bounds[2].toFixed(6)}</p>
+                                                                    <p>{patchRef.current?.bounds[2].toFixed(6)}</p>
                                                                 </div>
                                                             </TooltipContent>
                                                         </Tooltip>
@@ -556,7 +578,7 @@ export default function PatchPage(
                                                             <TooltipContent>
                                                                 <div className="text-[12px]">
                                                                     <p className="font-bold mb-1 text-purple-500">South</p>
-                                                                    <p>{pageContext.current?.patch?.bounds[1].toFixed(6)}</p>
+                                                                    <p>{patchRef.current?.bounds[1].toFixed(6)}</p>
                                                                 </div>
                                                             </TooltipContent>
                                                         </Tooltip>

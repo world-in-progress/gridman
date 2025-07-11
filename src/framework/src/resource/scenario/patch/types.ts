@@ -1,6 +1,6 @@
 import { ISceneNode } from "@/core/scene/iscene";
 
-export interface PatchPageProps {
+export interface TopologyEditorProps {
     node: ISceneNode
 }
 

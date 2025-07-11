@@ -102,7 +102,6 @@ export default function PatchesPage({
         flyToMarker(schemaMarkerPoint.current, 11)
 
         if (pc.originBounds && pc.adjustedBounds) {
-            console.log('切换')
             const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(pc.originBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
             const adjustedSWPoint = [pc.adjustedBounds[0], pc.adjustedBounds[1]] as [number, number]
             setConvertCoordinate([convertedBounds!.southWest[0], convertedBounds!.southWest[1], convertedBounds!.northEast[0], convertedBounds!.northEast[1]])
@@ -248,7 +247,6 @@ export default function PatchesPage({
     }
 
     const resetForm = async() => {
-        console.log('我要清空表单')
         if (isDrawingBounds) {
             document.removeEventListener('rectangle-draw-complete', onDrawComplete);
             setIsDrawingBounds(false);
@@ -264,8 +262,6 @@ export default function PatchesPage({
         pageContext.current.schema = currentSchema;
 
         await (node as SceneNode).deletePageContext()
-        console.log(pageContext.current)
-
 
         setConvertCoordinate(null)
         setAdjustedCoordinate(null)
@@ -285,7 +281,6 @@ export default function PatchesPage({
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
-        console.log('点击了submit')
         e.preventDefault()
 
         const pc = pageContext.current

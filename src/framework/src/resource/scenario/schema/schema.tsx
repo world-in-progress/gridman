@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 import { SchemaInfo } from './types'
 import SchemaPage from './schemaPage'
 import { ISceneNode } from '@/core/scene/iscene'
-import { Delete, FilePlus2 } from 'lucide-react'
+import { Delete, FilePlus2, Info } from 'lucide-react'
 import { deleteSchema, getSchemaInfo } from './util'
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
@@ -51,7 +51,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
         return (
             <ContextMenuContent>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.CHECK_INFO)}>
-                    <FilePlus2 className='w-4 h-4' />
+                    <Info className='w-4 h-4' />
                     <span>Check Info</span>
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => handleContextMenu(nodeSelf, SchemaMenuItem.DELETE)}>

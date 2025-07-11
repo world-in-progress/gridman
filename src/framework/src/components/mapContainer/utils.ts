@@ -289,7 +289,15 @@ export const clearDrawPatchBounds = (id?: string) => {
 }
 
 // Add patch bounds to map
-export const addMapPatchBounds = (bounds: [number, number, number, number], id?: string) => {
+export const addMapPatchBounds = (
+    bounds: [number, number, number, number],
+    id?: string,
+    options?: {
+        fillColor?: string,
+        lineColor?: string,
+        opacity?: number,
+    }
+) => {
     const map = store.get<mapboxgl.Map>('map')
     if (!map) return
 
@@ -323,9 +331,14 @@ export const addMapPatchBounds = (bounds: [number, number, number, number], id?:
             data: boundsData as GeoJSON.Feature<GeoJSON.Polygon>
         })
 
-        const fillColor = id === 'adjusted-bounds' ? '#00FF00' : '#00A8C2';
-        const lineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#FFFF00';
-        const opacity = id === 'adjusted-bounds' ? 0.1 : 0.5
+        // 使用options传入的样式，如果没有则使用默认值
+        const defaultFillColor = id === 'adjusted-bounds' ? '#00FF00' : '#00A8C2';
+        const defaultLineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#FFFF00';
+        const defaultOpacity = id === 'adjusted-bounds' ? 0.1 : 0.5;
+
+        const fillColor = options?.fillColor || defaultFillColor;
+        const lineColor = options?.lineColor || defaultLineColor;
+        const opacity = options?.opacity !== undefined ? options.opacity : defaultOpacity;
 
         // Inner filled layer
         map.addLayer({

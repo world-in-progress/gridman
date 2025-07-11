@@ -139,7 +139,11 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                             {/* -----------*/}
                             {/* Page Title */}
                             {/* -----------*/}
-                            <h1 className='font-bold text-[25px]'>Check Schema Info ({node.name})</h1>
+                            <h1 className='font-bold text-[25px] relative flex items-center'>
+                                Check Schema Info
+                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                <span>[{node.name}]</span>
+                                </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
                             {/* ----------*/}
@@ -157,7 +161,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                     <AlertDialogTrigger asChild>
                                         <Button
                                             variant='destructive'
-                                            className='bg-red-500 hover:bg-red-400 h-8 text-white cursor-pointer rounded-sm flex'
+                                            className='bg-red-500 hover:bg-red-600 h-8 text-white cursor-pointer rounded-sm flex'
                                         >
                                             <span>Delete</span>
                                             <Separator orientation='vertical' className='h-4' />
