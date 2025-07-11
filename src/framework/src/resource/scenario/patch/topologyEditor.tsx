@@ -44,6 +44,14 @@ import { SceneNode } from "@/components/resourceScene/scene";
 import { PatchPageContext } from "./patch";
 import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils";
 import { GridMeta } from "@/core/apis/types";
+import { setPatch } from "./util";
+import GridCore from "@/core/grid/NHGridCore";
+import { GridContext } from "@/core/grid/types";
+import { boundingBox2D } from "@/core/util/boundingBox2D";
+import TopologyLayer from "@/components/mapContainer/TopologyLayer";
+import store from "@/store";
+import NHLayerGroup from "@/components/mapContainer/NHLayerGroup";
+import CapacityBar from "@/components/ui/capacityBar";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -105,13 +113,37 @@ export default function TopologyEditor(
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchPageContext
         const pc = pageContext.current
+        const map = store.get<mapboxgl.Map>('map')
 
-        patchRef.current = pc.patch
+        // Set Patch
+        const patchMeta = await setPatch(node)
+        patchRef.current = patchMeta
 
-        console.log(patchRef.current)
+        const gridContext: GridContext = {
+            srcCS: `EPSG:${patchMeta?.epsg}`,
+            targetCS: 'EPSG:4326',
+            bBox: boundingBox2D(...patchMeta!.bounds),
+            rules: patchMeta!.subdivide_rules
+        }
+
+        const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
+
+        const gridLayer = new TopologyLayer(map!)
+        const clg = store.get<NHLayerGroup>('clg')
+        clg!.addLayer(gridLayer)
+        
+
+        // TODO: Set Loading
+        gridLayer.startCallback = () => {
+            store.get<{ on: Function; off: Function }>('isLoading')!.on()
+        }
+        gridLayer.endCallback = () => {
+            store.get<{ on: Function; off: Function }>('isLoading')!.off()
+            triggerRepaint()
+        }
+        gridLayer.gridCore = gridCore
 
         if (patchRef.current) {
-            console.log('执行了')
             addMapPatchBounds(patchRef.current.bounds, undefined, {
                 fillColor: 'rgba(255, 0, 0, 0.5)',
                 lineColor: '#FFFFFF',
@@ -119,8 +151,6 @@ export default function TopologyEditor(
                 lineWidth: 5
             })
         }
-
-        // TODO: Set Patch
 
         triggerRepaint()
     }
@@ -883,6 +913,7 @@ export default function TopologyEditor(
                 </div>
             </div>
             <div className='w-3/5 h-full py-4 pr-4'>
+                <CapacityBar />
                 <MapContainer node={null} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
         </div>

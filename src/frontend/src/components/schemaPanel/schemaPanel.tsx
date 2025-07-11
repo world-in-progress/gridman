@@ -8,7 +8,7 @@ import { SubNavPanel } from './components/subNavPanel';
 import { Pagination } from './components/Pagination';
 import { createPaginationHandlers } from './utils/utils';
 import store from '@/store';
-import Loader from '../ui/loader';
+import Loader from '../../../../framework/src/components/ui/loader';
 
 interface SchemaPanelProps extends React.ComponentProps<typeof Sidebar> {
     onCreateNew?: () => void;
