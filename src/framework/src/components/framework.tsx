@@ -558,7 +558,7 @@ function FrameworkComponent() {
                     >
                         <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
                             {/* ResourcePage */}
-                            <ResourcePage node={focusNode!} />
+                            <ResourcePage node={focusNode!} menuItem={null}/>
                         </div>
                     </div>
                 )}

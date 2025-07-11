@@ -63,10 +63,11 @@ export const getPatch: IAPI<{ schemaName: string, patchName: string}, ResponseWi
     api: `${API_PREFIX}`,
     fetch: async (query: { schemaName: string, patchName: string}, isRemote: boolean): Promise<ResponseWithPatchMeta> => {
         try {
+            console.log('nihao')
             const { schemaName, patchName } = query
             const api = getPrefix(isRemote) + getPatch.api
-            const response = await fetch(`${api}/${schemaName}/${patchName}`, { method: 'GET' })
-
+            const response = await fetch(`${api}/${schemaName}/${patchName}/meta`, { method: 'GET' })
+            console.log(response)
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
