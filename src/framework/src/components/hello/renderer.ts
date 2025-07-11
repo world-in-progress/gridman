@@ -1,28 +1,42 @@
 import gll from '@/core/gl/glLib'
 
-const MaxGridNumINOneAxis = 50
+const MaxGridNumINOneAxis = 10
 
 export default class HelloRenderer {
-    private isReady: boolean = false
-    private gl: WebGL2RenderingContext
-    private canvas: HTMLCanvasElement
-    private resizeObserver: ResizeObserver
+    // Canvas-related properties
     private canvasWidth: number = 0
     private canvasHeight: number = 0
+    private canvas: HTMLCanvasElement
+    private resizeObserver: ResizeObserver
     private pixelRatio: number = window.devicePixelRatio || 1
 
     // Grid-related properties
-    private gridLayers: { [index: number]: { width: number, height: number } } = {}
+    private gridPixelResolution: number = 0
 
     // GPU-related resources
-    private helloShader: WebGLShader = 0
+    private isReady: boolean = false
+    private gl: WebGL2RenderingContext
+    private fitShader: WebGLShader = 0
     private gridShader: WebGLShader = 0
-    private vao: WebGLVertexArrayObject = 0
 
     private helloImageTexture: WebGLTexture = 0
     private helloTexture: WebGLTexture = 0
 
-    private helloFBO: WebGLFramebuffer = 0
+    private cooperationImageTexture: WebGLTexture = 0
+    private cooperationTexture: WebGLTexture = 0
+
+    // Pulse effect properties
+    private gridDimFactor: number = 0
+    private pulseSpeed: number = 0.5
+    private pulseRadius: number = 1.0
+    private pulseStartTime: number = 0
+    private pulseDuration: number = 2.0
+    private isPulseActive: boolean = false
+    private pulseCenter: [number, number] = [0.5, 0.5]
+
+    // Animation control
+    private animationId: number | null = null
+    private isAnimating: boolean = false
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -30,50 +44,114 @@ export default class HelloRenderer {
         this.resizeObserver = new ResizeObserver(() => this.handleCanvasResize())
         this.resizeObserver.observe(canvas)
 
+        this.canvas.addEventListener('mousedown', this.handleMouseClick.bind(this))
+
         this.gl = canvas.getContext('webgl2', {antialias: true, alpha: true}) as WebGL2RenderingContext
         gll.enableAllExtensions(this.gl)
 
         this.handleCanvasResize()
-
-        const maxDir = this.canvas.width > this.canvas.height ? 0 : 1
-        const d1 = maxDir === 0 ? this.canvas.height / MaxGridNumINOneAxis : this.canvas.width / MaxGridNumINOneAxis
-        const width1 = Math.ceil(this.canvas.width / d1)
-        const height1 = Math.ceil(this.canvas.height / d1)
-
-        // Only create three grid layers: l1 - hello, gridman! l2 - Next Hydro l3 - OpenGMS
-        this.gridLayers[0] = {
-            width: width1,
-            height: height1
-        }
-        this.gridLayers[1] = {
-            width: width1 * 2,
-            height: height1 * 2
-        }
-        this.gridLayers[2] = {
-            width: width1 * 4,
-            height: height1 * 4
-        }
-        console.log('Grid layers initialized:', this.gridLayers)
 
         this.init()
     }
 
     async init() {
         const gl = this.gl
-        this.helloShader = await gll.createShader(this.gl, '/shaders/hello/hello.glsl')
+        this.fitShader = await gll.createShader(this.gl, '/shaders/hello/fit.glsl')
         this.gridShader = await gll.createShader(this.gl, '/shaders/hello/grid.glsl')
-
-        this.vao = gl.createVertexArray()
 
         const helloBitmap = await gll.loadImage('/images/hello/hello.png')
         this.helloImageTexture = gll.createTexture2D(gl, 0, helloBitmap.width, helloBitmap.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, helloBitmap)
-        this.helloTexture = gll.createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)
+        this.helloTexture = this.fitTexture(this.helloImageTexture)
 
-        this.helloFBO = gll.createFrameBuffer(gl, [this.helloTexture])
+        const cooperationBitmap = await gll.loadImage('/images/hello/cooperation.png')
+        this.cooperationImageTexture = gll.createTexture2D(gl, 0, cooperationBitmap.width, cooperationBitmap.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, cooperationBitmap)
+        this.cooperationTexture = this.fitTexture(this.cooperationImageTexture)
 
         this.isReady = true
 
+        this.pulseStartTime = Date.now()
+
         this.render()
+    }
+
+    private fitTexture(sourceTexture: WebGLTexture, targetTexture?: WebGLTexture) {
+        const gl = this.gl
+
+        // Create target texture
+        if (targetTexture) gl.deleteTexture(targetTexture)
+        targetTexture = gll.createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)
+
+        // Create framebuffer for target texture
+        const fbo = gll.createFrameBuffer(gl, [targetTexture])
+
+        // Render texture to framebuffer
+        gl.enable(gl.BLEND)
+        gl.disable(gl.DEPTH_TEST)
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+        gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
+
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+
+        gl.useProgram(this.fitShader)
+        gl.bindTexture(gl.TEXTURE_2D, sourceTexture)
+
+        gl.uniform1i(gl.getUniformLocation(this.fitShader, 'uTexture'), 0)
+        gl.uniform2f(gl.getUniformLocation(this.fitShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+        // Clean
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+        gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.deleteFramebuffer(fbo)
+        gl.useProgram(null)
+
+        return targetTexture
+    }
+
+    private handleMouseClick = (event: MouseEvent) => {
+        if (this.isPulseActive) return
+
+        // Convert mouse coordinates to normalized coordinates [0,1]
+        const rect = this.canvas.getBoundingClientRect()
+        const x = (event.clientX - rect.left) / rect.width
+        const y = 1.0 - (event.clientY - rect.top) / rect.height  // flip Y coordinate
+        
+        // Set pulse center to click position
+        this.pulseCenter = [x, y]
+        
+        // Start new pulse
+        this.pulseStartTime = Date.now()
+        this.isPulseActive = true
+        
+        this.startAnimation()
+    }
+
+    private startAnimation() {
+        if (this.isAnimating) return
+        
+        this.isAnimating = true
+        const animate = () => {
+            this.render()
+            
+            // Continue animation only if pulse is active
+            if (this.isPulseActive) {
+                this.animationId = requestAnimationFrame(animate)
+            } else {
+                this.stopAnimation()
+            }
+        }
+        this.animationId = requestAnimationFrame(animate)
+    }
+
+    private stopAnimation() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId)
+            this.animationId = null
+        }
+        this.isAnimating = false
     }
 
     handleCanvasResize() {
@@ -83,16 +161,15 @@ export default class HelloRenderer {
         this.canvas.width = this.canvasWidth
         this.canvas.height = this.canvasHeight
 
-        if (!this.isReady) return
+        // Update grid size based on canvas size
+        this.gridPixelResolution = this.canvas.width > this.canvas.height 
+                            ? Math.ceil(this.canvas.width / MaxGridNumINOneAxis)
+                            : Math.ceil(this.canvas.height / MaxGridNumINOneAxis)
 
         // Reset canvas-related GPU resources
-        const gl = this.gl
+        if (!this.isReady) return
 
-        gl.deleteTexture(this.helloTexture)
-        this.helloTexture = gll.createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)
-
-        gl.deleteFramebuffer(this.helloFBO)
-        this.helloFBO = gll.createFrameBuffer(gl, [this.helloTexture])
+        this.helloTexture = this.fitTexture(this.helloImageTexture, this.helloTexture)
 
         this.render()
     }
@@ -101,26 +178,10 @@ export default class HelloRenderer {
         if (!this.isReady) return
 
         const gl = this.gl
+
         gl.enable(gl.BLEND)
         gl.disable(gl.DEPTH_TEST)
 
-        // Pass 1: Render hello texture
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.helloFBO)
-        gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
-
-        gl.clearColor(0, 0, 0, 0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
-
-        gl.useProgram(this.helloShader)
-        gl.bindTexture(gl.TEXTURE_2D, this.helloImageTexture)
-
-        gl.uniform1i(gl.getUniformLocation(this.helloShader, 'uTexture'), 0)
-        gl.uniform2f(gl.getUniformLocation(this.helloShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
-
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-        gl.bindVertexArray(null)
-
-        // Pass 2: Render
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
 
@@ -129,26 +190,61 @@ export default class HelloRenderer {
 
         gl.useProgram(this.gridShader)
         gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.cooperationTexture)
+        gl.activeTexture(gl.TEXTURE1)
 
-        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uTexture'), 0)
-        gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uGridDim'), this.gridLayers[0].width, this.gridLayers[0].height)
+        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uHello'), 0)
+        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uCooperation'), 1)
+        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
+        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridResolution'), this.gridPixelResolution)
+        gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
+        
+        // Only apply pulse uniforms if pulse is active
+        if (this.isPulseActive) {
+            const currentTime = (Date.now() - this.pulseStartTime) / 1000.0
+            
+            // Check if pulse duration has expired
+            if (currentTime >= this.pulseDuration) {
+                this.isPulseActive = false
+                this.gridDimFactor += 1
+                console.log('Pulse ended, grid dimension factor:', this.gridDimFactor)
+            } else {
+                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uTime'), currentTime)
+                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseSpeed'), this.pulseSpeed)
+                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), this.pulseRadius)
+                gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uPulseCenter'), this.pulseCenter[0], this.pulseCenter[1])
+            }
+        } else {
+            // Set pulse brightness to 0 when inactive
+            gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), 0.0)
+            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
+        }
 
-        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.gridLayers[0].width * this.gridLayers[0].height)
-        // gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 2)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
         gl.bindTexture(gl.TEXTURE_2D, null)
 
 
         // Error check
         gll.errorCheck(gl)
+
+        if (this.isPulseActive) {
+            requestAnimationFrame(() => this.render())
+        }
     }
 
     clean() {
+        this.stopAnimation()
+
         this.resizeObserver.unobserve(this.canvas)
+        this.canvas.removeEventListener('click', this.handleMouseClick)
 
         const gl = this.gl
-        console.log('Cleaning up resources')
-        gl.deleteProgram(this.helloShader)
-        gl.deleteVertexArray(this.vao)
+        gl.deleteProgram(this.fitShader)
+        gl.deleteProgram(this.gridShader)
+        gl.deleteTexture(this.helloTexture)
         gl.deleteTexture(this.helloImageTexture)
+        gl.deleteTexture(this.cooperationTexture)
+        gl.deleteTexture(this.cooperationImageTexture)
     }
 }

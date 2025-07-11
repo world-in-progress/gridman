@@ -84,9 +84,7 @@ export class SceneNode implements ISceneNode {
 
         if (this._pageContext === null) throw new Error('Page context is null. Cannot freeze context while editing is paused.')
 
-        if (this._pageContext
-            && this._pageContext instanceof DefaultPageContext
-        ) {
+        if (this._pageContext && this._pageContext instanceof DefaultPageContext) {
             if (this._pageContext.serialize !== DefaultPageContext.prototype.serialize) {
                 const db = this.tree.cs
                 db.constructorMap.set(this.id, this._pageContext.constructor as any)
