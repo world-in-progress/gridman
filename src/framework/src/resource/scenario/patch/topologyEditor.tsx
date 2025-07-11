@@ -111,13 +111,17 @@ export default function TopologyEditor(
         schemaRef.current = pc.schema
         patchRef.current = pc.patch
 
+        console.log(schemaRef.current)
+        console.log(patchRef.current)
+
         if (patchRef.current && schemaRef.current) {
             console.log('执行了')
             const patchBoundsOn4326 = convertToWGS84(patchRef.current.bounds, schemaRef.current.epsg.toString())
             addMapPatchBounds(patchBoundsOn4326, undefined, {
                 fillColor: 'rgba(255, 0, 0, 0.5)',
                 lineColor: '#FFFFFF',
-                opacity: 1.0,
+                opacity: 0.8,
+                lineWidth: 5
             })
         }
 

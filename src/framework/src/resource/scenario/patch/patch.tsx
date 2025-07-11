@@ -10,6 +10,7 @@ import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-men
 import { Delete, Grid3x3, Info } from "lucide-react"
 import { toast } from "sonner"
 import TopologyEditor from "./topologyEditor"
+import PatchInfo from "./patchInfo"
 
 export class PatchPageContext extends DefaultPageContext {
     patch: PatchMeta | null
@@ -85,9 +86,10 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
         }
     }
 
-    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
         return (
-            <TopologyEditor node={nodeSelf}/>
+            // <TopologyEditor node={nodeSelf}/>
+            <PatchInfo node={nodeSelf} />
         )
     }
 }
