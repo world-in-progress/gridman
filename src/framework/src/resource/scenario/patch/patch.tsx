@@ -1,14 +1,20 @@
-import { deletepatch, getPatchInfo } from "./util"
+import store from '@/store'
+import { deletepatch, getPatchInfo, setPatch } from './util'
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
-import { ISceneNode } from "@/core/scene/iscene"
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
-import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
-import { Delete, Grid3x3, Info } from "lucide-react"
-import { toast } from "sonner"
-import TopologyEditor from "./topologyEditor"
-import PatchInfo from "./patchInfo"
-import { GridMeta } from "@/core/apis/types"
+import { ISceneNode } from '@/core/scene/iscene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import { Delete, Grid3x3, Info } from 'lucide-react'
+import { toast } from 'sonner'
+import TopologyEditor from './topologyEditor'
+import PatchInfo from './patchInfo'
+import { GridMeta } from '@/core/apis/types'
+import NHLayerGroup from '@/components/mapContainer/NHLayerGroup'
+import { GridContext } from '@/core/grid/types'
+import { boundingBox2D } from '@/core/util/boundingBox2D'
+import GridCore from '@/core/grid/NHGridCore'
+import TopologyLayer from '@/components/mapContainer/TopologyLayer'
 
 export class PatchPageContext extends DefaultPageContext {
     patch: GridMeta | null
@@ -103,5 +109,31 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
                     <TopologyEditor node={nodeSelf} />
                 )
         }
+    }
+
+    async handleMapAdd(nodeSelf: ISceneNode, map: mapboxgl.Map, layerGroup: NHLayerGroup): Promise<void> {
+        const node = nodeSelf as SceneNode
+        // Set Patch
+        const patchMeta = await setPatch(nodeSelf as SceneNode)
+        const context = await node.getPageContext() as PatchPageContext
+        context.patch = patchMeta
+
+        const gridContext: GridContext = {
+            srcCS: `EPSG:${patchMeta?.epsg}`,
+            targetCS: 'EPSG:4326',
+            bBox: boundingBox2D(...patchMeta!.bounds),
+            rules: patchMeta!.subdivide_rules
+        }
+        const gridLayer = new TopologyLayer(map)
+        gridLayer.startCallback = () => {
+            store.get<{ on: Function, off: Function }>('isLoading')!.on()
+        }
+        gridLayer.endCallback = () => {
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        }
+        layerGroup.addLayer(gridLayer)
+
+        const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
+        gridLayer.gridCore = gridCore   
     }
 }

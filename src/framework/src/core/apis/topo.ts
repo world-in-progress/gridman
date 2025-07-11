@@ -4,7 +4,7 @@ import { GridSaveInfo, MultiGridBaseInfo, MultiGridInfoParser } from '../grid/ty
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
-const API_PREFIX = '/api/patch/topo'
+const API_PREFIX = '/api/topo'
 
 export const getActivateGridInfo: IAPI<void, MultiGridBaseInfo> = {
     api: `${API_PREFIX}/activate-info`,

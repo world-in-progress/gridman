@@ -206,6 +206,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     // Initialization //////////////////////////////////////////////////
 
     async initialize(_: Map, gl: WebGL2RenderingContext) {
+        console.log('Initializing TopologyLayer...')
         this._gl = gl
         this.initDOM()
         await this.initGPUResource()
@@ -248,9 +249,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gll.enableAllExtensions(gl)
 
         // Create shader
-        this._pickingShader = await gll.createShader(gl, '/shaders/picking.glsl')
-        this._gridLineShader = await gll.createShader(gl, '/shaders/gridLine.glsl')
-        this._gridMeshShader = await gll.createShader(gl, '/shaders/gridMesh.glsl')
+        this._pickingShader = await gll.createShader(gl, '/shaders/patch/picking.glsl')
+        this._gridLineShader = await gll.createShader(gl, '/shaders/patch/gridLine.glsl')
+        this._gridMeshShader = await gll.createShader(gl, '/shaders/patch/gridMesh.glsl')
 
         // Set static uniform in shaders
         gl.useProgram(this._gridMeshShader)
@@ -332,7 +333,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
         // Create texture
-        this._paletteTexture = gll.createTexture2D(gl, 1, LEVEL_PALETTE_LENGTH, 1, gl.RGB8, gl.RGB, gl.UNSIGNED_BYTE)
+        this._paletteTexture = gll.createTexture2D(gl, 0, LEVEL_PALETTE_LENGTH, 1, gl.RGB8, gl.RGB, gl.UNSIGNED_BYTE)
 
         // Create picking pass
         this._pickingTexture = gll.createTexture2D(gl, 0, 1, 1, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]))

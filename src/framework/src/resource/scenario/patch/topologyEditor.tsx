@@ -1,6 +1,6 @@
-import MapContainer from "@/components/mapContainer/mapContainer";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import MapContainer from "@/components/mapContainer/mapContainer"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
     Delete,
     SquareMousePointer,
@@ -14,7 +14,7 @@ import {
     Brush,
     SquareDashed,
     FolderOpen,
-} from "lucide-react";
+} from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,31 +27,31 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import {
-} from 'lucide-react';
+} from 'lucide-react'
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { TopologyEditorProps, TopologyOperationType } from "./types";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { SceneNode } from "@/components/resourceScene/scene";
-import { PatchPageContext } from "./patch";
-import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils";
-import { GridMeta } from "@/core/apis/types";
-import { setPatch } from "./util";
-import GridCore from "@/core/grid/NHGridCore";
-import { GridContext } from "@/core/grid/types";
-import { boundingBox2D } from "@/core/util/boundingBox2D";
-import TopologyLayer from "@/components/mapContainer/TopologyLayer";
-import store from "@/store";
-import NHLayerGroup from "@/components/mapContainer/NHLayerGroup";
-import CapacityBar from "@/components/ui/capacityBar";
+} from '@/components/ui/tooltip'
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { TopologyEditorProps, TopologyOperationType } from "./types"
+import { useCallback, useEffect, useReducer, useRef, useState } from "react"
+import { SceneNode } from "@/components/resourceScene/scene"
+import { PatchPageContext } from "./patch"
+import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils"
+import { GridMeta } from "@/core/apis/types"
+import { setPatch } from "./util"
+import GridCore from "@/core/grid/NHGridCore"
+import { GridContext } from "@/core/grid/types"
+import { boundingBox2D } from "@/core/util/boundingBox2D"
+import TopologyLayer from "@/components/mapContainer/TopologyLayer"
+import store from "@/store"
+import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
+import CapacityBar from "@/components/ui/capacityBar"
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -86,7 +86,7 @@ const topologyOperations = [
         hoverColor: 'hover:bg-orange-600',
         shortcut: '[ Ctrl+R ]',
     },
-];
+]
 
 export default function TopologyEditor(
     { node }: TopologyEditorProps
@@ -113,43 +113,37 @@ export default function TopologyEditor(
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchPageContext
         const pc = pageContext.current
-        const map = store.get<mapboxgl.Map>('map')
+        // const map = store.get<mapboxgl.Map>('map')!
 
-        // Set Patch
-        const patchMeta = await setPatch(node)
-        patchRef.current = patchMeta
+        // // Set Patch
+        // const patchMeta = await setPatch(node)
+        // patchRef.current = patchMeta
 
-        const gridContext: GridContext = {
-            srcCS: `EPSG:${patchMeta?.epsg}`,
-            targetCS: 'EPSG:4326',
-            bBox: boundingBox2D(...patchMeta!.bounds),
-            rules: patchMeta!.subdivide_rules
-        }
+        // const gridContext: GridContext = {
+        //     srcCS: `EPSG:${patchMeta?.epsg}`,
+        //     targetCS: 'EPSG:4326',
+        //     bBox: boundingBox2D(...patchMeta!.bounds),
+        //     rules: patchMeta!.subdivide_rules
+        // }
 
-        const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
+        // const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
 
-        const gridLayer = new TopologyLayer(map!)
-        const clg = store.get<NHLayerGroup>('clg')
-        clg!.addLayer(gridLayer)
-        
-
-        // TODO: Set Loading
-        gridLayer.startCallback = () => {
-            store.get<{ on: Function; off: Function }>('isLoading')!.on()
-        }
-        gridLayer.endCallback = () => {
-            store.get<{ on: Function; off: Function }>('isLoading')!.off()
-            triggerRepaint()
-        }
-        gridLayer.gridCore = gridCore
+        // const gridLayer = new TopologyLayer(map!)
+        // gridLayer.startCallback = () => {
+        //     store.get<{ on: Function; off: Function }>('isLoading')!.on()
+        // }
+        // gridLayer.endCallback = () => {
+        //     store.get<{ on: Function; off: Function }>('isLoading')!.off()
+        //     triggerRepaint()
+        // }
 
         if (patchRef.current) {
-            addMapPatchBounds(patchRef.current.bounds, undefined, {
-                fillColor: 'rgba(255, 0, 0, 0.5)',
-                lineColor: '#FFFFFF',
-                opacity: 0.8,
-                lineWidth: 5
-            })
+            // addMapPatchBounds(patchRef.current.bounds, undefined, {
+            //     fillColor: 'rgba(255, 0, 0, 0.5)',
+            //     lineColor: '#FFFFFF',
+            //     opacity: 0.8,
+            //     lineWidth: 5
+            // })
         }
 
         triggerRepaint()
@@ -914,7 +908,7 @@ export default function TopologyEditor(
             </div>
             <div className='w-3/5 h-full py-4 pr-4'>
                 <CapacityBar />
-                <MapContainer node={null} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
+                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
         </div>
     )
