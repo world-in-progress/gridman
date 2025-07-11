@@ -1,7 +1,4 @@
 import { deletepatch, getPatchInfo } from "./util"
-import { PatchMeta } from "../patches/types"
-import { SchemaInfo } from "../schema/types"
-import { getSchemaInfo } from "../schema/util"
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
 import { ISceneNode } from "@/core/scene/iscene"
@@ -11,15 +8,14 @@ import { Delete, Grid3x3, Info } from "lucide-react"
 import { toast } from "sonner"
 import TopologyEditor from "./topologyEditor"
 import PatchInfo from "./patchInfo"
+import { GridMeta } from "@/core/apis/types"
 
 export class PatchPageContext extends DefaultPageContext {
-    patch: PatchMeta | null
-    schema: SchemaInfo | null
+    patch: GridMeta | null
 
     constructor() {
         super()
         this.patch = null
-        this.schema = null
     }
 
     static async create(node: ISceneNode): Promise<PatchPageContext> {
@@ -27,9 +23,7 @@ export class PatchPageContext extends DefaultPageContext {
         const context = new PatchPageContext()
 
         try {
-            const schema = await getSchemaInfo(n, n.tree.isPublic)
             const patch = await getPatchInfo(n, n.tree.isPublic)
-            context.schema = schema
             context.patch = patch
         } catch (error) {
             console.error('Process patch info failed: ', error)
@@ -71,8 +65,13 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
 
     async handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): Promise<void> {
         switch (menuItem) {
+            case PatchMenuItem.CHECK_INFO:
+                (nodeSelf as SceneNode).pageId = 'checkInfo'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
             case PatchMenuItem.TOPOLOGY_EDITOR:
-                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                (nodeSelf as SceneNode).pageId = 'default'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case PatchMenuItem.DELETE: {
                 const response = await deletepatch(nodeSelf as SceneNode, nodeSelf.tree.isPublic)
@@ -87,9 +86,19 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
     }
 
     renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
-        return (
-            // <TopologyEditor node={nodeSelf}/>
-            <PatchInfo node={nodeSelf} />
-        )
+        switch ((nodeSelf as SceneNode).pageId) {
+            case 'default':
+                return (
+                    <TopologyEditor node={nodeSelf} />
+                )
+            case 'checkInfo':
+                return (
+                    <PatchInfo node={nodeSelf} />
+                )
+            default:
+                return (
+                    <TopologyEditor node={nodeSelf} />
+                )
+        }
     }
 }
