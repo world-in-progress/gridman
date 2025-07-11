@@ -9,6 +9,7 @@ import { useEffect, useRef, forwardRef } from 'react'
 // @ts-ignore
 import DrawRectangle from "mapbox-gl-draw-rectangle-mode";
 import { calculateRectangleCoordinates } from './utils'
+import NHLayerGroup from './NHLayerGroup'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -74,11 +75,18 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 mapInstance!.setFog({})
             })
 
+            mapInstance.on('load', () => {
+                if (!mapInstance) return
+
+                const layerGroup = new NHLayerGroup()
+                layerGroup.id = 'gridman-custom-layer-group'
+                mapInstance.addLayer(layerGroup)
+                store.set('clg', layerGroup)
+            })
+
             let isProcessingDrawEvent = false;
 
             mapInstance.on('draw.create', (e: any) => {
-
-
                 if (isProcessingDrawEvent) return;
                 
                 isProcessingDrawEvent = true;

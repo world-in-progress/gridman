@@ -80,6 +80,7 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
                 if (response) {
                     toast.success(`Patch ${nodeSelf.name} deleted successfully`)
                     await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    
                 } else {
                     toast.error(`Failed to delete patch ${nodeSelf.name}`)
                 }
