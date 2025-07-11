@@ -81,7 +81,7 @@ export default class SchemaScenarioNode extends DefaultScenarioNode {
         }
     }
 
-    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
         return (
             <SchemaPage node={nodeSelf} />
         )

@@ -75,7 +75,7 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
         }
     }
 
-    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
         return (
             <PatchesPage node={nodeSelf} />
         )
