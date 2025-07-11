@@ -43,8 +43,7 @@ export default class HelloRenderer {
     private pulseCenter: [number, number] = [-1.0, -1.0]
 
     // Particle-related properties
-    private lastMouseMoveTime: number = 0
-    private mouseEffectDuration: number = 2000
+    private mouseEffectDuration: number = 3000
     private swapCounter: number = 0
     private particleSize: number = 20
     private samplingStep: number = 2
@@ -55,9 +54,11 @@ export default class HelloRenderer {
     private forceCenter: [number, number] = [-1.0, -1.0]
 
     // Animation control
+    private stopTimeout: NodeJS.Timeout | null = null
     private pulseStartTime: number = 0
     private isAnimating: boolean = false
     private animationId: number | null = null
+    renderControl: { start: () => void, stop: () => void } | null = null
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -215,7 +216,23 @@ export default class HelloRenderer {
 
         this.forceCenter = [x * 2.0 - 1.0, y * 2.0 - 1.0]
 
-        this.lastMouseMoveTime = Date.now()
+        if (this.renderControl && !this.isAnimating) {
+            this.renderControl.start()
+            this.isAnimating = true
+        }
+
+        this.scheduleStopRendering()
+    }
+
+    private scheduleStopRendering() {
+        if (this.stopTimeout) clearTimeout(this.stopTimeout)
+        
+        this.stopTimeout = setTimeout(() => {
+            if (this.renderControl) {
+                this.renderControl.stop()
+                this.isAnimating = false
+            }
+        }, this.mouseEffectDuration)
     }
 
     private startAnimation() {
@@ -355,13 +372,6 @@ export default class HelloRenderer {
 
         // Error check
         gll.errorCheck(gl)
-
-        // const timeSinceLastMove = Date.now() - this.lastMouseMoveTime
-        // const shouldContinueForMouse = timeSinceLastMove < this.mouseEffectDuration
-
-        // if (this.isPulseActive || shouldContinueForMouse) {
-        //     requestAnimationFrame(() => this.render())
-        // }
     }
 
     clean() {

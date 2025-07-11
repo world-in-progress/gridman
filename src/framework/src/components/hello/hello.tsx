@@ -1,9 +1,29 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import HelloRenderer from './renderer'
 
 export default function Hello() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const animationRef = useRef<number | null>(null)
     const rendererRef = useRef<HelloRenderer | null>(null)
+
+    const startRenderLoop = useCallback(() => {
+        if (animationRef.current) return
+        
+        const render = () => {
+            if (rendererRef.current) {
+                rendererRef.current.render()
+                animationRef.current = requestAnimationFrame(render)
+            }
+        }
+        animationRef.current = requestAnimationFrame(render)
+    }, [])
+
+    const stopRenderLoop = useCallback(() => {
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current)
+            animationRef.current = null
+        }
+    }, [])
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -11,14 +31,19 @@ export default function Hello() {
         if (canvas) {
             rendererRef.current = new HelloRenderer(canvas)
 
-            const render = () => {
-                if (rendererRef.current) {
-                    rendererRef.current.render()
-                    requestAnimationFrame(render)
-                }
+            rendererRef.current.renderControl = {
+                start: startRenderLoop,
+                stop: stopRenderLoop
             }
 
-            render()
+            // const render = () => {
+            //     if (rendererRef.current) {
+            //         rendererRef.current.render()
+            //         requestAnimationFrame(render)
+            //     }
+            // }
+
+            // render()
         }
 
         return () => {
@@ -27,7 +52,7 @@ export default function Hello() {
                 rendererRef.current = null
             }
         }
-    }, [])
+    }, [startRenderLoop, stopRenderLoop])
 
     return (
         <div className={'relative w-full h-full bg-[#1E1E1E]'}>

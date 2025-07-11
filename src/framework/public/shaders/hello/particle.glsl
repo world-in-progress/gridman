@@ -42,7 +42,7 @@ out vec4 fragColor;
 void main() {
     float distance = v_uv.x * v_uv.x + v_uv.y * v_uv.y;
     if (distance < 0.5) {
-        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        fragColor = vec4(0.91, 0.94, 0.93, 1.0);
     } else {
         discard;
     }
