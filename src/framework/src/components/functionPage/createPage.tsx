@@ -1,4 +1,3 @@
-import PatchPage from '@/resource/scenario/patch/patchPage'
 import MapContainer from '../mapContainer/mapContainer'
 import { CreatePageProps } from './types'
 
