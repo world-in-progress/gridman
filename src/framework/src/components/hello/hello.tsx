@@ -10,6 +10,15 @@ export default function Hello() {
 
         if (canvas) {
             rendererRef.current = new HelloRenderer(canvas)
+
+            const render = () => {
+                if (rendererRef.current) {
+                    rendererRef.current.render()
+                    requestAnimationFrame(render)
+                }
+            }
+
+            render()
         }
 
         return () => {
