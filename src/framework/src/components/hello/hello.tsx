@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react'
 import HelloRenderer from './renderer'
+import { useCallback, useEffect, useRef } from 'react'
 
 export default function Hello() {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
     const animationRef = useRef<number | null>(null)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
     const rendererRef = useRef<HelloRenderer | null>(null)
 
     const startRenderLoop = useCallback(() => {
