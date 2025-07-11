@@ -71,15 +71,19 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
 
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
         switch (menuItem) {
-            case SchemasMenuItem.CREATE_NEW_SCHEMA:
-                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+            case SchemasMenuItem.CREATE_NEW_SCHEMA: {
+                (nodeSelf as SceneNode).pageId = 'default'
+                ;(nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
+            }
         }
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
-        return (
-            <SchemasPage node={nodeSelf} />
-        )
+        switch ((nodeSelf as SceneNode).pageId) {
+            case 'default':
+            default:
+                return (<SchemasPage node={nodeSelf} />)
+        }
     }
 }
