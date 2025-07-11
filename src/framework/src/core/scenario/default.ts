@@ -22,7 +22,7 @@ export default class DefaultScenarioNode implements IScenarioNode {
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
     }
 
-    renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
+    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
         return null
     }
 }
