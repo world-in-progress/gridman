@@ -1,5 +1,5 @@
-import proj4 from 'proj4';
 import BoundingBox2D from '../util/boundingBox2D';
+import type { Converter } from 'proj4/dist/lib/core'
 import { MercatorCoordinate } from '../math/mercatorCoordinate';
 
 export const EDGE_CODE_INVALID = -1;
@@ -189,7 +189,7 @@ export class GridNode {
         };
     }
 
-    getVertices(converter: proj4.Converter, bBox: BoundingBox2D) {
+    getVertices(converter: Converter, bBox: BoundingBox2D) {
         const xMin = lerp(bBox.xMin, bBox.xMax, this.xMin);
         const yMin = lerp(bBox.yMin, bBox.yMax, this.yMin);
         const xMax = lerp(bBox.xMin, bBox.xMax, this.xMax);

@@ -28,10 +28,10 @@ export default class HelloRenderer {
     // Pulse effect properties
     private gridDimFactor: number = 0
     private pulseSpeed: number = 1.0
-    private pulseRadius: number = 1.0
+    private pulseRadius: number = 0.5
     private pulseStartTime: number = 0
-    private pulseDuration: number = 1.0
     private isPulseActive: boolean = false
+    private pulseDuration: number = this.pulseRadius / this.pulseSpeed
     private pulseCenter: [number, number] = [0.5, 0.5]
 
     // Animation control
