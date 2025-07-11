@@ -4,8 +4,8 @@ import * as apis from '@/core/apis/apis'
 // Get Patch by schemaName and patchName
 export const getPatchInfo = async(node: SceneNode, isRemote: boolean) => {
     try {
-        const res = await apis.patch.getPatch.fetch({schemaName: node.parent!.parent!.name, patchName: node.name}, isRemote)
-        return res.patch_meta
+        const res = await apis.patch.getPatchMeta.fetch({schemaName: node.parent!.parent!.name, patchName: node.name}, isRemote)
+        return res
     } catch (error) {
         console.error('Get patch info failed: ', error)
         return null
