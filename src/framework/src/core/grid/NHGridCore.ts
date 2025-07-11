@@ -1,7 +1,7 @@
 import proj4 from 'proj4'
 import Dispatcher from '../message/dispatcher'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
-import { GridContext, GridCheckingInfo, GridSaveInfo, MultiGridRenderInfo, MultiGridBaseInfo, StructuredGridRenderVertices, GridKeyHashTable } from './types'
+import { GridContext, GridCheckingInfo, GridSaveInfo, MultiGridBaseInfo, StructuredGridRenderVertices, GridKeyHashTable } from './types'
 
 proj4.defs('EPSG:2326',"+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
 
@@ -57,7 +57,7 @@ export default class GridCore {
     private _gridGlobalIdCache: Uint32Array
     private _gridKey_storageId_dict: GridKeyHashTable
 
-    constructor(public context: GridContext, options: GridRecordOptions = {}) {
+    constructor(public context: GridContext, public isRemote: boolean, options: GridRecordOptions = {}) {
         // Init metadata
         this.maxGridNum = options.maxGridNum ?? 4096 * 4096
         this.levelInfos = new Array<GridLevelInfo>(this.context.rules.length)
@@ -113,7 +113,7 @@ export default class GridCore {
         // Brodcast actors to init grid manager and initialize grid cache
         this._dispatcher.broadcast('setGridManager', this.context, () => {
             // Get activate grid information
-            this._dispatcher.actor.send('getGridInfo', null, (_, baseInfo: MultiGridBaseInfo) => {
+            this._dispatcher.actor.send('getGridInfo', this.isRemote, (_, baseInfo: MultiGridBaseInfo) => {
                 this.updateMultiGridRenderInfo(baseInfo, callback)
             })
         })
@@ -270,7 +270,7 @@ export default class GridCore {
             this._gridDeletedCache[storageId] = DELETED_FLAG
         }
         // Mark provided grids as deleted
-        this._dispatcher.actor.send('removeGrids', { levels, globalIds }, () => {
+        this._dispatcher.actor.send('deleteGrids', { levels, globalIds, isRemote: this.isRemote }, () => {
             callback && callback()
         })
     }
@@ -286,7 +286,7 @@ export default class GridCore {
             this._gridDeletedCache[storageId] = UNDELETED_FLAG
         }
         // Recover provided grids
-        this._dispatcher.actor.send('recoverGrids', { levels, globalIds }, () => {
+        this._dispatcher.actor.send('recoverGrids', { levels, globalIds, isRemote: this.isRemote }, () => {
             callback && callback()
         })
     }
@@ -298,9 +298,8 @@ export default class GridCore {
      * use storageIds to get info of subdividable grids is incorrect.
      */
     subdivideGrids(subdivideInfos: {levels: Uint8Array, globalIds: Uint32Array}, callback?: Function): void {
-
         // Dispatch a worker to subdivide the grids
-        this._dispatcher.actor.send('subdivideGrids', subdivideInfos, (_, baseInfo: MultiGridBaseInfo) => {
+        this._dispatcher.actor.send('subdivideGrids', { ...subdivideInfos, isRemote: this.isRemote }, (_, baseInfo: MultiGridBaseInfo) => {
             baseInfo.deleted = new Uint8Array(baseInfo.levels.length).fill(UNDELETED_FLAG)
             this.updateMultiGridRenderInfo(baseInfo, callback)
         })
@@ -316,7 +315,7 @@ export default class GridCore {
             globalIds[i] = globalId
         }
         // Merge provided grids
-        this._dispatcher.actor.send('mergeGrids', { levels, globalIds }, (_: any, parentInfo: MultiGridBaseInfo) => {
+        this._dispatcher.actor.send('mergeGrids', { levels, globalIds, isRemote: this.isRemote }, (_: any, parentInfo: MultiGridBaseInfo) => {
             // Get storageIds of all child grids
             const childStorageIds: number[] = []
             const parentNum = parentInfo.levels.length
@@ -336,7 +335,7 @@ export default class GridCore {
     }
 
     getGridInfoByFeature(path: string, callback?: Function) {
-        this._dispatcher.actor.send('getGridInfoByFeature', path, (_, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
+        this._dispatcher.actor.send('getGridInfoByFeature', { path, isRemote: this.isRemote }, (_, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
             const { levels, globalIds } = gridInfo
             const gridNum = levels.length
             const storageIds: number[] = new Array(gridNum)
@@ -412,7 +411,7 @@ export default class GridCore {
     }
 
     save(callback: Function) {
-        this._dispatcher.actor.send('saveGrids', null, (_: any, gridInfo: GridSaveInfo) => {
+        this._dispatcher.actor.send('saveGrids', this.isRemote, (_: any, gridInfo: GridSaveInfo) => {
             callback && callback(gridInfo)
         })
     }
