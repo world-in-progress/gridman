@@ -66,24 +66,25 @@ void main() {
                     pixelInGrid.y <= 1 || pixelInGrid.y >= (gridSize - 2));
 
     vec4 color = vec4(0.0);
-    if (dynamicGridFactor % 2 == 0) {
+    if (gridSize > 1) {
         color = texture(uHello, v_uv);
+        if (color.a == 0.0) {
+            discard;
+        }
+
+        // Draw edges
+        if (isOnEdge) {
+            vec4 gridColor = vec4(0.71, 0.17, 0.06, 0.1);
+            fragColor = mix(gridColor, color, 0.4);
+
+        } 
+        // Draw filling
+        else {
+            fragColor = color;
+        }
+
     } else {
-        color = texture(uCooperation, v_uv);
-    }
-    if (color.a == 0.0) {
-        discard;
-    }
-
-    // Draw edges
-    if (isOnEdge) {
-        vec4 gridColor = vec4(0.71, 0.17, 0.06, 0.1);
-        fragColor = mix(gridColor, color, 0.4);
-
-    } 
-    // Draw filling
-    else {
-        fragColor = color;
+        fragColor = texture(uCooperation, v_uv);
     }
 }
 

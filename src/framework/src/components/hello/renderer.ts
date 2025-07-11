@@ -1,6 +1,6 @@
 import gll from '@/core/gl/glLib'
 
-const MaxGridNumINOneAxis = 10
+const Max_Grid_Num_IN_One_Axis = 50
 
 export default class HelloRenderer {
     // Canvas-related properties
@@ -19,27 +19,28 @@ export default class HelloRenderer {
     private fitShader: WebGLShader = 0
     private gridShader: WebGLShader = 0
 
-    private helloImageTexture: WebGLTexture = 0
     private helloTexture: WebGLTexture = 0
+    private helloImageTexture: WebGLTexture = 0
 
-    private cooperationImageTexture: WebGLTexture = 0
     private cooperationTexture: WebGLTexture = 0
+    private cooperationImageTexture: WebGLTexture = 0
 
     // Pulse effect properties
     private gridDimFactor: number = 0
-    private pulseSpeed: number = 0.5
+    private pulseSpeed: number = 1.0
     private pulseRadius: number = 1.0
     private pulseStartTime: number = 0
-    private pulseDuration: number = 2.0
+    private pulseDuration: number = 1.0
     private isPulseActive: boolean = false
     private pulseCenter: [number, number] = [0.5, 0.5]
 
     // Animation control
-    private animationId: number | null = null
     private isAnimating: boolean = false
+    private animationId: number | null = null
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
+
         // Create a ResizeObserver to watch for canvas size changes
         this.resizeObserver = new ResizeObserver(() => this.handleCanvasResize())
         this.resizeObserver.observe(canvas)
@@ -49,12 +50,12 @@ export default class HelloRenderer {
         this.gl = canvas.getContext('webgl2', {antialias: true, alpha: true}) as WebGL2RenderingContext
         gll.enableAllExtensions(this.gl)
 
-        this.handleCanvasResize()
-
         this.init()
     }
 
     async init() {
+        this.handleCanvasResize()
+
         const gl = this.gl
         this.fitShader = await gll.createShader(this.gl, '/shaders/hello/fit.glsl')
         this.gridShader = await gll.createShader(this.gl, '/shaders/hello/grid.glsl')
@@ -164,8 +165,8 @@ export default class HelloRenderer {
 
         // Update grid size based on canvas size
         this.gridPixelResolution = this.canvas.width > this.canvas.height 
-                            ? Math.ceil(this.canvas.width / MaxGridNumINOneAxis)
-                            : Math.ceil(this.canvas.height / MaxGridNumINOneAxis)
+                            ? Math.ceil(this.canvas.width / Max_Grid_Num_IN_One_Axis)
+                            : Math.ceil(this.canvas.height / Max_Grid_Num_IN_One_Axis)
 
         // Reset canvas-related GPU resources
         if (!this.isReady) return
@@ -210,7 +211,7 @@ export default class HelloRenderer {
             if (currentTime >= this.pulseDuration) {
                 this.isPulseActive = false
                 this.gridDimFactor += 1
-                console.log('Pulse ended, grid dimension factor:', this.gridDimFactor)
+
             } else {
                 gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uTime'), currentTime)
                 gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseSpeed'), this.pulseSpeed)
@@ -239,7 +240,7 @@ export default class HelloRenderer {
         this.stopAnimation()
 
         this.resizeObserver.unobserve(this.canvas)
-        this.canvas.removeEventListener('click', this.handleMouseClick)
+        this.canvas.removeEventListener('mousedown', this.handleMouseClick)
 
         const gl = this.gl
         gl.deleteProgram(this.fitShader)
