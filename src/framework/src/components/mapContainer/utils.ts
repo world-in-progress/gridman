@@ -2,7 +2,7 @@ import store from '@/store';
 import mapboxgl from 'mapbox-gl'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import proj4 from 'proj4';
-import { RectangleCoordinates } from '../patches/types';
+import { RectangleCoordinates } from '@/resource/scenario/patches/types';
 
 export const clearMapMarkers = (): void => {
     const markers = document.getElementsByClassName('mapboxgl-marker')
@@ -384,7 +384,7 @@ export const startDrawingRectangle = () => {
     const draw = store.get<MapboxDraw>('mapDraw')
 
     if (!map || !draw) {
-        console.error('地图或绘图工具未初始化')
+        console.error('Map or drawing tool not initialized')
         return false;
     }
 
@@ -393,7 +393,7 @@ export const startDrawingRectangle = () => {
         draw.changeMode('draw_rectangle')
         return true;
     } catch (error) {
-        console.error('启动绘图出错:', error)
+        console.error('Start drawing rectangle error:', error)
         return false;
     }
 }
@@ -407,9 +407,8 @@ export const stopDrawingRectangle = () => {
 
     try {
         draw.changeMode('simple_select');
-        console.log('停止绘图')
     } catch (error) {
-        console.error('停止绘图出错:', error);
+        console.error('Stop drawing rectangle error:', error);
     }
 }
 
