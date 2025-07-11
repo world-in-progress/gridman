@@ -198,6 +198,7 @@ export default function PatchesPage({
         triggerRepaint();
     }
 
+
     const handleDrawBounds = () => {
         if (isDrawingBounds) {
             setIsDrawingBounds(false)
@@ -243,8 +244,6 @@ export default function PatchesPage({
             }
             triggerRepaint()
             addMapPatchBounds(inputBoundsOn4326, '4326')
-            triggerRepaint()
-            addMapPatchBounds(inputBoundsOn4326, '4326')
         }
     }
 
@@ -267,8 +266,6 @@ export default function PatchesPage({
         await (node as SceneNode).deletePageContext()
         console.log(pageContext.current)
 
-        await (node as SceneNode).deletePageContext()
-        console.log(pageContext.current)
 
         setConvertCoordinate(null)
         setAdjustedCoordinate(null)
@@ -281,7 +278,6 @@ export default function PatchesPage({
 
         setGeneralMessage(null)
 
-        setGeneralMessage(null)
 
         clearMapMarkers()
         clearGridLines()
@@ -426,6 +422,7 @@ export default function PatchesPage({
                                         id='schema'
                                         value={pageContext.current.schema?.name}
                                         readOnly={true}
+                                        readOnly={true}
                                         placeholder='Schema Name'
                                         className={`text-black w-full border-gray-300`}
                                     />
@@ -508,6 +505,7 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[3] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 3)}
+                                                    onChange={(e) => handleSetInputBounds(e, 3)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max Y'}
                                                     step="any"
@@ -526,6 +524,7 @@ export default function PatchesPage({
                                                 <input
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[0] ?? ''}
+                                                    onChange={(e) => handleSetInputBounds(e, 0)}
                                                     onChange={(e) => handleSetInputBounds(e, 0)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter mix X'}
@@ -560,6 +559,7 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[2] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 2)}
+                                                    onChange={(e) => handleSetInputBounds(e, 2)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
                                                     placeholder={'Enter max X'}
                                                     step="any"
@@ -579,7 +579,9 @@ export default function PatchesPage({
                                                     type="number"
                                                     value={pageContext.current.inputBounds?.[1] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 1)}
+                                                    onChange={(e) => handleSetInputBounds(e, 1)}
                                                     className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    placeholder={'Enter min Y'}
                                                     placeholder={'Enter min Y'}
                                                     step="any"
                                                 />
@@ -590,6 +592,7 @@ export default function PatchesPage({
                                             </div>
                                         </div>
                                         <button
+                                            type="button"
                                             type="button"
                                             className="w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
                                             onClick={drawBoundsByParams}
