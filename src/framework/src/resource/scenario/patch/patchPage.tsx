@@ -39,7 +39,9 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PatchPageProps, TopologyOperationType } from "./types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { SceneNode } from "@/components/resourceScene/scene";
+import { PatchPageContext } from "./patch";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -49,29 +51,29 @@ const topologyOperations = [
     {
         type: 'subdivide',
         text: 'Subdivide',
-        activeColor: 'bg-blue-600',
-        hoverColor: 'hover:bg-blue-700',
+        activeColor: 'bg-blue-500',
+        hoverColor: 'hover:bg-blue-600',
         shortcut: '[ Ctrl+S ]',
     },
     {
         type: 'merge',
         text: 'Merge',
-        activeColor: 'bg-green-600',
-        hoverColor: 'hover:bg-green-700',
+        activeColor: 'bg-green-500',
+        hoverColor: 'hover:bg-green-600',
         shortcut: '[ Ctrl+M ]',
     },
     {
         type: 'delete',
         text: 'Delete',
-        activeColor: 'bg-red-600',
-        hoverColor: 'hover:bg-red-700',
+        activeColor: 'bg-red-500',
+        hoverColor: 'hover:bg-red-600',
         shortcut: '[ Ctrl+D ]',
     },
     {
         type: 'recover',
         text: 'Recover',
         activeColor: 'bg-orange-500',
-        hoverColor: 'hover:bg-orange-500',
+        hoverColor: 'hover:bg-orange-600',
         shortcut: '[ Ctrl+R ]',
     },
 ];
@@ -81,12 +83,58 @@ export default function PatchPage(
 ) {
 
     const [pickingTab, setPickingTab] = useState<'picking' | 'unpicking'>('picking');
+    const [checkSwitchOn, setCheckSwitchOn] = useState(false);
     const [activeSelectTab, setActiveSelectTab] = useState<'brush' | 'box' | 'feature'>('brush');
+    const [selectAllDialogOpen, setSelectAllDialogOpen] = useState(false);
+    const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
 
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
+    const pageContext = useRef<PatchPageContext>(new PatchPageContext())
+
     useEffect(() => {
-    })
+        loadContext(node as SceneNode)
+        return () => {
+            unloadContext(node as SceneNode)
+        }
+    }, [node])
+
+    const loadContext = async (node: SceneNode) => {
+        pageContext.current = await node.getPageContext() as PatchPageContext
+        const pc = pageContext.current
+    }
+
+    const unloadContext = (node: SceneNode) => {
+        return
+    }
+
+    const handleSelectAllClick = () => {
+        // if (store.get<boolean>('highSpeedModeState')!) {
+        //     handleConfirmSelectAll();
+        // } 
+        setSelectAllDialogOpen(true);
+    };
+
+    const handleDeleteSelectClick = () => {
+        // if (store.get<boolean>('highSpeedModeState')!) {
+        //     handleConfirmDeleteSelect();
+        // } 
+        setDeleteSelectDialogOpen(true);
+    };
+
+    const handleConfirmSelectAll = useCallback(() => {
+        setSelectAllDialogOpen(false);
+        // topologyLayer.executePickAllGrids();
+    }, []
+        // [topologyLayer]
+    );
+
+    const handleConfirmDeleteSelect = useCallback(() => {
+        setDeleteSelectDialogOpen(false);
+        // topologyLayer.executeClearSelection();
+    }, []
+        // [topologyLayer]
+    );
 
     const handlePatchDelete = async () => {
         console.log('delete patch')
@@ -114,7 +162,173 @@ export default function PatchPage(
                 console.warn('No active topology operation to confirm.');
         }
         setActiveTopologyOperation(null);
-    }, [activeTopologyOperation, topologyLayer]);
+    }, [activeTopologyOperation,
+        // topologyLayer
+    ]);
+
+    const onTopologyOperationClick = (operationType: string) => {
+        // if (store.get<boolean>('highSpeedModeState')! && operationType !== null) {
+        if (operationType !== null) {
+            switch (operationType) {
+                case 'subdivide':
+                    // topologyLayer.executeSubdivideGrids();
+                    break;
+                case 'merge':
+                    // topologyLayer.executeMergeGrids();
+                    break;
+                case 'delete':
+                    // topologyLayer.executeDeleteGrids();
+                    break;
+                case 'recover':
+                    // topologyLayer.executeRecoverGrids();
+                    break;
+                default:
+                    console.warn(
+                        'Unknown topology operation type:',
+                        operationType
+                    );
+            }
+        } else {
+            setActiveTopologyOperation(operationType);
+        }
+    };
+
+    const handleFeatureClick = useCallback(async () => {
+        // const currentTab: 'brush' | 'box' | 'feature' = setActiveSelectTab('feature');
+        // if (
+        //     window.electronAPI &&
+        //     typeof window.electronAPI.openFileDialog === 'function'
+        // ) {
+        //     try {
+        //         const filePath = await window.electronAPI.openFileDialog();
+        //         if (filePath) {
+        //             console.log('Selected file path:', filePath);
+        //             store
+        //                 .get<{ on: Function; off: Function }>('isLoading')!
+        //                 .on();
+        //             topologyLayer.executePickGridsByFeature(filePath);
+        //             setActiveSelectTab(currentTab);
+        //         } else {
+        //             console.log('No file selected');
+        //             setActiveSelectTab(currentTab);
+        //             store;
+        //         }
+        //     } catch (error) {
+        //         console.error('Error opening file dialog:', error);
+        //         setActiveSelectTab(currentTab);
+        //     }
+        // } else {
+        //     console.warn('Electron API not available');
+        //     setActiveSelectTab(currentTab);
+        // }
+        console.log('handleFeatureClick');
+    }, []
+        // [setActiveSelectTab, topologyLayer]
+    );
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.ctrlKey || event.metaKey) {
+                // if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
+                if (event.key === 'P' || event.key === 'p') {
+                    event.preventDefault();
+                    setPickingTab('picking');
+                    // store.set('pickingSelect', true);
+                }
+                if (event.key === 'U' || event.key === 'u') {
+                    event.preventDefault();
+                    setPickingTab('unpicking');
+                    // store.set('pickingSelect', false);
+                }
+                if (event.key === 'A' || event.key === 'a') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     handleConfirmSelectAll();
+                    // } else {
+                    //     setSelectAllDialogOpen(true);
+                    // }
+                    setSelectAllDialogOpen(true);
+                }
+                if (event.key === 'C' || event.key === 'c') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     handleConfirmDeleteSelect();
+                    // } else {
+                    //     setDeleteSelectDialogOpen(true);
+                    // }
+                    setDeleteSelectDialogOpen(true);
+                }
+                if (event.key === '1') {
+                    event.preventDefault();
+                    setActiveSelectTab('brush');
+                }
+                if (event.key === '2') {
+                    event.preventDefault();
+                    setActiveSelectTab('box');
+                }
+                if (event.key === '3') {
+                    event.preventDefault();
+                    setActiveSelectTab('feature');
+                    handleFeatureClick();
+                }
+                if (event.key === 'S' || event.key === 's') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     topologyLayer.executeSubdivideGrids();
+                    // } else {
+                    //     setActiveTopologyOperation('subdivide');
+                    // }
+                    setActiveTopologyOperation('subdivide');
+                }
+                if (event.key === 'M' || event.key === 'm') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     topologyLayer.executeMergeGrids();
+                    // } else {
+                    //     setActiveTopologyOperation('merge');
+                    // }
+                    setActiveTopologyOperation('merge');
+                }
+                if (event.key === 'D' || event.key === 'd') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     topologyLayer.executeDeleteGrids();
+                    // } else {
+                    //     setActiveTopologyOperation('delete');
+                    // }
+                    setActiveTopologyOperation('delete');
+                }
+                if (event.key === 'R' || event.key === 'r') {
+                    event.preventDefault();
+                    // if (store.get<boolean>('highSpeedModeState')!) {
+                    //     topologyLayer.executeRecoverGrids();
+                    // } else {
+                    //     setActiveTopologyOperation('recover');
+                    // }
+                    setActiveTopologyOperation('recover');
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [
+        // setPickingTab,
+        // isPickingHighSpeedModeOn,
+        // isTopologyHighSpeedModeOn,
+        // handleConfirmDeleteSelect,
+        // handleConfirmSelectAll,
+        // handleFeatureClick,
+        // setActiveSelectTab,
+        // topologyLayer
+    ]);
+
+    const toggleCheckSwitch = () => {
+        setCheckSwitchOn(prev => !prev);
+    };
 
     return (
         <div className='w-full h-[96vh] flex flex-row'>
@@ -188,6 +402,18 @@ export default function PatchPage(
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
+                                <div
+                                    className='bg-sky-500 hover:bg-sky-600 h-8 p-2 text-white cursor-pointer rounded-sm flex items-center px-4'
+                                    onClick={() => setCheckSwitchOn(!checkSwitchOn)}
+                                >
+                                    <span>Check</span>
+                                    <Separator orientation='vertical' className='h-4 mx-2' />
+                                    <Switch
+                                        className='data-[state=checked]:bg-amber-300 data-[state=unchecked]:bg-gray-300 cursor-pointer'
+                                        checked={checkSwitchOn}
+                                        onCheckedChange={setCheckSwitchOn}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -202,21 +428,21 @@ export default function PatchPage(
                                     <div className="text-sm text-white mt-1 grid gap-1">
                                         <div>
                                             <span className="font-bold">Schema Name: </span>
-                                            {node.pageContext?.schema?.name}
+                                            {pageContext.current?.schema?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">Patch Name: </span>
-                                            {node.pageContext?.patch?.name}
+                                            {pageContext.current?.patch?.name}
                                         </div>
                                         <div>
                                             <span className="font-bold">EPSG: </span>
-                                            {node.pageContext?.schema?.epsg}
+                                            {pageContext.current?.schema?.epsg}
                                         </div>
                                         <div className="flex items-start flex-row">
                                             <div className={`font-bold w-[25%]`}>Grid Levels(m): </div>
                                             <div className="space-y-1">
-                                                {node.pageContext?.schema?.grid_info && (
-                                                    node.pageContext?.schema?.grid_info.map(
+                                                {pageContext.current?.schema?.grid_info && (
+                                                    pageContext.current?.schema?.grid_info.map(
                                                         (level: number[], index: number) => {
                                                             // const color = paletteColorList ?
                                                             //     [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :
@@ -237,138 +463,110 @@ export default function PatchPage(
                                         </div>
 
                                         <div className="font-bold">
-                                            BoundingBox:
+                                            <span className="text-white">BoundingBox:</span>
                                             {/* {bounds ? ( */}
-                                            {true ? (
-                                                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600 mt-4">
-                                                    {/* Top Left Corner */}
-                                                    <div className="relative h-8 flex items-center justify-center">
-                                                        <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t border-l border-gray-300 rounded-tl"></div>
-                                                    </div>
-                                                    {/* North/Top */}
-                                                    <div className="text-center">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <div className="flex flex-col items-center">
-                                                                        <ArrowUp className="h-4 w-4 text-blue-600" />
-                                                                        <span className="font-bold text-blue-600 text-sm mb-1">
-                                                                            N
-                                                                        </span>
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[12px]">
-                                                                        <p className="font-bold mb-1">
-                                                                            North
-                                                                        </p>
-                                                                        {/* <p>{bounds[3].toFixed(6)}</p> */}
-                                                                        <p>123</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </div>
-                                                    {/* Top Right Corner */}
-                                                    <div className="relative h-8 flex items-center justify-center">
-                                                        <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t border-r border-gray-300 rounded-tr"></div>
-                                                    </div>
-                                                    {/* West/Left */}
-                                                    <div className="text-center">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <div className="flex flex-row items-center justify-center gap-1 mt-2">
-                                                                        <ArrowLeft className="h-4 w-4 text-green-600" />
-                                                                        <span className="font-bold text-green-600 text-sm mr-1 mt-1">
-                                                                            W
-                                                                        </span>
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[12px]">
-                                                                        <p className="font-bold mb-1">
-                                                                            West
-                                                                        </p>
-                                                                        {/* <p>{bounds[0].toFixed(6)}</p> */}
-                                                                        <p>123</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </div>
-                                                    {/* Center */}
-                                                    <div className="text-center">
-                                                        <span className="font-bold text-[14px] text-orange-500">
-                                                            Center
-                                                        </span>
-                                                        <div className="text-[12px]">
-                                                            {/* <div>{((bounds[0] + bounds[2]) / 2).toFixed(6)}</div>
-                                                        <div>{((bounds[1] + bounds[3]) / 2).toFixed(6)}</div> */}
-                                                            <div>123</div>
-                                                            <div>123</div>
-                                                        </div>
-                                                    </div>
-                                                    {/* East/Right */}
-                                                    <div className="text-center">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <div className="flex flex-row items-center justify-center gap-1 mt-2">
-                                                                        <span className="font-bold text-red-600 text-sm mt-1 ml-4">
-                                                                            E
-                                                                        </span>
-                                                                        <ArrowRight className="h-4 w-4 text-red-600" />
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[12px]">
-                                                                        <p className="font-bold mb-1">
-                                                                            East
-                                                                        </p>
-                                                                        {/* <p>{bounds[2].toFixed(6)}</p> */}
-                                                                        <p>123</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </div>
-                                                    {/* Bottom Left Corner */}
-                                                    <div className="relative h-8 flex items-center justify-center">
-                                                        <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b border-l border-gray-300 rounded-bl"></div>
-                                                    </div>
-                                                    {/* South/Bottom */}
-                                                    <div className="text-center">
-                                                        <TooltipProvider>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <div className="flex flex-col items-center">
-                                                                        <span className="font-bold text-purple-600 text-sm mt-1">
-                                                                            S
-                                                                        </span>
-                                                                        <ArrowDown className="h-4 w-4 text-purple-600" />
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className="text-[12px]">
-                                                                        <p className="font-bold mb-1">
-                                                                            South
-                                                                        </p>
-                                                                        {/* <p>{bounds[1].toFixed(6)}</p> */}
-                                                                        <p>123</p>
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    </div>
-                                                    {/* Bottom Right Corner */}
-                                                    <div className="relative h-8 flex items-center justify-center">
-                                                        <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b border-r border-gray-300 rounded-br"></div>
+                                            <div className="grid grid-cols-3 gap-1 text-xs text-white mt-4">
+                                                {/* Top Left Corner */}
+                                                <div className="relative h-8 flex items-center justify-center">
+                                                    <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t border-l border-gray-300 rounded-tl"></div>
+                                                </div>
+                                                {/* North/Top */}
+                                                <div className="text-center">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-col items-center">
+                                                                    <ArrowUp className="h-4 w-4 text-blue-500" />
+                                                                    <span className="font-bold text-blue-500 text-sm mb-1">N</span>
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[12px] space-y-1">
+                                                                    <p className="font-bold text-blue-500">North</p>
+                                                                    <p>{pageContext.current?.patch?.bounds[3].toFixed(6)}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                                {/* Top Right Corner */}
+                                                <div className="relative h-8 flex items-center justify-center">
+                                                    <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t border-r border-gray-300 rounded-tr"></div>
+                                                </div>
+                                                {/* West/Left */}
+                                                <div className="text-center">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-row items-center justify-center gap-1 mt-2">
+                                                                    <ArrowLeft className="h-4 w-4 text-green-500" />
+                                                                    <span className="font-bold text-green-500 text-sm mr-1 mt-1">W</span>
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[12px]">
+                                                                    <p className="font-bold mb-1 text-green-500">West</p>
+                                                                    <p>{pageContext.current?.patch?.bounds[0].toFixed(6)}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                                {/* Center */}
+                                                <div className="text-center">
+                                                    <span className="font-bold text-[14px] text-orange-500">Center</span>
+                                                    <div className="text-[12px]">
+                                                        <div>{pageContext.current?.patch?.bounds ? ((pageContext.current.patch.bounds[0] + pageContext.current.patch.bounds[2]) / 2).toFixed(6) : '-'}</div>
+                                                        <div>{pageContext.current?.patch?.bounds ? ((pageContext.current.patch.bounds[1] + pageContext.current.patch.bounds[3]) / 2).toFixed(6) : '-'}</div>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <span>-</span>
-                                            )}
+                                                {/* East/Right */}
+                                                <div className="text-center">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-row items-center justify-center gap-1 mt-2">
+                                                                    <span className="font-bold text-red-500 text-sm mt-1 ml-4">E</span>
+                                                                    <ArrowRight className="h-4 w-4 text-red-500" />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[12px]">
+                                                                    <p className="font-bold mb-1 text-red-500">East</p>
+                                                                    <p>{pageContext.current?.patch?.bounds[2].toFixed(6)}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                                {/* Bottom Left Corner */}
+                                                <div className="relative h-8 flex items-center justify-center">
+                                                    <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b border-l border-gray-300 rounded-bl"></div>
+                                                </div>
+                                                {/* South/Bottom */}
+                                                <div className="text-center">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="flex flex-col items-center">
+                                                                    <span className="font-bold text-purple-500 text-sm mt-1">S</span>
+                                                                    <ArrowDown className="h-4 w-4 text-purple-500" />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <div className="text-[12px]">
+                                                                    <p className="font-bold mb-1 text-purple-500">South</p>
+                                                                    <p>{pageContext.current?.patch?.bounds[1].toFixed(6)}</p>
+                                                                </div>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                                {/* Bottom Right Corner */}
+                                                <div className="relative h-8 flex items-center justify-center">
+                                                    <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b border-r border-gray-300 rounded-br"></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -377,7 +575,10 @@ export default function PatchPage(
                                 <div className="w-2/3 mx-auto space-y-4 pl-4 pr-1 border-r border-[#414141]">
                                     <div className="space-y-2 p-2">
                                         {/* 框选全部网格 */}
-                                        <AlertDialog>
+                                        <AlertDialog
+                                            open={selectAllDialogOpen}
+                                            onOpenChange={setSelectAllDialogOpen}
+                                        >
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>
@@ -390,15 +591,13 @@ export default function PatchPage(
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel
                                                         className="cursor-pointer"
-                                                    onClick={() => {
-                                                        setPickingTab('picking');
-                                                    }}
+                                                        onClick={() => { setPickingTab('picking') }}
                                                     >
                                                         Cancel
                                                     </AlertDialogCancel>
                                                     <AlertDialogAction
-                                                        // onClick={handleConfirmSelectAll}
-                                                        className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                                                        onClick={handleConfirmSelectAll}
+                                                        className="bg-green-500 hover:bg-green-600 cursor-pointer"
                                                     >
                                                         Confirm
                                                     </AlertDialogAction>
@@ -407,7 +606,10 @@ export default function PatchPage(
                                         </AlertDialog>
 
                                         {/* 取消全部网格框选 */}
-                                        <AlertDialog>
+                                        <AlertDialog
+                                            open={deleteSelectDialogOpen}
+                                            onOpenChange={setDeleteSelectDialogOpen}
+                                        >
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>
@@ -420,15 +622,13 @@ export default function PatchPage(
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel
                                                         className="cursor-pointer"
-                                                    onClick={() => {
-                                                        setPickingTab('picking');
-                                                    }}
+                                                        onClick={() => { setPickingTab('picking') }}
                                                     >
                                                         Cancel
                                                     </AlertDialogCancel>
                                                     <AlertDialogAction
-                                                        // onClick={handleConfirmDeleteSelect}
-                                                        className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                                                        onClick={handleConfirmDeleteSelect}
+                                                        className="bg-red-500 hover:bg-red-600 cursor-pointer"
                                                     >
                                                         Confirm
                                                     </AlertDialogAction>
@@ -440,9 +640,7 @@ export default function PatchPage(
                                         <AlertDialog
                                             open={activeTopologyOperation !== null}
                                             onOpenChange={(open) => {
-                                                if (!open) {
-                                                    setActiveTopologyOperation(null);
-                                                }
+                                                if (!open) { setActiveTopologyOperation(null) }
                                             }}
                                         >
                                             <AlertDialogContent>
@@ -452,15 +650,15 @@ export default function PatchPage(
                                                     </AlertDialogTitle>
                                                     <AlertDialogDescription>
                                                         {activeTopologyOperation ===
-                                                                'subdivide'
-                                                                ? 'Are you sure you want to subdivide the selected grids?'
-                                                                : activeTopologyOperation === 'merge'
-                                                                    ? 'Are you sure you want to merge the selected grids?'
-                                                                    : activeTopologyOperation === 'delete'
-                                                                        ? 'Are you sure you want to delete the selected grids?'
-                                                                        : activeTopologyOperation === 'recover'
-                                                                            ? 'Are you sure you want to recover the selected grids?'
-                                                                            : ''}
+                                                            'subdivide'
+                                                            ? 'Are you sure you want to subdivide the selected grids?'
+                                                            : activeTopologyOperation === 'merge'
+                                                                ? 'Are you sure you want to merge the selected grids?'
+                                                                : activeTopologyOperation === 'delete'
+                                                                    ? 'Are you sure you want to delete the selected grids?'
+                                                                    : activeTopologyOperation === 'recover'
+                                                                        ? 'Are you sure you want to recover the selected grids?'
+                                                                        : ''}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -469,239 +667,152 @@ export default function PatchPage(
                                                     </AlertDialogCancel>
                                                     <AlertDialogAction
                                                         onClick={handleConfirmTopologyAction}
-                                                    // className={
-                                                    //     activeTopologyOperation === 'subdivide'
-                                                    //         ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                                                    //         : activeTopologyOperation ===
-                                                    //             'merge'
-                                                    //             ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
-                                                    //             : activeTopologyOperation ===
-                                                    //                 'delete'
-                                                    //                 ? 'bg-red-600 hover:bg-red-700 cursor-pointer'
-                                                    //                 : activeTopologyOperation ===
-                                                    //                     'recover'
-                                                    //                     ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer'
-                                                    //                     : 'bg-gray-600 cursor-not-allowed'
-                                                    // }
-                                                    // disabled={activeTopologyOperation === null}
-                                                    >
-                                                        {/* {language === 'zh'
-                                                            ? activeTopologyOperation ===
-                                                                'subdivide'
-                                                                ? '细分'
+                                                        className={
+                                                            activeTopologyOperation === 'subdivide'
+                                                                ? 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
                                                                 : activeTopologyOperation ===
                                                                     'merge'
-                                                                    ? '合并'
+                                                                    ? 'bg-green-500 hover:bg-green-600 cursor-pointer'
                                                                     : activeTopologyOperation ===
                                                                         'delete'
-                                                                        ? '删除'
+                                                                        ? 'bg-red-500 hover:bg-red-600 cursor-pointer'
                                                                         : activeTopologyOperation ===
                                                                             'recover'
-                                                                            ? '恢复'
-                                                                            : '确认'
-                                                            : activeTopologyOperation ===
-                                                                'subdivide'
-                                                                ? 'Subdivide'
-                                                                : activeTopologyOperation === 'merge'
-                                                                    ? 'Merge'
-                                                                    : activeTopologyOperation === 'delete'
-                                                                        ? 'Delete'
-                                                                        : activeTopologyOperation === 'recover'
-                                                                            ? 'Recover'
-                                                                            : 'Confirm'} */}
+                                                                            ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer'
+                                                                            : 'bg-gray-500 cursor-not-allowed'
+                                                        }
+                                                        disabled={activeTopologyOperation === null}
+                                                    >
+                                                        {activeTopologyOperation ===
+                                                            'subdivide'
+                                                            ? 'Subdivide'
+                                                            : activeTopologyOperation === 'merge'
+                                                                ? 'Merge'
+                                                                : activeTopologyOperation === 'delete'
+                                                                    ? 'Delete'
+                                                                    : activeTopologyOperation === 'recover'
+                                                                        ? 'Recover'
+                                                                        : 'Confirm'}
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                         <div className="space-y-2">
                                             <h1 className="text-2xl font-bold text-white">Picking</h1>
-
-                                            <div className="mt-2 px-2">
+                                            <div className="mt-2">
                                                 <h3 className="text-md mb-1 font-bold text-white">Operation</h3>
-                                                <div className="flex items-center p-1 h-[64px] bg-gray-200 rounded-lg">
+                                                <div className="flex items-center gap-1 p-1 h-[64px] border border-gray-200 rounded-lg">
                                                     <button
-                                                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                            ${pickingTab === 'picking'
-                                                                ? 'bg-[#4d4d4d] text-white'
-                                                                : 'bg-transparent hover:bg-gray-300'
-                                                            }`}
-
-                                                        onClick={() => {
-                                                            setPickingTab('picking');
-                                                        }}
+                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                            ${pickingTab === 'picking' ? 'bg-gray-600 ' : 'bg-transparent hover:bg-gray-500'}`}
+                                                        onClick={() => { setPickingTab('picking') }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <SquareMousePointer className="h-4 w-4" />
                                                             Picking
                                                         </div>
-                                                        <div
-                                                            className={`text-xs ${pickingTab === 'picking' &&
-                                                                ' text-white'
-                                                                }`}
-                                                        >
+                                                        <div className={`text-xs ${pickingTab === 'picking' && ' text-white'}`}>
                                                             [ Ctrl+P ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                            ${pickingTab === 'unpicking'
-                                                                ? 'bg-[#4d4d4d] text-white'
-                                                                : 'bg-transparent hover:bg-gray-300'
-                                                            }`}
-                                                        // 
-                                                        onClick={() => {
-                                                            setPickingTab('unpicking');
-                                                        }}
+                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                            ${pickingTab === 'unpicking' ? 'bg-gray-700 ' : 'bg-transparent hover:bg-gray-500'}`}
+                                                        onClick={() => { setPickingTab('unpicking') }}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <SquareDashedMousePointer className="h-4 w-4" />
                                                             Unpicking
                                                         </div>
-                                                        <div
-                                                            className={`text-xs ${pickingTab === 'unpicking' &&
-                                                                ' text-white'
-                                                                }`}
-                                                        >
+                                                        <div className={`text-xs ${pickingTab === 'unpicking' && ' text-white'}`}>
                                                             [Ctrl+U]
                                                         </div>
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center gap-1 p-1 mt-2 h-[64px] bg-gray-200 rounded-lg">
+                                                <div className="flex items-center gap-1 p-1 mt-2 h-[64px] border border-gray-200 rounded-lg">
                                                     <button
-                                                        // className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${selectAllDialogOpen
-                                                        //     ? 'bg-green-500 '
-                                                        //     : 'bg-gray-600 hover:bg-green-500'
-                                                        //     }`}
-                                                        className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
-                                                    // onClick={handleSelectAllClick}
+                                                        className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                            ${selectAllDialogOpen ? 'bg-green-500 ' : ' hover:bg-green-500'}`}
+                                                        onClick={handleSelectAllClick}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <Grip className="h-4 w-4" />
                                                             Select All
                                                         </div>
-                                                        <div
-                                                        // className={`text-xs ${selectAllDialogOpen && ' text-white'
-                                                        //     }`}
-                                                        >
+                                                        <div className={`text-xs ${selectAllDialogOpen && ' text-white'}`}>
                                                             [ Ctrl+A ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        // className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        //     ${deleteSelectDialogOpen
-                                                        //     ? 'bg-red-500 '
-                                                        //     : 'bg-gray-600 hover:bg-red-500'
-                                                        //     }`}
-                                                        className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                        `}
-                                                    // onClick={handleDeleteSelectClick}
+                                                        className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                            ${deleteSelectDialogOpen ? 'bg-red-500 ' : ' hover:bg-red-500'}`}
+                                                        onClick={handleDeleteSelectClick}
                                                     >
                                                         <div className="flex flex-row gap-1 items-center">
                                                             <CircleOff className="h-4 w-4" />
                                                             Cancel All
                                                         </div>
-                                                        <div
-                                                        // className={`text-xs ${deleteSelectDialogOpen && ' text-white'
-                                                        //     }`}
-                                                        >
+                                                        <div className={`text-xs ${deleteSelectDialogOpen && ' text-white'}`}>
                                                             [ Ctrl+C ]
                                                         </div>
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div className="mb-2 px-2">
-                                                <h3 className="text-md ml-1 mb-1 font-bold text-white">
-                                                    Mode
-                                                </h3>
-                                                <div className="flex items-center h-[64px] mb-1 p-1 bg-gray-200 rounded-lg shadow-md">
+                                            <div className="mb-2">
+                                                <h3 className="text-md mb-1 font-bold text-white">Mode</h3>
+                                                <div className="flex items-center h-[64px] mb-1 p-1 gap-1 rounded-lg border border-gray-200 shadow-md">
                                                     <button
-                                                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                            ${activeSelectTab === 'brush'
-                                                                ? 'bg-[#FF8F2E] text-white'
-                                                                : 'bg-transparent hover:bg-gray-300'
-                                                            }`}
-                                                        onClick={() => {
-                                                            setActiveSelectTab('brush');
-                                                        }}
+                                                        className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                            ${activeSelectTab === 'brush' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
+                                                        onClick={() => { setActiveSelectTab('brush') }}
                                                     >
-                                                        <div className="flex flex-row gap-1 items-center">
+                                                        <div className="flex flex-row items-center">
                                                             <Brush className="h-4 w-4" />
                                                             Brush
                                                         </div>
-                                                        <div
-                                                            className={`text-xs ${activeSelectTab === 'brush' &&
-                                                                'text-white'
-                                                                } `}
-                                                        >
+                                                        <div className={`text-xs ${activeSelectTab === 'brush' && 'text-white'} `}>
                                                             [ Ctrl+1 ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                            ${activeSelectTab === 'box'
-                                                                ? 'bg-[#FF8F2E] text-white'
-                                                                : 'bg-transparent hover:bg-gray-300'
-                                                            }`}
-                                                        onClick={() => {
-                                                            setActiveSelectTab('box');
-                                                        }}
+                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                            ${activeSelectTab === 'box' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
+                                                        onClick={() => { setActiveSelectTab('box') }}
                                                     >
-                                                        <div className="flex flex-row gap-1 items-center">
+                                                        <div className="flex flex-row items-center">
                                                             <SquareDashed className="h-4 w-4" />
                                                             Box
                                                         </div>
-                                                        <div
-                                                            className={`text-xs ${activeSelectTab === 'box' &&
-                                                                'text-white'
-                                                                } `}
-                                                        >
+                                                        <div className={`text-xs ${activeSelectTab === 'box' && 'text-white'} `}>
                                                             [ Ctrl+2 ]
                                                         </div>
                                                     </button>
                                                     <button
-                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
-                                                            ${activeSelectTab === 'feature'
-                                                                ? 'bg-[#FF8F2E] text-white'
-                                                                : 'bg-transparent hover:bg-gray-300'
-                                                            }`}
-                                                    // onClick={handleFeatureClick}
+                                                        className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col text-white gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                            ${activeSelectTab === 'feature' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
+                                                        onClick={() => { handleFeatureClick }}
                                                     >
-                                                        <div className="flex flex-row gap-1 items-center">
+                                                        <div className="flex flex-row items-center">
                                                             <FolderOpen className="h-4 w-4" />
                                                             Feature
                                                         </div>
-                                                        <div
-                                                        // className={`text-xs ${activeSelectTab === 'feature' &&
-                                                        //     'text-white'
-                                                        //     } `}
-                                                        >
+                                                        <div className={`text-xs ${activeSelectTab === 'feature' && 'text-white'} `}>
                                                             [ Ctrl+3 ]
                                                         </div>
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <Separator className="my-8  bg-[#414141]" />
+                                        <Separator className="my-6 bg-[#414141]" />
                                         <div className="space-y-2">
                                             <h1 className="text-2xl font-bold text-white">Topology</h1>
-                                            <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 bg-gray-200 rounded-lg shadow-md">
+                                            <div className="flex items-center h-[56px] mt-2 mb-2 p-1 space-x-1 border border-gray-200 rounded-lg shadow-md">
                                                 {topologyOperations.map((operation) => (
                                                     <button
                                                         key={operation.type}
                                                         className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
-                                                            ${activeTopologyOperation === operation.type
-                                                                ? operation.activeColor
-                                                                : `bg-gray-600 ${operation.hoverColor}`
-                                                            }
-                                                            `}
-                                                        className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
-                                                        
-                                                        `}
-                                                        onClick={() => {
-                                                            // onTopologyOperationClick(operation.type);
-                                                        }}
+                                                            ${activeTopologyOperation === operation.type ? operation.activeColor : `${operation.hoverColor}`}`}
+                                                        onClick={() => { onTopologyOperationClick(operation.type) }}
                                                     >
                                                         <div className="flex flex-row items-center">
                                                             {operation.text}
@@ -718,7 +829,6 @@ export default function PatchPage(
                                 {/* ////////////////////////////////////////////////////////////////// */}
                                 {/* ////////////////////////////////////////////////////////////////// */}
                                 {/* ////////////////////////////////////////////////////////////////// */}
-
                                 <div className="w-1/3 mx-auto space-y-4 pr-4 pl-1 border-l border-[#414141]">
                                     <div className="space-y-2 p-2 mb-4">
                                         <h1 className="text-2xl font-bold text-white">Checking</h1>
@@ -750,8 +860,6 @@ export default function PatchPage(
                                         </div>
                                     </div>
                                 </div>
-
-
                             </div>
                         </div>
                     </ScrollArea>

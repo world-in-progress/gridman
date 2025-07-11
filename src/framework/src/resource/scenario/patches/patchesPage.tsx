@@ -90,7 +90,7 @@ export default function PatchesPage({
         }
     }, [node])
 
-    const loadContext = (node: SceneNode) => {
+    const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchesPageContext
         const pc = pageContext.current
 
@@ -115,6 +115,7 @@ export default function PatchesPage({
             setConvertCoordinate(null)
             setAdjustedCoordinate(null)
         }
+        triggerRepaint()
     }
 
     const unloadContext = (node: SceneNode) => {
@@ -239,7 +240,7 @@ export default function PatchesPage({
         }
     }
 
-    const resetForm = () => {
+    const resetForm = async() => {
         console.log('我要清空表单')
         if (isDrawingBounds) {
             document.removeEventListener('rectangle-draw-complete', onDrawComplete);
@@ -255,8 +256,7 @@ export default function PatchesPage({
         pageContext.current = new PatchesPageContext()
         pageContext.current.schema = currentSchema;
 
-        node.pageContext = pageContext.current;
-
+        await (node as SceneNode).deletePageContext()
         console.log(pageContext.current)
 
         setConvertCoordinate(null)
