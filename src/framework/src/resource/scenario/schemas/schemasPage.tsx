@@ -111,7 +111,7 @@ export default function SchemasPage({
         picking.current.marker = null
 
         setIsSelectingPoint(false)
-        
+
         node.freezePageContext()
 
         triggerRepaint()
@@ -343,7 +343,10 @@ export default function SchemasPage({
                             {/* -----------*/}
                             {/* Page Title */}
                             {/* -----------*/}
-                            <h1 className='font-bold text-[25px]'>Create New Schema {node.tree.isPublic ? '(Public)' : '(Private)'}</h1>
+                            <h1 className='font-bold text-[25px] relative flex items-center'>
+                                Create New Schema
+                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                            </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
                             {/* ----------*/}

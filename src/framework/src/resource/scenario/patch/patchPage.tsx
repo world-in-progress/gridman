@@ -42,6 +42,8 @@ import { PatchPageProps, TopologyOperationType } from "./types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SceneNode } from "@/components/resourceScene/scene";
 import { PatchPageContext } from "./patch";
+import { SchemaInfo } from "../schema/types";
+import { PatchMeta } from "../patches/types";
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -91,6 +93,8 @@ export default function PatchPage(
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
+    const schemaRef = useRef<SchemaInfo | null>(null)
+    const patchRef = useRef<PatchMeta | null>(null)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -102,6 +106,10 @@ export default function PatchPage(
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as PatchPageContext
         const pc = pageContext.current
+
+        schemaRef.current = pc.schema
+        patchRef.current = pc.patch
+
     }
 
     const unloadContext = (node: SceneNode) => {
@@ -377,7 +385,7 @@ export default function PatchPage(
                                     <AlertDialogTrigger asChild>
                                         <Button
                                             variant='destructive'
-                                            className='bg-red-500 hover:bg-red-400 h-8 text-white cursor-pointer rounded-sm flex'
+                                            className='bg-red-500 hover:bg-red-600 h-8 text-white cursor-pointer rounded-sm flex'
                                         >
                                             <span>Delete</span>
                                             <Separator orientation='vertical' className='h-4' />
