@@ -28,37 +28,36 @@ export default class HelloRenderer {
 
     private particleTexture1: WebGLTexture = 0
     private particleTexture2: WebGLTexture = 0
-    private particleFBO1: WebGLFramebuffer = 0
-    private particleFBO2: WebGLFramebuffer = 0
+    private particleUpdateFBO1: WebGLFramebuffer = 0
+    private particleUpdateFBO2: WebGLFramebuffer = 0
 
     private cooperationTexture: WebGLTexture = 0
     private cooperationImageTexture: WebGLTexture = 0
 
     // Pulse effect properties
+    private pulseStartTime: number = 0
     private gridDimFactor: number = 0
     private pulseSpeed: number = 1.0
     private pulseRadius: number = 1.0
     private isPulseActive: boolean = false
-    private pulseDuration: number = this.pulseRadius / this.pulseSpeed
     private pulseCenter: [number, number] = [-1.0, -1.0]
+    private pulseDuration: number = this.pulseRadius / this.pulseSpeed
 
     // Particle-related properties
-    private mouseEffectDuration: number = 3000
     private swapCounter: number = 0
-    private particleSize: number = 20
-    private samplingStep: number = 2
-    private repulsionRadius: number = 0.05
-    private repulsionForce: number = 0.2
-    private friction: number = 0.15
-    private returnSpeed: number = 0.008
+    private samplingStep: number = 8
+    private particleSize: number = 10
+    private friction: number = 0.1
+    private returnSpeed: number = 0.03
+    private repulsionForce: number = 50.0
+    private repulsionRadius: number = 200.0
     private forceCenter: [number, number] = [-1.0, -1.0]
 
     // Animation control
+    private animation: number | null = null
+    private mouseEffectDuration: number = 3000
     private stopTimeout: NodeJS.Timeout | null = null
-    private pulseStartTime: number = 0
-    private isAnimating: boolean = false
-    private animationId: number | null = null
-    renderControl: { start: () => void, stop: () => void } | null = null
+    private renderControl: { start: (duration?: number) => void, stop: () => void }
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -73,7 +72,63 @@ export default class HelloRenderer {
         this.gl = canvas.getContext('webgl2', {antialias: true, alpha: true}) as WebGL2RenderingContext
         gll.enableAllExtensions(this.gl)
 
+        this.renderControl = {
+            start: (duration?: number) => {
+                if (this.animation !== null) return
+                
+                const render = () => {
+                    if (this.animation) {
+                        this.render()
+                        this.animation = requestAnimationFrame(render)
+                    }
+                }
+                this.animation = requestAnimationFrame(render)
+
+                // Schedule stop rendering
+                if (this.stopTimeout) clearTimeout(this.stopTimeout)
+                
+                this.stopTimeout = setTimeout(() => {
+                    this.renderControl.stop()
+                    this.isPulseActive = false
+                }, duration ?? this.mouseEffectDuration)
+            },
+            stop: () => {
+                if (this.animation) {
+                    cancelAnimationFrame(this.animation)
+                    this.animation = null
+                }
+            }
+        }
+
         this.init()
+    }
+
+    handleCanvasResize() {
+        this.pixelRatio = window.devicePixelRatio || 1
+        this.canvasWidth = this.canvas.clientWidth * this.pixelRatio
+        this.canvasHeight = this.canvas.clientHeight * this.pixelRatio
+        this.canvas.width = this.canvasWidth
+        this.canvas.height = this.canvasHeight
+
+        // Update grid size based on canvas size
+        this.gridPixelResolution = this.canvas.width > this.canvas.height 
+                            ? Math.ceil(this.canvas.width / Max_Grid_Num_IN_One_Axis)
+                            : Math.ceil(this.canvas.height / Max_Grid_Num_IN_One_Axis)
+
+        // Reset canvas-related GPU resources
+        if (!this.isReady) return
+
+        this.renderControl.stop()
+
+        this.helloTexture = this.fitTexture(this.helloImageTexture, this.helloTexture)
+        this.cooperationTexture = this.fitTexture(this.cooperationImageTexture, this.cooperationTexture)
+
+        this.setParticleMaterial(this.helloTexture, false)
+
+        // Force render a frame to avoid flickering
+        this.render()
+
+        this.renderControl.start()
     }
 
     async init() {
@@ -94,29 +149,18 @@ export default class HelloRenderer {
         this.cooperationImageTexture = gll.createTexture2D(gl, 0, cooperationBitmap.width, cooperationBitmap.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, cooperationBitmap)
         this.cooperationTexture = this.fitTexture(this.cooperationImageTexture)
 
-        this.setParticleMaterial(false)
+        this.setParticleMaterial(this.helloTexture, true)
 
         this.isReady = true
 
-        this.pulseStartTime = Date.now()
-
-        this.render()
-    }
-
-    get particleUpdateMaterial(): { fbo: WebGLFramebuffer, texture: WebGLTexture } {
-        let material: { fbo: WebGLFramebuffer, texture: WebGLTexture }
-        this.swapCounter % 2 === 0
-        ? material = { fbo: this.particleFBO1, texture: this.particleTexture1 }
-        : material = { fbo: this.particleFBO2, texture: this.particleTexture2 }
-        this.swapCounter = (this.swapCounter + 1) % 2
-        return material
+        this.renderControl.start()
     }
 
     private fitTexture(sourceTexture: WebGLTexture, targetTexture?: WebGLTexture) {
         const gl = this.gl
 
         // Create target texture
-        if (targetTexture) gl.deleteTexture(targetTexture)
+        targetTexture && gl.deleteTexture(targetTexture)
         targetTexture = gll.createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)
 
         // Create framebuffer for target texture
@@ -150,44 +194,60 @@ export default class HelloRenderer {
         return targetTexture
     }
 
-    private setParticleMaterial(reset: boolean) {
+    get particleUpdateResources(): { fbo: WebGLFramebuffer, texture: WebGLTexture } {
+        let resources: { fbo: WebGLFramebuffer, texture: WebGLTexture }
+        this.swapCounter % 2 === 0
+        ? resources = { fbo: this.particleUpdateFBO1, texture: this.particleTexture2 }
+        : resources = { fbo: this.particleUpdateFBO2, texture: this.particleTexture1 }
+        this.swapCounter = (this.swapCounter + 1) % 2
+        return resources
+    }
+
+    private setParticleMaterial(backgroundTexture: WebGLTexture, randomPlace: boolean) {
         const gl = this.gl
 
-        if (reset) {
-            gl.deleteTexture(this.particleTexture1)
-            gl.deleteTexture(this.particleTexture2)
-            gl.deleteFramebuffer(this.particleFBO1)
-            gl.deleteFramebuffer(this.particleFBO2)
-        }
+        // Clean up previous particle resources
+        this.particleTexture1 && gl.deleteTexture(this.particleTexture1)
+        this.particleTexture2 && gl.deleteTexture(this.particleTexture2)
+        this.particleUpdateFBO1 && gl.deleteFramebuffer(this.particleUpdateFBO1)
+        this.particleUpdateFBO2 && gl.deleteFramebuffer(this.particleUpdateFBO2)
+        this.swapCounter = 0
 
-        // Sample hello texture to init particles
+        // Create particle resources
         this.particleTexture1 = gll.createTexture2D(gl, 0, Math.floor(this.canvasWidth / this.samplingStep), Math.floor(this.canvasHeight / this.samplingStep), gl.RGBA32F, gl.RGBA, gl.FLOAT)
         this.particleTexture2 = gll.createTexture2D(gl, 0, Math.floor(this.canvasWidth / this.samplingStep), Math.floor(this.canvasHeight / this.samplingStep), gl.RGBA32F, gl.RGBA, gl.FLOAT)
-        const initFBO = gll.createFrameBuffer(gl, [this.particleTexture1])
+        this.particleUpdateFBO1 = gll.createFrameBuffer(gl, [this.particleTexture1])
+        this.particleUpdateFBO2 = gll.createFrameBuffer(gl, [this.particleTexture2])
+
+        // Sample texture to init particles
+        const initFBO = gll.createFrameBuffer(gl, [this.particleTexture1, this.particleTexture2])
         gl.bindFramebuffer(gl.FRAMEBUFFER, initFBO)
         gl.viewport(0, 0, Math.floor(this.canvasWidth / this.samplingStep), Math.floor(this.canvasHeight / this.samplingStep))
         gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
+
+        gl.disable(gl.BLEND)
+        gl.disable(gl.DEPTH_TEST)
+        
         gl.useProgram(this.particleInitShader)
 
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
+        gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
         gl.uniform1i(gl.getUniformLocation(this.particleInitShader, 'uTexture'), 0)
+        gl.uniform1f(gl.getUniformLocation(this.particleInitShader, 'uRandomSeed'), Math.random())
+        gl.uniform1i(gl.getUniformLocation(this.particleInitShader, 'uIsRandom'), randomPlace ? 1 : 0)
         gl.uniform1f(gl.getUniformLocation(this.particleInitShader, 'uSamplingStep'), this.samplingStep)
+        gl.uniform2f(gl.getUniformLocation(this.particleInitShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
 
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1])
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
+        
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.bindTexture(gl.TEXTURE_2D, null)
+        gl.drawBuffers([gl.BACK])
         gl.useProgram(null)
 
         gl.deleteFramebuffer(initFBO)
-
-        // Create particle FBOs
-        this.particleFBO1 = gll.createFrameBuffer(gl, [this.particleTexture2])
-        this.particleFBO2 = gll.createFrameBuffer(gl, [this.particleTexture1])
-
-        this.swapCounter = 0
     }
 
     private handleMouseClick = (event: MouseEvent) => {
@@ -203,8 +263,8 @@ export default class HelloRenderer {
         
         this.pulseStartTime = Date.now()
         this.isPulseActive = true
-        
-        this.startAnimation()
+
+        this.renderControl.start(this.pulseDuration * 1500)
     }
 
     private handleMouseMove = (event: MouseEvent) => {
@@ -213,73 +273,9 @@ export default class HelloRenderer {
         const x = (event.clientX - rect.left) / rect.width
         const y = 1.0 - (event.clientY - rect.top) / rect.height  // flip Y coordinate
 
-        this.forceCenter = [x * 2.0 - 1.0, y * 2.0 - 1.0]
+        this.forceCenter = [x, y]
 
-        if (this.renderControl && !this.isAnimating) {
-            this.renderControl.start()
-            this.isAnimating = true
-        }
-
-        this.scheduleStopRendering()
-    }
-
-    private scheduleStopRendering() {
-        if (this.stopTimeout) clearTimeout(this.stopTimeout)
-        
-        this.stopTimeout = setTimeout(() => {
-            if (this.renderControl) {
-                this.renderControl.stop()
-                this.isAnimating = false
-            }
-        }, this.mouseEffectDuration)
-    }
-
-    private startAnimation() {
-        if (this.isAnimating) return
-        
-        this.isAnimating = true
-        const animate = () => {
-            this.render()
-            
-            // Continue animation only if pulse is active
-            if (this.isPulseActive) {
-                this.animationId = requestAnimationFrame(animate)
-            } else {
-                this.stopAnimation()
-            }
-        }
-        this.animationId = requestAnimationFrame(animate)
-    }
-
-    private stopAnimation() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId)
-            this.animationId = null
-        }
-        this.isAnimating = false
-    }
-
-    handleCanvasResize() {
-        this.pixelRatio = window.devicePixelRatio || 1
-        this.canvasWidth = this.canvas.clientWidth * this.pixelRatio
-        this.canvasHeight = this.canvas.clientHeight * this.pixelRatio
-        this.canvas.width = this.canvasWidth
-        this.canvas.height = this.canvasHeight
-
-        // Update grid size based on canvas size
-        this.gridPixelResolution = this.canvas.width > this.canvas.height 
-                            ? Math.ceil(this.canvas.width / Max_Grid_Num_IN_One_Axis)
-                            : Math.ceil(this.canvas.height / Max_Grid_Num_IN_One_Axis)
-
-        // Reset canvas-related GPU resources
-        if (!this.isReady) return
-
-        this.helloTexture = this.fitTexture(this.helloImageTexture, this.helloTexture)
-        this.cooperationTexture = this.fitTexture(this.cooperationImageTexture, this.cooperationTexture)
-
-        this.setParticleMaterial(true)
-
-        this.render()
+        this.renderControl.start()
     }
 
     render() {
@@ -290,7 +286,7 @@ export default class HelloRenderer {
 
         // Pass 1: Update particles
         if (!eatEasterEgg) {
-            const { fbo, texture } = this.particleUpdateMaterial
+            const { fbo, texture } = this.particleUpdateResources
 
             gl.disable(gl.BLEND)
             gl.disable(gl.DEPTH_TEST)
@@ -306,6 +302,7 @@ export default class HelloRenderer {
 
             gl.uniform1i(gl.getUniformLocation(this.particleUpdateShader, 'uTexture'), 0)
             gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uForce'), this.forceCenter[0], this.forceCenter[1])
+            gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
             gl.uniform4f(gl.getUniformLocation(this.particleUpdateShader, 'uAction'), this.repulsionForce, this.repulsionRadius, this.friction, this.returnSpeed)
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -314,6 +311,9 @@ export default class HelloRenderer {
         // Pass 1: Render grids
         gl.enable(gl.BLEND)
         gl.disable(gl.DEPTH_TEST)
+        gl.blendEquation(gl.FUNC_ADD)
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
 
@@ -334,9 +334,8 @@ export default class HelloRenderer {
         
         // Only apply pulse uniforms if pulse is active
         if (this.isPulseActive) {
-            const currentTime = (Date.now() - this.pulseStartTime) / 1000.0
-            
             // Check if pulse duration has expired
+            const currentTime = (Date.now() - this.pulseStartTime) / 1000.0
             if (currentTime >= this.pulseDuration) {
                 this.isPulseActive = false
                 this.gridDimFactor += 1
@@ -374,7 +373,7 @@ export default class HelloRenderer {
     }
 
     clean() {
-        this.stopAnimation()
+        if (this.stopTimeout) clearTimeout(this.stopTimeout)
 
         this.resizeObserver.unobserve(this.canvas)
         this.canvas.removeEventListener('mousedown', this.handleMouseClick)

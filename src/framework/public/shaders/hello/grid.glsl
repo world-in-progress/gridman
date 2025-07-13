@@ -69,19 +69,12 @@ void main() {
     if (gridSize > 1) {
         color = texture(uHello, v_uv);
 
-        // Draw filling
-        if (color.a > 0.0) {
-            if (isOnEdge) {
-                vec4 edgeColor = vec4(0.71, 0.17, 0.06, 0.1);
+        if (isOnEdge) {
+            if (color.a > 0.0) {
+                vec4 edgeColor = vec4(0.71, 0.17, 0.06, 0.5);
                 fragColor = mix(edgeColor, color, 0.5);
             } else {
-                fragColor = color;
-            }
-        } 
-        // Draw edges
-        else {
-            if (isOnEdge) {
-                vec4 edgeColor = vec4(0.1);
+                vec4 edgeColor = vec4(0.5);
                 fragColor = edgeColor;
             }
         }

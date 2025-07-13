@@ -9,7 +9,7 @@ vec4[] hardCodedRectanglePosition = vec4[4](
     vec4(-1.0, -1.0, 0.0, 0.0),   // Bottom left
     vec4(-1.0, 1.0, 0.0, 1.0),    // Top left
     vec4(1.0, -1.0, 1.0, 0.0),    // Bottom right
-    vec4(1.0, 1.0, 1.0, 1.0)     // Top right
+    vec4(1.0, 1.0, 1.0, 1.0)      // Top right
 );
 
 void main() {
@@ -28,11 +28,13 @@ in vec2 v_uv;
 
 uniform vec2 uForce;
 uniform vec4 uAction;
+uniform vec2 uResolution;
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
 
 void main() {
+    vec2 resolution = uResolution - 1.0;
     float repulsionForce = uAction.x;
     float repulsionRadius = uAction.y;
     float friction = uAction.z;
@@ -43,16 +45,16 @@ void main() {
     float y = particle.y;
     float vx = particle.z;
     float vy = particle.w;
-    vec2 originPos = v_uv * 2.0 - 1.0;
-    bool isActive = particle.x >= -1.0 && particle.y >= -1.0;
+    vec2 originPos = v_uv * resolution;
+    bool isActive = particle.x >= 0.0 && particle.y >= 0.0;
 
-    float dx = x - uForce.x;
-    float dy = y - uForce.y;
-    float distance = sqrt(dx * dx + dy * dy);
+    float dx = x - uForce.x * resolution.x;
+    float dy = y - uForce.y * resolution.y;
+    float dis = sqrt(dx * dx + dy * dy);
 
-    if (distance < repulsionRadius) {
+    if (dis < repulsionRadius) {
         float angle = atan(dy, dx);
-        float ratio = (repulsionRadius - distance) / repulsionRadius;
+        float ratio = (repulsionRadius - dis) / repulsionRadius;
         float force = ratio * ratio * repulsionForce;
 
         vx += cos(angle) * force;
@@ -71,11 +73,11 @@ void main() {
     y += vy;
     
     if (isActive) {
-        x = clamp(x, -1.0, 1.0);
-        y = clamp(y, -1.0, 1.0);
+        x = clamp(x, 0.0, resolution.x);
+        y = clamp(y, 0.0, resolution.y);
         fragColor = vec4(x, y, vx, vy);
     } else {
-        fragColor = particle; // Inactive particles
+        fragColor = particle; // inactive particles
     }
 }
 
