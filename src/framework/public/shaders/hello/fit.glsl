@@ -12,7 +12,7 @@ vec4[] hardCodedRectanglePosition = vec4[4](
     vec4(-1.0, -1.0, 0.0, 0.0),   // Bottom left
     vec4(-1.0, 1.0, 0.0, 1.0),    // Top left
     vec4(1.0, -1.0, 1.0, 0.0),    // Bottom right
-    vec4(1.0, 1.0, 1.0, 1.0)     // Top right
+    vec4(1.0, 1.0, 1.0, 1.0)      // Top right
 );
 
 void main() {
@@ -45,12 +45,7 @@ uniform sampler2D uTexture;
 out vec4 fragColor;
 
 void main() {
-    vec4 color = texture(uTexture, v_uv);
-    // if (color.a == 0.0) {
-    //     discard;
-    // } else {
-    // }
-    fragColor = color;
+    fragColor = texture(uTexture, v_uv);
 }
 
 #endif
