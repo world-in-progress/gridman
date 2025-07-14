@@ -26,13 +26,13 @@ export default class HelloRenderer {
     private helloTexture: WebGLTexture = 0
     private helloImageTexture: WebGLTexture = 0
 
+    private cooperationTexture: WebGLTexture = 0
+    private cooperationImageTexture: WebGLTexture = 0
+
     private particleTexture1: WebGLTexture = 0
     private particleTexture2: WebGLTexture = 0
     private particleUpdateFBO1: WebGLFramebuffer = 0
     private particleUpdateFBO2: WebGLFramebuffer = 0
-
-    private cooperationTexture: WebGLTexture = 0
-    private cooperationImageTexture: WebGLTexture = 0
 
     // Pulse effect properties
     private pulseStartTime: number = 0
@@ -47,7 +47,7 @@ export default class HelloRenderer {
     private swapCounter: number = 0
     private samplingStep: number = 8
     private particleSize: number = 10
-    private friction: number = 0.1
+    private friction: number = 0.15
     private returnSpeed: number = 0.03
     private repulsionForce: number = 50.0
     private repulsionRadius: number = 200.0
@@ -55,9 +55,9 @@ export default class HelloRenderer {
 
     // Animation control
     private animation: number | null = null
-    private mouseEffectDuration: number = 3000
+    private mouseEffectDuration: number = 10000
     private stopTimeout: NodeJS.Timeout | null = null
-    private renderControl: { start: (duration?: number) => void, stop: () => void }
+    private renderControl: { start: () => void, stop: () => void }
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -73,7 +73,7 @@ export default class HelloRenderer {
         gll.enableAllExtensions(this.gl)
 
         this.renderControl = {
-            start: (duration?: number) => {
+            start: () => {
                 if (this.animation !== null) return
                 
                 const render = () => {
@@ -90,7 +90,7 @@ export default class HelloRenderer {
                 this.stopTimeout = setTimeout(() => {
                     this.renderControl.stop()
                     this.isPulseActive = false
-                }, duration ?? this.mouseEffectDuration)
+                }, this.mouseEffectDuration)
             },
             stop: () => {
                 if (this.animation) {
@@ -264,7 +264,7 @@ export default class HelloRenderer {
         this.pulseStartTime = Date.now()
         this.isPulseActive = true
 
-        this.renderControl.start(this.pulseDuration * 1500)
+        this.renderControl.start()
     }
 
     private handleMouseMove = (event: MouseEvent) => {
@@ -373,6 +373,7 @@ export default class HelloRenderer {
     }
 
     clean() {
+        this.isReady = false
         if (this.stopTimeout) clearTimeout(this.stopTimeout)
 
         this.resizeObserver.unobserve(this.canvas)
@@ -382,9 +383,19 @@ export default class HelloRenderer {
         const gl = this.gl
         gl.deleteProgram(this.fitShader)
         gl.deleteProgram(this.gridShader)
+        gl.deleteProgram(this.particleShader)
+        gl.deleteProgram(this.particleInitShader)
+        gl.deleteProgram(this.particleUpdateShader)
+        
         gl.deleteTexture(this.helloTexture)
         gl.deleteTexture(this.helloImageTexture)
+
         gl.deleteTexture(this.cooperationTexture)
         gl.deleteTexture(this.cooperationImageTexture)
+
+        gl.deleteTexture(this.particleTexture1)
+        gl.deleteTexture(this.particleTexture2)
+        gl.deleteFramebuffer(this.particleUpdateFBO1)
+        gl.deleteFramebuffer(this.particleUpdateFBO2)
     }
 }
