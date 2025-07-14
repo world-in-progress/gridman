@@ -32,7 +32,6 @@ uniform int uGridDimFactor;
 uniform int uGridResolution;
 
 uniform float uTime;
-uniform float uPulseSpeed;
 uniform float uPulseRadius;
 uniform vec2 uPulseCenter;
 
@@ -46,9 +45,9 @@ void main() {
     int dynamicGridFactor = uGridDimFactor;
 
     // Check if this area has been hit by pulse
-    float distanceFromCenter = length(v_uv - uPulseCenter);
-    float pulsePhase = fract(uTime * uPulseSpeed);
+    float pulsePhase = uTime;
     float pulseDistance = pulsePhase * uPulseRadius;
+    float distanceFromCenter = length(v_uv * uResolution - uPulseCenter * uResolution);
 
     // If this pixel has been swept by the pulse
     if (distanceFromCenter <= pulseDistance) {
