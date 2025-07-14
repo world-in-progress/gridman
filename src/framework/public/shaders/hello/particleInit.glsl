@@ -59,7 +59,7 @@ void main() {
     }
     vec4 color = totalColor / float(sampleCount);
     float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-    if (color.a != 0.0 && luminance > 0.5) {
+    if (color.a != 0.0 && luminance > 0.6) {
         float x = v_uv.x;
         float y = v_uv.y;
         vec2 birthPos = v_uv * resolution;

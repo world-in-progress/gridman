@@ -29,6 +29,8 @@ export default class HelloRenderer {
     private cooperationTexture: WebGLTexture = 0
     private cooperationImageTexture: WebGLTexture = 0
 
+    private particleBackgroundTexture: WebGLTexture = 0
+
     private particleTexture1: WebGLTexture = 0
     private particleTexture2: WebGLTexture = 0
     private particleUpdateFBO1: WebGLFramebuffer = 0
@@ -37,11 +39,10 @@ export default class HelloRenderer {
     // Pulse effect properties
     private pulseStartTime: number = 0
     private gridDimFactor: number = 0
-    private pulseSpeed: number = 1.0
     private pulseRadius: number = 1.0
     private isPulseActive: boolean = false
     private pulseCenter: [number, number] = [-1.0, -1.0]
-    private pulseDuration: number = this.pulseRadius / this.pulseSpeed
+    private pulseDuration: number = 1000.0 // milliseconds
 
     // Particle-related properties
     private swapCounter: number = 0
@@ -54,6 +55,7 @@ export default class HelloRenderer {
     private forceCenter: [number, number] = [-1.0, -1.0]
 
     // Animation control
+    private eatEasterEgg: boolean = false
     private animation: number | null = null
     private mouseEffectDuration: number = 10000
     private stopTimeout: NodeJS.Timeout | null = null
@@ -114,6 +116,8 @@ export default class HelloRenderer {
         this.gridPixelResolution = this.canvas.width > this.canvas.height 
                             ? Math.ceil(this.canvas.width / Max_Grid_Num_IN_One_Axis)
                             : Math.ceil(this.canvas.height / Max_Grid_Num_IN_One_Axis)
+        
+        this.pulseRadius = Math.max(this.canvasWidth, this.canvasHeight)
 
         // Reset canvas-related GPU resources
         if (!this.isReady) return
@@ -123,7 +127,11 @@ export default class HelloRenderer {
         this.helloTexture = this.fitTexture(this.helloImageTexture, this.helloTexture)
         this.cooperationTexture = this.fitTexture(this.cooperationImageTexture, this.cooperationTexture)
 
-        this.setParticleMaterial(this.helloTexture, false)
+        ;(this.gridPixelResolution / Math.pow(2, this.gridDimFactor)) < this.pixelRatio * 3.0
+            ? this.particleBackgroundTexture = this.cooperationTexture
+            : this.particleBackgroundTexture = this.helloTexture
+
+        this.setParticleMaterial(false)
 
         // Force render a frame to avoid flickering
         this.render()
@@ -149,7 +157,9 @@ export default class HelloRenderer {
         this.cooperationImageTexture = gll.createTexture2D(gl, 0, cooperationBitmap.width, cooperationBitmap.height, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, cooperationBitmap)
         this.cooperationTexture = this.fitTexture(this.cooperationImageTexture)
 
-        this.setParticleMaterial(this.helloTexture, true)
+        this.particleBackgroundTexture = this.helloTexture
+
+        this.setParticleMaterial(true)
 
         this.isReady = true
 
@@ -203,7 +213,7 @@ export default class HelloRenderer {
         return resources
     }
 
-    private setParticleMaterial(backgroundTexture: WebGLTexture, randomPlace: boolean) {
+    private setParticleMaterial(randomPlace: boolean) {
         const gl = this.gl
 
         // Clean up previous particle resources
@@ -232,7 +242,7 @@ export default class HelloRenderer {
         gl.useProgram(this.particleInitShader)
 
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, backgroundTexture)
+        gl.bindTexture(gl.TEXTURE_2D, this.particleBackgroundTexture)
         gl.uniform1i(gl.getUniformLocation(this.particleInitShader, 'uTexture'), 0)
         gl.uniform1f(gl.getUniformLocation(this.particleInitShader, 'uRandomSeed'), Math.random())
         gl.uniform1i(gl.getUniformLocation(this.particleInitShader, 'uIsRandom'), randomPlace ? 1 : 0)
@@ -282,33 +292,86 @@ export default class HelloRenderer {
         if (!this.isReady) return
 
         const gl = this.gl
-        const eatEasterEgg = (this.gridPixelResolution / Math.pow(2, this.gridDimFactor)) < this.pixelRatio
+        if (!this.eatEasterEgg) {
+            this.eatEasterEgg = (this.gridPixelResolution / Math.pow(2, this.gridDimFactor)) < this.pixelRatio * 3.0
+            if (this.eatEasterEgg) {
+                this.particleBackgroundTexture = this.cooperationTexture
+                this.particleSize /= 2.0
+                this.samplingStep /= 2.0
+                this.setParticleMaterial(true)
+            }
+        }
 
-        // Pass 1: Update particles
-        if (!eatEasterEgg) {
-            const { fbo, texture } = this.particleUpdateResources
-
-            gl.disable(gl.BLEND)
+        // Pass 1: Render grids
+        if (!this.eatEasterEgg) {
+            gl.enable(gl.BLEND)
             gl.disable(gl.DEPTH_TEST)
+            gl.blendEquation(gl.FUNC_ADD)
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
-            gl.viewport(0, 0, Math.floor(this.canvasWidth / this.samplingStep), Math.floor(this.canvasHeight / this.samplingStep))
-            gl.clearColor(0, 0, 0, 0)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+            gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
+
+            gl.clearColor(41.0 / 255.0, 44.0 / 255.0, 51.0 / 255.0, 1.0)
             gl.clear(gl.COLOR_BUFFER_BIT)
 
-            gl.useProgram(this.particleUpdateShader)
+            gl.useProgram(this.gridShader)
             gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, texture)
+            gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
+            gl.activeTexture(gl.TEXTURE1)
+            gl.bindTexture(gl.TEXTURE_2D, this.cooperationTexture)
 
-            gl.uniform1i(gl.getUniformLocation(this.particleUpdateShader, 'uTexture'), 0)
-            gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uForce'), this.forceCenter[0], this.forceCenter[1])
-            gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
-            gl.uniform4f(gl.getUniformLocation(this.particleUpdateShader, 'uAction'), this.repulsionForce, this.repulsionRadius, this.friction, this.returnSpeed)
+            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uHello'), 0)
+            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uCooperation'), 1)
+            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
+            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridResolution'), this.gridPixelResolution)
+            gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
+            
+            // Only apply pulse uniforms if pulse is active
+            if (this.isPulseActive) {
+                // Check if pulse duration has expired
+                const currentTime = Date.now() - this.pulseStartTime
+                if (currentTime >= this.pulseDuration) {
+                    this.isPulseActive = false
+                    this.gridDimFactor += 1
+
+                } else {
+                    gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uTime'), currentTime / this.pulseDuration)
+                    gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), this.pulseRadius)
+                    gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uPulseCenter'), this.pulseCenter[0], this.pulseCenter[1])
+                }
+            } else {
+                // Set pulse brightness to 0 when inactive
+                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), 0.0)
+                gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
+            }
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
         }
 
-        // Pass 1: Render grids
+        // Pass 2: Update particles
+        const { fbo, texture } = this.particleUpdateResources
+
+        gl.disable(gl.BLEND)
+        gl.disable(gl.DEPTH_TEST)
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+        gl.viewport(0, 0, Math.floor(this.canvasWidth / this.samplingStep), Math.floor(this.canvasHeight / this.samplingStep))
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+
+        gl.useProgram(this.particleUpdateShader)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+
+        gl.uniform1i(gl.getUniformLocation(this.particleUpdateShader, 'uTexture'), 0)
+        gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uForce'), this.forceCenter[0], this.forceCenter[1])
+        gl.uniform2f(gl.getUniformLocation(this.particleUpdateShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
+        gl.uniform4f(gl.getUniformLocation(this.particleUpdateShader, 'uAction'), this.repulsionForce, this.repulsionRadius, this.friction, this.returnSpeed)
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+        // Pass 3: Render particles
         gl.enable(gl.BLEND)
         gl.disable(gl.DEPTH_TEST)
         gl.blendEquation(gl.FUNC_ADD)
@@ -317,56 +380,16 @@ export default class HelloRenderer {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.viewport(0, 0, this.canvasWidth, this.canvasHeight)
 
-        gl.clearColor(41.0 / 255.0, 44.0 / 255.0, 51.0 / 255.0, 1.0)
-        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.useProgram(this.particleShader)
 
-        gl.useProgram(this.gridShader)
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.helloTexture)
-        gl.activeTexture(gl.TEXTURE1)
-        gl.bindTexture(gl.TEXTURE_2D, this.cooperationTexture)
+        gl.bindTexture(gl.TEXTURE_2D, this.swapCounter % 2 === 0 ? this.particleTexture2 : this.particleTexture1)
 
-        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uHello'), 0)
-        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uCooperation'), 1)
-        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
-        gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridResolution'), this.gridPixelResolution)
-        gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
-        
-        // Only apply pulse uniforms if pulse is active
-        if (this.isPulseActive) {
-            // Check if pulse duration has expired
-            const currentTime = (Date.now() - this.pulseStartTime) / 1000.0
-            if (currentTime >= this.pulseDuration) {
-                this.isPulseActive = false
-                this.gridDimFactor += 1
+        gl.uniform1i(gl.getUniformLocation(this.particleShader, 'uTexture'), 0)
+        gl.uniform1f(gl.getUniformLocation(this.particleShader, 'uParticleSize'), this.particleSize)
+        gl.uniform2f(gl.getUniformLocation(this.particleShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
 
-            } else {
-                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uTime'), currentTime)
-                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseSpeed'), this.pulseSpeed)
-                gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), this.pulseRadius)
-                gl.uniform2f(gl.getUniformLocation(this.gridShader, 'uPulseCenter'), this.pulseCenter[0], this.pulseCenter[1])
-            }
-        } else {
-            // Set pulse brightness to 0 when inactive
-            gl.uniform1f(gl.getUniformLocation(this.gridShader, 'uPulseRadius'), 0.0)
-            gl.uniform1i(gl.getUniformLocation(this.gridShader, 'uGridDimFactor'), this.gridDimFactor)
-        }
-
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-        // Pass 3: Render particles
-        if (!eatEasterEgg) {
-            gl.useProgram(this.particleShader)
-
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.swapCounter % 2 === 0 ? this.particleTexture2 : this.particleTexture1)
-
-            gl.uniform1i(gl.getUniformLocation(this.particleShader, 'uTexture'), 0)
-            gl.uniform1f(gl.getUniformLocation(this.particleShader, 'uParticleSize'), this.particleSize)
-            gl.uniform2f(gl.getUniformLocation(this.particleShader, 'uResolution'), this.canvasWidth, this.canvasHeight)
-
-            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, Math.floor(this.canvasWidth / this.samplingStep) * Math.floor(this.canvasHeight / this.samplingStep))
-        }
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, Math.floor(this.canvasWidth / this.samplingStep) * Math.floor(this.canvasHeight / this.samplingStep))
 
         // Error check
         gll.errorCheck(gl)
@@ -376,6 +399,7 @@ export default class HelloRenderer {
         this.isReady = false
         if (this.stopTimeout) clearTimeout(this.stopTimeout)
 
+        this.particleBackgroundTexture = 0
         this.resizeObserver.unobserve(this.canvas)
         this.canvas.removeEventListener('mousedown', this.handleMouseClick)
         this.canvas.removeEventListener('mousemove', this.handleMouseMove)
