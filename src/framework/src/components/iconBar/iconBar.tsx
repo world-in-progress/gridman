@@ -2,6 +2,12 @@ import { cn } from '@/utils/utils'
 import { IconBarResourceBinding } from './types'
 import { Button } from '@/components/ui/button'
 import { ICON_REGISTRY } from '../../resource/iconRegistry'
+import { useTranslation } from 'react-i18next';
+
+function MyComponent () {
+  const { t, i18n } = useTranslation();
+  return <h1>{t('Welcome to React')}</h1>
+}
 
 export default function IconBar({ currentActiveId, clickHandlers }: IconBarResourceBinding) {
     return (

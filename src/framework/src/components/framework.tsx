@@ -16,8 +16,13 @@ import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
 import Hello from './hello/hello'
+import { useTranslation } from 'react-i18next';
+
 
 function FrameworkComponent() {
+    //i18 methods
+    const { t, i18n } = useTranslation();
+
     // Framework-related ref and state
     const nodeTabs = useRef<Tab[]>([])
     const nodeStack = useRef<ISceneNode[]>([])
@@ -67,14 +72,20 @@ function FrameworkComponent() {
                         setLastResourceTreeWidth(resourceTreeWidth)
                         setIsResourceTreeCollapsed(true)
                     }
-                } else {
+                } 
+                else {
                     setActiveIconID(iconID)
                     if (isResourceTreeCollapsed) {
                         setIsResourceTreeCollapsed(false)
                         setResourceTreeWidth(lastResourceTreeWidth || 200)
                     }
                 }
-            } else {
+            } 
+            else if(icon.id === 'languages'){
+                i18n.changeLanguage(i18n.language ==="szh"?"en":"szh")
+
+            }
+            else {
                 setActiveIconID(iconID)
             }
         }

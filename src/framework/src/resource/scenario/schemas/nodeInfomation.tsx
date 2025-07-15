@@ -86,7 +86,6 @@ export default function NodeInformation() {
 
                 </div>
             </div>
-        <div className='w-full bg-white'></div>
         </div>
     )
 }
