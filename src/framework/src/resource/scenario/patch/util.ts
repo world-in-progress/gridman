@@ -7,9 +7,9 @@ import { GridContext } from "@/core/grid/types";
 import GridCore from "@/core/grid/NHGridCore";
 
 // Get Patch by schemaName and patchName
-export const getPatchInfo = async(node: SceneNode, isRemote: boolean) => {
+export const getPatchInfo = async(node: SceneNode) => {
     try {
-        const res = await apis.patch.getPatchMeta.fetch({schemaName: node.parent!.parent!.name, patchName: node.name}, isRemote)
+        const res = await apis.patch.getPatchMeta.fetch({schemaName: node.parent!.parent!.name, patchName: node.name}, node.tree.isPublic)
         return res
     } catch (error) {
         console.error('Get patch info failed: ', error)

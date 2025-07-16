@@ -576,8 +576,8 @@ function FrameworkComponent() {
                 )}
 
                 {/* Hello Page */}
-                {/* {nodeStack.current.length === 0 && <Hello />} */}
-                {nodeStack.current.length === 0 && <SettingsPage />}
+                {nodeStack.current.length === 0 && <Hello />}
+                {/* {nodeStack.current.length === 0 && <SettingsPage />} */}
             </div>
         </div >
     )

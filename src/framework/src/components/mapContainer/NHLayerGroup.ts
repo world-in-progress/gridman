@@ -122,7 +122,10 @@ export default class NHLayerGroup implements CustomLayerInterface {
 
   public addLayer(layer: NHCustomLayerInterface) {
     this.layers.push(layer);
-    this.prepared && layer.initialize(this.map, this.gl);
+    if (this.prepared) {
+      layer.layerGroup = this
+      layer.initialize(this.map, this.gl);
+    }
     this.sortLayer();
   }
 
