@@ -4,6 +4,7 @@ import { SettingItem } from "./settingsItem"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import store from "@/store"
 
 interface SettingsContentProps {
     activeCategory: string
@@ -12,14 +13,22 @@ interface SettingsContentProps {
 export function SettingsContent({ activeCategory }: SettingsContentProps) {
     const handleSettingChange = (settingName: string, value: any) => {
         console.log(`Setting ${settingName} changed to:`, value)
+        if (settingName === "highSpeed") {
+            if (value === "on") {
+                store.set('highSpeedMode', true)
+            } else {
+                store.set('highSpeedMode', false)
+            }
+        }
+
         // 这里可以添加实际的设置保存逻辑
     }
 
     const renderGeneralSettings = () => (
         <div className="space-y-0">
             <SettingItem title="Grid: High Speed" description="控制是否开启高速操作。">
-                <Select 
-                    defaultValue="off" 
+                <Select
+                    defaultValue="off"
                     onValueChange={(value) => handleSettingChange("highSpeed", value)}
                 >
                     <SelectTrigger className="w-32 bg-gray-700 border-gray-600">
@@ -27,7 +36,7 @@ export function SettingsContent({ activeCategory }: SettingsContentProps) {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="off">Off</SelectItem>
-                        <SelectItem value="afterDelay">On</SelectItem>
+                        <SelectItem value="on">On</SelectItem>
                     </SelectContent>
                 </Select>
             </SettingItem>
