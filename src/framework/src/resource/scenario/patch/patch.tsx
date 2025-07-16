@@ -19,11 +19,25 @@ import TopologyLayer from '@/components/mapContainer/TopologyLayer'
 export class PatchPageContext extends DefaultPageContext {
     patch: GridMeta | null
     isEditing: boolean
+    isChecking: boolean
+    topologyLayer: TopologyLayer | null
+    gridCore: GridCore | null
+    editingState: {
+        pick: boolean,
+        select: 'brush' | 'box' | 'feature',
+    }
 
     constructor() {
         super()
         this.patch = null
         this.isEditing = false
+        this.isChecking = false
+        this.topologyLayer = null
+        this.gridCore = null
+        this.editingState = {
+            pick: true,
+            select: 'brush'
+        }
     }
 
     static async create(node: ISceneNode): Promise<PatchPageContext> {
@@ -84,8 +98,8 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
             case PatchMenuItem.DELETE: {
                 const response = await deletepatch(nodeSelf as SceneNode, nodeSelf.tree.isPublic)
                 if (response) {
-                    toast.success(`Patch ${nodeSelf.name} deleted successfully`)
                     await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    toast.success(`Patch ${nodeSelf.name} deleted successfully`)
                     
                 } else {
                     toast.error(`Failed to delete patch ${nodeSelf.name}`)
@@ -124,16 +138,23 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
             bBox: boundingBox2D(...patchMeta!.bounds),
             rules: patchMeta!.subdivide_rules
         }
+        
         const gridLayer = new TopologyLayer(map)
-        gridLayer.startCallback = () => {
-            store.get<{ on: Function, off: Function }>('isLoading')!.on()
-        }
+        // gridLayer.startCallback = () => {
+        //     // store.get<{ on: Function, off: Function }>('isLoading')!.on()
+        // }
         gridLayer.endCallback = () => {
+            console.log('endCallback')
             store.get<{ on: Function, off: Function }>('isLoading')!.off()
         }
         layerGroup.addLayer(gridLayer)
 
         const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
-        gridLayer.gridCore = gridCore   
+        
+        await gridLayer.initialize(map, map.painter.context.gl)
+        context.topologyLayer = gridLayer
+        
+        gridLayer.gridCore = gridCore
+        context.gridCore = gridCore
     }
 }

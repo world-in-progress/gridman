@@ -1,536 +1,387 @@
+// import React from 'react';
+// import styled from 'styled-components';
+
+// const Loader = () => {
+//   return (
+//     <StyledWrapper>
+//       <div className="earth">
+//         <div className="earth-loader">
+//           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+//             <path transform="translate(100 100)" d="M29.4,-17.4C33.1,1.8,27.6,16.1,11.5,31.6C-4.7,47,-31.5,63.6,-43,56C-54.5,48.4,-50.7,16.6,-41,-10.9C-31.3,-38.4,-15.6,-61.5,-1.4,-61C12.8,-60.5,25.7,-36.5,29.4,-17.4Z" fill="#7CC133" />
+//           </svg>
+//           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+//             <path transform="translate(100 100)" d="M31.7,-55.8C40.3,-50,45.9,-39.9,49.7,-29.8C53.5,-19.8,55.5,-9.9,53.1,-1.4C50.6,7.1,43.6,14.1,41.8,27.6C40.1,41.1,43.4,61.1,37.3,67C31.2,72.9,15.6,64.8,1.5,62.2C-12.5,59.5,-25,62.3,-31.8,56.7C-38.5,51.1,-39.4,37.2,-49.3,26.3C-59.1,15.5,-78,7.7,-77.6,0.2C-77.2,-7.2,-57.4,-14.5,-49.3,-28.4C-41.2,-42.4,-44.7,-63,-38.5,-70.1C-32.2,-77.2,-16.1,-70.8,-2.3,-66.9C11.6,-63,23.1,-61.5,31.7,-55.8Z" fill="#7CC133" />
+//           </svg>
+//           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+//             <path transform="translate(100 100)" d="M30.6,-49.2C42.5,-46.1,57.1,-43.7,67.6,-35.7C78.1,-27.6,84.6,-13.8,80.3,-2.4C76.1,8.9,61.2,17.8,52.5,29.1C43.8,40.3,41.4,53.9,33.7,64C26,74.1,13,80.6,2.2,76.9C-8.6,73.1,-17.3,59,-30.6,52.1C-43.9,45.3,-61.9,45.7,-74.1,38.2C-86.4,30.7,-92.9,15.4,-88.6,2.5C-84.4,-10.5,-69.4,-20.9,-60.7,-34.6C-52.1,-48.3,-49.8,-65.3,-40.7,-70C-31.6,-74.8,-15.8,-67.4,-3.2,-61.8C9.3,-56.1,18.6,-52.3,30.6,-49.2Z" fill="#7CC133" />
+//           </svg>
+//           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+//             <path transform="translate(100 100)" d="M39.4,-66C48.6,-62.9,51.9,-47.4,52.9,-34.3C53.8,-21.3,52.4,-10.6,54.4,1.1C56.3,12.9,61.7,25.8,57.5,33.2C53.2,40.5,39.3,42.3,28.2,46C17,49.6,8.5,55.1,1.3,52.8C-5.9,50.5,-11.7,40.5,-23.6,37.2C-35.4,34,-53.3,37.5,-62,32.4C-70.7,27.4,-70.4,13.7,-72.4,-1.1C-74.3,-15.9,-78.6,-31.9,-73.3,-43C-68.1,-54.2,-53.3,-60.5,-39.5,-60.9C-25.7,-61.4,-12.9,-56,1.1,-58C15.1,-59.9,30.2,-69.2,39.4,-66Z" fill="#7CC133" />
+//           </svg>
+//         </div>
+//       </div>
+//     </StyledWrapper>
+//   );
+// }
+
+// const StyledWrapper = styled.div`{
+//     .earth-loader {
+//       --watercolor: #3344c1;
+//       --landcolor: #7cc133;
+//       width: 7.5em;
+//       height: 7.5em;
+//       background-color: var(--watercolor);
+//       position: absolute;
+//       left: 50%;
+//       top: 50%;
+//       margin-left: -3.75em;
+//       margin-top: -3.75em;
+//       z-index: 1000;
+//       overflow: hidden;
+//       border-radius: 50%;
+//       box-shadow:
+//         inset 0em 0.5em rgb(255, 255, 255, 0.25),
+//         inset 0em -0.5em rgb(0, 0, 0, 0.25);
+//       border: solid 0.15em #7ECBFF;
+//       animation: startround 1s;
+//       animation-iteration-count: 1;
+//     }
+
+//     .earth p {
+//       color: white;
+//       display: flex;
+//       justify-content: center;
+//       align-items: center;
+//       padding-top: 0.25em;
+//       font-size: 1.25em;
+//       font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+//     }
+
+//     .earth-loader svg:nth-child(1) {
+//       position: absolute;
+//       bottom: -2em;
+//       width: 7em;
+//       height: auto;
+//       animation: round1 5s infinite linear 0.75s;
+//     }
+
+//     .earth-loader svg:nth-child(2) {
+//       position: absolute;
+//       top: -3em;
+//       width: 7em;
+//       height: auto;
+//       animation: round1 5s infinite linear;
+//     }
+//     .earth-loader svg:nth-child(3) {
+//       position: absolute;
+//       top: -2.5em;
+//       width: 7em;
+//       height: auto;
+//       animation: round2 5s infinite linear;
+//     }
+//     .earth-loader svg:nth-child(4) {
+//       position: absolute;
+//       bottom: -2.2em;
+//       width: 7em;
+//       height: auto;
+//       animation: round2 5s infinite linear 0.75s;
+//     }
+
+//     @keyframes startround {
+//       0% {
+//         filter: brightness(500%);
+//         box-shadow: none;
+//       }
+//       75% {
+//         filter: brightness(500%);
+//         box-shadow: none;
+//       }
+//       100% {
+//         filter: brightness(100%);
+//         box-shadow:
+//           inset 0em 0.5em rgb(255, 255, 255, 0.25),
+//           inset 0em -0.5em rgb(0, 0, 0, 0.25);
+//       }
+//     }
+
+//     @keyframes round1 {
+//       0% {
+//         left: -2em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//       }
+//       30% {
+//         left: -6em;
+//         opacity: 100%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       }
+//       31% {
+//         left: -6em;
+//         opacity: 0%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       }
+//       35% {
+//         left: 7em;
+//         opacity: 0%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       }
+//       45% {
+//         left: 7em;
+//         opacity: 100%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       }
+//       100% {
+//         left: -2em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//       }
+//     }
+
+//     @keyframes round2 {
+//       0% {
+//         left: 5em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//         left: -2em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//       }
+//     }
+
+//     @keyframes round2 {
+//       0% {
+//         left: 5em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//       }
+//       75% {
+//         left: -7em;
+//         opacity: 100%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       }
+//       76% {
+//         left: -7em;
+//         opacity: 0%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       75% {
+//         left: -7em;
+//         opacity: 100%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       }
+//       76% {
+//         left: -7em;
+//         opacity: 0%;
+//         transform: skewX(-25deg) rotate(25deg);
+//       }
+//       77% {
+//         left: 8em;
+//         opacity: 0%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       }
+//       80% {
+//         left: 8em;
+//         opacity: 100%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       77% {
+//         left: 8em;
+//         opacity: 0%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       }
+//       80% {
+//         left: 8em;
+//         opacity: 100%;
+//         transform: skewX(25deg) rotate(-25deg);
+//       }
+//       100% {
+//         left: 5em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//         left: 5em;
+//         opacity: 100%;
+//         transform: skewX(0deg) rotate(0deg);
+//       }
+//     }`;
+
+// export default Loader;
+
+
+
+
 import React from 'react';
 import styled from 'styled-components';
 
 const Loader = () => {
   return (
     <StyledWrapper>
-      <div className="socket">
-        <div className="gel center-gel">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
+      <div className="earth">
+        <div className="earth-loader">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <path transform="translate(100 100)" d="M29.4,-17.4C33.1,1.8,27.6,16.1,11.5,31.6C-4.7,47,-31.5,63.6,-43,56C-54.5,48.4,-50.7,16.6,-41,-10.9C-31.3,-38.4,-15.6,-61.5,-1.4,-61C12.8,-60.5,25.7,-36.5,29.4,-17.4Z" fill="#7CC133" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <path transform="translate(100 100)" d="M31.7,-55.8C40.3,-50,45.9,-39.9,49.7,-29.8C53.5,-19.8,55.5,-9.9,53.1,-1.4C50.6,7.1,43.6,14.1,41.8,27.6C40.1,41.1,43.4,61.1,37.3,67C31.2,72.9,15.6,64.8,1.5,62.2C-12.5,59.5,-25,62.3,-31.8,56.7C-38.5,51.1,-39.4,37.2,-49.3,26.3C-59.1,15.5,-78,7.7,-77.6,0.2C-77.2,-7.2,-57.4,-14.5,-49.3,-28.4C-41.2,-42.4,-44.7,-63,-38.5,-70.1C-32.2,-77.2,-16.1,-70.8,-2.3,-66.9C11.6,-63,23.1,-61.5,31.7,-55.8Z" fill="#7CC133" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <path transform="translate(100 100)" d="M30.6,-49.2C42.5,-46.1,57.1,-43.7,67.6,-35.7C78.1,-27.6,84.6,-13.8,80.3,-2.4C76.1,8.9,61.2,17.8,52.5,29.1C43.8,40.3,41.4,53.9,33.7,64C26,74.1,13,80.6,2.2,76.9C-8.6,73.1,-17.3,59,-30.6,52.1C-43.9,45.3,-61.9,45.7,-74.1,38.2C-86.4,30.7,-92.9,15.4,-88.6,2.5C-84.4,-10.5,-69.4,-20.9,-60.7,-34.6C-52.1,-48.3,-49.8,-65.3,-40.7,-70C-31.6,-74.8,-15.8,-67.4,-3.2,-61.8C9.3,-56.1,18.6,-52.3,30.6,-49.2Z" fill="#7CC133" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <path transform="translate(100 100)" d="M39.4,-66C48.6,-62.9,51.9,-47.4,52.9,-34.3C53.8,-21.3,52.4,-10.6,54.4,1.1C56.3,12.9,61.7,25.8,57.5,33.2C53.2,40.5,39.3,42.3,28.2,46C17,49.6,8.5,55.1,1.3,52.8C-5.9,50.5,-11.7,40.5,-23.6,37.2C-35.4,34,-53.3,37.5,-62,32.4C-70.7,27.4,-70.4,13.7,-72.4,-1.1C-74.3,-15.9,-78.6,-31.9,-73.3,-43C-68.1,-54.2,-53.3,-60.5,-39.5,-60.9C-25.7,-61.4,-12.9,-56,1.1,-58C15.1,-59.9,30.2,-69.2,39.4,-66Z" fill="#7CC133" />
+          </svg>
         </div>
-        <div className="gel c1 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c2 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c3 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c4 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c5 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c6 r1">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c7 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c8 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c9 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c10 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c11 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c12 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c13 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c14 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c15 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c16 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c17 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c18 r2">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c19 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c20 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c21 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c22 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c23 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c24 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c25 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c26 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c28 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c29 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c30 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c31 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c32 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c33 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c34 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c35 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c36 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
-        <div className="gel c37 r3">
-          <div className="hex-brick h1" />
-          <div className="hex-brick h2" />
-          <div className="hex-brick h3" />
-        </div>
+        <p>Loading...</p>
       </div>
     </StyledWrapper>
   );
 }
 
 const StyledWrapper = styled.div`
-  .socket {
-    width: 200px;
-    height: 200px;
+  .earth-loader {
+    --watercolor: #3344c1;
+    --landcolor: #7cc133;
+    width: 7.5em;
+    height: 7.5em;
+    background-color: var(--watercolor);
     position: absolute;
     left: 50%;
-    margin-left: -100px;
-    top: 55%;
-    margin-top: -100px;
-    z-index: 1000;
-  }
-
-  .hex-brick {
-    background: #FFFFFF;
-    width: 30px;
-    height: 17px;
-    position: absolute;
-    top: 5px;
-    animation-name: fade00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    -webkit-animation-name: fade00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-  }
-
-  .h2 {
-    transform: rotate(60deg);
-    -webkit-transform: rotate(60deg);
-  }
-
-  .h3 {
-    transform: rotate(-60deg);
-    -webkit-transform: rotate(-60deg);
-  }
-
-  .gel {
-    height: 30px;
-    width: 30px;
-    transition: all 0.3s;
-    -webkit-transition: all 0.3s;
-    position: absolute;
     top: 50%;
+    margin-left: -3.75em;
+    margin-top: -3.75em;
+    z-index: 1000;
+    overflow: hidden;
+    border-radius: 50%;
+    box-shadow:
+      inset 0em 0.5em rgb(255, 255, 255, 0.25),
+      inset 0em -0.5em rgb(0, 0, 0, 0.25);
+    border: solid 0.15em white;
+    animation: startround 1s;
+    animation-iteration-count: 1;
+  }
+
+  .earth p {
+    color: white;
+    display: flex;
+        position: absolute;
     left: 50%;
+    top: 58%;
+    margin-left: -1.75em;
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding-top: 0.25em;
+    font-size: 1.8em;
+    font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
   }
 
-  .center-gel {
-    margin-left: -15px;
-    margin-top: -15px;
-    animation-name: pulse00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    -webkit-animation-name: pulse00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
+  .earth-loader svg:nth-child(1) {
+    position: absolute;
+    bottom: -2em;
+    width: 7em;
+    height: auto;
+    animation: round1 5s infinite linear 0.75s;
   }
 
-  .c1 {
-    margin-left: -47px;
-    margin-top: -15px;
+  .earth-loader svg:nth-child(2) {
+    position: absolute;
+    top: -3em;
+    width: 7em;
+    height: auto;
+    animation: round1 5s infinite linear;
+  }
+  .earth-loader svg:nth-child(3) {
+    position: absolute;
+    top: -2.5em;
+    width: 7em;
+    height: auto;
+    animation: round2 5s infinite linear;
+  }
+  .earth-loader svg:nth-child(4) {
+    position: absolute;
+    bottom: -2.2em;
+    width: 7em;
+    height: auto;
+    animation: round2 5s infinite linear 0.75s;
   }
 
-  .c2 {
-    margin-left: -31px;
-    margin-top: -43px;
-  }
-
-  .c3 {
-    margin-left: 1px;
-    margin-top: -43px;
-  }
-
-  .c4 {
-    margin-left: 17px;
-    margin-top: -15px;
-  }
-
-  .c5 {
-    margin-left: -31px;
-    margin-top: 13px;
-  }
-
-  .c6 {
-    margin-left: 1px;
-    margin-top: 13px;
-  }
-
-  .c7 {
-    margin-left: -63px;
-    margin-top: -43px;
-  }
-
-  .c8 {
-    margin-left: 33px;
-    margin-top: -43px;
-  }
-
-  .c9 {
-    margin-left: -15px;
-    margin-top: 41px;
-  }
-
-  .c10 {
-    margin-left: -63px;
-    margin-top: 13px;
-  }
-
-  .c11 {
-    margin-left: 33px;
-    margin-top: 13px;
-  }
-
-  .c12 {
-    margin-left: -15px;
-    margin-top: -71px;
-  }
-
-  .c13 {
-    margin-left: -47px;
-    margin-top: -71px;
-  }
-
-  .c14 {
-    margin-left: 17px;
-    margin-top: -71px;
-  }
-
-  .c15 {
-    margin-left: -47px;
-    margin-top: 41px;
-  }
-
-  .c16 {
-    margin-left: 17px;
-    margin-top: 41px;
-  }
-
-  .c17 {
-    margin-left: -79px;
-    margin-top: -15px;
-  }
-
-  .c18 {
-    margin-left: 49px;
-    margin-top: -15px;
-  }
-
-  .c19 {
-    margin-left: -63px;
-    margin-top: -99px;
-  }
-
-  .c20 {
-    margin-left: 33px;
-    margin-top: -99px;
-  }
-
-  .c21 {
-    margin-left: 1px;
-    margin-top: -99px;
-  }
-
-  .c22 {
-    margin-left: -31px;
-    margin-top: -99px;
-  }
-
-  .c23 {
-    margin-left: -63px;
-    margin-top: 69px;
-  }
-
-  .c24 {
-    margin-left: 33px;
-    margin-top: 69px;
-  }
-
-  .c25 {
-    margin-left: 1px;
-    margin-top: 69px;
-  }
-
-  .c26 {
-    margin-left: -31px;
-    margin-top: 69px;
-  }
-
-  .c27 {
-    margin-left: -79px;
-    margin-top: -15px;
-  }
-
-  .c28 {
-    margin-left: -95px;
-    margin-top: -43px;
-  }
-
-  .c29 {
-    margin-left: -95px;
-    margin-top: 13px;
-  }
-
-  .c30 {
-    margin-left: 49px;
-    margin-top: 41px;
-  }
-
-  .c31 {
-    margin-left: -79px;
-    margin-top: -71px;
-  }
-
-  .c32 {
-    margin-left: -111px;
-    margin-top: -15px;
-  }
-
-  .c33 {
-    margin-left: 65px;
-    margin-top: -43px;
-  }
-
-  .c34 {
-    margin-left: 65px;
-    margin-top: 13px;
-  }
-
-  .c35 {
-    margin-left: -79px;
-    margin-top: 41px;
-  }
-
-  .c36 {
-    margin-left: 49px;
-    margin-top: -71px;
-  }
-
-  .c37 {
-    margin-left: 81px;
-    margin-top: -15px;
-  }
-
-  .r1 {
-    animation-name: pulse00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.2s;
-    -webkit-animation-name: pulse00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.2s;
-  }
-
-  .r2 {
-    animation-name: pulse00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.4s;
-    -webkit-animation-name: pulse00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.4s;
-  }
-
-  .r3 {
-    animation-name: pulse00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.6s;
-    -webkit-animation-name: pulse00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.6s;
-  }
-
-  .r1 > .hex-brick {
-    animation-name: fade00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.2s;
-    -webkit-animation-name: fade00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.2s;
-  }
-
-  .r2 > .hex-brick {
-    animation-name: fade00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.4s;
-    -webkit-animation-name: fade00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.4s;
-  }
-
-  .r3 > .hex-brick {
-    animation-name: fade00;
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-    animation-delay: 0.6s;
-    -webkit-animation-name: fade00;
-    -webkit-animation-duration: 2s;
-    -webkit-animation-iteration-count: infinite;
-    -webkit-animation-delay: 0.6s;
-  }
-
-  @keyframes pulse00 {
+  @keyframes startround {
     0% {
-      -webkit-transform: scale(1);
-      transform: scale(1);
+      filter: brightness(500%);
+      box-shadow: none;
     }
-
-    50% {
-      -webkit-transform: scale(0.01);
-      transform: scale(0.01);
+    75% {
+      filter: brightness(500%);
+      box-shadow: none;
     }
-
     100% {
-      -webkit-transform: scale(1);
-      transform: scale(1);
+      filter: brightness(100%);
+      box-shadow:
+        inset 0em 0.5em rgb(255, 255, 255, 0.25),
+        inset 0em -0.5em rgb(0, 0, 0, 0.25);
     }
   }
 
-  @keyframes fade00 {
+  @keyframes round1 {
     0% {
-      background: #FFFFFF;
+      left: -2em;
+      opacity: 100%;
+      transform: skewX(0deg) rotate(0deg);
     }
-
-    50% {
-      background: #FF8C00;
+    30% {
+      left: -6em;
+      opacity: 100%;
+      transform: skewX(-25deg) rotate(25deg);
     }
-
+    31% {
+      left: -6em;
+      opacity: 0%;
+      transform: skewX(-25deg) rotate(25deg);
+    }
+    35% {
+      left: 7em;
+      opacity: 0%;
+      transform: skewX(25deg) rotate(-25deg);
+    }
+    45% {
+      left: 7em;
+      opacity: 100%;
+      transform: skewX(25deg) rotate(-25deg);
+    }
     100% {
-      background: #FFFFFF;
+      left: -2em;
+      opacity: 100%;
+      transform: skewX(0deg) rotate(0deg);
+    }
+  }
+
+  @keyframes round2 {
+    0% {
+      left: 5em;
+      opacity: 100%;
+      transform: skewX(0deg) rotate(0deg);
+    }
+    75% {
+      left: -7em;
+      opacity: 100%;
+      transform: skewX(-25deg) rotate(25deg);
+    }
+    76% {
+      left: -7em;
+      opacity: 0%;
+      transform: skewX(-25deg) rotate(25deg);
+    }
+    77% {
+      left: 8em;
+      opacity: 0%;
+      transform: skewX(25deg) rotate(-25deg);
+    }
+    80% {
+      left: 8em;
+      opacity: 100%;
+      transform: skewX(25deg) rotate(-25deg);
+    }
+    100% {
+      left: 5em;
+      opacity: 100%;
+      transform: skewX(0deg) rotate(0deg);
     }
   }`;
 
