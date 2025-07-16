@@ -83,8 +83,9 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
             mapInstance.on('load', async() => {
                 const layerGroup = new NHLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
-                node && await node.scenarioNode.handleMapAdd(node, mapInstance, layerGroup)
                 mapInstance.addLayer(layerGroup)
+                // node && await node.scenarioNode.handleMapAdd(node, mapInstance, layerGroup)
+                store.set('clg', layerGroup)
             })
             store.set('map', mapInstance)
 

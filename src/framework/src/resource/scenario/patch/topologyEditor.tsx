@@ -48,7 +48,9 @@ import store from "@/store"
 import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
 import CapacityBar from "@/components/ui/capacityBar"
 import { toast } from "sonner"
-import { deletepatch } from "./util"
+import { deletepatch, setPatch } from "./util"
+import { GridContext } from "@/core/grid/types"
+import { boundingBox2D } from "@/core/util/boundingBox2D"
 
 const topologyTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -93,36 +95,26 @@ export default function TopologyEditor(
     const [selectTab, setSelectTab] = useState<'brush' | 'box' | 'feature'>('brush');
     const [checkSwitchOn, setCheckSwitchOn] = useState(false);
     const [selectAllDialogOpen, setSelectAllDialogOpen] = useState(false);
-    const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false);
-    const [isLayerReady, setIsLayerReady] = useState(false);
+    const [deleteSelectDialogOpen, setDeleteSelectDialogOpen] = useState(false)
     const [topologyLayer, setTopologyLayer] = useState<TopologyLayer | null>(null)
 
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
-    const gridCore = useRef<GridCore | null>(null)
 
     useEffect(() => {
         if (!topologyLayer) {
-            setIsLayerReady(false);
             return;
         }
-
         const checkLayerReady = () => {
             if (topologyLayer?.isReady) {
                 console.log("拓扑图层已准备就绪")
-                setIsLayerReady(true)
             } else {
                 console.log("拓扑图层正在初始化中...")
                 setTimeout(checkLayerReady, 500);
             }
         };
-
-        checkLayerReady();
-
-        return () => {
-            setIsLayerReady(false);
-        };
+        checkLayerReady()
     }, [topologyLayer]);
 
     useEffect(() => {
@@ -145,7 +137,7 @@ export default function TopologyEditor(
 
         const onMouseMove = (e: MouseEvent) => {
             if (!e.shiftKey || !localIsMouseDown.current) return;
-            // if (store.get<CheckingSwitch>("checkingSwitch")!.isOn) return;
+            // if (checkSwitchOn) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -184,7 +176,7 @@ export default function TopologyEditor(
             }
 
             if (!e.shiftKey) return
-            // if (store.get<CheckingSwitch>("checkingSwitch")!.isOn) return
+            // if (checkSwitchOn) return
 
             const rect = canvas.getBoundingClientRect()
             const x = e.clientX - rect.left
@@ -200,7 +192,7 @@ export default function TopologyEditor(
         }
 
         const onMouseOut = (e: MouseEvent) => {
-            // if (store.get<CheckingSwitch>("checkingSwitch")!.isOn) return;
+            // if (checkSwitchOn) return;
             if (map) {
                 map.dragPan.enable();
                 map.scrollZoom.enable();
@@ -224,11 +216,11 @@ export default function TopologyEditor(
                 [mouseUpPos[0], mouseUpPos[1]]
             )
         }
-
         canvas.addEventListener("mousedown", onMouseDown);
         canvas.addEventListener("mousemove", onMouseMove);
         canvas.addEventListener("mouseup", onMouseUp);
         canvas.addEventListener("mouseout", onMouseOut);
+        console.log('已加载')
 
         return () => {
             canvas.removeEventListener("mousedown", onMouseDown);
@@ -236,7 +228,7 @@ export default function TopologyEditor(
             canvas.removeEventListener("mouseup", onMouseUp);
             canvas.removeEventListener("mouseout", onMouseOut);
         };
-    }, [isLayerReady, topologyLayer, selectTab, pickingTab]);
+    }, [selectTab, pickingTab, checkSwitchOn, topologyLayer]);
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -246,39 +238,73 @@ export default function TopologyEditor(
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
-        setIsLayerReady(false)
         store.get<{ on: Function, off: Function }>('isLoading')!.on()
+        await setPatch(node as SceneNode)
 
         pageContext.current = await node.getPageContext() as PatchPageContext
+
+        const map = store.get<mapboxgl.Map>('map')!
         const pc = pageContext.current
 
-        function waitForTopologyLayer(pc: PatchPageContext) {
-            return new Promise(resolve => {
-                const check = () => {
-                    if (pc.topologyLayer !== null) {
-                        resolve(pc.topologyLayer);
-                    } else {
-                        setTimeout(check, 100);
-                    }
-                };
-                check();
-            });
+        const waitForMapLoad = () => {
+            return new Promise<void>((resolve) => {
+                if (map.loaded()) {
+                    console.log('map loaded')
+                    resolve()
+                } else {
+                    map.once('load', () => {
+                        console.log('map loaded')
+                        resolve()
+                    })
+                }
+            })
         }
 
-        await waitForTopologyLayer(pc);
-        store.get<{ on: Function, off: Function }>('isLoading')!.off()
-        console.log(pc.gridCore)
+        await waitForMapLoad()
+
+        const waitForClg = () => {
+            return new Promise<NHLayerGroup>((resolve) => {
+                const checkClg = () => {
+                    const clg = store.get<NHLayerGroup>('clg')!
+                    if (clg) {
+                        console.log('clg loaded')
+                        resolve(clg)
+                    } else {
+                        setTimeout(checkClg, 100)
+                    }
+                }
+                checkClg()
+            })
+        }
+
+        const clg = await waitForClg()
+        console.log(clg)
+
+        const gridContext: GridContext = {
+            srcCS: `EPSG:${pageContext.current.patch?.epsg}`,
+            targetCS: 'EPSG:4326',
+            bBox: boundingBox2D(...pageContext.current.patch!.bounds),
+            rules: pageContext.current.patch!.subdivide_rules
+        }
+        const gridLayer = new TopologyLayer(map)
+        clg.addLayer(gridLayer)
+        const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
+        await gridLayer.initialize(map, map.painter.context.gl)
+        pc.topologyLayer = gridLayer
+        gridLayer.gridCore = gridCore
+        pc.gridCore = gridCore
 
         setTopologyLayer(pc.topologyLayer)
-        gridCore.current = pc.gridCore
         setPickingTab(pc.editingState.pick)
         setSelectTab(pc.editingState.select)
+        setCheckSwitchOn(pc.isChecking)
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        // triggerRepaint()
     }
 
     const unloadContext = (node: SceneNode) => {
         const clg = store.get<NHLayerGroup>('clg')!
         clg.removeLayer('TopologyLayer')
-
     }
 
     const handleSelectAllClick = () => {
@@ -494,8 +520,12 @@ export default function TopologyEditor(
     ]);
 
     const toggleCheckSwitch = () => {
-        setCheckSwitchOn(prev => !prev);
-    };
+        if (checkSwitchOn === pageContext.current!.isChecking) {
+            console.log('toggleCheckSwitch')
+            setCheckSwitchOn(prev => !prev);
+            pageContext.current!.isChecking = !pageContext.current!.isChecking
+        }
+    }
 
     const handleSaveTopologyState = () => {
         const core: GridCore = pageContext.current.gridCore!
@@ -579,14 +609,14 @@ export default function TopologyEditor(
                                 </AlertDialog>
                                 <div
                                     className='bg-sky-500 hover:bg-sky-600 h-8 p-2 text-white cursor-pointer rounded-sm flex items-center px-4'
-                                    onClick={() => setCheckSwitchOn(!checkSwitchOn)}
+                                    onClick={toggleCheckSwitch}
                                 >
                                     <span>Check</span>
                                     <Separator orientation='vertical' className='h-4 mx-2' />
                                     <Switch
                                         className='data-[state=checked]:bg-amber-300 data-[state=unchecked]:bg-gray-300 cursor-pointer'
                                         checked={checkSwitchOn}
-                                        onCheckedChange={setCheckSwitchOn}
+                                        onCheckedChange={toggleCheckSwitch}
                                     />
                                 </div>
                                 <Button
@@ -604,7 +634,7 @@ export default function TopologyEditor(
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
                     <ScrollArea className='h-full max-h-[calc(100vh-12.5rem)]'>
-                        <div className='w-2/3 mx-auto'>
+                        <div className='w-4/5 mx-auto'>
                             <div className="p-3 rounded-md shadow-sm">
                                 <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
                                 <div className="text-sm text-white mt-1 grid gap-1">
@@ -752,7 +782,6 @@ export default function TopologyEditor(
                         <div className='w-full flex flex-row border-t-2 border-[#414141]'>
                             <div className="w-2/3 mx-auto space-y-4 pl-4 pr-1 border-r border-[#414141]">
                                 <div className="space-y-2 p-2">
-                                    {/* 框选全部网格 */}
                                     <AlertDialog
                                         open={selectAllDialogOpen}
                                         onOpenChange={setSelectAllDialogOpen}
@@ -782,8 +811,6 @@ export default function TopologyEditor(
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-
-                                    {/* 取消全部网格框选 */}
                                     <AlertDialog
                                         open={deleteSelectDialogOpen}
                                         onOpenChange={setDeleteSelectDialogOpen}
@@ -813,8 +840,6 @@ export default function TopologyEditor(
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-
-                                    {/* 通用的拓扑操作确认对话框 */}
                                     <AlertDialog
                                         open={activeTopologyOperation !== null}
                                         onOpenChange={(open) => {
@@ -1042,18 +1067,10 @@ export default function TopologyEditor(
                     </ScrollArea>
                 </div>
             </div>
-            <div className='w-3/5 h-full py-4 pr-4 relative'>
+            <div className='w-3/4 h-full py-4 pr-4 relative'>
                 <div className="absolute left-0 z-10">
                     <CapacityBar />
                 </div>
-                {!isLayerReady && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 bg-opacity-10 z-20 rounded-lg">
-                        <div className="flex flex-col items-center space-y-4">
-                            <div className="text-white text-xl">Topology layer is loading ...</div>
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-                        </div>
-                    </div>
-                )}
                 <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
         </div>
