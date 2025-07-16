@@ -1,6 +1,7 @@
 import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
-import { FilePlus2 } from 'lucide-react'
+import NodeInformation from './nodeInfomation'
+import { FilePlus2, Info } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
@@ -49,6 +50,7 @@ export class SchemasPageContext extends DefaultPageContext {
 }
 
 export enum SchemasMenuItem {
+    Node_INFORMATION = 'Node Information',
     CREATE_NEW_SCHEMA = 'Create New Schema',
 }
 
@@ -62,6 +64,9 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent >
+                <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, SchemasMenuItem.Node_INFORMATION) }}>
+                    <Info className='w-4 h-4' />Node Information
+                </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, SchemasMenuItem.CREATE_NEW_SCHEMA) }}>
                     <FilePlus2 className='w-4 h-4' />Create New Schema
                 </ContextMenuItem>
@@ -71,17 +76,23 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
 
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
         switch (menuItem) {
-            case SchemasMenuItem.CREATE_NEW_SCHEMA: {
+            case SchemasMenuItem.CREATE_NEW_SCHEMA:
                 (nodeSelf as SceneNode).pageId = 'default'
-                ;(nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
-            }
+            case SchemasMenuItem.Node_INFORMATION:
+                (nodeSelf as SceneNode).pageId = 'information'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
         }
     }
 
     renderPage(nodeSelf: ISceneNode): React.JSX.Element | null {
         switch ((nodeSelf as SceneNode).pageId) {
             case 'default':
+                return (<SchemasPage node={nodeSelf} />)
+            case 'information':
+                return (<NodeInformation/>)
             default:
                 return (<SchemasPage node={nodeSelf} />)
         }

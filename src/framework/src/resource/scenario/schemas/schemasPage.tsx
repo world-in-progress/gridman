@@ -16,6 +16,7 @@ import MapContainer from '@/components/mapContainer/mapContainer'
 import { convertCoordinate } from '@/components/mapContainer/utils'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { validateGridLayers, validateSchemaForm, pickingFromMap } from './utils'
+import { useTranslation } from 'react-i18next'
 
 const schemaTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -46,6 +47,9 @@ const gridItemText = {
 export default function SchemasPage({
     node,
 }: SchemasPageProps) {
+    //i18
+    const{t,i18n} = useTranslation()
+
     const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => { } })
     const pageContext = useRef<SchemasPageContext>(new SchemasPageContext())
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
@@ -354,7 +358,7 @@ export default function SchemasPage({
                                 <ul className='list-disc space-y-1'>
                                     {schemaTips.map((tip, index) => (
                                         <li key={index}>
-                                            {Object.values(tip)[0]}
+                                            {t(Object.values(tip)[0])}
                                         </li>
                                     ))}
                                 </ul>

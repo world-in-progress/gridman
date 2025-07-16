@@ -20,6 +20,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/utils/utils'
 import { Button } from '../ui/button'
+import { useTranslation } from 'react-i18next';
+
+
 
 interface TreeNodeProps {
     node: ISceneNode
@@ -218,6 +221,9 @@ export default function ResourceTreeComponent({
     onNodeClick,
     onNodeRemove,
 }: SceneTreeProps) {
+    //i18
+    const { t } = useTranslation();
+
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
@@ -280,7 +286,7 @@ export default function ResourceTreeComponent({
             <div className='w-full bg-[#22222B]'>
                 <div className='pl-2'>
                     <div className='text-sm font-semibold text-gray-400 py-2 uppercase tracking-wide'>
-                        Explorer
+                        {t('EXPLORER')}
                     </div>
 
                     {privateTree && (
