@@ -22,3 +22,7 @@ export interface ValidationResult {
 export type SchemasPageProps = {
     node: ISceneNode
 }
+
+export interface NodeInformationProps {
+    node: ISceneNode;
+}

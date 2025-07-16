@@ -92,7 +92,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
             case 'default':
                 return (<SchemasPage node={nodeSelf} />)
             case 'information':
-                return (<NodeInformation/>)
+                return (<NodeInformation node={nodeSelf} />)
             default:
                 return (<SchemasPage node={nodeSelf} />)
         }
