@@ -17,6 +17,7 @@ import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
 import Hello from './hello/hello'
 import { useTranslation } from 'react-i18next';
+import SettingsPage from './settingPage/settingsPage'
 
 
 function FrameworkComponent() {
@@ -575,7 +576,8 @@ function FrameworkComponent() {
                 )}
 
                 {/* Hello Page */}
-                {nodeStack.current.length === 0 && <Hello />}
+                {/* {nodeStack.current.length === 0 && <Hello />} */}
+                {nodeStack.current.length === 0 && <SettingsPage />}
             </div>
         </div >
     )
