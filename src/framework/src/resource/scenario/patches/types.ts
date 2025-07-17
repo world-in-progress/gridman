@@ -30,3 +30,7 @@ export interface ValidationResult {
     errors: FormErrors
     generalError: string | null
 }
+
+export interface PatchesInformationProps {
+    node: ISceneNode
+}
