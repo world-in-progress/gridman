@@ -109,7 +109,7 @@ export const validateSchemaForm = (
         lon: string
         lat: string
         gridLayerInfos: GridLayerInfo[]
-        convertedCoord: { x: string, y: string } | null
+        convertedCoord: { x: number, y: number } | null
     },
 ): ValidationResult => {
     const errors = {
