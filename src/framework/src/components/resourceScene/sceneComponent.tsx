@@ -60,6 +60,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     const isFolder = node.scenarioNode.degree > 0
     const isExpanded = tree.isNodeExpanded(node.id)
     const isSelected = tree.selectedNode?.id === node.id
+    const { t } = useTranslation("resourceScene");
 
     const nodeRef = useRef<HTMLDivElement>(null)
     const [isDownloaded, setIsDownloaded] = useState(false)
@@ -164,7 +165,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                             <button
                                 type='button'
                                 className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
-                                title='download'
+                                title={t('download')}
                                 onClick={handleClickPublicDownload}
                             >
                                 {isDownloaded ? <CloudCheck className='w-4 h-4 text-green-500' /> : <CloudDownload className='w-4 h-4 text-white' />}
@@ -196,11 +197,12 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
 const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic, triggerFocus }) => {
     if (!privateTree && !publicTree) return null
     const tree = isPublic ? publicTree : privateTree
+    const { t } = useTranslation("resourceScene");
 
     return (
         <>
             <div className=' z-10 bg-[#2A2C33] py-1 pl-1 text-sm font-semibold text-gray-200 ml-1'>
-                {title}
+                {t(title)}
             </div>
             <NodeRenderer key={tree!.root.id} node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
         </>
@@ -222,7 +224,7 @@ export default function ResourceTreeComponent({
     onNodeRemove,
 }: SceneTreeProps) {
     //i18
-    const { t } = useTranslation();
+    const { t } = useTranslation("resourceScene");
 
     // Force focusing on the focused node 
     // to ensure focus again when the component re-renders
