@@ -19,6 +19,7 @@ import Hello from './hello/hello'
 import { useTranslation } from 'react-i18next';
 import SettingsPage from './settingPage/settingsPage'
 import DefaultScenarioNode from '@/core/scenario/default'
+import Simulation from './simulation/simulationPage'
 
 
 function FrameworkComponent() {
@@ -131,6 +132,56 @@ function FrameworkComponent() {
                     settingsNode.tab.isActive = true
                     nodeTabs.current.forEach(tab => {
                         if (tab.node.id !== 'settings-virtual-node') {
+                            tab.isActive = false
+                        }
+                    })
+                    setFocusNode(settingsNode)
+                }
+            }
+            else if(icon.id === 'simulation') {
+                setActiveIconID(iconID)
+                
+                // 创建虚拟的设置节点（如果不存在）
+                const existingSettingsNode = nodeStack.current.find(node => node.id === 'settings-virtual-node')
+                if (!existingSettingsNode) {
+                    // 创建一个新的虚拟ScenarioNode
+                    const settingsScenarioNode = new DefaultScenarioNode()
+                    settingsScenarioNode.semanticPath = 'simulation'
+                    
+                    // 重写renderPage方法，使其返回SettingsPage组件
+                    settingsScenarioNode.renderPage = () => <Simulation />
+                    
+                    // 创建一个新的虚拟SceneNode
+                    const settingsNode = new SceneNode(
+                        privateTree as SceneTree,
+                        'simulation',
+                        null,
+                        settingsScenarioNode
+                    )
+                    
+                    // 设置id以便于识别
+                    Object.defineProperty(settingsNode, 'id', {
+                        get: function() { return 'simulation-virtual-node' }
+                    })
+                    
+                    // 设置tab名称
+                    settingsNode.tab.name = '模型模拟'
+                    
+                    // 将节点添加到nodeStack和nodeTabs
+                    nodeStack.current.push(settingsNode)
+                    nodeTabs.current.push(settingsNode.tab)
+                    
+                    // 激活tab
+                    settingsNode.tab.isActive = true
+                    
+                    // 设置为焦点节点
+                    setFocusNode(settingsNode)
+                } else {
+                    // 如果已经存在，则激活它
+                    const settingsNode = existingSettingsNode as SceneNode
+                    settingsNode.tab.isActive = true
+                    nodeTabs.current.forEach(tab => {
+                        if (tab.node.id !== 'simulation-virtual-node') {
                             tab.isActive = false
                         }
                     })

@@ -106,9 +106,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
             this.paletteColorList.set(color, i * 3)
         }
 
-        // 将生成的颜色列表存储到 store 中
-        store.set('paletteColorList', this.paletteColorList);
-
         // Bind callbacks and event handlers
         this.resizeHandler = this._resizeHandler.bind(this)
 
@@ -237,10 +234,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         canvas2d.height = rect.height
         this._ctx = canvas2d.getContext('2d')
 
-        // Check On
-        // const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
-        // checkingSwitch.addEventListener('on', CHECK_ON_EVENT)
-        // checkingSwitch.addEventListener('off', CHECK_OFF_EVENT)
     }
 
     async initGPUResource() {
@@ -1057,10 +1050,6 @@ export default class TopologyLayer implements NHCustomLayerInterface {
         this.initialized = false
         this._gridCore = null
 
-        // const checkingSwitch: CheckingSwitch = store.get('checkingSwitch')!
-        // checkingSwitch.removeEventListener('on', CHECK_ON_EVENT)
-        // checkingSwitch.removeEventListener('off', CHECK_OFF_EVENT)
-
         this.map.triggerRepaint()
     }
 
@@ -1091,6 +1080,15 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     executeClearDrawBox(): void {
         if (!this._overlayCtx) return
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas!.width, this._overlayCanvas!.height)
+    }
+
+    setCheckMode(isChecking: boolean) {
+        if (isChecking) {
+            CHECK_ON_EVENT()
+        } else {
+            CHECK_OFF_EVENT()
+        }
+        this.map.triggerRepaint()
     }
 }
 

@@ -1,5 +1,3 @@
-"use client"
-
 import { SettingItem } from "./settingsItem"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,8 +18,6 @@ export function SettingsContent({ activeCategory }: SettingsContentProps) {
                 store.set('highSpeedMode', false)
             }
         }
-
-        // 这里可以添加实际的设置保存逻辑
     }
 
     const renderGeneralSettings = () => (
