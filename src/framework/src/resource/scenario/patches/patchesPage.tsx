@@ -363,7 +363,7 @@ export default function PatchesPage({
                             {/* Page Title */}
                             {/* -----------*/}
                             <h1 className='font-bold text-[25px] relative flex items-center'>
-                                Create New Schema
+                                Create New Patch
                                 <span className=' bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1'>{node.tree.isPublic ? 'Public' : 'Private'}</span>
                                 <span>[{node.parent?.name}]</span>
                             </h1>
