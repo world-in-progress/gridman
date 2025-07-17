@@ -11,6 +11,57 @@ export interface BaseResponse {
     message: string
 }
 
+
+export interface SolutionMeta {
+    name: string
+    env: {
+        [key: string]: string
+    }
+}
+
+export interface DiscoverBaseResponse {
+    success: boolean
+    message: string
+    address: string
+}
+
+export interface SimulationEnv {
+    solution_name: string
+    solution_address: string
+}
+
+export interface ProcessGroupMeta {
+    solution_name: string
+    simulation_name: string
+    group_type: string
+    solution_address: string
+}
+
+export interface SimulationMeta {
+    solution_name: string
+    simulation_name: string
+    solution_address: string
+}
+
+export interface GetSimulationResultBaseRequest {
+    simulation_name: string
+    step: number
+}
+
+export interface SimulationResultMeta {
+    success: boolean;
+    message: string;
+    is_ready: boolean;
+    files: {
+        [key: string]: {
+            filename: string;
+            content: string;
+            is_binary: boolean;
+            size: number;
+        }
+    }
+}
+
 export interface ResponseWithNum {
     number: number
 }
@@ -89,3 +140,4 @@ export interface SceneMeta {
 export interface ResponseWithPatchMeta {
     patch_meta: PatchMeta | null
 }
+

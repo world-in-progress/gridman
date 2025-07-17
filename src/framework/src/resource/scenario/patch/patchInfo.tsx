@@ -23,7 +23,7 @@ import {
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { deletepatch, updatePatchInfo } from './util'
+import { deletepatch, updatePatchInfo } from './utils'
 import { toast } from 'sonner'
 import { PatchMeta } from '../patches/types'
 

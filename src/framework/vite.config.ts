@@ -28,6 +28,16 @@ export default defineConfig(({ command, mode }) => {
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/remote/, ''),
                 },
+                '/model': {
+                    target: env.VITE_MODEL_API_URL,
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/model/, ''),
+                },
+                '/resource': {
+                    target: env.VITE_RESOURCE_API_URL,
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/resource/, ''),
+                },
             },
         },
         optimizeDeps: {

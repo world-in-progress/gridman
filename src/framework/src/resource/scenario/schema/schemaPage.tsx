@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { deleteSchema, updateSchemaInfo } from './util'
+import { deleteSchema, updateSchemaInfo } from './utils'
 import { SchemaPageProps } from './types'
 import { SchemaPageContext } from './schema'
 import { Label } from '@/components/ui/label'
