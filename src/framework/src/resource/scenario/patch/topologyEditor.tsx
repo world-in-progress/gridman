@@ -137,7 +137,7 @@ export default function TopologyEditor(
 
         const onMouseMove = (e: MouseEvent) => {
             if (!e.shiftKey || !localIsMouseDown.current) return;
-            // if (checkSwitchOn) return;
+            if (checkSwitchOn) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -176,7 +176,7 @@ export default function TopologyEditor(
             }
 
             if (!e.shiftKey) return
-            // if (checkSwitchOn) return
+            if (checkSwitchOn) return
 
             const rect = canvas.getBoundingClientRect()
             const x = e.clientX - rect.left
@@ -192,7 +192,7 @@ export default function TopologyEditor(
         }
 
         const onMouseOut = (e: MouseEvent) => {
-            // if (checkSwitchOn) return;
+            if (checkSwitchOn) return;
             if (map) {
                 map.dragPan.enable();
                 map.scrollZoom.enable();
@@ -223,12 +223,12 @@ export default function TopologyEditor(
         console.log('已加载')
 
         return () => {
-            canvas.removeEventListener("mousedown", onMouseDown);
-            canvas.removeEventListener("mousemove", onMouseMove);
-            canvas.removeEventListener("mouseup", onMouseUp);
-            canvas.removeEventListener("mouseout", onMouseOut);
-        };
-    }, [selectTab, pickingTab, checkSwitchOn, topologyLayer]);
+            canvas.removeEventListener("mousedown", onMouseDown)
+            canvas.removeEventListener("mousemove", onMouseMove)
+            canvas.removeEventListener("mouseup", onMouseUp)
+            canvas.removeEventListener("mouseout", onMouseOut)
+        }
+    }, [selectTab, pickingTab, checkSwitchOn, topologyLayer])
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -299,7 +299,6 @@ export default function TopologyEditor(
         setSelectTab(pc.editingState.select)
         setCheckSwitchOn(pc.isChecking)
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
-        // triggerRepaint()
     }
 
     const unloadContext = (node: SceneNode) => {
@@ -308,16 +307,16 @@ export default function TopologyEditor(
     }
 
     const handleSelectAllClick = () => {
-        // if (store.get<boolean>('highSpeedModeState')!) {
-        //     handleConfirmSelectAll();
-        // } 
+        if (store.get<boolean>('highSpeedMode')!) {
+            handleConfirmSelectAll();
+        } 
         setSelectAllDialogOpen(true);
     };
 
     const handleDeleteSelectClick = () => {
-        // if (store.get<boolean>('highSpeedModeState')!) {
-        //     handleConfirmDeleteSelect();
-        // } 
+        if (store.get<boolean>('highSpeedMode')!) {
+            handleConfirmDeleteSelect();
+        } 
         setDeleteSelectDialogOpen(true);
     };
 
@@ -367,8 +366,7 @@ export default function TopologyEditor(
     }, [activeTopologyOperation, topologyLayer]);
 
     const onTopologyOperationClick = (operationType: string) => {
-        // if (store.get<boolean>('highSpeedModeState')! && operationType !== null) {
-        if (operationType !== null) {
+        if (store.get<boolean>('highSpeedMode')! && operationType !== null) {
             switch (operationType) {
                 case 'subdivide':
                     topologyLayer!.executeSubdivideGrids();
@@ -389,7 +387,7 @@ export default function TopologyEditor(
                     );
             }
         } else {
-            setActiveTopologyOperation(operationType);
+            setActiveTopologyOperation(operationType as TopologyOperationType);
         }
     };
 
@@ -421,7 +419,7 @@ export default function TopologyEditor(
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey || event.metaKey) {
-                // if (store.get<CheckingSwitch>('checkingSwitch')!.isOn) return;
+                if (checkSwitchOn) return;
                 if (event.key === 'P' || event.key === 'p') {
                     event.preventDefault();
                     setPickingTab(true)
@@ -432,21 +430,19 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     handleConfirmSelectAll();
-                    // } else {
-                    //     setSelectAllDialogOpen(true);
-                    // }
-                    setSelectAllDialogOpen(true);
+                    if (store.get<boolean>('highSpeedMode')!) {
+                        handleConfirmSelectAll();
+                    } else {
+                        setSelectAllDialogOpen(true);
+                    }
                 }
                 if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     handleConfirmDeleteSelect();
-                    // } else {
-                    //     setDeleteSelectDialogOpen(true);
-                    // }
-                    setDeleteSelectDialogOpen(true);
+                    if (store.get<boolean>('highSpeedMode')!) {
+                        handleConfirmDeleteSelect();
+                    } else {
+                        setDeleteSelectDialogOpen(true);
+                    }
                 }
                 if (event.key === '1') {
                     event.preventDefault();
@@ -466,39 +462,36 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     topologyLayer.executeSubdivideGrids();
-                    // } else {
-                    //     setActiveTopologyOperation('subdivide');
-                    // }
-                    setActiveTopologyOperation('subdivide');
+                    if (store.get<boolean>('highSpeedMode')!) {
+                        topologyLayer!.executeSubdivideGrids();
+                    } else {
+                        setActiveTopologyOperation('subdivide');
+                    }
                 }
                 if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     topologyLayer.executeMergeGrids();
-                    // } else {
-                    //     setActiveTopologyOperation('merge');
-                    // }
+                    if (store.get<boolean>('highSpeedMode')!) {
+                        topologyLayer!.executeMergeGrids();
+                    } else {
+                        setActiveTopologyOperation('merge');
+                    }
                     setActiveTopologyOperation('merge');
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     topologyLayer.executeDeleteGrids();
-                    // } else {
-                    //     setActiveTopologyOperation('delete');
-                    // }
-                    setActiveTopologyOperation('delete');
+                    if (store.get<boolean>('highSpeedModeState')!) {
+                        topologyLayer!.executeDeleteGrids();
+                    } else {
+                        setActiveTopologyOperation('delete');
+                    }
                 }
                 if (event.key === 'R' || event.key === 'r') {
                     event.preventDefault();
-                    // if (store.get<boolean>('highSpeedModeState')!) {
-                    //     topologyLayer.executeRecoverGrids();
-                    // } else {
-                    //     setActiveTopologyOperation('recover');
-                    // }
-                    setActiveTopologyOperation('recover');
+                    if (store.get<boolean>('highSpeedModeState')!) {
+                        topologyLayer!.executeRecoverGrids();
+                    } else {
+                        setActiveTopologyOperation('recover');
+                    }
                 }
             }
         };
@@ -510,8 +503,6 @@ export default function TopologyEditor(
         };
     }, [
         setPickingTab,
-        // isPickingHighSpeedModeOn,
-        // isTopologyHighSpeedModeOn,
         handleConfirmDeleteSelect,
         handleConfirmSelectAll,
         // handleFeatureClick,

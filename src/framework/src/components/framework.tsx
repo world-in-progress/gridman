@@ -18,6 +18,7 @@ import ResourceTreeComponent from './resourceScene/sceneComponent'
 import Hello from './hello/hello'
 import { useTranslation } from 'react-i18next';
 import SettingsPage from './settingPage/settingsPage'
+import DefaultScenarioNode from '@/core/scenario/default'
 
 
 function FrameworkComponent() {
@@ -85,6 +86,56 @@ function FrameworkComponent() {
             else if(icon.id === 'languages'){
                 i18n.changeLanguage(i18n.language ==="szh"?"en":"szh")
 
+            }
+            else if(icon.id === 'settings') {
+                setActiveIconID(iconID)
+                
+                // 创建虚拟的设置节点（如果不存在）
+                const existingSettingsNode = nodeStack.current.find(node => node.id === 'settings-virtual-node')
+                if (!existingSettingsNode) {
+                    // 创建一个新的虚拟ScenarioNode
+                    const settingsScenarioNode = new DefaultScenarioNode()
+                    settingsScenarioNode.semanticPath = 'settings'
+                    
+                    // 重写renderPage方法，使其返回SettingsPage组件
+                    settingsScenarioNode.renderPage = () => <SettingsPage />
+                    
+                    // 创建一个新的虚拟SceneNode
+                    const settingsNode = new SceneNode(
+                        privateTree as SceneTree,
+                        'settings',
+                        null,
+                        settingsScenarioNode
+                    )
+                    
+                    // 设置id以便于识别
+                    Object.defineProperty(settingsNode, 'id', {
+                        get: function() { return 'settings-virtual-node' }
+                    })
+                    
+                    // 设置tab名称
+                    settingsNode.tab.name = '设置'
+                    
+                    // 将节点添加到nodeStack和nodeTabs
+                    nodeStack.current.push(settingsNode)
+                    nodeTabs.current.push(settingsNode.tab)
+                    
+                    // 激活tab
+                    settingsNode.tab.isActive = true
+                    
+                    // 设置为焦点节点
+                    setFocusNode(settingsNode)
+                } else {
+                    // 如果已经存在，则激活它
+                    const settingsNode = existingSettingsNode as SceneNode
+                    settingsNode.tab.isActive = true
+                    nodeTabs.current.forEach(tab => {
+                        if (tab.node.id !== 'settings-virtual-node') {
+                            tab.isActive = false
+                        }
+                    })
+                    setFocusNode(settingsNode)
+                }
             }
             else {
                 setActiveIconID(iconID)
