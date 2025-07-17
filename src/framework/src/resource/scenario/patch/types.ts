@@ -13,4 +13,12 @@ export type TopologyOperationType =
     | 'merge'
     | 'delete'
     | 'recover'
-    | null;
+    | null
+
+export interface GridCheckingInfo {
+    storageId: number;
+    level: number;
+    globalId: number;
+    localId: number;
+    deleted: boolean;
+}

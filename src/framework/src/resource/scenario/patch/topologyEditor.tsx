@@ -38,7 +38,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { TopologyEditorProps, TopologyOperationType } from "./types"
+import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from "./types"
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import { PatchPageContext } from "./patch"
@@ -101,6 +101,7 @@ export default function TopologyEditor(
     const [activeTopologyOperation, setActiveTopologyOperation] = useState<TopologyOperationType>(null);
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
+    const gridInfo = useRef<GridCheckingInfo | null>(null)
 
     useEffect(() => {
         if (!topologyLayer) {
@@ -133,6 +134,11 @@ export default function TopologyEditor(
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             localMouseDownPos.current = [x, y];
+
+            if (checkSwitchOn) {
+                gridInfo.current = topologyLayer!.executeCheckGrid([x, y])
+                triggerRepaint()
+            }
         }
 
         const onMouseMove = (e: MouseEvent) => {
@@ -201,7 +207,6 @@ export default function TopologyEditor(
                     map.getCanvas().style.cursor = "";
                 }
             }
-
             if (!e.shiftKey) return
 
             const rect = canvas.getBoundingClientRect()
@@ -298,6 +303,12 @@ export default function TopologyEditor(
         setPickingTab(pc.editingState.pick)
         setSelectTab(pc.editingState.select)
         setCheckSwitchOn(pc.isChecking)
+
+        // Make sure the check mode is set correctly
+        if (pc.topologyLayer && pc.isChecking) {
+            pc.topologyLayer.setCheckMode(pc.isChecking)
+        }
+
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
     }
 
@@ -309,14 +320,14 @@ export default function TopologyEditor(
     const handleSelectAllClick = () => {
         if (store.get<boolean>('highSpeedMode')!) {
             handleConfirmSelectAll();
-        } 
+        }
         setSelectAllDialogOpen(true);
     };
 
     const handleDeleteSelectClick = () => {
         if (store.get<boolean>('highSpeedMode')!) {
             handleConfirmDeleteSelect();
-        } 
+        }
         setDeleteSelectDialogOpen(true);
     };
 
@@ -418,8 +429,8 @@ export default function TopologyEditor(
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (checkSwitchOn) return;
             if (event.ctrlKey || event.metaKey) {
-                if (checkSwitchOn) return;
                 if (event.key === 'P' || event.key === 'p') {
                     event.preventDefault();
                     setPickingTab(true)
@@ -507,14 +518,20 @@ export default function TopologyEditor(
         handleConfirmSelectAll,
         // handleFeatureClick,
         selectTab,
-        topologyLayer
+        topologyLayer,
+        checkSwitchOn
     ]);
 
     const toggleCheckSwitch = () => {
         if (checkSwitchOn === pageContext.current!.isChecking) {
             console.log('toggleCheckSwitch')
-            setCheckSwitchOn(prev => !prev);
-            pageContext.current!.isChecking = !pageContext.current!.isChecking
+            const newCheckState = !checkSwitchOn
+            setCheckSwitchOn(newCheckState)
+            pageContext.current!.isChecking = newCheckState
+
+            if (topologyLayer) {
+                topologyLayer.setCheckMode(newCheckState)
+            }
         }
     }
 
@@ -625,7 +642,7 @@ export default function TopologyEditor(
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
                     <ScrollArea className='h-full max-h-[calc(100vh-12.5rem)]'>
-                        <div className='w-4/5 mx-auto'>
+                        <div className='w-3/5 mx-auto'>
                             <div className="p-3 rounded-md shadow-sm">
                                 <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
                                 <div className="text-sm text-white mt-1 grid gap-1">
@@ -638,19 +655,18 @@ export default function TopologyEditor(
                                         {pageContext.current?.patch?.epsg}
                                     </div>
                                     <div className="flex items-start flex-row">
-                                        <div className={`font-bold w-[25%]`}>Grid Levels(m): </div>
+                                        <div className={`font-bold w-[35%]`}>Grid Levels(m): </div>
                                         <div className="space-y-1">
                                             {pageContext.current?.patch?.subdivide_rules && (
                                                 pageContext.current?.patch?.subdivide_rules.map(
                                                     (level: number[], index: number) => {
-                                                        // const color = paletteColorList ?
-                                                        //     [paletteColorList[(index + 1) * 3], paletteColorList[(index + 1) * 3 + 1], paletteColorList[(index + 1) * 3 + 2]] :
-                                                        //     null;
-                                                        // const colorStyle = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : undefined;
+                                                        const color = topologyLayer!.paletteColorList ?
+                                                            [topologyLayer!.paletteColorList[(index + 1) * 3], topologyLayer!.paletteColorList[(index + 1) * 3 + 1], topologyLayer!.paletteColorList[(index + 1) * 3 + 2]] : null;
+                                                        const colorStyle = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : undefined;
 
                                                         return (
                                                             <div key={index} className="text-sm"
-                                                            // style={{ color: colorStyle }}
+                                                                style={{ color: colorStyle }}
                                                             >
                                                                 level {index + 1}: [{level.join(', ')}]
                                                             </div>
@@ -660,7 +676,6 @@ export default function TopologyEditor(
                                             )}
                                         </div>
                                     </div>
-
                                     <div className="font-bold">
                                         <span className="text-white">BoundingBox:</span>
                                         {/* {bounds ? ( */}
@@ -770,8 +785,16 @@ export default function TopologyEditor(
                                 </div>
                             </div>
                         </div>
-                        <div className='w-full flex flex-row border-t-2 border-[#414141]'>
-                            <div className="w-2/3 mx-auto space-y-4 pl-4 pr-1 border-r border-[#414141]">
+                        <div className='w-full flex flex-row border-t-2 border-[#414141] relative'>
+                            {checkSwitchOn && (
+                                <div className="absolute w-5/7 inset-0 bg-black/10 z-10 flex items-center justify-center rounded-md backdrop-blur-sm">
+                                    <div className=" text-white px-6 py-3 rounded-lg text-center">
+                                        <span className="text-3xl font-bold">Check Mode On</span>
+                                        <p className="text-sm mt-1">Please click the grid to view information</p>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="w-5/7 mx-auto space-y-4 pl-4 pr-1 border-r border-[#414141]">
                                 <div className="space-y-2 p-2">
                                     <AlertDialog
                                         open={selectAllDialogOpen}
@@ -897,9 +920,10 @@ export default function TopologyEditor(
                                             <h3 className="text-md mb-1 font-bold text-white">Operation</h3>
                                             <div className="flex items-center gap-1 p-1 h-[64px] border border-gray-200 rounded-lg">
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${pickingTab === true ? 'bg-gray-600 ' : 'bg-transparent hover:bg-gray-500'}`}
-                                                    onClick={() => { setPickingTab(true) }}
+                                                    onClick={() => { !checkSwitchOn && setPickingTab(true) }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <SquareMousePointer className="h-4 w-4" />
@@ -910,9 +934,10 @@ export default function TopologyEditor(
                                                     </div>
                                                 </button>
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors text-white duration-200 flex flex-col text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${pickingTab === false ? 'bg-gray-700 ' : 'bg-transparent hover:bg-gray-500'}`}
-                                                    onClick={() => { setPickingTab(false) }}
+                                                    onClick={() => { !checkSwitchOn && setPickingTab(false) }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <SquareDashedMousePointer className="h-4 w-4" />
@@ -925,9 +950,10 @@ export default function TopologyEditor(
                                             </div>
                                             <div className="flex items-center gap-1 p-1 mt-2 h-[64px] border border-gray-200 rounded-lg">
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${selectAllDialogOpen ? 'bg-green-500 ' : ' hover:bg-green-500'}`}
-                                                    onClick={handleSelectAllClick}
+                                                    onClick={() => { !checkSwitchOn && handleSelectAllClick() }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <Grip className="h-4 w-4" />
@@ -938,9 +964,10 @@ export default function TopologyEditor(
                                                     </div>
                                                 </button>
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md text-white transition-colors duration-200 flex flex-col text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${deleteSelectDialogOpen ? 'bg-red-500 ' : ' hover:bg-red-500'}`}
-                                                    onClick={handleDeleteSelectClick}
+                                                    onClick={() => { !checkSwitchOn && handleDeleteSelectClick() }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <CircleOff className="h-4 w-4" />
@@ -956,9 +983,10 @@ export default function TopologyEditor(
                                             <h3 className="text-md mb-1 font-bold text-white">Mode</h3>
                                             <div className="flex items-center h-[64px] mb-1 p-1 gap-1 rounded-lg border border-gray-200 shadow-md">
                                                 <button
-                                                    className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                    className={` flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${selectTab === 'brush' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
-                                                    onClick={() => { setSelectTab('brush') }}
+                                                    onClick={() => { !checkSwitchOn && setSelectTab('brush') }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <Brush className="h-4 w-4" />
@@ -969,9 +997,10 @@ export default function TopologyEditor(
                                                     </div>
                                                 </button>
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 text-white flex flex-col gap-0.5 text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${selectTab === 'box' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
-                                                    onClick={() => { setSelectTab('box') }}
+                                                    onClick={() => { !checkSwitchOn && setSelectTab('box') }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <SquareDashed className="h-4 w-4" />
@@ -982,9 +1011,10 @@ export default function TopologyEditor(
                                                     </div>
                                                 </button>
                                                 <button
-                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col text-white gap-0.5 text-sm justify-center items-center cursor-pointer 
+                                                    className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col text-white gap-0.5 text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${selectTab === 'feature' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
-                                                    onClick={() => { setSelectTab('feature') }}
+                                                    onClick={() => { !checkSwitchOn && setSelectTab('feature') }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
                                                         <FolderOpen className="h-4 w-4" />
@@ -1004,9 +1034,10 @@ export default function TopologyEditor(
                                             {topologyOperations.map((operation) => (
                                                 <button
                                                     key={operation.type}
-                                                    className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center cursor-pointer text-white 
+                                                    className={`flex-1 py-1 px-2 rounded-md transition-colors duration-200 flex flex-col gap-0.5 text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer text-white'} 
                                                             ${activeTopologyOperation === operation.type ? operation.activeColor : `${operation.hoverColor}`}`}
-                                                    onClick={() => { onTopologyOperationClick(operation.type) }}
+                                                    onClick={() => { !checkSwitchOn && onTopologyOperationClick(operation.type) }}
+                                                    disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row items-center">
                                                         {operation.text}
@@ -1023,33 +1054,35 @@ export default function TopologyEditor(
                             {/* ////////////////////////////////////////////////////////////////// */}
                             {/* ////////////////////////////////////////////////////////////////// */}
                             {/* ////////////////////////////////////////////////////////////////// */}
-                            <div className="w-1/3 mx-auto space-y-4 pr-4 pl-1 border-l border-[#414141]">
+                            <div className="w-2/7 mx-auto space-y-4 pr-4 pl-1 border-l border-[#414141]">
                                 <div className="space-y-2 p-2 mb-4">
                                     <h1 className="text-2xl font-bold text-white">Checking</h1>
-                                    <div className="text-md p-1 space-y-2 mt-2 text-white">
-                                        <div>
-                                            <span className="font-bold">level: </span>
-                                            {/* {gridInfo?.level ?? '-'} */}
+                                    <div className="space-y-2 p-1 text-white">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-300">Level</span>
+                                            <span className="text-lg font-semibold">{gridInfo.current?.level ?? '-'}</span>
                                         </div>
-                                        <div>
-                                            <span className="font-bold">localId: </span>
-                                            {/* {gridInfo?.localId ?? '-'} */}
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-300">Local ID</span>
+                                            <span className="text-lg font-semibold">{gridInfo.current?.localId ?? '-'}</span>
                                         </div>
-                                        <div>
-                                            <span className="font-bold">deleted: </span>
-                                            {/* {gridInfo?.deleted === true
-                                                    ? 'true'
-                                                    : gridInfo?.deleted === false
-                                                        ? 'false'
-                                                        : '-'} */}
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-300">Deleted</span>
+                                            <span className="text-lg font-semibold">
+                                                {gridInfo.current?.deleted === true
+                                                    ? 'True'
+                                                    : gridInfo.current?.deleted === false
+                                                        ? 'False'
+                                                        : '-'}
+                                            </span>
                                         </div>
-                                        <div>
-                                            <span className="font-bold">globalId: </span>
-                                            {/* {gridInfo?.globalId ?? '-'} */}
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-300">Global ID</span>
+                                            <span className="text-lg font-semibold">{gridInfo.current?.globalId ?? '-'}</span>
                                         </div>
-                                        <div>
-                                            <span className="font-bold">storageId: </span>
-                                            {/* {gridInfo?.storageId ?? '-'} */}
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-300">Storage ID</span>
+                                            <span className="text-lg font-semibold">{gridInfo.current?.storageId ?? '-'}</span>
                                         </div>
                                     </div>
                                 </div>
