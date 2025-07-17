@@ -1,17 +1,17 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from 'react'
 import * as apis from '@/core/apis/apis'
-import { validatePatchForm } from "./utils"
-import { Input } from "@/components/ui/input"
-import { PatchesPageContext } from "./patches"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Save, SquaresIntersect } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import MapContainer from "@/components/mapContainer/mapContainer"
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
-import { PatchesPageProps, PatchMeta, RectangleCoordinates } from "./types"
+import { validatePatchForm } from './utils'
+import { Input } from '@/components/ui/input'
+import { PatchesPageContext } from './patches'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Save, SquaresIntersect } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { PatchesPageProps, PatchMeta, RectangleCoordinates } from './types'
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -26,7 +26,8 @@ import {
     flyToMarker,
     startDrawingRectangle,
     stopDrawingRectangle
-} from "@/components/mapContainer/utils"
+} from '@/components/mapContainer/utils'
+import { toast } from 'sonner'
 
 const patchTips = [
     { tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -57,12 +58,13 @@ export default function PatchesPage({
     const [adjustedCoordinate, setAdjustedCoordinate] = useState<[number, number, number, number] | null>(null)
 
     const schemaEPSG = useRef<string>('')
+    const hasAdjustedBounds = useRef<boolean>(false)
     const schemaBasePoint = useRef<[number, number]>([0, 0])
     const schemaGridLevel = useRef<[number, number]>([0, 0])
     const schemaMarkerPoint = useRef<[number, number]>([0, 0])
     const drawCoordinates = useRef<RectangleCoordinates | null>(null)
 
-    const [isError, setIsError] = useState<boolean>(false);
+    const [isError, setIsError] = useState<boolean>(false)
 
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -86,6 +88,7 @@ export default function PatchesPage({
         return () => {
             unloadContext(node as SceneNode)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
@@ -100,7 +103,7 @@ export default function PatchesPage({
         flyToMarker(schemaMarkerPoint.current, 11)
 
         if (pc.originBounds && pc.adjustedBounds) {
-            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(pc.originBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)
+            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(pc.originBounds, schemaGridLevel.current, '4326', schemaEPSG.current, schemaBasePoint.current)
             const adjustedSWPoint = [pc.adjustedBounds[0], pc.adjustedBounds[1]] as [number, number]
             setConvertCoordinate([convertedBounds!.southWest[0], convertedBounds!.southWest[1], convertedBounds!.northEast[0], convertedBounds!.northEast[1]])
             setAdjustedCoordinate([expandedBounds!.southWest[0], expandedBounds!.southWest[1], expandedBounds!.northEast[0], expandedBounds!.northEast[1]])
@@ -119,65 +122,68 @@ export default function PatchesPage({
         clearDrawPatchBounds()
         clearMapMarkers()
         clearGridLines()
-        document.removeEventListener('rectangle-draw-complete', onDrawComplete);
-        setIsDrawingBounds(false);
+        document.removeEventListener('rectangle-draw-complete', onDrawComplete)
+        setIsDrawingBounds(false)
         stopDrawingRectangle()
         triggerRepaint()
     }
 
-    // Draw adjusted bounds, aligned LB marker and grid counts line on map after drawing original bounds
-    useEffect(() => {
-        if (drawCoordinates.current !== null) {
-            clearMapMarkers()
-            addMapMarker(schemaMarkerPoint.current)
-            clearGridLines()
-            clearDrawPatchBounds()
-            clearMapMarkers()
-            addMapMarker(schemaMarkerPoint.current)
-            clearGridLines()
-            clearDrawPatchBounds()
-            const coords = drawCoordinates.current
-            console.log(coords.northEast, coords.southWest)
-            pageContext.current.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
-            const drawBounds = pageContext.current.originBounds                                                              // EPSG: 4326
+    const adjustCoords = () => {
+        if (drawCoordinates.current === null || hasAdjustedBounds.current) return
 
-            if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
-                const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
+        clearMapMarkers()
+        addMapMarker(schemaMarkerPoint.current)
+        clearGridLines()
+        clearDrawPatchBounds()
+        clearMapMarkers()
+        addMapMarker(schemaMarkerPoint.current)
+        clearGridLines()
+        clearDrawPatchBounds()
 
-                const convertedSWOnTarget = convertedBounds!.southWest              // EPSG: Schema
-                const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
-                setConvertCoordinate([convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]])
+        const pc = pageContext.current
+        const coords = drawCoordinates.current
+        pc.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
+        const drawBounds = pc.originBounds                                                                           // EPSG: 4326
 
-                const adjustedSWOnTarget = alignedBounds!.southWest                 // EPSG: Schema
-                const adjustedNEOnTarget = alignedBounds!.northEast                 // EPSG: Schema
-                setAdjustedCoordinate([adjustedSWOnTarget[0], adjustedSWOnTarget[1], adjustedNEOnTarget[0], adjustedNEOnTarget[1]])
+        if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
+            const patchBounds = pc.inputBounds ?? drawBounds
+            const fromEPSG = pc.inputBounds ? schemaEPSG.current : '4326' // use '4326' if inputBounds is not set
+            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(patchBounds, schemaGridLevel.current, fromEPSG, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
 
-                pageContext.current.inputBounds = [convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]]  // EPSG: Schema
+            const convertedSWOnTarget = convertedBounds!.southWest              // EPSG: Schema
+            const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
+            setConvertCoordinate([convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]])
 
+            const adjustedSWOnTarget = alignedBounds!.southWest                 // EPSG: Schema
+            const adjustedNEOnTarget = alignedBounds!.northEast                 // EPSG: Schema
+            setAdjustedCoordinate([adjustedSWOnTarget[0], adjustedSWOnTarget[1], adjustedNEOnTarget[0], adjustedNEOnTarget[1]])
 
-                const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
-                const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, schemaEPSG.current, '4326')
-                addMapMarker(alignedSWPoint, { color: 'red', draggable: false })
-                pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
-                const adjustedDrawBoundsOn4326 = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]] as [number, number, number, number]
-                addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
-                const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
-                pageContext.current.widthCount = widthCount
-                pageContext.current.heightCount = heightCount
-                addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount)
-                triggerRepaint()
-            }
-            triggerRepaint()
+            pageContext.current.inputBounds = [expandedBounds!.southWest[0], expandedBounds!.southWest[1], expandedBounds!.northEast[0], expandedBounds!.northEast[1]]  // EPSG: Schema
+
+            const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
+            const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, schemaEPSG.current, '4326')
+            addMapMarker(alignedSWPoint, { color: 'red', draggable: false })
+            pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
+
+            const adjustedDrawBoundsOn4326 = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]] as [number, number, number, number]
+            addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
+
+            const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
+            pageContext.current.widthCount = widthCount
+            pageContext.current.heightCount = heightCount
+
+            addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount)
+            hasAdjustedBounds.current = true
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [drawCoordinates.current])
+        triggerRepaint()
+    }
 
-    const formatSingleValue = (value: number): string => value.toFixed(6);
+    const formatSingleValue = (value: number): string => value.toFixed(6)
 
     const formatCoordinate = (coord: [number, number] | undefined) => {
-        if (!coord) return '---';
-        return `[${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}]`;
-    };
+        if (!coord) return '---'
+        return `[${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}]`
+    }
 
     const handleSetName = (e: React.ChangeEvent<HTMLInputElement>) => {
         pageContext.current.name = e.target.value
@@ -191,43 +197,47 @@ export default function PatchesPage({
 
     const handleSetInputBounds = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (!pageContext.current.inputBounds) {
-            pageContext.current.inputBounds = [0, 0, 0, 0];
+            pageContext.current.inputBounds = [0, 0, 0, 0]
         }
-        const value = parseFloat(e.target.value) || 0;
-        pageContext.current.inputBounds[index] = value;
-        triggerRepaint();
+        const value = parseFloat(e.target.value) || 0
+        pageContext.current.inputBounds[index] = value
+        hasAdjustedBounds.current = false // reset adjusted bounds flag because input bounds have changed
+        triggerRepaint()
     }
-
 
     const handleDrawBounds = () => {
         if (isDrawingBounds) {
             setIsDrawingBounds(false)
             stopDrawingRectangle()
-            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
+            document.removeEventListener('rectangle-draw-complete', onDrawComplete)
             return
         } else {
             setIsDrawingBounds(true)
-
-
             startDrawingRectangle()
-            document.addEventListener('rectangle-draw-complete', onDrawComplete);
+            document.addEventListener('rectangle-draw-complete', onDrawComplete)
         }
-    };
+    }
 
     const onDrawComplete = (event: Event) => {
-        const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>;
+        const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>
         if (customEvent.detail.coordinates) {
             drawCoordinates.current = customEvent.detail.coordinates
+            adjustCoords()
             addMapPatchBounds([customEvent.detail.coordinates.southWest[0], customEvent.detail.coordinates.southWest[1], customEvent.detail.coordinates.northEast[0], customEvent.detail.coordinates.northEast[1]], '4326')
         }
-        document.removeEventListener('rectangle-draw-complete', onDrawComplete);
-        setIsDrawingBounds(false);
+        document.removeEventListener('rectangle-draw-complete', onDrawComplete)
+        setIsDrawingBounds(false)
         stopDrawingRectangle()
         triggerRepaint()
-    };
+    }
 
     const drawBoundsByParams = () => {
         const inputBounds = pageContext.current.inputBounds
+        if (hasAdjustedBounds.current) {
+            toast.info('Map bounds have been adjusted')
+            return
+        }
+
         if (inputBounds && inputBounds.length === 4) {
             clearMapMarkers()
             addMapMarker(schemaMarkerPoint.current)
@@ -242,27 +252,29 @@ export default function PatchesPage({
                 northWest: [inputBoundsOn4326[0], inputBoundsOn4326[3]],
                 center: [(inputBoundsOn4326[0] + inputBoundsOn4326[2]) / 2, (inputBoundsOn4326[1] + inputBoundsOn4326[3]) / 2],
             }
-            triggerRepaint()
+            adjustCoords()
             addMapPatchBounds(inputBoundsOn4326, '4326')
         }
     }
 
     const resetForm = async() => {
         if (isDrawingBounds) {
-            document.removeEventListener('rectangle-draw-complete', onDrawComplete);
-            setIsDrawingBounds(false);
+            document.removeEventListener('rectangle-draw-complete', onDrawComplete)
+            setIsDrawingBounds(false)
             stopDrawingRectangle()
             triggerRepaint()
         }
 
         // Store the current schema before resetting
-        const currentSchema = pageContext.current.schema;
+        const currentSchema = pageContext.current.schema
 
         // Create new context and preserve the schema
         pageContext.current = new PatchesPageContext()
-        pageContext.current.schema = currentSchema;
+        pageContext.current.schema = currentSchema
 
         await (node as SceneNode).deletePageContext()
+
+        hasAdjustedBounds.current = false
 
         setConvertCoordinate(null)
         setAdjustedCoordinate(null)
@@ -323,7 +335,7 @@ export default function PatchesPage({
                 tree.notifyDomUpdate()
             }, 500)
         }
-    };
+    }
 
     return (
         <div className='w-full h-[96vh] flex flex-row'>
@@ -352,7 +364,7 @@ export default function PatchesPage({
                             {/* -----------*/}
                             <h1 className='font-bold text-[25px] relative flex items-center'>
                                 Create New Schema
-                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                <span className=' bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1'>{node.tree.isPublic ? 'Public' : 'Private'}</span>
                                 <span>[{node.parent?.name}]</span>
                             </h1>
                             {/* ----------*/}
@@ -445,17 +457,17 @@ export default function PatchesPage({
                             {/* --------- */}
                             {/* Patch Bounds */}
                             {/* --------- */}
-                            <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                                <h2 className="text-lg font-semibold mb-2">
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
                                     Patch Bounds
                                 </h2>
-                                <div className="space-y-2">
-                                    <div className="p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                                        <div className="font-bold text-md mb-2">
+                                <div className='space-y-2'>
+                                    <div className='p-2 bg-white rounded-md shadow-sm border border-gray-200'>
+                                        <div className='font-bold text-md mb-2'>
                                             Method One: Draw to generate
                                         </div>
                                         <button
-                                            type="button"
+                                            type='button'
                                             onClick={handleDrawBounds}
                                             className={`w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer ${isDrawingBounds
                                                 ? 'bg-red-500 text-white hover:bg-red-600'
@@ -466,9 +478,9 @@ export default function PatchesPage({
                                                 : 'Click to draw rectangle'}
                                         </button>
                                         {isDrawingBounds && (
-                                            <div className="mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200 text-xs text-yellow-800">
+                                            <div className='mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200 text-xs text-yellow-800'>
                                                 <p>Drawing method:</p>
-                                                <ul className="list-disc pl-4 mt-1">
+                                                <ul className='list-disc pl-4 mt-1'>
                                                     <li>
                                                         Click on the map to set starting point
                                                     </li>
@@ -482,53 +494,53 @@ export default function PatchesPage({
                                             </div>
                                         )}
                                     </div>
-                                    <Separator className="h-px mb-2 bg-gray-300" />
-                                    <div className=" p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                                        <div className="mb-2 font-bold text-md">
+                                    <Separator className='h-px mb-2 bg-gray-300' />
+                                    <div className=' p-2 bg-white rounded-md shadow-sm border border-gray-200'>
+                                        <div className='mb-2 font-bold text-md'>
                                             Method Two: Input parameters to generate
                                         </div>
-                                        <div className="grid grid-cols-3 mb-2 gap-1 text-xs">
+                                        <div className='grid grid-cols-3 mb-2 gap-1 text-xs'>
                                             {/* Top Left Corner */}
-                                            <div className="relative h-12 flex items-center justify-center">
-                                                <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                            <div className='relative h-12 flex items-center justify-center'>
+                                                <div className='absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl'></div>
                                             </div>
                                             {/* North/Top - northEast[1] */}
-                                            <div className="text-center -mt-2">
-                                                <span className="font-bold text-blue-600 text-xl">
+                                            <div className='text-center -mt-2'>
+                                                <span className='font-bold text-blue-600 text-xl'>
                                                     N
                                                 </span>
                                                 {/* Input for North */}
                                                 <input
-                                                    type="number"
+                                                    type='number'
                                                     value={pageContext.current.inputBounds?.[3] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 3)}
-                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
                                                     placeholder={'Enter max Y'}
-                                                    step="any"
+                                                    step='any'
                                                 />
                                             </div>
                                             {/* Top Right Corner */}
-                                            <div className="relative h-12 flex items-center justify-center">
-                                                <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                            <div className='relative h-12 flex items-center justify-center'>
+                                                <div className='absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr'></div>
                                             </div>
                                             {/* West/Left - southWest[0] */}
-                                            <div className="text-center">
-                                                <span className="font-bold text-green-600 text-xl">
+                                            <div className='text-center'>
+                                                <span className='font-bold text-green-600 text-xl'>
                                                     W
                                                 </span>
                                                 {/* Input for West */}
                                                 <input
-                                                    type="number"
+                                                    type='number'
                                                     value={pageContext.current.inputBounds?.[0] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 0)}
-                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
                                                     placeholder={'Enter mix X'}
-                                                    step="any"
+                                                    step='any'
                                                 />
                                             </div>
                                             {/* Center */}
-                                            <div className="text-center">
-                                                <span className="font-bold text-[#FF8F2E] text-xl">Center</span>
+                                            <div className='text-center'>
+                                                <span className='font-bold text-[#FF8F2E] text-xl'>Center</span>
                                                 <div
                                                     className={`text-[10px] mt-1 ${isError ? 'text-red-600' : ''
                                                         }`}
@@ -545,47 +557,47 @@ export default function PatchesPage({
                                                 </div>
                                             </div>
                                             {/* East/Right - southEast[0] */}
-                                            <div className="text-center">
-                                                <span className="font-bold text-red-600 text-xl">
+                                            <div className='text-center'>
+                                                <span className='font-bold text-red-600 text-xl'>
                                                     E
                                                 </span>
                                                 {/* Input for East */}
                                                 <input
-                                                    type="number"
+                                                    type='number'
                                                     value={pageContext.current.inputBounds?.[2] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 2)}
-                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
                                                     placeholder={'Enter max X'}
-                                                    step="any"
+                                                    step='any'
                                                 />
                                             </div>
                                             {/* Bottom Left Corner */}
-                                            <div className="relative h-12 flex items-center justify-center">
-                                                <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                            <div className='relative h-12 flex items-center justify-center'>
+                                                <div className='absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl'></div>
                                             </div>
                                             {/* South/Bottom - southWest[1] */}
-                                            <div className="text-center mt-2">
-                                                <span className="font-bold text-purple-600 text-xl">
+                                            <div className='text-center mt-2'>
+                                                <span className='font-bold text-purple-600 text-xl'>
                                                     S
                                                 </span>
                                                 {/* Input for South */}
                                                 <input
-                                                    type="number"
+                                                    type='number'
                                                     value={pageContext.current.inputBounds?.[1] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 1)}
-                                                    className="w-full text-center border border-gray-500 rounded-sm h-[22px]"
+                                                    className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
                                                     placeholder={'Enter min Y'}
-                                                    step="any"
+                                                    step='any'
                                                 />
                                             </div>
                                             {/* Bottom Right Corner */}
-                                            <div className="relative h-12 flex items-center justify-center">
-                                                <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                            <div className='relative h-12 flex items-center justify-center'>
+                                                <div className='absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br'></div>
                                             </div>
                                         </div>
                                         <button
-                                            type="button"
-                                            className="w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
+                                            type='button'
+                                            className='w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600'
                                             onClick={drawBoundsByParams}
                                         >
                                             Click to adjust and draw bounds
@@ -597,49 +609,49 @@ export default function PatchesPage({
                             {/* Original Coordinates */}
                             {/* --------------- */}
                             {convertCoordinate &&
-                                <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
-                                    <h3 className="font-semibold text-lg mb-2">Original Bounds (EPSG:{schemaEPSG.current})</h3>
-                                    <div className="grid grid-cols-3 gap-1 text-xs">
+                                <div className='mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200'>
+                                    <h3 className='font-semibold text-lg mb-2'>Original Bounds (EPSG:{schemaEPSG.current})</h3>
+                                    <div className='grid grid-cols-3 gap-1 text-xs'>
                                         {/* Top Left Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl'></div>
                                         </div>
                                         {/* North/Top - northEast[1] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-blue-600 text-xl">N</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-blue-600 text-xl'>N</span>
                                             <div>[{formatSingleValue(convertCoordinate[3])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr'></div>
                                         </div>
                                         {/* West/Left - southWest[0] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-green-600 text-xl">W</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-green-600 text-xl'>W</span>
                                             <div>[{formatSingleValue(convertCoordinate[0])}]</div>
                                         </div>
                                         {/* Center */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-xl">Center</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-xl'>Center</span>
                                             <div>{formatCoordinate([(convertCoordinate[0] + convertCoordinate[2]) / 2, (convertCoordinate[1] + convertCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-red-600 text-xl">E</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-red-600 text-xl'>E</span>
                                             <div>[{formatSingleValue(convertCoordinate[2])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl'></div>
                                         </div>
                                         {/* South/Bottom - southWest[1] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-purple-600 text-xl">S</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-purple-600 text-xl'>S</span>
                                             <div>[{formatSingleValue(convertCoordinate[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br'></div>
                                         </div>
                                     </div>
                                 </div>
@@ -648,49 +660,49 @@ export default function PatchesPage({
                             {/* Adjusted Coordinates */}
                             {/* --------------- */}
                             {adjustedCoordinate &&
-                                <div className="mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200">
-                                    <h3 className="font-semibold text-lg mb-2">Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
-                                    <div className="grid grid-cols-3 gap-1 text-xs">
+                                <div className='mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200'>
+                                    <h3 className='font-semibold text-lg mb-2'>Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
+                                    <div className='grid grid-cols-3 gap-1 text-xs'>
                                         {/* Top Left Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute top-0 left-1/4 w-3/4 h-1/2 border-t-2 border-l-2 border-gray-300 rounded-tl'></div>
                                         </div>
                                         {/* North/Top - northEast[1] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-blue-600 text-xl">N</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-blue-600 text-xl'>N</span>
                                             <div>[{formatSingleValue(adjustedCoordinate[3])}]</div>
                                         </div>
                                         {/* Top Right Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute top-0 right-1/4 w-3/4 h-1/2 border-t-2 border-r-2 border-gray-300 rounded-tr'></div>
                                         </div>
                                         {/* West/Left - southWest[0] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-green-600 text-xl">W</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-green-600 text-xl'>W</span>
                                             <div>[{formatSingleValue(adjustedCoordinate[0])}]</div>
                                         </div>
                                         {/* Center */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-xl">Center</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-xl'>Center</span>
                                             <div>{formatCoordinate([(adjustedCoordinate[0] + adjustedCoordinate[2]) / 2, (adjustedCoordinate[1] + adjustedCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-red-600 text-xl">E</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-red-600 text-xl'>E</span>
                                             <div>[{formatSingleValue(adjustedCoordinate[2])}]</div>
                                         </div>
                                         {/* Bottom Left Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute bottom-0 left-1/4 w-3/4 h-1/2 border-b-2 border-l-2 border-gray-300 rounded-bl'></div>
                                         </div>
                                         {/* South/Bottom - southWest[1] */}
-                                        <div className="text-center">
-                                            <span className="font-bold text-purple-600 text-xl">S</span>
+                                        <div className='text-center'>
+                                            <span className='font-bold text-purple-600 text-xl'>S</span>
                                             <div>[{formatSingleValue(adjustedCoordinate[1])}]</div>
                                         </div>
                                         {/* Bottom Right Corner */}
-                                        <div className="relative h-12 flex items-center justify-center">
-                                            <div className="absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br"></div>
+                                        <div className='relative h-12 flex items-center justify-center'>
+                                            <div className='absolute bottom-0 right-1/4 w-3/4 h-1/2 border-b-2 border-r-2 border-gray-300 rounded-br'></div>
                                         </div>
                                     </div>
                                 </div>

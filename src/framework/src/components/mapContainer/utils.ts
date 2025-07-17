@@ -500,14 +500,15 @@ export const getDrawnRectangleCoordinates = (): {
 export const adjustPatchBounds = (
     bounds: [number, number, number, number],
     gridLevel: [number, number],
-    epsg: string,
+    fromEPSG: string,
+    toEPSG: string,
     schemaBasePoint: [number, number]
 ): {
     convertedBounds: RectangleCoordinates | null
     alignedBounds: RectangleCoordinates | null
     expandedBounds: RectangleCoordinates | null
 } => {
-    if (!bounds || !gridLevel || !epsg || !schemaBasePoint || gridLevel.length < 2) {
+    if (!bounds || !gridLevel || !toEPSG || !schemaBasePoint || gridLevel.length < 2) {
         return {
             convertedBounds: null,
             alignedBounds: null,
@@ -523,11 +524,19 @@ export const adjustPatchBounds = (
     const originalCenter: [number, number] = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2]
 
     // Convert original bounds coordinates to target EPSG
-    const convertedSW = convertSinglePointCoordinate(originalSW, '4326', epsg) as [number, number]
-    const convertedSE = convertSinglePointCoordinate(originalSE, '4326', epsg) as [number, number]
-    const convertedNE = convertSinglePointCoordinate(originalNE, '4326', epsg) as [number, number]
-    const convertedNW = convertSinglePointCoordinate(originalNW, '4326', epsg) as [number, number]
-    const convertedCenter = convertSinglePointCoordinate(originalCenter, '4326', epsg) as [number, number]
+    let convertedSW: [number, number] = originalSW
+    let convertedSE: [number, number] = originalSE
+    let convertedNE: [number, number] = originalNE
+    let convertedNW: [number, number] = originalNW
+    let convertedCenter: [number, number] = originalCenter
+
+    if (toEPSG !== fromEPSG) {
+        convertedSW = convertSinglePointCoordinate(originalSW, fromEPSG, toEPSG) as [number, number]
+        convertedSE = convertSinglePointCoordinate(originalSE, fromEPSG, toEPSG) as [number, number]
+        convertedNE = convertSinglePointCoordinate(originalNE, fromEPSG, toEPSG) as [number, number]
+        convertedNW = convertSinglePointCoordinate(originalNW, fromEPSG, toEPSG) as [number, number]
+        convertedCenter = convertSinglePointCoordinate(originalCenter, fromEPSG, toEPSG) as [number, number]
+    }
 
     const convertedBounds: RectangleCoordinates = {
         northEast: convertedNE,
@@ -560,7 +569,7 @@ export const adjustPatchBounds = (
     const alignedSE = [alignedSW[0] + rectWidth, alignedSW[1]] as [number, number]
     const alignedNE = [alignedSW[0] + rectWidth, alignedSW[1] + rectHeight] as [number, number]
     const alignedNW = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
-    const alignedCenter = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
+    const alignedCenter = [alignedSW[0] + rectWidth / 2, alignedSW[1] + rectHeight / 2] as [number, number]
 
     const alignedBounds: RectangleCoordinates = {
         southWest: alignedSW,
