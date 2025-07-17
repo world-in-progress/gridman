@@ -48,7 +48,7 @@ import store from "@/store"
 import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
 import CapacityBar from "@/components/ui/capacityBar"
 import { toast } from "sonner"
-import { deletepatch, setPatch } from "./util"
+import { deletepatch, setPatch } from "./utils"
 import { GridContext } from "@/core/grid/types"
 import { boundingBox2D } from "@/core/util/boundingBox2D"
 

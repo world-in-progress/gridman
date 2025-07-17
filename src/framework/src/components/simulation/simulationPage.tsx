@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, Play, Square } from "lucide-react"
 import MapContainer from "../mapContainer/mapContainer"
+import * as apis from '@/core/apis/apis'
+import { toast } from "sonner"
 
 interface WorkflowStep {
     id: string
@@ -57,11 +59,53 @@ export default function Simulation() {
         setInputValue(workflowSteps[index].value)
     }
 
-    const handleStepConfirm = () => {
+    const handleStepConfirm = async () => {
         if (!dialogOpen || !inputValue.trim()) return
 
         const stepIndex = workflowSteps.findIndex((step) => step.id === dialogOpen)
         if (stepIndex === -1) return
+
+        if (workflowSteps[stepIndex].id === "solution") {
+
+            // Step 1: Create Solution
+            const createSolutionRes = await apis.simulation.createSolution.fetch({
+                name: inputValue.trim(),
+                env: {
+                    ne_path: "E:/test_data/ne.txt",
+                    ns_path: "E:/test_data/ns.txt",
+                    inp_path: "E:/test_data/0610.inp",
+                    rainfall_path: "E:/test_data/test_rain.csv",
+                    gate_path: "E:/test_data/max_gate7_ne.txt",
+                    tide_path: "E:/test_data/test_tide.csv",
+                }
+            }, true)
+
+            if (createSolutionRes.success === false) {
+                console.error(createSolutionRes.message)
+                return
+            }
+
+            const node_key = createSolutionRes.message
+
+            // Step 2: Discover
+            const discoverRes = await apis.simulation.discoverProxy.fetch(node_key, true)
+
+            if (discoverRes.success === false) {
+                console.error(discoverRes.message)
+                return
+            }
+
+            const solution_address = discoverRes.address
+
+            // Step 3: Clone env
+            const cloneEnvRes = await apis.simulation.cloneEnv.fetch({
+                solution_name: inputValue.trim(),
+                solution_address: solution_address
+            }, false)
+
+            toast.info(cloneEnvRes)
+
+        }
 
         const updatedSteps = [...workflowSteps]
         updatedSteps[stepIndex] = {
@@ -126,10 +170,10 @@ export default function Simulation() {
                                 <div className="flex items-center gap-3">
                                     <div
                                         className={`w-6 h-6 rounded-full flex items-center justify-center ${step.completed
+                                            ? "bg-green-500"
+                                            : index === 0 || workflowSteps[index - 1]?.completed
                                                 ? "bg-green-500"
-                                                : index === 0 || workflowSteps[index - 1]?.completed
-                                                    ? "bg-green-500"
-                                                    : "bg-slate-600"
+                                                : "bg-slate-600"
                                             }`}
                                     >
                                         {step.completed ? (

@@ -6,7 +6,7 @@ import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
 import PatchesPage from './patchesPage'
 import { SchemaInfo } from '../schema/types'
-import { getSchemaInfo } from '../schema/util'
+import { getSchemaInfo } from '../schema/utils'
 import NodeInformation from './nodeInformation'
 
 export class PatchesPageContext extends DefaultPageContext {
