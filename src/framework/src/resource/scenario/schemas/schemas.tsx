@@ -1,6 +1,6 @@
 import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
-import NodeInformation from './nodeInfomation'
+import SchemasInformation from './nodeInfomation'
 import { FilePlus2, Info } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
 import DefaultPageContext from '@/core/context/default'
@@ -92,7 +92,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
             case 'default':
                 return (<SchemasPage node={nodeSelf} />)
             case 'information':
-                return (<NodeInformation node={nodeSelf} />)
+                return (<SchemasInformation node={nodeSelf} />)
             default:
                 return (<SchemasPage node={nodeSelf} />)
         }

@@ -23,6 +23,6 @@ export type SchemasPageProps = {
     node: ISceneNode
 }
 
-export interface NodeInformationProps {
+export interface SchemasInformationProps {
     node: ISceneNode;
 }

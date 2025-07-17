@@ -48,7 +48,7 @@ export default function SchemasPage({
     node,
 }: SchemasPageProps) {
     //i18
-    const{t,i18n} = useTranslation()
+    const{t,i18n} = useTranslation("schemasPage")
 
     const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => { } })
     const pageContext = useRef<SchemasPageContext>(new SchemasPageContext())
@@ -348,8 +348,8 @@ export default function SchemasPage({
                             {/* Page Title */}
                             {/* -----------*/}
                             <h1 className='font-bold text-[25px] relative flex items-center'>
-                                Create New Schema
-                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                {t('Create New Schema')}
+                                <span className=" bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1">{t(node.tree.isPublic ? 'Public' : 'Private')}</span>
                             </h1>
                             {/* ----------*/}
                             {/* Page Tips */}
@@ -375,16 +375,14 @@ export default function SchemasPage({
                             {/* ----------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-black text-lg font-semibold mb-2'>
-                                    New Schema Name
+                                    {t('New Schema Name')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Input
                                         id='name'
                                         value={pageContext.current.name}
                                         onChange={handleSetName}
-                                        placeholder={
-                                            'Enter new schema name'
-                                        }
+                                        placeholder={t('Enter new schema name')}
                                         className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''
                                             }`}
                                     />
@@ -395,14 +393,14 @@ export default function SchemasPage({
                             {/* ------------------ */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-black text-lg font-semibold mb-2'>
-                                    Schema Description (Optional)
+                                    {t('Schema Description (Optional)')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
                                         value={pageContext.current.description}
                                         onChange={handleSetDescription}
-                                        placeholder={'Enter schema description'}
+                                        placeholder={t('Enter schema description')}
                                         className={`w-full text-black border-gray-300 ${formErrors.description ? 'border-red-500 focus:ring-red-500' : ''
                                             }`}
                                     />
@@ -413,12 +411,12 @@ export default function SchemasPage({
                             {/* --------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-black text-lg font-semibold mb-2'>
-                                    EPSG Code
+                                    {t('EPSG Code')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Input
                                         id='epsg'
-                                        placeholder='Enter EPSG code (e.g. 4326)'
+                                        placeholder={t('Enter EPSG code (e.g. 4326)')}
                                         className={`text-black w-full border-gray-300 ${formErrors.epsg ? 'border-red-500 focus:ring-red-500' : ''}`}
                                         value={pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
                                         onChange={handleSetEPSG}
@@ -430,13 +428,13 @@ export default function SchemasPage({
                             {/* ----------------------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-black text-lg font-semibold mb-2'>
-                                    Coordinates (EPSG:4326)
+                                    {t('Coordinates (EPSG:4326)')}
                                 </h2>
                                 <div className='flex items-stretch gap-4'>
                                     <div className='flex-1 flex flex-col justify-between text-black'>
                                         <div className='flex items-center gap-2 mb-2'>
                                             <Label htmlFor='lon' className='text-sm font-medium w-1/4'>
-                                                Longitude
+                                                {t('Longitude')}
                                             </Label>
                                             <Input
                                                 id='lon'
@@ -444,14 +442,14 @@ export default function SchemasPage({
                                                 step='0.000001'
                                                 value={pageContext.current.basePoint[0] || ''}
                                                 onChange={handleSetBasePointLon}
-                                                placeholder={'Enter longitude'}
+                                                placeholder={t('Enter longitude')}
                                                 className={`w-3/4 border-gray-300 ${formErrors.coordinates ? 'border-red-500 focus:ring-red-500' : ''
                                                     }`}
                                             />
                                         </div>
                                         <div className='flex items-center gap-2'>
                                             <Label htmlFor='lat' className='text-sm font-medium w-1/4'>
-                                                Latitude
+                                                {t('Latitude')}
                                             </Label>
                                             <Input
                                                 id='lat'
@@ -459,7 +457,7 @@ export default function SchemasPage({
                                                 step='0.000001'
                                                 value={pageContext.current.basePoint[1] || ''}
                                                 onChange={handleSetBasePointLat}
-                                                placeholder={'Enter latitude'}
+                                                placeholder={t('Enter latitude')}
                                                 className={`w-3/4 border-gray-300 ${formErrors.coordinates ? 'border-red-500 focus:ring-red-500' : ''
                                                     }`}
                                             />
@@ -484,8 +482,8 @@ export default function SchemasPage({
                                             )}
                                             <span>
                                                 {isSelectingPoint
-                                                    ? 'Cancel'
-                                                    : 'Draw'
+                                                    ? t('Cancel')
+                                                    : t('Draw')
                                                 }
                                             </span>
                                         </div>
@@ -498,7 +496,7 @@ export default function SchemasPage({
                             {convertedCoord &&
                                 <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-black'>
                                     <h2 className='text-lg font-semibold mb-2'>
-                                        Converted Coordinate (EPSG:{pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
+                                        {t('Converted Coordinate')} (EPSG:{pageContext.current.epsg ? pageContext.current.epsg.toString() : ''}
                                         )
                                     </h2>
                                     <div className='flex-1 flex flex-col justify-between'>
@@ -522,13 +520,13 @@ export default function SchemasPage({
                             {/* ----------- */}
                             <div className='p-3 bg-white text-black rounded-md shadow-sm border border-gray-200'>
                                 <div className='flex justify-between items-center mb-2'>
-                                    <h3 className='text-lg font-semibold'>{gridLevelText.title}</h3>
+                                    <h3 className='text-lg font-semibold'>{t(gridLevelText.title)}</h3>
                                     <Button
                                         type='button'
                                         className='px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm shadow-sm cursor-pointer'
                                         onClick={handleAddGridLayer}
                                     >
-                                        <span className='text-lg'>+</span> {gridLevelText.addButton}
+                                        <span className='text-lg'>+</span> {t(gridLevelText.addButton)}
                                     </Button>
                                 </div>
                                 {/* ---------- */}
@@ -539,40 +537,40 @@ export default function SchemasPage({
                                         {pageContext.current.gridLayers.map(layer => (
                                             <div key={layer.id} className='p-2 bg-gray-50 rounded border border-gray-200'>
                                                 <div className='flex justify-between items-center mb-2'>
-                                                    <h4 className='text-sm font-medium'>{gridItemText.level} {layer.id + 1}</h4>
+                                                    <h4 className='text-sm font-medium'>{t(gridItemText.level)} {layer.id + 1}</h4>
                                                     <Button
                                                         type='button'
                                                         className='px-2 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs cursor-pointer'
                                                         onClick={() => handleRemoveLayer(layer.id)}
                                                     >
-                                                        {gridItemText.remove}
+                                                        {t(gridItemText.remove)}
                                                     </Button>
                                                 </div>
                                                 <div className='grid grid-cols-2 gap-2'>
                                                     <div>
-                                                        <label className='block text-xs mb-1'>{gridItemText.width}</label>
+                                                        <label className='block text-xs mb-1'>{t(gridItemText.width)}</label>
                                                         <input
                                                             type='number'
                                                             className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
                                                             value={layer.width}
                                                             onChange={(e) => handleUpdateWidth(layer.id, e.target.value)}
-                                                            placeholder={gridItemText.widthPlaceholder}
+                                                            placeholder={t(gridItemText.widthPlaceholder)}
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className='block text-xs mb-1'>{gridItemText.height}</label>
+                                                        <label className='block text-xs mb-1'>{t(gridItemText.height)}</label>
                                                         <input
                                                             type='number'
                                                             className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
                                                             value={layer.height}
                                                             onChange={(e) => handleUpdateHeight(layer.id, e.target.value)}
-                                                            placeholder={gridItemText.heightPlaceholder}
+                                                            placeholder={t(gridItemText.heightPlaceholder)}
                                                         />
                                                     </div>
                                                 </div>
                                                 {layerErrors[layer.id] && (
                                                     <div className='mt-2 p-1 bg-red-50 text-red-700 text-xs rounded-md border border-red-200'>
-                                                        {layerErrors[layer.id]}
+                                                        {t(layerErrors[layer.id])}
                                                     </div>
                                                 )}
                                             </div>
@@ -580,7 +578,7 @@ export default function SchemasPage({
                                     </div>
                                 ) : (
                                     <div className='text-sm text-gray-500 text-center py-2'>
-                                        {gridLevelText.noLayers}
+                                        {t(gridLevelText.noLayers)}
                                     </div>
                                 )}
                                 {/* ----------------------- */}
@@ -588,16 +586,16 @@ export default function SchemasPage({
                                 {/* ----------------------- */}
                                 {pageContext.current.gridLayers.length > 0 && (
                                     <div className='mt-2 p-2 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200'>
-                                        <p>{gridLevelText.rulesTitle}</p>
+                                        <p>{t(gridLevelText.rulesTitle)}</p>
                                         <ul className='list-disc pl-4 mt-1'>
                                             <li>
-                                                {gridLevelText.rule1}
+                                                {t(gridLevelText.rule1)}
                                             </li>
                                             <li>
-                                                {gridLevelText.rule2}
+                                                {t(gridLevelText.rule2)}
                                             </li>
                                             <li>
-                                                {gridLevelText.rule3}
+                                                {t(gridLevelText.rule3)}
                                             </li>
                                         </ul>
                                     </div>
@@ -610,7 +608,7 @@ export default function SchemasPage({
                                 <div
                                     className={`p-2 ${bgColor} ${textColor} text-sm rounded-md border ${borderColor}`}
                                 >
-                                    {generalMessage}
+                                    {t(generalMessage || '')}
                                 </div>
                             }
                             {/* ------ */}
@@ -622,7 +620,7 @@ export default function SchemasPage({
                                     className='w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer'
                                 >
                                     <Save className='h-4 w-4 mr-2' />
-                                    Create and Back
+                                    {t('Create and Back')}
                                 </Button>
                             </div>
                         </div>
