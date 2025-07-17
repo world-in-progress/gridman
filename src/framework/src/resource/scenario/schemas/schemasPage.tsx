@@ -57,7 +57,7 @@ export default function SchemasPage({
     const [isSelectingPoint, setIsSelectingPoint] = useState(false)
     const [generalMessage, setGeneralMessage] = useState<string | null>(null)
     const [layerErrors, setLayerErrors] = useState<Record<number, string>>({})
-    const [convertedCoord, setConvertedCoord] = useState<{ x: string, y: string } | null>(null)
+    const [convertedCoord, setConvertedCoord] = useState<{ x: number, y: number } | null>(null)
     const [formErrors, setFormErrors] = useState<{
         name: boolean
         epsg: boolean
@@ -143,7 +143,7 @@ export default function SchemasPage({
     const updateCoords = () => {
         const pc = pageContext.current
 
-        let converted: { x: string, y: string } | null = null
+        let converted: { x: number, y: number } | null = null
         if (pc.basePoint[0] && pc.basePoint[1] && pc.epsg) {
             const epsg = pc.epsg
             const epsgString = epsg.toString()
@@ -155,7 +155,7 @@ export default function SchemasPage({
             else if (epsgString.length < 4) converted = null
 
             // Try to reproject coordinate
-            else converted = convertCoordinate(pc.basePoint[0].toString(), pc.basePoint[1].toString(), '4326', epsgString)
+            else converted = convertCoordinate(pc.basePoint[0], pc.basePoint[1], '4326', epsgString)
         }
         setConvertedCoord(converted)
     }
@@ -298,7 +298,7 @@ export default function SchemasPage({
             epsg: pc.epsg!,
             starred: false,
             description: pc.description,
-            base_point: [parseFloat(convertedCoord!.x), parseFloat(convertedCoord!.y)],
+            base_point: [convertedCoord!.x, convertedCoord!.y],
             grid_info: pc.gridLayers.map(layer => [parseFloat(layer.width), parseFloat(layer.height)]),
         }
 

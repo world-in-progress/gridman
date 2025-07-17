@@ -137,8 +137,9 @@ export default function PatchesPage({
             clearGridLines()
             clearDrawPatchBounds()
             const coords = drawCoordinates.current
+            console.log(coords.northEast, coords.southWest)
             pageContext.current.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
-            const drawBounds = pageContext.current.originBounds                                                                          // EPSG: 4326
+            const drawBounds = pageContext.current.originBounds                                                              // EPSG: 4326
 
             if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
                 const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(drawBounds, schemaGridLevel.current, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
@@ -168,6 +169,7 @@ export default function PatchesPage({
             }
             triggerRepaint()
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawCoordinates.current])
 
     const formatSingleValue = (value: number): string => value.toFixed(6);
