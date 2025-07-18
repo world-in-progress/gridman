@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { PatchesPageProps, PatchMeta, RectangleCoordinates } from './types'
+import { useTranslation } from 'react-i18next'
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -39,7 +40,7 @@ const patchTips = [
 export default function PatchesPage({
     node
 }: PatchesPageProps) {
-
+    const { t } = useTranslation("patchesPage")
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<PatchesPageContext>(new PatchesPageContext())
     const [generalMessage, setGeneralMessage] = useState<string | null>(null)
@@ -72,12 +73,12 @@ export default function PatchesPage({
     let bgColor = 'bg-red-50'
     let textColor = 'text-red-700'
     let borderColor = 'border-red-200'
-    if (generalMessage?.includes('Submitting data')) {
+    if (generalMessage?.includes(t('Submitting data...'))) {
         bgColor = 'bg-orange-50'
         textColor = 'text-orange-700'
         borderColor = 'border-orange-200'
     }
-    else if (generalMessage?.includes('Created successfully')) {
+    else if (generalMessage?.includes(t('Created successfully'))) {
         bgColor = 'bg-green-50'
         textColor = 'text-green-700'
         borderColor = 'border-green-200'
@@ -234,7 +235,7 @@ export default function PatchesPage({
     const drawBoundsByParams = () => {
         const inputBounds = pageContext.current.inputBounds
         if (hasAdjustedBounds.current) {
-            toast.info('Map bounds have been adjusted')
+            toast.info(t('Map bounds have been adjusted'))
             return
         }
 
@@ -318,14 +319,14 @@ export default function PatchesPage({
             bounds: adjustedCoordinate!
         }
 
-        setGeneralMessage('Submitting data...')
+        setGeneralMessage(t('Submitting data...'))
 
         const res = await apis.patch.createPatch.fetch({ schemaName: pc.schema!.name, patchMeta: patchData }, node.tree.isPublic)
         if (res.success === false) {
             console.error(res.message)
             setGeneralMessage(`Failed to create patch: ${res.message}`)
         } else {
-            setGeneralMessage('Created successfully')
+            setGeneralMessage(t('Created successfully'))
 
             const tree = node.tree as SceneTree
             await tree.alignNodeInfo(node, true)
@@ -363,8 +364,8 @@ export default function PatchesPage({
                             {/* Page Title */}
                             {/* -----------*/}
                             <h1 className='font-bold text-[25px] relative flex items-center'>
-                                Create New Patch
-                                <span className=' bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1'>{node.tree.isPublic ? 'Public' : 'Private'}</span>
+                                {t('Create New Patch')}
+                                <span className=' bg-[#D63F26] rounded px-0.5 mb-2 text-[12px] inline-flex items-center mx-1'>{node.tree.isPublic ? t('Public') : t('Private')}</span>
                                 <span>[{node.parent?.name}]</span>
                             </h1>
                             {/* ----------*/}
@@ -374,7 +375,7 @@ export default function PatchesPage({
                                 <ul className='list-disc space-y-1'>
                                     {patchTips.map((tip, index) => (
                                         <li key={index}>
-                                            {Object.values(tip)[0]}
+                                            {t(Object.values(tip)[0])}
                                         </li>
                                     ))}
                                 </ul>
@@ -391,14 +392,14 @@ export default function PatchesPage({
                             {/* ----------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-lg font-semibold mb-2'>
-                                    New Patch Name
+                                    {t('Patch Name')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Input
                                         id='name'
                                         value={pageContext.current.name}
                                         onChange={handleSetName}
-                                        placeholder={'Enter new patch name'}
+                                        placeholder={t('Enter new patch name')}
                                         className={`w-full text-black border-gray-300 ${formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     />
                                 </div>
@@ -408,14 +409,14 @@ export default function PatchesPage({
                             {/* ------------------ */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-lg font-semibold mb-2'>
-                                    Patch Description (Optional)
+                                    {t('Patch Description (Optional)')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
                                         value={pageContext.current.description}
                                         onChange={handleSetDescription}
-                                        placeholder={'Enter patch description'}
+                                        placeholder={t('Enter patch description')}
                                         className={`w-full text-black border-gray-300 ${formErrors.description ? 'border-red-500 focus:ring-red-500' : ''}`}
                                     />
                                 </div>
@@ -425,14 +426,14 @@ export default function PatchesPage({
                             {/* --------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-lg font-semibold mb-2'>
-                                    Belong To Schema
+                                    {t('Belong To Schema')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Input
                                         id='schema'
                                         value={pageContext.current.schema?.name}
                                         readOnly={true}
-                                        placeholder='Schema Name'
+                                        placeholder={t('Schema Name')}
                                         className={`text-black w-full border-gray-300`}
                                     />
                                 </div>
@@ -442,14 +443,14 @@ export default function PatchesPage({
                             {/* --------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-lg font-semibold mb-2'>
-                                    EPSG Code
+                                    {t('EPSG Code')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <Input
                                         id='epsg'
                                         value={pageContext.current.schema?.epsg.toString()}
                                         readOnly={true}
-                                        placeholder='EPSG Code'
+                                        placeholder={t('EPSG Code')}
                                         className={`text-black w-full border-gray-300`}
                                     />
                                 </div>
@@ -459,12 +460,12 @@ export default function PatchesPage({
                             {/* --------- */}
                             <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
                                 <h2 className='text-lg font-semibold mb-2'>
-                                    Patch Bounds
+                                    {t('Patch Bounds')}
                                 </h2>
                                 <div className='space-y-2'>
                                     <div className='p-2 bg-white rounded-md shadow-sm border border-gray-200'>
                                         <div className='font-bold text-md mb-2'>
-                                            Method One: Draw to generate
+                                            {t('Method One: Draw to generate')}
                                         </div>
                                         <button
                                             type='button'
@@ -474,21 +475,21 @@ export default function PatchesPage({
                                                 : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                                         >
                                             {isDrawingBounds
-                                                ? 'Click to cancel rectangle drawing'
-                                                : 'Click to draw rectangle'}
+                                                ? t('Click to cancel rectangle drawing')
+                                                : t('Click to draw rectangle')}
                                         </button>
                                         {isDrawingBounds && (
                                             <div className='mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200 text-xs text-yellow-800'>
-                                                <p>Drawing method:</p>
+                                                <p>{t('Drawing method:')}</p>
                                                 <ul className='list-disc pl-4 mt-1'>
                                                     <li>
-                                                        Click on the map to set starting point
+                                                        {t('Click on the map to set starting point')}
                                                     </li>
                                                     <li>
-                                                        Move the mouse to desired location
+                                                        {t('Move the mouse to desired location')}
                                                     </li>
                                                     <li>
-                                                        Click again to complete drawing
+                                                        {t('Click again to complete drawing')}
                                                     </li>
                                                 </ul>
                                             </div>
@@ -497,7 +498,7 @@ export default function PatchesPage({
                                     <Separator className='h-px mb-2 bg-gray-300' />
                                     <div className=' p-2 bg-white rounded-md shadow-sm border border-gray-200'>
                                         <div className='mb-2 font-bold text-md'>
-                                            Method Two: Input parameters to generate
+                                            {t('Method Two: Input parameters to generate')}
                                         </div>
                                         <div className='grid grid-cols-3 mb-2 gap-1 text-xs'>
                                             {/* Top Left Corner */}
@@ -515,7 +516,7 @@ export default function PatchesPage({
                                                     value={pageContext.current.inputBounds?.[3] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 3)}
                                                     className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
-                                                    placeholder={'Enter max Y'}
+                                                    placeholder={t('Enter max Y')}
                                                     step='any'
                                                 />
                                             </div>
@@ -534,26 +535,26 @@ export default function PatchesPage({
                                                     value={pageContext.current.inputBounds?.[0] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 0)}
                                                     className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
-                                                    placeholder={'Enter mix X'}
+                                                    placeholder={t('Enter min X')}
                                                     step='any'
                                                 />
                                             </div>
                                             {/* Center */}
                                             <div className='text-center'>
-                                                <span className='font-bold text-[#FF8F2E] text-xl'>Center</span>
+                                                <span className='font-bold text-[#FF8F2E] text-xl'>{t('Center')}</span>
                                                 <div
                                                     className={`text-[10px] mt-1 ${isError ? 'text-red-600' : ''
                                                         }`}
                                                 >
                                                     {isError
-                                                        ? 'Coordinate Error'
+                                                        ? t('Coordinate Error')
                                                         : pageContext.current.inputBounds
                                                             ? `${formatSingleValue(
                                                                 (pageContext.current.inputBounds[0] + pageContext.current.inputBounds[2]) / 2
                                                             )}, ${formatSingleValue(
                                                                 (pageContext.current.inputBounds[1] + pageContext.current.inputBounds[3]) / 2
                                                             )}`
-                                                            : 'Enter bounds'}
+                                                            : t('Enter bounds')}
                                                 </div>
                                             </div>
                                             {/* East/Right - southEast[0] */}
@@ -567,7 +568,7 @@ export default function PatchesPage({
                                                     value={pageContext.current.inputBounds?.[2] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 2)}
                                                     className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
-                                                    placeholder={'Enter max X'}
+                                                    placeholder={t('Enter max X')}
                                                     step='any'
                                                 />
                                             </div>
@@ -586,7 +587,7 @@ export default function PatchesPage({
                                                     value={pageContext.current.inputBounds?.[1] ?? ''}
                                                     onChange={(e) => handleSetInputBounds(e, 1)}
                                                     className='w-full text-center border border-gray-500 rounded-sm h-[22px]'
-                                                    placeholder={'Enter min Y'}
+                                                    placeholder={t('Enter min Y')}
                                                     step='any'
                                                 />
                                             </div>
@@ -600,7 +601,7 @@ export default function PatchesPage({
                                             className='w-full py-2 px-4 rounded-md font-medium transition-colors cursor-pointer bg-blue-500 text-white hover:bg-blue-600'
                                             onClick={drawBoundsByParams}
                                         >
-                                            Click to adjust and draw bounds
+                                            {t('Click to adjust and draw bounds')}
                                         </button>
                                     </div>
                                 </div>
@@ -610,7 +611,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {convertCoordinate &&
                                 <div className='mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200'>
-                                    <h3 className='font-semibold text-lg mb-2'>Original Bounds (EPSG:{schemaEPSG.current})</h3>
+                                    <h3 className='font-semibold text-lg mb-2'>{t('Original Bounds')} (EPSG:{schemaEPSG.current})</h3>
                                     <div className='grid grid-cols-3 gap-1 text-xs'>
                                         {/* Top Left Corner */}
                                         <div className='relative h-12 flex items-center justify-center'>
@@ -632,7 +633,7 @@ export default function PatchesPage({
                                         </div>
                                         {/* Center */}
                                         <div className='text-center'>
-                                            <span className='font-bold text-xl'>Center</span>
+                                            <span className='font-bold text-xl'>{t('Center')}</span>
                                             <div>{formatCoordinate([(convertCoordinate[0] + convertCoordinate[2]) / 2, (convertCoordinate[1] + convertCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
@@ -661,7 +662,7 @@ export default function PatchesPage({
                             {/* --------------- */}
                             {adjustedCoordinate &&
                                 <div className='mt-4 p-3 bg-white rounded-md shadow-sm border border-gray-200'>
-                                    <h3 className='font-semibold text-lg mb-2'>Adjusted Coordinates (EPSG:{schemaEPSG.current})</h3>
+                                    <h3 className='font-semibold text-lg mb-2'>{t('Adjusted Coordinates')} (EPSG:{schemaEPSG.current})</h3>
                                     <div className='grid grid-cols-3 gap-1 text-xs'>
                                         {/* Top Left Corner */}
                                         <div className='relative h-12 flex items-center justify-center'>
@@ -683,7 +684,7 @@ export default function PatchesPage({
                                         </div>
                                         {/* Center */}
                                         <div className='text-center'>
-                                            <span className='font-bold text-xl'>Center</span>
+                                            <span className='font-bold text-xl'>{t('Center')}</span>
                                             <div>{formatCoordinate([(adjustedCoordinate[0] + adjustedCoordinate[2]) / 2, (adjustedCoordinate[1] + adjustedCoordinate[3]) / 2])}</div>
                                         </div>
                                         {/* East/Right - southEast[0] */}
@@ -726,7 +727,7 @@ export default function PatchesPage({
                                     className='w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer'
                                 >
                                     <Save className='h-4 w-4 mr-2' />
-                                    Create and Back
+                                    {t('Create and Back')}
                                 </Button>
                             </div>
                         </div>
