@@ -10,6 +10,8 @@ import schemaPageEn from "../resource/scenario/schema/locales/en.json";
 import schemaPageSzh from "../resource/scenario/schema/locales/szh.json";
 import resourceSceneEn from "../components/resourceScene/locales/en.json";
 import resourceSceneSzh from "../components/resourceScene/locales/szh.json";
+import patchesPageEn from "../resource/scenario/patches/locales/en.json";
+import patchesPageSzh from "../resource/scenario/patches/locales/szh.json";
 
 // 使用命名空间组织翻译资源
 const resources = {
@@ -18,14 +20,16 @@ const resources = {
     // 组件级命名空间
     schemasPage: schemasPageEn,
     schemaPage: schemaPageEn,
-    resourceScene: resourceSceneEn
+    resourceScene: resourceSceneEn,
+    patchesPage: patchesPageEn
   },
   szh: {
     translation: szh.translation,
     // 组件级命名空间
     schemasPage: schemasPageSzh,
     schemaPage: schemaPageSzh,
-    resourceScene: resourceSceneSzh
+    resourceScene: resourceSceneSzh,
+    patchesPage: patchesPageSzh
   },
 };
 
@@ -39,7 +43,7 @@ i18n
     fallbackLng:"en",
     
     // 允许加载多个命名空间
-    ns: ["translation", "schemasPage", "schemaPage", "resourceScene"],
+    ns: ["translation", "schemasPage", "schemaPage", "resourceScene", "patchesPage"],
     defaultNS: "translation",
 
     interpolation: {
