@@ -3,7 +3,6 @@ import { mat4 } from 'gl-matrix'
 
 import '@/App.css'
 import store from '@/store'
-// import { CheckingSwitch } from '@/context'
 import GridCore from '@/core/grid/NHGridCore'
 import VibrantColorGenerator from '@/core/util/vibrantColorGenerator'
 import { GridCheckingInfo, MultiGridBaseInfo } from '@/core/grid/types'
@@ -559,9 +558,9 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     executePickGridsByFeature(path: string) {
         this.startCallback()
         this.gridCore.getGridInfoByFeature(path, (storageIds: number[]) => {
-
             this._hit(storageIds)
             this.endCallback()
+            store.get<{ on: Function; off: Function }>('isLoading')!.off();
         })
     }
 

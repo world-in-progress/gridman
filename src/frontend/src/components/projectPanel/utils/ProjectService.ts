@@ -36,7 +36,7 @@ export class ProjectService {
                     if (!a.starred && b.starred) return 1;
                     return 0;
                 });
-                
+
                 if (callback) callback(err, sortedProjects);
             }
         );
