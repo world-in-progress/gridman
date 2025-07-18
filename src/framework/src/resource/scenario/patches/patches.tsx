@@ -7,7 +7,7 @@ import DefaultScenarioNode from '@/core/scenario/default'
 import PatchesPage from './patchesPage'
 import { SchemaInfo } from '../schema/types'
 import { getSchemaInfo } from '../schema/utils'
-import NodeInformation from './nodeInformation'
+import PatchesInformation from './patchInformation'
 
 export class PatchesPageContext extends DefaultPageContext {
     name: string
@@ -49,8 +49,8 @@ export class PatchesPageContext extends DefaultPageContext {
 }
 
 export enum PatchesMenuItem {
-    NODE_INFORMATION = 'Node Information',
     CREATE_NEW_PATCH = 'Create New Patch',
+    PATCH_INFORMATION = 'Patch Information',
 }
 
 export default class PatchesScenarioNode extends DefaultScenarioNode {
@@ -63,11 +63,11 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.NODE_INFORMATION)}>
-                    <Info className='w-4 h-4' />Node Information
-                </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.CREATE_NEW_PATCH)}>
-                    <FileType2 className='w-4 h-4' />Create New Patch
+                    <FileType2 className='w-4 h-4 ml-2' />Create New Patch
+                </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.PATCH_INFORMATION)}>
+                    <FileType2 className='w-4 h-4 ml-2' />Node Information
                 </ContextMenuItem>
             </ContextMenuContent>
         )
@@ -75,12 +75,11 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
 
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
         switch (menuItem) {
-            case PatchesMenuItem.NODE_INFORMATION:
-                (nodeSelf as SceneNode).pageId = 'information'
-                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
-                break
             case PatchesMenuItem.CREATE_NEW_PATCH:
-                (nodeSelf as SceneNode).pageId = 'default'
+                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
+            case PatchesMenuItem.PATCH_INFORMATION:
+                (nodeSelf as SceneNode).pageId = 'information'
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
         }
@@ -89,11 +88,11 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
         switch ((nodeSelf as SceneNode).pageId) {
             case 'default':
-                return ( <PatchesPage node={nodeSelf} /> )
+                return (<PatchesPage node={nodeSelf} />)
             case 'information':
-                return ( <NodeInformation /> )
+                return (<PatchesInformation node={nodeSelf} />)
             default:
-                return ( <PatchesPage node={nodeSelf} /> )
+                return (<PatchesPage node={nodeSelf} />)
         }
     }
 }
