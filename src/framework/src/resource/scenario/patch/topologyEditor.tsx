@@ -1,59 +1,60 @@
-import MapContainer from "@/components/mapContainer/mapContainer"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import {
+    Save,
+    Grip,
+    Brush,
     Delete,
-    SquareMousePointer,
     ArrowUp,
     ArrowDown,
+    CircleOff,
     ArrowLeft,
     ArrowRight,
-    SquareDashedMousePointer,
-    Grip,
-    CircleOff,
-    Brush,
-    SquareDashed,
     FolderOpen,
-    Save,
+    SquareDashed,
+    SquareMousePointer,
+    SquareDashedMousePointer,
 } from "lucide-react"
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import {
-} from 'lucide-react'
-import {
     Tooltip,
+    TooltipTrigger,
     TooltipContent,
     TooltipProvider,
-    TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from "./types"
-import { useCallback, useEffect, useReducer, useRef, useState } from "react"
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+import {
+    AlertDialog,
+    AlertDialogTitle,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogTrigger,
+    AlertDialogDescription,
+} from '@/components/ui/alert-dialog'
+import store from "@/store"
+import { toast } from "sonner"
 import { PatchPageContext } from "./patch"
 import GridCore from "@/core/grid/NHGridCore"
-import TopologyLayer from "@/components/mapContainer/TopologyLayer"
-import store from "@/store"
-import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
-import CapacityBar from "@/components/ui/capacityBar"
-import { toast } from "sonner"
-import { deletepatch, setPatch } from "./utils"
 import { GridContext } from "@/core/grid/types"
+import { deletepatch, setPatch } from "./utils"
+import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import CapacityBar from "@/components/ui/capacityBar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { boundingBox2D } from "@/core/util/boundingBox2D"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import MapContainer from "@/components/mapContainer/mapContainer"
+import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
+import TopologyLayer from "@/components/mapContainer/TopologyLayer"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from "./types"
 
 const topologyTips = [
-    { tip1: 'Fill in the name of the Schema and the EPSG code.' },
+    { tip: 'Hold Shift to select/deselect grids with Brush or Box.' },
+    { tip: 'Subdivide splits grids; Merge combines.' },
+    { tip: 'Delete removes grids; Recover restores.' },
+    { tip: 'Check mode shows grid details; Ctrl+A selects all.' },
 ]
 
 const topologyOperations = [
@@ -224,8 +225,7 @@ export default function TopologyEditor(
         canvas.addEventListener("mousedown", onMouseDown);
         canvas.addEventListener("mousemove", onMouseMove);
         canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseout", onMouseOut);
-        console.log('已加载')
+        canvas.addEventListener("mouseout", onMouseOut)
 
         return () => {
             canvas.removeEventListener("mousedown", onMouseDown)
@@ -304,7 +304,6 @@ export default function TopologyEditor(
         setSelectTab(pc.editingState.select)
         setCheckSwitchOn(pc.isChecking)
 
-        // Make sure the check mode is set correctly
         if (pc.topologyLayer && pc.isChecking) {
             pc.topologyLayer.setCheckMode(pc.isChecking)
         }
@@ -315,6 +314,11 @@ export default function TopologyEditor(
     const unloadContext = (node: SceneNode) => {
         const clg = store.get<NHLayerGroup>('clg')!
         clg.removeLayer('TopologyLayer')
+
+        pageContext.current.editingState.select = selectTab
+        pageContext.current.editingState.pick = pickingTab
+        pageContext.current.isChecking = checkSwitchOn
+        // pageContext.current.topologyLayer = topologyLayer
     }
 
     const handleSelectAllClick = () => {
@@ -355,20 +359,16 @@ export default function TopologyEditor(
     const handleConfirmTopologyAction = useCallback(() => {
         switch (activeTopologyOperation) {
             case 'subdivide':
-                topologyLayer!.executeSubdivideGrids();
-                console.log('subdivide')
+                topologyLayer!.executeSubdivideGrids()
                 break;
             case 'merge':
-                topologyLayer!.executeMergeGrids();
-                console.log('merge')
+                topologyLayer!.executeMergeGrids()
                 break;
             case 'delete':
-                topologyLayer!.executeDeleteGrids();
-                console.log('delete')
+                topologyLayer!.executeDeleteGrids()
                 break;
             case 'recover':
-                topologyLayer!.executeRecoverGrids();
-                console.log('recover')
+                topologyLayer!.executeRecoverGrids()
                 break;
             default:
                 console.warn('No active topology operation to confirm.');
@@ -402,30 +402,30 @@ export default function TopologyEditor(
         }
     };
 
-    // const handleFeatureClick = useCallback(async () => {
-    //     editingState.current.pick = 'feature'
-    //     if ( window.electronAPI && typeof window.electronAPI.openFileDialog === 'function') {
-    //         try {
-    //             const filePath = await window.electronAPI.openFileDialog();
-    //             if (filePath) {
-    //                 console.log('Selected file path:', filePath);
-    //                 store.get<{ on: Function; off: Function }>('isLoading')!.on();
-    //                 topologyLayer.current!.executePickGridsByFeature(filePath);
-    //                 editingState.current.pick = 'brush'
-    //             } else {
-    //                 console.log('No file selected');
-    //                 editingState.current.pick = 'brush'
-    //             }
-    //         } catch (error) {
-    //             console.error('Error opening file dialog:', error);
-    //             editingState.current.pick = 'brush'
-    //         }
-    //     } else {
-    //         console.warn('Electron API not available');
-    //         editingState.current.pick = 'brush'
-    //     }
-    //     console.log('handleFeatureClick');
-    // }, [topologyLayer])
+    const handleFeatureClick = useCallback(async () => {
+        const currentTab: 'brush' | 'box' | 'feature' = selectTab
+        setSelectTab('feature')
+        if ( window.electronAPI && typeof window.electronAPI.openFileDialog === 'function') {
+            try {
+                const filePath = await window.electronAPI.openFileDialog();
+                if (filePath) {
+                    console.log('Selected file path:', filePath);
+                    store.get<{ on: Function; off: Function }>('isLoading')!.on();
+                    topologyLayer!.executePickGridsByFeature(filePath);
+                    setSelectTab(currentTab)
+                } else {
+                    console.log('No file selected');
+                    setSelectTab(currentTab)
+                }
+            } catch (error) {
+                console.error('Error opening file dialog:', error);
+                setSelectTab(currentTab)
+            }
+        } else {
+            console.warn('Electron API not available');
+            setSelectTab(currentTab)
+        }
+    }, [topologyLayer])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -469,7 +469,7 @@ export default function TopologyEditor(
                     event.preventDefault();
                     pageContext.current!.editingState.select = 'feature'
                     setSelectTab('feature')
-                    // handleFeatureClick();
+                    handleFeatureClick();
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
@@ -537,10 +537,10 @@ export default function TopologyEditor(
 
     const handleSaveTopologyState = () => {
         const core: GridCore = pageContext.current.gridCore!
-        // core.save((saveInfo: GridSaveInfo) => {
-        //     toast.success('Topology edit state saved successfully')
-        // });
-        toast.success('Topology edit state saved successfully')
+        console.log(core.gridNum)
+        core.save(() => {
+            toast.success('Topology edit state saved successfully')
+        })
     };
 
     return (
@@ -580,7 +580,7 @@ export default function TopologyEditor(
                                 <ul className='list-disc space-y-1'>
                                     {topologyTips.map((tip, index) => (
                                         <li key={index}>
-                                            {Object.values(tip)[0]}
+                                            {tip.tip}
                                         </li>
                                     ))}
                                 </ul>
@@ -641,7 +641,7 @@ export default function TopologyEditor(
                     {/* ---------------- */}
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
-                    <ScrollArea className='h-full max-h-[calc(100vh-12.5rem)]'>
+                    <ScrollArea className='h-full max-h-[calc(100vh-16rem)]'>
                         <div className='w-3/5 mx-auto'>
                             <div className="p-3 rounded-md shadow-sm">
                                 <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
@@ -1013,7 +1013,7 @@ export default function TopologyEditor(
                                                 <button
                                                     className={`flex-1 py-2 px-3 rounded-md transition-colors duration-200 flex flex-col text-white gap-0.5 text-sm justify-center items-center ${checkSwitchOn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
                                                             ${selectTab === 'feature' ? 'bg-[#FF8F2E] ' : ' hover:bg-gray-500'}`}
-                                                    onClick={() => { !checkSwitchOn && setSelectTab('feature') }}
+                                                    onClick={() => { !checkSwitchOn && handleFeatureClick() }}
                                                     disabled={checkSwitchOn}
                                                 >
                                                     <div className="flex flex-row gap-1 items-center">
@@ -1093,7 +1093,7 @@ export default function TopologyEditor(
             </div>
             <div className='w-3/4 h-full py-4 pr-4 relative'>
                 <div className="absolute left-0 z-10">
-                    <CapacityBar />
+                    <CapacityBar gridCore={pageContext.current.gridCore!}/>
                 </div>
                 <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>
