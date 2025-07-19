@@ -262,7 +262,7 @@ const StyledWrapper = styled.div`
     display: flex;
         position: absolute;
     left: 50%;
-    top: 58%;
+    top: 56%;
     margin-left: -1.75em;
     z-index: 1000;
     justify-content: center;
