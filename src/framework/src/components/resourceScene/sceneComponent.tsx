@@ -84,18 +84,18 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        
+
         // Clear single click timeout
         if (clickTimeoutRef.current) {
             clearTimeout(clickTimeoutRef.current)
             clickTimeoutRef.current = null
         }
-        
+
         // Prevent text selection
         if (window.getSelection) {
             window.getSelection()?.removeAllRanges()
         }
-        
+
         (node.tree as SceneTree).doubleClickNode(node)
     }, [node])
 
@@ -284,19 +284,18 @@ export default function ResourceTreeComponent({
     }, [focusNode, triggerFocus])
 
     return (
-        <ScrollArea className='h-full bg-[#22222B] overflow-hidden'>
-            <div className='w-full bg-[#22222B]'>
+        <ScrollArea className='h-full bg-[#252526] overflow-hidden'>
+            <div className='w-full bg-[#252526]'>
                 <div className='pl-2'>
                     <div className='text-sm font-semibold text-gray-400 py-2 uppercase tracking-wide'>
                         {t('EXPLORER')}
                     </div>
-
                     {privateTree && (
                         <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} triggerFocus={triggerFocus} />
                     )}
-
-                    <Separator className='my-2 bg-gray-700 w-full' />
-
+                </div>
+                <Separator className='my-2 bg-[#585858] w-full' />
+                <div className='pl-2'>
                     {publicTree && (
                         <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} triggerFocus={triggerFocus} />
                     )}

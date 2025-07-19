@@ -53,7 +53,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
             try {
                 if (e.features && e.features.length > 0) {
                     const feature = e.features[0];
-                    if (feature.geometry.type === 'Polygon') {
+                    if (drawInstance && drawInstance.getMode() === 'draw_rectangle' && feature.geometry.type === 'Polygon') {
                         const coordinates = calculateRectangleCoordinates(feature)
                         const drawCompleteEvent = new CustomEvent('rectangle-draw-complete', {
                             detail: { coordinates }

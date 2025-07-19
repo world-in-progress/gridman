@@ -544,7 +544,7 @@ export default function TopologyEditor(
     };
 
     return (
-        <div className='w-full h-[96vh] flex flex-row'>
+        <div className='w-full h-full flex flex-row'>
             <div className='w-2/5 h-full flex flex-col'>
                 <div className='flex-1 overflow-hidden'>
                     {/* ----------------- */}
@@ -641,7 +641,7 @@ export default function TopologyEditor(
                     {/* ---------------- */}
                     {/* Grid Schema Form */}
                     {/* ---------------- */}
-                    <ScrollArea className='h-full max-h-[calc(100vh-16rem)]'>
+                    <ScrollArea className='flex-1 h-[calc(100vh-16rem)]'>
                         <div className='w-3/5 mx-auto'>
                             <div className="p-3 rounded-md shadow-sm">
                                 <h2 className="text-xl font-bold text-white">Current Editing Information</h2>
@@ -785,7 +785,7 @@ export default function TopologyEditor(
                                 </div>
                             </div>
                         </div>
-                        <div className='w-full flex flex-row border-t-2 border-[#414141] relative'>
+                        <div className='w-full flex flex-row border-t-2 border-[#414141] relative mb-2'>
                             {checkSwitchOn && (
                                 <div className="absolute w-5/7 inset-0 bg-black/10 z-10 flex items-center justify-center rounded-md backdrop-blur-sm">
                                     <div className=" text-white px-6 py-3 rounded-lg text-center">

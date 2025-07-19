@@ -52,8 +52,8 @@ const RenderNodeTab: React.FC<renderNodeTabProps> = ({
                             <div
                                 title={`${node.key} · ${node.tree.isPublic ? 'PUBLIC' : 'PRIVATE'}`}
                                 className={cn(
-                                    'group flex items-center px-4 py-2 border-r border-gray-700 cursor-pointer h-[4vh]',
-                                    isFocused && 'bg-[#2A2C33]',
+                                    'group flex items-center px-4 bg-[#2D2D2D] border-r border-[#252526] cursor-pointer h-[4vh]',
+                                    isFocused && 'bg-[#1E1E1E]',
                                     snapshot.isDragging && 'bg-gray-600'
                                 )}
                             >
@@ -172,17 +172,17 @@ export default function TabBar({
 
     return (
         <div 
-            className='bg-[#22222B] flex h-[4vh]'
-            style={{ width: width ? `${width}px` : '85vw' }}
+            className='bg-[#252526] flex shrink-0 h-[4vh]'
+            style={{ width: width ? `${width}px` : '[84.5%]' }}
         >
-            <ScrollArea ref={scrollAreaRef} className='w-full'>
+            <ScrollArea ref={scrollAreaRef} className='w-full h-full'>
                 <DragDropContext onDragStart={handleDragStart} onDragEnd={onTabDragEnd}>
                     <Droppable droppableId='tabs' direction='horizontal'>
                         {(provided) => (
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className='bg-[#22222B] border-gray-700 flex h-[4vh] min-w-max'
+                                className='flex'
                             >
                                 <RenderNodeTabs focusNode={focusNode} tabs={tabs} onTabClick={onTabClick} triggerFocus={triggerFocus} />
                                 {provided.placeholder}

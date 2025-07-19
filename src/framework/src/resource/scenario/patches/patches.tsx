@@ -1,4 +1,4 @@
-import { FileType2, Info } from 'lucide-react'
+import { FilePlus, FilePlus2, FileType2, Info } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
@@ -63,11 +63,11 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
             <ContextMenuContent>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.CREATE_NEW_PATCH)}>
-                    <FileType2 className='w-4 h-4 ml-2' />Create New Patch
-                </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.PATCH_INFORMATION)}>
-                    <FileType2 className='w-4 h-4 ml-2' />Node Information
+                    <FileType2 className='w-4 h-4' />Node Information
+                </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.CREATE_NEW_PATCH)}>
+                    <FilePlus2 className='w-4 h-4' />Create New Patch
                 </ContextMenuItem>
             </ContextMenuContent>
         )
@@ -76,7 +76,8 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
         switch (menuItem) {
             case PatchesMenuItem.CREATE_NEW_PATCH:
-                (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                (nodeSelf as SceneNode).pageId = 'default'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case PatchesMenuItem.PATCH_INFORMATION:
                 (nodeSelf as SceneNode).pageId = 'information'
