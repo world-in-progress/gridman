@@ -11,5 +11,7 @@ export default class RootScenarioNode extends DefaultScenarioNode {
         'rainfalls',
         'solutions',
         'instances',
+        'settings',
+        'simulation',
     ]
 }

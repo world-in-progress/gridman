@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import SettingsPage from './settingPage/settingsPage'
 import DefaultScenarioNode from '@/core/scenario/default'
 import Simulation from './simulation/simulationPage'
+import LoginPage from './user/loginPage'
 
 
 function FrameworkComponent() {
@@ -75,7 +76,7 @@ function FrameworkComponent() {
                         setLastResourceTreeWidth(resourceTreeWidth)
                         setIsResourceTreeCollapsed(true)
                     }
-                } 
+                }
                 else {
                     setActiveIconID(iconID)
                     if (isResourceTreeCollapsed) {
@@ -83,116 +84,102 @@ function FrameworkComponent() {
                         setResourceTreeWidth(lastResourceTreeWidth || 200)
                     }
                 }
-            } 
-            else if(icon.id === 'languages'){
-                i18n.changeLanguage(i18n.language ==="szh"?"en":"szh")
+            }
+            else if (icon.id === 'languages') {
+                i18n.changeLanguage(i18n.language === "szh" ? "en" : "szh")
 
             }
-            else if(icon.id === 'settings') {
-                setActiveIconID(iconID)
-                
-                // 创建虚拟的设置节点（如果不存在）
-                const existingSettingsNode = nodeStack.current.find(node => node.id === 'settings-virtual-node')
-                if (!existingSettingsNode) {
-                    // 创建一个新的虚拟ScenarioNode
-                    const settingsScenarioNode = new DefaultScenarioNode()
-                    settingsScenarioNode.semanticPath = 'settings'
-                    
-                    // 重写renderPage方法，使其返回SettingsPage组件
-                    settingsScenarioNode.renderPage = () => <SettingsPage />
-                    
-                    // 创建一个新的虚拟SceneNode
-                    const settingsNode = new SceneNode(
-                        privateTree as SceneTree,
-                        'settings',
-                        null,
-                        settingsScenarioNode
-                    )
-                    
-                    // 设置id以便于识别
-                    Object.defineProperty(settingsNode, 'id', {
-                        get: function() { return 'settings-virtual-node' }
-                    })
-                    
-                    // 设置tab名称
-                    settingsNode.tab.name = '设置'
-                    
-                    // 将节点添加到nodeStack和nodeTabs
-                    nodeStack.current.push(settingsNode)
-                    nodeTabs.current.push(settingsNode.tab)
-                    
-                    // 激活tab
-                    settingsNode.tab.isActive = true
-                    
-                    // 设置为焦点节点
-                    setFocusNode(settingsNode)
-                } else {
-                    // 如果已经存在，则激活它
-                    const settingsNode = existingSettingsNode as SceneNode
-                    settingsNode.tab.isActive = true
-                    nodeTabs.current.forEach(tab => {
-                        if (tab.node.id !== 'settings-virtual-node') {
-                            tab.isActive = false
-                        }
-                    })
-                    setFocusNode(settingsNode)
-                }
+            else if (icon.id === 'settings') {
+                setActiveIconID(iconID);
+                createOrActivateVirtualNode(
+                    'settings',
+                    '设置',
+                    'settings',
+                    <SettingsPage />
+                );
             }
-            else if(icon.id === 'simulation') {
-                setActiveIconID(iconID)
-                
-                // 创建虚拟的设置节点（如果不存在）
-                const existingSettingsNode = nodeStack.current.find(node => node.id === 'settings-virtual-node')
-                if (!existingSettingsNode) {
-                    // 创建一个新的虚拟ScenarioNode
-                    const settingsScenarioNode = new DefaultScenarioNode()
-                    settingsScenarioNode.semanticPath = 'simulation'
-                    
-                    // 重写renderPage方法，使其返回SettingsPage组件
-                    settingsScenarioNode.renderPage = () => <Simulation />
-                    
-                    // 创建一个新的虚拟SceneNode
-                    const settingsNode = new SceneNode(
-                        privateTree as SceneTree,
-                        'simulation',
-                        null,
-                        settingsScenarioNode
-                    )
-                    
-                    // 设置id以便于识别
-                    Object.defineProperty(settingsNode, 'id', {
-                        get: function() { return 'simulation-virtual-node' }
-                    })
-                    
-                    // 设置tab名称
-                    settingsNode.tab.name = '模型模拟'
-                    
-                    // 将节点添加到nodeStack和nodeTabs
-                    nodeStack.current.push(settingsNode)
-                    nodeTabs.current.push(settingsNode.tab)
-                    
-                    // 激活tab
-                    settingsNode.tab.isActive = true
-                    
-                    // 设置为焦点节点
-                    setFocusNode(settingsNode)
-                } else {
-                    // 如果已经存在，则激活它
-                    const settingsNode = existingSettingsNode as SceneNode
-                    settingsNode.tab.isActive = true
-                    nodeTabs.current.forEach(tab => {
-                        if (tab.node.id !== 'simulation-virtual-node') {
-                            tab.isActive = false
-                        }
-                    })
-                    setFocusNode(settingsNode)
-                }
+            else if (icon.id === 'simulation') {
+                setActiveIconID(iconID);
+                createOrActivateVirtualNode(
+                    'simulation',
+                    '模型模拟',
+                    'simulation',
+                    <Simulation />
+                );
+            }
+            else if (icon.id === 'user') {
+                setActiveIconID(iconID);
+                createOrActivateVirtualNode(
+                    'user',
+                    '用户',
+                    'user',
+                    <LoginPage />
+                );
             }
             else {
                 setActiveIconID(iconID)
             }
         }
     })
+
+    // Create or activate virtual node
+    const createOrActivateVirtualNode = (
+        id: string,
+        name: string,
+        semanticPath: string,
+        renderComponent: React.ReactElement,
+    ) => {
+        // Check if node already exists
+        const existingNode = nodeStack.current.find(node => node.id === id);
+
+        if (!existingNode) {
+            // Create new virtual ScenarioNode
+            const scenarioNode = new DefaultScenarioNode();
+            scenarioNode.semanticPath = semanticPath;
+
+            // Override renderPage method
+            scenarioNode.renderPage = () => renderComponent;
+
+            // Create virtual SceneNode
+            const virtualNode = new SceneNode(
+                privateTree as SceneTree,
+                semanticPath,
+                null,
+                scenarioNode
+            );
+
+            // Set id for identification
+            Object.defineProperty(virtualNode, 'id', {
+                get: function() { return id; }
+            });
+
+            // Set tab name
+            virtualNode.tab.name = name;
+
+            // Add to nodeStack and nodeTabs
+            nodeStack.current.push(virtualNode);
+            nodeTabs.current.push(virtualNode.tab);
+
+            // Activate tab
+            virtualNode.tab.isActive = true;
+
+            // Set as focus node
+            setFocusNode(virtualNode);
+
+            // Add to editing node set
+            (privateTree as SceneTree).editingNodeIds.add(id);
+        } else {
+            // If it already exists, activate it
+            const node = existingNode as SceneNode;
+            node.tab.isActive = true;
+            nodeTabs.current.forEach(tab => {
+                if (tab.node.id !== id) {
+                    tab.isActive = false;
+                }
+            });
+            setFocusNode(node);
+        }
+    };
 
     //////////////////////////////////////////////////////////////
     // Handlers //////////////////////////////////////////////////
@@ -372,6 +359,13 @@ function FrameworkComponent() {
         setFocusNode(node)
         setTriggerFocus(prev => prev + 1)
 
+        // activate the corresponding icon
+        if (node.id !== 'settings' && node.id !== 'simulation' && node.id !== 'user') {
+            setActiveIconID('grid-editor')
+        } else {
+            setActiveIconID(node.id)
+        }
+        
     }, [publicTree, privateTree])
 
     // Handle action after dragging tab on tabBar
@@ -624,7 +618,7 @@ function FrameworkComponent() {
             {/* Resource Tree Panel - Resizable */}
             {!isResourceTreeCollapsed && (
                 <div
-                    className='relative border-r border-gray-700 flex-shrink-0'
+                    className='relative flex-shrink-0'
                     style={{ width: `${resourceTreeWidth}px` }}
                 >
                     <ResourceTreeComponent
@@ -650,20 +644,19 @@ function FrameworkComponent() {
                 </div>
             )}
             {/* Main Content Area */}
-            <div className='main-content-area'>
+            {/* <div className='main-content-area'> */}
+            <div className='flex flex-col flex-1 h-full overflow-hidden'>
                 {/* Fixed TabBar - no horizontal scroll */}
-                <div className='tab-bar-container'>
-                    <TabBar
-                        focusNode={focusNode as SceneNode | null}
-                        triggerFocus={triggerFocus}
-                        tabs={nodeTabs.current}
-                        localTree={privateTree}
-                        remoteTree={publicTree}
-                        onTabDragEnd={handleTabDragEnd}
-                        onTabClick={handleTabClick}
-                        width={viewportWidth}
-                    />
-                </div>
+                <TabBar
+                    focusNode={focusNode as SceneNode | null}
+                    triggerFocus={triggerFocus}
+                    tabs={nodeTabs.current}
+                    localTree={privateTree}
+                    remoteTree={publicTree}
+                    onTabDragEnd={handleTabDragEnd}
+                    onTabClick={handleTabClick}
+                    width={viewportWidth}
+                />
 
                 {/* Scrollable content area */}
                 {nodeStack.current.length > 0 && (
@@ -679,7 +672,6 @@ function FrameworkComponent() {
 
                 {/* Hello Page */}
                 {nodeStack.current.length === 0 && <Hello />}
-                {/* {nodeStack.current.length === 0 && <SettingsPage />} */}
             </div>
         </div >
     )

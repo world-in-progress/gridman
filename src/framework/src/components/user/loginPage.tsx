@@ -3,9 +3,9 @@ import login from '../../assets/login.jpg'
 
 export default function LoginPage() {
     return (
-        <div className="flex-1 h-full bg-[#1E1E1E] text-white text-foreground">
+        <div className="flex-1 h-full bg-[#1E1E1E] text-white">
             <div className="flex h-full flex-row">
-                <div className="flex flex-col w-2/5 gap-4 p-6 md:p-10 bg-background">
+                <div className="flex flex-col w-2/5 gap-4 p-6 md:p-10">
                     <div className="flex flex-1 items-center justify-center">
                         <div className="w-full max-w-lg">
                             <LoginForm />

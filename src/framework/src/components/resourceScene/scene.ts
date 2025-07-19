@@ -303,8 +303,10 @@ export class SceneTree implements ISceneTree {
     }
 
     async stopEditingNode(node: ISceneNode): Promise<void> {
+        console.log('我要关闭')
         // Do nothing if not editing
         if (!this.editingNodeIds.has(node.id)) {
+            console.log('我关闭失败')
             return
         }
 
@@ -317,6 +319,7 @@ export class SceneTree implements ISceneTree {
         this.handleNodeStopEditing(node)
 
         this.notifyDomUpdate()
+        console.log('我关闭成功')
     }
 
     // Node Tab Click //////////////////////////////////////////////////
