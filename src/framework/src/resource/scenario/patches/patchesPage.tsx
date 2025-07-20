@@ -155,8 +155,8 @@ export default function PatchesPage({
             const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
             setConvertCoordinate([convertedSWOnTarget[0], convertedSWOnTarget[1], convertedNEOnTarget[0], convertedNEOnTarget[1]])
 
-            const adjustedSWOnTarget = alignedBounds!.southWest                 // EPSG: Schema
-            const adjustedNEOnTarget = alignedBounds!.northEast                 // EPSG: Schema
+            const adjustedSWOnTarget = expandedBounds!.southWest                 // EPSG: Schema
+            const adjustedNEOnTarget = expandedBounds!.northEast                 // EPSG: Schema
             setAdjustedCoordinate([adjustedSWOnTarget[0], adjustedSWOnTarget[1], adjustedNEOnTarget[0], adjustedNEOnTarget[1]])
 
             pageContext.current.inputBounds = [expandedBounds!.southWest[0], expandedBounds!.southWest[1], expandedBounds!.northEast[0], expandedBounds!.northEast[1]]  // EPSG: Schema
