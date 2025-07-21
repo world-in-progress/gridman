@@ -348,6 +348,11 @@ export class SceneTree implements ISceneTree {
         return true
     }
 
+    findNodeById(id: string): SceneNode | null {
+        // Use the scene map directly since it stores all nodes by their IDs
+        return this.scene.get(id) as SceneNode || null;
+    }
+
     // Scene Tree Creation //////////////////////////////////////////////////
 
     static async create(isRemote: boolean): Promise<SceneTree> {

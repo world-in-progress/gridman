@@ -89,7 +89,7 @@ export default function PatchesPage({
         return () => {
             unloadContext(node as SceneNode)
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
@@ -258,7 +258,7 @@ export default function PatchesPage({
         }
     }
 
-    const resetForm = async() => {
+    const resetForm = async () => {
         if (isDrawingBounds) {
             document.removeEventListener('rectangle-draw-complete', onDrawComplete)
             setIsDrawingBounds(false)

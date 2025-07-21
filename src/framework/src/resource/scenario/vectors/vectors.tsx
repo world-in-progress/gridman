@@ -9,10 +9,24 @@ import VectorsPage from './vectorsPage'
 import VectorsInformation from './vectorsInformation'
 
 export class VectorsPageContext extends DefaultPageContext {
+    hasFeature: boolean
+    featureData: {
+        type: "point" | "line" | "polygon"
+        name: string
+        savePath: string
+        color: string
+    }
 
 
     constructor() {
         super()
+        this.hasFeature = false
+        this.featureData = {
+            type: "point",
+            name: "",
+            savePath: "",
+            color: 'sky-500'
+        }
     }
 
     static async create(): Promise<VectorsPageContext> {

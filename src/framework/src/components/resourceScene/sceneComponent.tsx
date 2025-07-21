@@ -139,10 +139,19 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                         className={cn(
                             'flex items-center py-0.5 px-2 hover:bg-gray-700 cursor-pointer text-sm w-full select-none',
                             isSelected ? 'bg-gray-600 text-white' : 'text-gray-300',
+                            !isFolder && 'cursor-grab active:cursor-grabbing', // Add cursor style for draggable items
                         )}
                         style={{ paddingLeft: `${depth * 16 + 2}px` }}
                         onClick={handleClick}
                         onDoubleClick={handleDoubleClick}
+                        draggable={!isFolder} // Only allow dragging files, not folders
+                        onDragStart={(e) => {
+                            if (!isFolder) {
+                                // 只传递节点ID，不需要整个JSON对象
+                                e.dataTransfer.setData('text/plain', node.id);
+                                e.dataTransfer.effectAllowed = 'copy';
+                            }
+                        }}
                     >
                         {isFolder ? (
                             <>
