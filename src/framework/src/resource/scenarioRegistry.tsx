@@ -10,6 +10,7 @@ import IconScenarioNode from './scenario/icon'
 import SettingsScenarioNode, { SettingsPageContext } from './scenario/settings/settings'
 import SimulationScenarioNode, { SimulationPageContext } from './scenario/simulation/simulation'
 import VectorsScenarioNode, { VectorsPageContext } from './scenario/vectors/vectors'
+import GridsScenariNode, { GridsPageContext } from './scenario/grids/grids'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -19,6 +20,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [SchemaScenarioNode.classKey]: SchemaScenarioNode,
     [PatchesScenarioNode.classKey]: PatchesScenarioNode,
     [PatchScenarioNode.classKey]: PatchScenarioNode,
+    [GridsScenariNode.classKey]: GridsScenariNode,
     [IconScenarioNode.classKey]: IconScenarioNode,
     [SettingsScenarioNode.classKey]: SettingsScenarioNode,
     [SimulationScenarioNode.classKey]: SimulationScenarioNode,
@@ -31,6 +33,7 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [SchemaScenarioNode.classKey]: SchemaPageContext,
     [PatchesScenarioNode.classKey]: PatchesPageContext,
     [PatchScenarioNode.classKey]: PatchPageContext,
+    [GridsScenariNode.classKey]: GridsPageContext,
     [SettingsScenarioNode.classKey]: SettingsPageContext,
     [SimulationScenarioNode.classKey]: SimulationPageContext,
     [VectorsScenarioNode.classKey]: VectorsPageContext,
