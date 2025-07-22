@@ -419,7 +419,7 @@ export const addMapPatchBounds = (
             [bounds[2], bounds[3]]
         ], { 
             padding: 50,
-            duration: 300
+            duration: 1000
          })
     }
 
@@ -709,7 +709,7 @@ export const highlightPatchBounds = (
             [bounds[2], bounds[3]]
         ], { 
             padding: 80, 
-            duration: 300
+            duration: 1000
         })
     } 
 }

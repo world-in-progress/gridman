@@ -173,7 +173,7 @@ export default function GridsPage({ node }: GridsPageProps) {
             [boundsOn4326[2], boundsOn4326[3]]
         ], {
             padding: 80,
-            duration: 500
+            duration: 1000
         })
     }
 
