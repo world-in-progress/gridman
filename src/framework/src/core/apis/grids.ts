@@ -10,7 +10,6 @@ export const createGrid: IAPI<{schemaName: string, gridName: string, gridInfo: G
         try {
             const {schemaName, gridName, gridInfo} = query
             const api = getPrefix(isRemote) + createGrid.api + `/${schemaName}/${gridName}`
-            console.log(api)
             const response = await fetch(api, { 
                 method: 'POST', 
                 body: JSON.stringify(gridInfo),

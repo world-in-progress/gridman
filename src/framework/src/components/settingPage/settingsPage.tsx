@@ -12,7 +12,7 @@ export default function SettingsPage() {
 		<div className="h-full w-full bg-gray-900 text-white flex flex-col">
 			{/* Header */}
 			<div className="flex overflow-hidden border-b border-gray-700 ">
-				<div className="w-64 bg-[#1E1E1E] px-4 py-4 flex items-center">
+				<div className="w-64 bg-[#1E1E1E] px-4 py-4 flex items-center justify-center mx-auto">
 					<div className="flex items-center space-x-2">
 						<Settings className="w-8 h-8" />
 						<span className="text-2xl font-bold">设置</span>

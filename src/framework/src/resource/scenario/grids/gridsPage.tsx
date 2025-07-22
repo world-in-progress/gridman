@@ -1,36 +1,58 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
+import store from '@/store'
+import { toast } from 'sonner'
 import { cn } from '@/utils/utils'
+import { createGrid } from './utils'
+import * as apis from '@/core/apis/apis'
 import { GridsPageProps } from './types'
+import { GridsPageContext } from './grids'
+import { GridInfo } from '@/core/apis/types'
+import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
 import { SquaresUnite, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
-import { GridsPageContext } from './grids'
-import { toast } from 'sonner'
-import * as apis from '@/core/apis/apis'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import {
+    Table,
+    TableRow,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+} from '@/components/ui/table'
+import {
+    ColumnDef,
+    flexRender,
+    SortingState,
+    useReactTable,
+    getCoreRowModel,
+    VisibilityState,
+    getSortedRowModel,
+    ColumnFiltersState,
+    getFilteredRowModel,
+} from '@tanstack/react-table'
 import {
     AlertDialog,
+    AlertDialogTitle,
     AlertDialogAction,
     AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle
+    AlertDialogContent,
+    AlertDialogDescription,
 } from '@/components/ui/alert-dialog'
-import { GridInfo } from '@/core/apis/types'
-import { createGrid } from './utils'
-import store from '@/store'
-import { Input } from '@/components/ui/input'
 import {
-    addMapPatchBounds,
-    clearBoundsById,
     convertToWGS84,
-    highlightPatchBounds
+    clearBoundsById,
+    addMapPatchBounds,
+    highlightPatchBounds,
+    clearDrawPatchBounds,
 } from '@/components/mapContainer/utils'
+
+
 
 const gridTips = [
     { tip1: 'Drag patches from the resource manager to the upload area.' },
@@ -39,7 +61,7 @@ const gridTips = [
 ]
 
 export default function GridsPage({ node }: GridsPageProps) {
-    const { t } = useTranslation("patchesPage")
+    const { t } = useTranslation('patchesPage')
     const [isDragOver, setIsDragOver] = useState(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
@@ -56,10 +78,22 @@ export default function GridsPage({ node }: GridsPageProps) {
 
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as GridsPageContext
+
+        // Convert each patch bounds to EPSG:4326 and add to map
+        Object.entries(pageContext.current.patchesBounds).forEach(([patchId, bounds]) => {
+            const patchBoundsOn4326 = convertToWGS84(bounds, pageContext.current.schema.epsg.toString())
+            addMapPatchBounds(patchBoundsOn4326, patchId, false, undefined)
+        })
+
+        if (Object.keys(pageContext.current.patchesBounds).length !== 0) {
+            fitGridBounds()
+        }
+
+        triggerRepaint()
     }
 
     const unloadContext = () => {
-        console.log('组件卸载')
+        return
     }
 
     const resetForm = () => {
@@ -79,10 +113,10 @@ export default function GridsPage({ node }: GridsPageProps) {
     }
 
     const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
+        e.preventDefault()
         setIsDragOver(false)
 
-        const nodeKey = e.dataTransfer.getData("text/plain")
+        const nodeKey = e.dataTransfer.getData('text/plain')
         const patchPath = nodeKey.split('.').slice(0, -2).join('.')
         const patchName = nodeKey.split('.').pop()
         const schemaPath = node.key.split('.').slice(0, -1).join('.')
@@ -145,23 +179,23 @@ export default function GridsPage({ node }: GridsPageProps) {
         triggerRepaint()
     }
 
-    const handlePreview = () => {
+    const fitGridBounds = () => {
         if (Object.keys(pageContext.current.patchesBounds).length === 0) {
-            toast.error("No patches selected");
-            return;
+            toast.error('No patches selected')
+            return
         }
 
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
+        let minX = Infinity
+        let minY = Infinity
+        let maxX = -Infinity
+        let maxY = -Infinity
 
         Object.values(pageContext.current.patchesBounds).forEach(bounds => {
-            minX = Math.min(minX, bounds[0]);
-            minY = Math.min(minY, bounds[1]);
-            maxX = Math.max(maxX, bounds[2]);
-            maxY = Math.max(maxY, bounds[3]);
-        });
+            minX = Math.min(minX, bounds[0])
+            minY = Math.min(minY, bounds[1])
+            maxX = Math.max(maxX, bounds[2])
+            maxY = Math.max(maxY, bounds[3])
+        })
 
         const bounds = [minX, minY, maxX, maxY] as [number, number, number, number]
 
@@ -177,13 +211,22 @@ export default function GridsPage({ node }: GridsPageProps) {
         })
     }
 
+    const handlePreview = () => {
+        fitGridBounds()
+    }
+
     const handleMerge = () => {
+        if (pageContext.current.gridName === '') {
+            toast.error(t('Please enter a grid name'))
+            return
+        }
         if (pageContext.current.selectedResources.length > 0) {
             setMergeDialogOpen(true)
         }
     }
 
     const confirmMerge = async () => {
+
         const treeger_address = 'http://127.0.0.1:8000'
         const gridInfo: GridInfo = {
             patches: pageContext.current.selectedResources.map((resource) => ({
@@ -194,20 +237,18 @@ export default function GridsPage({ node }: GridsPageProps) {
         const response = await createGrid((node as SceneNode), pageContext.current.gridName, gridInfo)
         store.get<{ on: Function; off: Function }>('isLoading')!.off()
         setMergeDialogOpen(false)
+        clearDrawPatchBounds()
+        resetForm()
 
         toast.success(t('Created successfully'))
 
         const tree = node.tree as SceneTree
         await tree.alignNodeInfo(node, true)
-
-        setTimeout(() => {
-            resetForm()
-            tree.notifyDomUpdate()
-        }, 500)
+        tree.notifyDomUpdate()
     }
 
     return (
-        <div className='w-full h-[96vh] flex flex-row'>
+        <div className='w-full h-full flex flex-row'>
             <div className='w-2/5 h-full flex flex-col'>
                 <div className='flex-1 overflow-hidden'>
                     {/* ----------------- */}
@@ -275,75 +316,55 @@ export default function GridsPage({ node }: GridsPageProps) {
                                     />
                                 </div>
                             </div>
-                            <div className="mb-6">
-                                <h2 className="text-lg font-medium text-white mb-4">Resource Upload Area</h2>
+                            <div className='mb-6'>
+                                <h2 className='text-lg font-medium text-white mb-4'>Resource Upload Area</h2>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed border-gray-600 rounded-lg p-4 min-h-[200px] bg-gray-900 transition-colors",
-                                        isDragOver && "border-blue-400 bg-gray-800",
+                                        'border-2 border-dashed border-gray-600 rounded-lg p-4 bg-gray-900 transition-colors',
+                                        isDragOver && 'border-blue-400 bg-gray-800',
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
                                     onDrop={handleDrop}
                                 >
                                     {pageContext.current.selectedResources.length === 0 ? (
-                                        <div className="relative min-h-[200px]">
-                                            <div className="absolute inset-0 flex flex-col justify-center items-center text-gray-400">
-                                                <p className="text-lg mb-2">Drag resources here</p>
-                                                <p className="text-sm">Drag files from the left resource manager here</p>
+                                        <div className='relative min-h-[200px]'>
+                                            <div className='absolute inset-0 flex flex-col justify-center items-center text-gray-400'>
+                                                <p className='text-lg mb-2'>Drag resources here</p>
+                                                <p className='text-sm'>Drag files from the left resource manager here</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        <div className="flex flex-col gap-3">
-                                            {pageContext.current.selectedResources.map((resource, index) => (
-                                                <div
-                                                    key={resource}
-                                                    className="bg-gray-800 border border-gray-600 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-700 transition-colors cursor-pointer"
-                                                    onClick={() => handleResourceClick(resource)}
-                                                >
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-white text-sm font-medium truncate">{resource.split('.').pop()}</p>
-                                                        <p className="text-gray-400 text-xs truncate">{resource}</p>
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="ml-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white text-white cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleResourceRemove(index);
-                                                        }}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <ResourceTable
+                                            resources={pageContext.current.selectedResources}
+                                            onResourceClick={handleResourceClick}
+                                            onResourceRemove={handleResourceRemove}
+                                        />
                                     )}
                                 </div>
                             </div>
-                            <div className="flex gap-4">
+                            <div className='flex gap-4'>
                                 <Button
                                     type='button'
-                                    variant="secondary"
+                                    variant='secondary'
                                     onClick={handleReset}
-                                    className="bg-gray-600 hover:bg-gray-500 text-white cursor-pointer"
+                                    className='bg-gray-600 hover:bg-gray-500 text-white cursor-pointer'
                                 >
                                     Reset
                                 </Button>
                                 <Button
                                     type='button'
-                                    variant="default"
+                                    variant='default'
                                     onClick={handlePreview}
-                                    className="bg-sky-500 hover:bg-sky-600 text-white cursor-pointer"
+                                    className='bg-sky-500 hover:bg-sky-600 text-white cursor-pointer'
+                                    disabled={pageContext.current.selectedResources.length === 0}
                                 >
                                     Preview
                                 </Button>
                                 <Button
                                     type='button'
                                     onClick={handleMerge}
-                                    className="bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+                                    className='bg-green-500 hover:bg-green-600 text-white cursor-pointer'
                                     disabled={pageContext.current.selectedResources.length === 0}
                                 >
                                     Merge
@@ -368,14 +389,14 @@ export default function GridsPage({ node }: GridsPageProps) {
                             Confirm Merge Patches
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            <div className="mb-4">
-                                You will merge {pageContext.current.selectedResources.length} patches:
+                            <div className='mb-4'>
+                                You will merge {pageContext.current.selectedResources.length} patches to create gird <span className='font-bold'>[{pageContext.current.gridName}]</span>
                             </div>
-                            <div className="max-h-[200px] overflow-y-auto bg-gray-100 p-3 rounded-lg">
-                                <ul className="list-disc list-inside space-y-1">
+                            <div className='max-h-[200px] overflow-y-auto bg-gray-100 p-3 rounded-lg'>
+                                <ul className='list-disc list-inside space-y-1'>
                                     {pageContext.current.selectedResources.map((resource, index) => (
-                                        <li key={index} className="text-sm">
-                                            {resource.split('.').pop()} <span className="text-gray-500 text-xs">({resource})</span>
+                                        <li key={index} className='text-sm'>
+                                            {resource.split('.').pop()} <span className='text-gray-500 text-xs'>({resource})</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -383,18 +404,150 @@ export default function GridsPage({ node }: GridsPageProps) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="cursor-pointer">
+                        <AlertDialogCancel className='cursor-pointer'>
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmMerge}
-                            className="bg-green-600 hover:bg-green-500 cursor-pointer"
+                            className='bg-green-600 hover:bg-green-500 cursor-pointer'
                         >
                             Confirm
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        </div>
+    )
+}
+
+function ResourceTable({
+    resources,
+    onResourceClick,
+    onResourceRemove,
+}: {
+    resources: string[],
+    onResourceClick: (resource: string) => void,
+    onResourceRemove: (index: number) => void
+}) {
+    const [sorting, setSorting] = React.useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+    const [refreshKey, forceRefresh] = useReducer(x => x + 1, 0)
+
+    const data = React.useMemo(() =>
+        resources.map((resource, index) => ({
+            id: index.toString(),
+            resource: resource,
+            name: resource.split('.').pop() || '',
+            path: resource
+        })),
+        [resources, refreshKey])
+
+    useEffect(() => {
+        forceRefresh()
+    }, [resources.length])
+
+    const columns = React.useMemo<ColumnDef<{ id: string, resource: string, name: string, path: string }>[]>(() => [
+        {
+            accessorKey: 'name',
+            header: 'Resource Name',
+            cell: ({ row }) => (
+                <div className='font-medium text-white'>
+                    {row.getValue('name')}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'path',
+            header: 'Resource Path',
+            cell: ({ row }) => (
+                <div className='text-gray-400 text-xs truncate max-w-[300px]'>
+                    {row.getValue('path')}
+                </div>
+            ),
+        },
+        {
+            id: 'actions',
+            enableHiding: false,
+            cell: ({ row }) => {
+                const index = parseInt(row.original.id)
+
+                return (
+                    <Button
+                        variant='ghost'
+                        size='sm'
+                        className='h-8 w-8 p-0 hover:bg-red-500 hover:text-white text-white cursor-pointer'
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onResourceRemove(index)
+                        }}
+                    >
+                        <X className='h-4 w-4' />
+                        <span className='sr-only'>Remove resource</span>
+                    </Button>
+                )
+            },
+        },
+    ], [onResourceClick, onResourceRemove])
+
+    const table = useReactTable({
+        data,
+        columns,
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+        },
+    })
+
+    return (
+        <div className='w-full min-h-[200px] text-white'>
+            <div className='rounded-md'>
+                <Table>
+                    <TableHeader className='bg-[#101828]'>
+                        <TableRow className='border-gray-700 hover:bg-[#101828] text-lg'>
+                            <TableHead className='text-gray-300 font-bold w-1/3'>Patch Name</TableHead>
+                            <TableHead className='text-gray-300 font-bold w-2/3'>Patch Path</TableHead>
+                            <TableHead className='text-gray-300 font-bold w-[50px]'></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    className='border-gray-700 hover:bg-gray-700 cursor-pointer'
+                                    onClick={() => onResourceClick(row.original.resource)}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className='h-24 text-center'
+                                >
+                                    No resources available.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
 }

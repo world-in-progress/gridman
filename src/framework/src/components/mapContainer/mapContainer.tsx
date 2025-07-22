@@ -23,6 +23,7 @@ export interface DrawCreateEvent {
 export interface MapContainerProps {
     style?: string
     node: ISceneNode | null
+    color?: string | null
 }
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -36,7 +37,7 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
 }
 
 const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
-    const { style, node } = props
+    const { style, node, color } = props
     const mapWrapperRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -45,7 +46,6 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
         let resizer: ResizeObserver | null = null
         let drawInstance: MapboxDraw | null = null
         let isProcessingDrawEvent = false
-        const drawColor = store.get<string>('vectorColor')
 
         const handleDrawCreate = (e: any) => {
             if (isProcessingDrawEvent) return
@@ -85,7 +85,6 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 const layerGroup = new NHLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
                 mapInstance.addLayer(layerGroup)
-                // node && await node.scenarioNode.handleMapAdd(node, mapInstance, layerGroup)
                 store.set('clg', layerGroup)
             })
             store.set('map', mapInstance)
@@ -94,6 +93,8 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 mapInstance.setFog({})
             })
 
+            const drawColor = color || '#0ea5e9'
+
             drawInstance = new MapboxDraw({
                 displayControlsDefault: false,
                 boxSelect: false,
@@ -101,57 +102,88 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                     ...MapboxDraw.modes,
                     draw_rectangle: DrawRectangle,
                 },
-                // // 根据节点名称判断是否使用自定义样式
-                // ...(node && node.name === 'vectors' ? {
-                //     styles: [
-                //         // 活跃点的样式
-                //         {
-                //             'id': 'gl-draw-point-active',
-                //             'type': 'circle',
-                //             'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'true']],
-                //             'paint': {
-                //                 'circle-radius': 7,
-                //                 'circle-color': drawColor
-                //             }
-                //         },
-                //         // 普通点的样式
-                //         {
-                //             'id': 'gl-draw-point',
-                //             'type': 'circle',
-                //             'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'false']],
-                //             'paint': {
-                //                 'circle-radius': 5,
-                //                 'circle-color': drawColor
-                //             }
-                //         },
-                //         // 线条样式
-                //         {
-                //             'id': 'gl-draw-line',
-                //             'type': 'line',
-                //             'filter': ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
-                //             'layout': {
-                //                 'line-cap': 'round',
-                //                 'line-join': 'round'
-                //             },
-                //             'paint': {
-                //                 'line-color': drawColor,
-                //                 'line-width': 2
-                //             }
-                //         },
-                //         // 多边形填充样式
-                //         {
-                //             'id': 'gl-draw-polygon-fill',
-                //             'type': 'fill',
-                //             'filter': ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-                //             'paint': {
-                //                 'fill-color': drawColor,
-                //                 'fill-outline-color': drawColor,
-                //                 'fill-opacity': 0.3
-                //             }
-                //         },
-                //         // 其他必要的样式...
-                //     ]
-                // } : {})
+                // Use custom styles when color is provided or for vectors page
+                styles: [
+                    // Active point style
+                    {
+                        'id': 'gl-draw-point-active',
+                        'type': 'circle',
+                        'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'true']],
+                        'paint': {
+                            'circle-radius': 7,
+                            'circle-color': drawColor
+                        }
+                    },
+                    // Inactive point style
+                    {
+                        'id': 'gl-draw-point',
+                        'type': 'circle',
+                        'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'false']],
+                        'paint': {
+                            'circle-radius': 5,
+                            'circle-color': drawColor
+                        }
+                    },
+                    // Line style
+                    {
+                        'id': 'gl-draw-line',
+                        'type': 'line',
+                        'filter': ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+                        'layout': {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        'paint': {
+                            'line-color': drawColor,
+                            'line-width': 2
+                        }
+                    },
+                    // Polygon fill style
+                    {
+                        'id': 'gl-draw-polygon-fill',
+                        'type': 'fill',
+                        'filter': ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+                        'paint': {
+                            'fill-color': drawColor,
+                            'fill-outline-color': drawColor,
+                            'fill-opacity': 0.3
+                        }
+                    },
+                    // Polygon outline style
+                    {
+                        'id': 'gl-draw-polygon-stroke',
+                        'type': 'line',
+                        'filter': ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+                        'layout': {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        'paint': {
+                            'line-color': drawColor,
+                            'line-width': 2
+                        }
+                    },
+                    // Vertex style
+                    {
+                        'id': 'gl-draw-point-mid-point',
+                        'type': 'circle',
+                        'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+                        'paint': {
+                            'circle-radius': 4,
+                            'circle-color': drawColor
+                        }
+                    },
+                    // Vertex point style
+                    {
+                        'id': 'gl-draw-point-and-mid',
+                        'type': 'circle',
+                        'filter': ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+                        'paint': {
+                            'circle-radius': 5,
+                            'circle-color': drawColor
+                        }
+                    }
+                ]
             })
             store.set('mapDraw', drawInstance)
 
@@ -184,7 +216,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [color]) // Add color to dependency array to re-initialize when color changes
 
     return (
         <div className={style ?? 'relative w-full h-full'} ref={mapWrapperRef} />

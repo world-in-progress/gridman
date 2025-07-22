@@ -27,6 +27,7 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/react-table": "^8.21.3",
     "@types/mapbox-gl": "^3.4.1",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/styled-components": "^5.1.34",

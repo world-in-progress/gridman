@@ -12,6 +12,7 @@ import { GridSchema } from "@/core/apis/types";
 export class GridsPageContext extends DefaultPageContext {
     schema: GridSchema
     gridName: string
+    gridBounds: [number, number, number, number] | null
     selectedResources: string[]
     patchesBounds: Record<string, [number, number, number, number]> // 修改为键值对结构
 
@@ -28,7 +29,8 @@ export class GridsPageContext extends DefaultPageContext {
         }
         this.gridName = ''
         this.selectedResources = []
-        this.patchesBounds = {} // 初始化为空对象
+        this.gridBounds = null
+        this.patchesBounds = {}
     }
 
     static async create(node: ISceneNode): Promise<GridsPageContext> {
