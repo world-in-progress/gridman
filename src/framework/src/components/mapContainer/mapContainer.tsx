@@ -44,8 +44,9 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
         let mapInstance: mapboxgl.Map
         let resizer: ResizeObserver | null = null
         let drawInstance: MapboxDraw | null = null
-
         let isProcessingDrawEvent = false
+        const drawColor = store.get<string>('vectorColor')
+
         const handleDrawCreate = (e: any) => {
             if (isProcessingDrawEvent) return
             
@@ -99,7 +100,58 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 modes: {
                     ...MapboxDraw.modes,
                     draw_rectangle: DrawRectangle,
-                }
+                },
+                // // 根据节点名称判断是否使用自定义样式
+                // ...(node && node.name === 'vectors' ? {
+                //     styles: [
+                //         // 活跃点的样式
+                //         {
+                //             'id': 'gl-draw-point-active',
+                //             'type': 'circle',
+                //             'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'true']],
+                //             'paint': {
+                //                 'circle-radius': 7,
+                //                 'circle-color': drawColor
+                //             }
+                //         },
+                //         // 普通点的样式
+                //         {
+                //             'id': 'gl-draw-point',
+                //             'type': 'circle',
+                //             'filter': ['all', ['==', '$type', 'Point'], ['==', 'active', 'false']],
+                //             'paint': {
+                //                 'circle-radius': 5,
+                //                 'circle-color': drawColor
+                //             }
+                //         },
+                //         // 线条样式
+                //         {
+                //             'id': 'gl-draw-line',
+                //             'type': 'line',
+                //             'filter': ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+                //             'layout': {
+                //                 'line-cap': 'round',
+                //                 'line-join': 'round'
+                //             },
+                //             'paint': {
+                //                 'line-color': drawColor,
+                //                 'line-width': 2
+                //             }
+                //         },
+                //         // 多边形填充样式
+                //         {
+                //             'id': 'gl-draw-polygon-fill',
+                //             'type': 'fill',
+                //             'filter': ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+                //             'paint': {
+                //                 'fill-color': drawColor,
+                //                 'fill-outline-color': drawColor,
+                //                 'fill-opacity': 0.3
+                //             }
+                //         },
+                //         // 其他必要的样式...
+                //     ]
+                // } : {})
             })
             store.set('mapDraw', drawInstance)
 

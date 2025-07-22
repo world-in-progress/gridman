@@ -4,13 +4,13 @@ import { GridsPageProps } from './types'
 import { useTranslation } from 'react-i18next'
 import { SquaresUnite, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ISceneNode } from '@/core/scene/iscene'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SceneNode } from '@/components/resourceScene/scene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { GridsPageContext } from './grids'
 import { toast } from 'sonner'
+import * as apis from '@/core/apis/apis'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,6 +21,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from '@/components/ui/alert-dialog'
+import { GridInfo } from '@/core/apis/types'
+import { createGrid } from './utils'
+import store from '@/store'
+import { Input } from '@/components/ui/input'
+import { addMapPatchBounds, clearBoundsById, convertToWGS84, } from '@/components/mapContainer/utils'
 
 const gridTips = [
     { tip1: 'Drag patches from the resource manager to the upload area.' },
@@ -31,9 +36,7 @@ const gridTips = [
 export default function GridsPage({ node }: GridsPageProps) {
     const { t } = useTranslation("patchesPage")
     const [isDragOver, setIsDragOver] = useState(false)
-    // const [selectedResources, setSelectedResources] = useState<string[]>([])
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
-    const [schemaName, setSchemaName] = useState('')
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
 
     const pageContext = useRef<GridsPageContext>(new GridsPageContext())
@@ -48,13 +51,17 @@ export default function GridsPage({ node }: GridsPageProps) {
 
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as GridsPageContext
-        setSchemaName(pageContext.current.schemaName)
     }
 
     const unloadContext = () => {
         console.log('组件卸载')
     }
 
+    const resetForm = () => {
+        pageContext.current.gridName = ''
+        pageContext.current.selectedResources = []
+        triggerRepaint()
+    }
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()
@@ -66,30 +73,58 @@ export default function GridsPage({ node }: GridsPageProps) {
         setIsDragOver(false)
     }
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false)
 
-        const nodeId = e.dataTransfer.getData("text/plain")
-        const patchPath = nodeId.split('.').slice(0, -2).join('.')
-        const schemaPath = node.id.split('.').slice(0, -1).join('.')
+        const nodeKey = e.dataTransfer.getData("text/plain")
+        const patchPath = nodeKey.split('.').slice(0, -2).join('.')
+        const patchName = nodeKey.split('.').pop()
+        const schemaPath = node.key.split('.').slice(0, -1).join('.')
         if (schemaPath === patchPath) {
-            const isAlreadySelected = pageContext.current.selectedResources.some((resource) => resource === nodeId)
-            if (!isAlreadySelected) {
-                pageContext.current.selectedResources.push(nodeId)
+            if (nodeKey.split('.').slice(-2)[0] === 'patches') {
+                const isAlreadySelected = pageContext.current.selectedResources.some((resource) => resource === nodeKey)
+                if (!isAlreadySelected) {
+                    pageContext.current.selectedResources.push(nodeKey)
+                    const res = await apis.patch.getPatchMeta.fetch({ schemaName: pageContext.current.schema.name, patchName: patchName! }, node.tree.isPublic)
+                    if (res && res.bounds) {
+                        const boundsId = patchName!
+                        pageContext.current.patchesBounds[boundsId] = res.bounds
+
+                        const patchBoundsOn4326 = convertToWGS84(res.bounds, pageContext.current.schema.epsg.toString())
+                        addMapPatchBounds(patchBoundsOn4326, boundsId)
+                    }
+                    triggerRepaint()
+                }
+            } else {
+                toast.error(`Please select patch not grid`)
             }
         } else {
-            toast.error(`Please select the correct patch on schema ${schemaName} [${schemaPath.split(':')[0]}]`)
+            toast.error(`Please select the correct patch on schema [${pageContext.current.schema.name}]`)
         }
     }
 
     const handleResourceRemove = (index: number) => {
+        const resourceKey = pageContext.current.selectedResources[index]
+        const patchName = resourceKey.split('.').pop()!
+
+        clearBoundsById(patchName)
+
+        delete pageContext.current.patchesBounds[patchName]
+
         pageContext.current.selectedResources = pageContext.current.selectedResources.filter((_, i) => i !== index)
+
         triggerRepaint()
     }
 
     const handleReset = () => {
+        Object.keys(pageContext.current.patchesBounds).forEach(id => {
+            clearBoundsById(id)
+        })
+
         pageContext.current.selectedResources = []
+        pageContext.current.patchesBounds = {}
+
         triggerRepaint()
     }
 
@@ -99,10 +134,27 @@ export default function GridsPage({ node }: GridsPageProps) {
         }
     }
 
-    const confirmMerge = () => {
-        console.log(pageContext.current.selectedResources)
-        // Actual merge logic  here
+    const confirmMerge = async () => {
+        const treeger_address = 'http://127.0.0.1:8000'
+        const gridInfo: GridInfo = {
+            patches: pageContext.current.selectedResources.map((resource) => ({
+                node_key: resource,
+                treeger_address: treeger_address
+            }))
+        }
+        const response = await createGrid((node as SceneNode), pageContext.current.gridName, gridInfo)
+        store.get<{ on: Function; off: Function }>('isLoading')!.off()
         setMergeDialogOpen(false)
+
+        toast.success(t('Created successfully'))
+
+        const tree = node.tree as SceneTree
+        await tree.alignNodeInfo(node, true)
+
+        setTimeout(() => {
+            resetForm()
+            tree.notifyDomUpdate()
+        }, 500)
     }
 
     return (
@@ -150,13 +202,30 @@ export default function GridsPage({ node }: GridsPageProps) {
                         </div>
                     </div>
                     {/* ---------------- */}
-                    {/* Grid Schema Form */}
+                    {/* Grid Form */}
                     {/* ---------------- */}
                     <ScrollArea className='h-full max-h-[calc(100vh-14.5rem)]'>
                         <div className='w-2/3 mx-auto mt-4 mb-4 space-y-4 pb-4'>
                             {/* ----------- */}
-                            {/* Patch Name */}
+                            {/* Grid Name */}
                             {/* ----------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    {t('Grid Name')}
+                                </h2>
+                                <div className='space-y-2'>
+                                    <Input
+                                        id='name'
+                                        value={pageContext.current.gridName}
+                                        onChange={(e) => {
+                                            pageContext.current.gridName = e.target.value
+                                            triggerRepaint()
+                                        }}
+                                        placeholder={t('Enter new grid name')}
+                                        className={`w-full text-black border-gray-300`}
+                                    />
+                                </div>
+                            </div>
                             <div className="mb-6">
                                 <h2 className="text-lg font-medium text-white mb-4">Resource Upload Area</h2>
                                 <div

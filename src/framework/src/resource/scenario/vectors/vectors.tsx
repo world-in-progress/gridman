@@ -13,6 +13,7 @@ export class VectorsPageContext extends DefaultPageContext {
     featureData: {
         type: "point" | "line" | "polygon"
         name: string
+        epsg: string
         savePath: string
         color: string
     }
@@ -23,7 +24,8 @@ export class VectorsPageContext extends DefaultPageContext {
         this.hasFeature = false
         this.featureData = {
             type: "point",
-            name: "",
+            name: '',
+            epsg: '',
             savePath: "",
             color: 'sky-500'
         }

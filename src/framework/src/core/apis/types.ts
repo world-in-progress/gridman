@@ -141,3 +141,10 @@ export interface ResponseWithPatchMeta {
     patch_meta: PatchMeta | null
 }
 
+export interface GridInfo {
+    patches: {
+        node_key: string,
+        treeger_address: string
+    }[]
+}
+
