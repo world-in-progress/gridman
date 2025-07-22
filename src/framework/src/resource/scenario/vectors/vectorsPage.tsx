@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import store from "@/store"
 import mapboxgl from "mapbox-gl"
 import MapboxDraw from "@mapbox/mapbox-gl-draw"
@@ -32,7 +32,9 @@ import {
 	Redo,
 	Dot,
 	Paintbrush,
-	FolderOpen
+	FolderOpen,
+	ChevronUp,
+	ChevronDown
 } from "lucide-react"
 import {
 	Select,
@@ -41,6 +43,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
+import { VectorsPageContext } from "./vectors"
+import { SceneNode } from "@/components/resourceScene/scene"
 
 // 点图层样式
 const pointLayer = {
@@ -66,43 +70,51 @@ const featureColorMap = [
 ]
 
 export default function VectorsPage({ node }: VectorsPageProps) {
-	const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+	const [, triggerRepaint] = useReducer(x => x + 1, 0)
+
+	const [isDrawing, setIsDrawing] = useState(false)
 	const [resetDialogOpen, setResetDialogOpen] = useState(false)
-	const [hasFeature, setHasFeature] = useState(false)
+	const [createDialogOpen, setCreateDialogOpen] = useState(false)
 	const [featureData, setFeatureData] = useState<FeatureData | null>(null)
 	const [selectedTool, setSelectedTool] = useState<string>("select")
-	const [isDrawing, setIsDrawing] = useState(false)
+	const [isCardExpanded, setIsCardExpanded] = useState(true)
 
-	// Form state
-	const [featureType, setFeatureType] = useState<"point" | "line" | "polygon">("point")
-	const [featureName, setFeatureName] = useState("")
-	const [savePath, setSavePath] = useState("")
-	const [featureColor, setFeatureColor] = useState("sky-500")
+	const pageContext = useRef<VectorsPageContext | null>(null)
 
 	useEffect(() => {
-		loadContext()
+		loadContext(node as SceneNode)
 		return () => {
 			unloadContext()
 		}
-	}, [])
+	}, [node])
 
-	const loadContext = () => {
-		setCreateDialogOpen(true)
+	const loadContext = async (node: SceneNode) => {
+		pageContext.current = await node.getPageContext() as VectorsPageContext
+		const pc = pageContext.current
+		if (pc.hasFeature) {
+			setFeatureData({
+				type: pc.featureData.type,
+				name: pc.featureData.name,
+				epsg: pc.featureData.epsg,
+				savePath: pc.featureData.savePath,
+				color: pc.featureData.color
+			})
+			setSelectedTool("select")
+			console.log('触发了')
+		} else {
+			setCreateDialogOpen(true)
+			setSelectedTool("select")
+		}
 	}
 
 	const unloadContext = () => {
-		resetForm()
-	}
-
-	const resetForm = () => {
-		setFeatureName("")
-		setSavePath("")
-		setFeatureType("point")
+		return
 	}
 
 	useEffect(() => {
 		const map = store.get<mapboxgl.Map>("map")
-		const drawInstance = store.get("mapDraw") as MapboxDraw | null
+		const drawInstance = store.get<MapboxDraw>("mapDraw")
 		if (!map || !drawInstance || !featureData) return
 
 		// Set up draw.create event handler
@@ -123,7 +135,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							drawInstance.changeMode("draw_polygon")
 							break
 					}
-				}, 50)
+				}, 10)
 			}
 		}
 
@@ -163,7 +175,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	}, [selectedTool, featureData, isDrawing])
 
 	useEffect(() => {
-		const drawInstance = store.get("mapDraw") as MapboxDraw | null
+		const drawInstance = store.get<MapboxDraw>("mapDraw")
 		if (!drawInstance || !featureData) return
 
 		if (selectedTool === "draw") {
@@ -188,35 +200,48 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	}, [selectedTool, featureData])
 
 	const handleCreateFeature = () => {
-		if (!featureName.trim() || !savePath.trim()) {
+		if ( !pageContext.current!.featureData.name.trim()
+			// || !pageContext.current!.featureData.savePath.trim()
+			|| !pageContext.current!.featureData.epsg
+		) {
 			return
 		}
 
 		const newFeature: FeatureData = {
-			type: featureType,
-			name: featureName.trim(),
-			savePath: savePath.trim(),
-			created: new Date(),
-			color: featureColor,
+			type: pageContext.current!.featureData.type,
+			name: pageContext.current!.featureData.name,
+			epsg: pageContext.current!.featureData.epsg,
+			savePath: pageContext.current!.featureData.savePath,
+			color: pageContext.current!.featureData.color,
 		}
 
-		setFeatureData(newFeature)
-		setHasFeature(true)
-		setCreateDialogOpen(false)
+		const vectorColor = featureColorMap.find(item => item.value === newFeature.color)?.color
+		console.log(vectorColor)
+		store.set('vectorColor', vectorColor)
 
-		resetForm()
+		setFeatureData(newFeature)
+		pageContext.current!.hasFeature = true
+		setCreateDialogOpen(false)
 	}
 
 	const handleReset = () => {
-		setFeatureData(null)
-		setHasFeature(false)
+		const pc = pageContext.current!
+		pc.hasFeature = false
+		pc.featureData = {
+			type: "point",
+			name: "",
+			epsg: "",
+			savePath: "",
+			color: "sky-500"
+		}
 		setResetDialogOpen(false)
 		setCreateDialogOpen(true)
 		setSelectedTool("select")
+		triggerRepaint()
 	}
 
 	const handleFilePlusClick = () => {
-		if (hasFeature) {
+		if (pageContext.current?.hasFeature) {
 			setResetDialogOpen(true)
 		} else {
 			setCreateDialogOpen(true)
@@ -233,11 +258,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const getFeatureTypeIcon = (type: string) => {
 		switch (type) {
 			case "point":
-				return <div className="w-3 h-3 bg-blue-500 rounded-full" />
+				return <Dot className="w-6 h-6 bg-blue-500"/>
 			case "line":
-				return <Minus className="w-4 h-4 text-green-500" />
+				return <Minus className="w-6 h-6 text-green-500" />
 			case "polygon":
-				return <Square className="w-4 h-4 text-purple-500" />
+				return <Square className="w-6 h-6 text-purple-500" />
 			default:
 				return null
 		}
@@ -266,8 +291,14 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 					<div className="space-y-6 py-4 -mt-4">
 						<div className="space-y-3">
-							<Label className="text-sm font-medium">Feature Type *</Label>
-							<RadioGroup value={featureType} onValueChange={(value: any) => setFeatureType(value)}>
+							<Label className="text-sm font-medium">
+								Feature Type
+								<span className="text-red-500">*</span>
+							</Label>
+							<RadioGroup value={pageContext.current?.featureData.type} onValueChange={(value: any) => {
+								pageContext.current!.featureData.type = value
+								triggerRepaint()
+							}}>
 								<div className="flex items-center space-x-2">
 									<RadioGroupItem value="point" id="point" className="cursor-pointer" />
 									<Label htmlFor="point" className="flex items-center gap-2 cursor-pointer">
@@ -296,7 +327,13 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							<Label htmlFor="featureColor" className="text-sm font-medium">
 								Feature Color
 							</Label>
-							<Select value={featureColor} onValueChange={setFeatureColor}>
+							<Select
+								value={pageContext.current?.featureData.color}
+								onValueChange={(value: any) => {
+									pageContext.current!.featureData.color = value
+									triggerRepaint()
+								}}
+							>
 								<SelectTrigger className="w-full cursor-pointer">
 									<SelectValue placeholder="Select color" />
 								</SelectTrigger>
@@ -315,34 +352,59 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 						<div className="space-y-2">
 							<Label htmlFor="featureName" className="text-sm font-medium">
-								Feature Name *
+								Feature Name
+								<span className="text-red-500">*</span>
 							</Label>
 							<Input
 								id="featureName"
-								value={featureName}
-								onChange={(e) => setFeatureName(e.target.value)}
+								value={pageContext.current?.featureData.name}
+								onChange={(e) => {
+									pageContext.current!.featureData.name = e.target.value
+									triggerRepaint()
+								}}
 								placeholder="Enter feature name"
 								className="w-full"
 							/>
 						</div>
 
 						<div className="space-y-2">
+							<Label htmlFor="featureName" className="text-sm font-medium">
+								EPSG Code
+								<span className="text-red-500">*</span>
+							</Label>
+							<Input
+								id="featureEpsg"
+								value={pageContext.current?.featureData.epsg}
+								onChange={(e) => {
+									pageContext.current!.featureData.epsg = e.target.value
+									triggerRepaint()
+								}}
+								placeholder="Enter EPSG code"
+								className="w-full"
+							/>
+						</div>
+
+						<div className="space-y-2">
 							<Label htmlFor="savePath" className="text-sm font-medium">
-								Local Save Path *
+								Local Save Path
+								<span className="text-red-500">*</span>
 							</Label>
 							<Button
 								variant="outline"
 								onClick={() => document.getElementById("savePath")?.click()}
 								className="w-full justify-start text-muted-foreground cursor-pointer"
 							>
-								{savePath || "Select folder for saving"}
+								{pageContext.current?.featureData.savePath || "Select folder for saving"}
 								<FolderOpen className="w-4 h-4 ml-auto" />
 							</Button>
 							<Input
 								id="savePath"
 								type="file"
-								value={savePath}
-								onChange={(e) => setSavePath(e.target.value)}
+								value={pageContext.current?.featureData.savePath}
+								onChange={(e) => {
+									pageContext.current!.featureData.savePath = e.target.value
+									triggerRepaint()
+								}}
 								className="hidden"
 							/>
 						</div>
@@ -352,7 +414,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 						<Button variant="outline" className="cursor-pointer" onClick={() => setCreateDialogOpen(false)}>
 							Cancel
 						</Button>
-						<Button className="cursor-pointer" onClick={handleCreateFeature} disabled={!featureName.trim() || !savePath.trim()}>
+						<Button
+							className="cursor-pointer"
+							onClick={handleCreateFeature}
+							disabled={!pageContext.current?.featureData.name.trim() || !pageContext.current?.featureData.epsg}
+						>
 							Confirm
 						</Button>
 					</DialogFooter>
@@ -387,9 +453,9 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							size="sm"
 							className="h-8 w-8 p-0 cursor-pointer"
 							onClick={handleFilePlusClick}
-							title={hasFeature ? "Reset and create new feature" : "Create new feature"}
+							title={pageContext.current?.hasFeature ? "Reset and create new feature" : "Create new feature"}
 						>
-							{hasFeature ? <RotateCcw className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
+							{pageContext.current?.hasFeature ? <RotateCcw className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
 						</Button>
 						<Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Save">
 							<Save className="h-4 w-4" />
@@ -432,46 +498,61 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 				<div className="w-full flex-1 relative">
 					{/* Feature meta information column */}
-					{featureData && (
-						<Card className="absolute bg-white/75 backdrop-blur-2xl bottom-4 left-2 w-80 z-50 shadow-lg">
-							<CardHeader>
-								<CardTitle className="text-lg flex items-center gap-2">
-									{getFeatureTypeIcon(featureData.type)}
+					{pageContext.current?.hasFeature && (
+						<Card className="absolute bg-white/75 backdrop-blur-2xl bottom-4 left-2 w-80 z-50 shadow-lg transition-all duration-200">
+							<button
+								className="absolute flex items-center justify-center right-2 top-2 h-8 w-8 p-0 z-10 cursor-pointer hover:border-2 hover:border-gray-300 rounded-md"
+								onClick={() => setIsCardExpanded(!isCardExpanded)}
+							>
+								{isCardExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+							</button>
+							<CardHeader className="cursor-pointer" onClick={() => setIsCardExpanded(!isCardExpanded)}>
+								<CardTitle className="text-xl flex items-center gap-2 -my-2">
+									{getFeatureTypeIcon(pageContext.current!.featureData.type)}
 									Feature Information
 								</CardTitle>
 							</CardHeader>
-							<CardContent className="space-y-4 -mt-2">
-								<div className="grid grid-cols-2 gap-4 text-sm">
+							{isCardExpanded && (
+								<CardContent className="space-y-4 -mt-2">
 									<div>
 										<Label className="text-muted-foreground">Type</Label>
 										<div className="flex items-center gap-2 mt-1">
-											{getFeatureTypeIcon(featureData.type)}
-											<span className="font-medium">{getFeatureTypeLabel(featureData.type)}</span>
+											{getFeatureTypeIcon(pageContext.current!.featureData.type)}
+											<span className="font-medium">{getFeatureTypeLabel(pageContext.current!.featureData.type)}</span>
 										</div>
 									</div>
+
 									<div>
-										<Label className="text-muted-foreground">Creation Time</Label>
-										<div className="mt-1 font-medium">{featureData.created.toLocaleTimeString()}</div>
+										<Label className="text-muted-foreground">Color</Label>
+										<div className="flex items-center gap-2 mt-1">
+											<div className={`w-32 h-4 bg-${pageContext.current!.featureData.color}`}></div>
+											<span className={`text-${pageContext.current!.featureData.color} font-bold`}>{pageContext.current!.featureData.color.split('-')[0]}</span>
+										</div>
 									</div>
-								</div>
 
-								<div>
-									<Label className="text-muted-foreground">Name</Label>
-									<div className="mt-1 font-medium">{featureData.name}</div>
-								</div>
-
-								<div>
-									<Label className="text-muted-foreground">Save Path</Label>
-									<div className="mt-1 font-mono text-xs p-2 rounded">{featureData.savePath}</div>
-								</div>
-
-								<div className="pt-2 border-t">
-									<Label className="text-muted-foreground">Current Tool</Label>
-									<div className="mt-1 font-medium capitalize">
-										{toolbarItems.find((item) => item.id === selectedTool)?.title || selectedTool}
+									<div>
+										<Label className="text-muted-foreground">Name</Label>
+										<div className="mt-1 font-medium">{pageContext.current!.featureData.name}</div>
 									</div>
-								</div>
-							</CardContent>
+
+									<div>
+										<Label className="text-muted-foreground">EPSG</Label>
+										<div className="mt-1 font-medium">{pageContext.current!.featureData.epsg}</div>
+									</div>
+
+									<div>
+										<Label className="text-muted-foreground">Save Path</Label>
+										<div className="mt-1 font-mono text-xs p-2 rounded">{pageContext.current!.featureData.savePath}</div>
+									</div>
+
+									<div className="pt-2 border-t">
+										<Label className="text-muted-foreground">Current Tool</Label>
+										<div className="mt-1 font-medium capitalize">
+											{toolbarItems.find((item) => item.id === selectedTool)?.title || selectedTool}
+										</div>
+									</div>
+								</CardContent>
+							)}
 						</Card>
 					)}
 

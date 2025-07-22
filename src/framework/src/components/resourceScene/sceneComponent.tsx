@@ -148,7 +148,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                         onDragStart={(e) => {
                             if (!isFolder) {
                                 // 只传递节点ID，不需要整个JSON对象
-                                e.dataTransfer.setData('text/plain', node.id);
+                                e.dataTransfer.setData('text/plain', node.key);
                                 e.dataTransfer.effectAllowed = 'copy';
                             }
                         }}

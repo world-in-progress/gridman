@@ -317,6 +317,24 @@ export const clearDrawPatchBounds = (id?: string) => {
     }
 }
 
+// Clear specific patch bounds by id provided
+export const clearBoundsById = (id: string) => {
+    const map = store.get<mapboxgl.Map>('map')
+    if (!map) return
+    const sourceId = `bounds-source-${id}`
+    const fillLayerId = `bounds-fill-${id}`
+    const outlineLayerId = `bounds-outline-${id}`
+    if (map.getLayer(fillLayerId)) {
+        map.removeLayer(fillLayerId)
+    }
+    if (map.getLayer(outlineLayerId)) {
+        map.removeLayer(outlineLayerId)
+    }
+    if (map.getSource(sourceId)) {
+        map.removeSource(sourceId)
+    }
+}
+
 // Add patch bounds to map
 export const addMapPatchBounds = (
     bounds: [number, number, number, number],

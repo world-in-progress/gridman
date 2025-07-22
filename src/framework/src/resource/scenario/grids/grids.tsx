@@ -1,29 +1,43 @@
 import DefaultPageContext from "@/core/context/default";
 import DefaultScenarioNode from "@/core/scenario/default";
 import { ISceneNode } from "@/core/scene/iscene";
-import {  FilePlus2, Info } from 'lucide-react'
+import { FilePlus2, Info } from 'lucide-react'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import GridsPage from "./gridsPage";
 import GridsInformation from "./gridsInformation";
+import * as apis from '@/core/apis/apis'
+import { GridSchema } from "@/core/apis/types";
 
 export class GridsPageContext extends DefaultPageContext {
-    schemaName: string
+    schema: GridSchema
+    gridName: string
     selectedResources: string[]
+    patchesBounds: Record<string, [number, number, number, number]> // 修改为键值对结构
 
     constructor() {
         super()
 
-        this.schemaName = ''
+        this.schema = {
+            name: '',
+            epsg: 0,
+            starred: false,
+            description: '',
+            base_point: [0, 0],
+            grid_info: []
+        }
+        this.gridName = ''
         this.selectedResources = []
+        this.patchesBounds = {} // 初始化为空对象
     }
 
     static async create(node: ISceneNode): Promise<GridsPageContext> {
         const n = node as SceneNode
         const schemaName = n.parent!.name
+        const res = await apis.schema.getSchema.fetch(schemaName!, n.tree.isPublic)
         const context = new GridsPageContext()
-        context.schemaName = schemaName!
-        
+        context.schema = res.grid_schema!
+
         return context
     }
 }
@@ -67,7 +81,7 @@ export default class GridsScenariNode extends DefaultScenarioNode {
     }
 
     renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
-        
+
         switch ((nodeSelf as SceneNode).pageId) {
             case 'default':
                 return (<GridsPage node={nodeSelf} />)
