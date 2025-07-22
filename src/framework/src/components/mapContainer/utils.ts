@@ -380,9 +380,9 @@ export const addMapPatchBounds = (
         })
 
         const defaultFillColor = id === 'adjusted-bounds' ? '#00FF00' : '#00A8C2'
-        const defaultLineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#FFFF00'
-        const defaultOpacity = id === 'adjusted-bounds' ? 0.1 : 0.5
-        const defaultLineWidth = 3
+        const defaultLineColor = id === 'adjusted-bounds' ? '#FF1A00' : '#0072FF'
+        const defaultOpacity = id === 'adjusted-bounds' ? 0.1 : 0.2 
+        const defaultLineWidth = 2
 
         const fillColor = options?.fillColor || defaultFillColor
         const lineColor = options?.lineColor || defaultLineColor
@@ -417,7 +417,10 @@ export const addMapPatchBounds = (
         map.fitBounds([
             [bounds[0], bounds[1]],
             [bounds[2], bounds[3]]
-        ], { padding: 50 })
+        ], { 
+            padding: 50,
+            duration: 300
+         })
     }
 
     if (map.isStyleLoaded()) {
@@ -666,5 +669,48 @@ export const calculateRectangleCoordinates = (
         northWest,
         center,
     }
+}
+
+// 高亮显示区域边界并聚焦到该区域
+export const highlightPatchBounds = (
+    bounds: [number, number, number, number],
+    id: string
+) => {
+    const map = store.get<mapboxgl.Map>('map')
+    if (!map) return
+    
+    // 先清除当前高亮状态
+    const prevHighlightId = store.get<string>('highlightedPatchId')
+    if (prevHighlightId) {
+        // 恢复之前高亮项的默认样式
+        const prevSourceId = `bounds-source-${prevHighlightId}`
+        const prevOutlineLayerId = `bounds-outline-${prevHighlightId}`
+        if (map.getLayer(prevOutlineLayerId)) {
+            map.setPaintProperty(prevOutlineLayerId, 'line-color', '#0072FF')
+            map.setPaintProperty(prevOutlineLayerId, 'line-width', 2)
+        }
+    }
+    
+    // 存储当前高亮的ID
+    store.set('highlightedPatchId', id)
+    
+    // 高亮显示选中的边界
+    const sourceId = `bounds-source-${id}`
+    const outlineLayerId = `bounds-outline-${id}`
+    
+    if (map.getLayer(outlineLayerId)) {
+        // 使用突出的颜色和更宽的线条
+        map.setPaintProperty(outlineLayerId, 'line-color', '#F3FF00')
+        map.setPaintProperty(outlineLayerId, 'line-width', 5)
+        
+        // 聚焦到该区域
+        map.fitBounds([
+            [bounds[0], bounds[1]],
+            [bounds[2], bounds[3]]
+        ], { 
+            padding: 80, 
+            duration: 300
+        })
+    } 
 }
 

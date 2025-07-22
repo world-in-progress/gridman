@@ -25,7 +25,12 @@ import { GridInfo } from '@/core/apis/types'
 import { createGrid } from './utils'
 import store from '@/store'
 import { Input } from '@/components/ui/input'
-import { addMapPatchBounds, clearBoundsById, convertToWGS84, } from '@/components/mapContainer/utils'
+import {
+    addMapPatchBounds,
+    clearBoundsById,
+    convertToWGS84,
+    highlightPatchBounds
+} from '@/components/mapContainer/utils'
 
 const gridTips = [
     { tip1: 'Drag patches from the resource manager to the upload area.' },
@@ -117,6 +122,18 @@ export default function GridsPage({ node }: GridsPageProps) {
         triggerRepaint()
     }
 
+    const handleResourceClick = (resourceKey: string) => {
+        const patchName = resourceKey.split('.').pop()!
+
+        if (pageContext.current.patchesBounds[patchName]) {
+            const patchBoundsOn4326 = convertToWGS84(
+                pageContext.current.patchesBounds[patchName],
+                pageContext.current.schema.epsg.toString()
+            )
+            highlightPatchBounds(patchBoundsOn4326, patchName)
+        }
+    }
+
     const handleReset = () => {
         Object.keys(pageContext.current.patchesBounds).forEach(id => {
             clearBoundsById(id)
@@ -126,6 +143,38 @@ export default function GridsPage({ node }: GridsPageProps) {
         pageContext.current.patchesBounds = {}
 
         triggerRepaint()
+    }
+
+    const handlePreview = () => {
+        if (Object.keys(pageContext.current.patchesBounds).length === 0) {
+            toast.error("No patches selected");
+            return;
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        Object.values(pageContext.current.patchesBounds).forEach(bounds => {
+            minX = Math.min(minX, bounds[0]);
+            minY = Math.min(minY, bounds[1]);
+            maxX = Math.max(maxX, bounds[2]);
+            maxY = Math.max(maxY, bounds[3]);
+        });
+
+        const bounds = [minX, minY, maxX, maxY] as [number, number, number, number]
+
+        const boundsOn4326 = convertToWGS84(bounds, pageContext.current.schema.epsg.toString())
+
+        const map = store.get<mapboxgl.Map>('map')!
+        map.fitBounds([
+            [boundsOn4326[0], boundsOn4326[1]],
+            [boundsOn4326[2], boundsOn4326[3]]
+        ], {
+            padding: 80,
+            duration: 500
+        })
     }
 
     const handleMerge = () => {
@@ -245,11 +294,13 @@ export default function GridsPage({ node }: GridsPageProps) {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        <div className="flex flex-col gap-3">
                                             {pageContext.current.selectedResources.map((resource, index) => (
                                                 <div
                                                     key={resource}
-                                                    className="bg-gray-800 border border-gray-600 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-700 transition-colors"
+                                                    className="bg-gray-800 border border-gray-600 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-700 transition-colors cursor-pointer"
+                                                    onClick={() => handleResourceClick(resource)}
                                                 >
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-white text-sm font-medium truncate">{resource.split('.').pop()}</p>
@@ -258,10 +309,13 @@ export default function GridsPage({ node }: GridsPageProps) {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="ml-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:text-white cursor-pointer"
-                                                        onClick={() => handleResourceRemove(index)}
+                                                        className="ml-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:text-white text-white cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleResourceRemove(index);
+                                                        }}
                                                     >
-                                                        <X className="h-3 w-3" />
+                                                        <X className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             ))}
@@ -280,8 +334,16 @@ export default function GridsPage({ node }: GridsPageProps) {
                                 </Button>
                                 <Button
                                     type='button'
+                                    variant="default"
+                                    onClick={handlePreview}
+                                    className="bg-sky-500 hover:bg-sky-600 text-white cursor-pointer"
+                                >
+                                    Preview
+                                </Button>
+                                <Button
+                                    type='button'
                                     onClick={handleMerge}
-                                    className="bg-green-600 hover:bg-green-500 text-white cursor-pointer"
+                                    className="bg-green-500 hover:bg-green-600 text-white cursor-pointer"
                                     disabled={pageContext.current.selectedResources.length === 0}
                                 >
                                     Merge
