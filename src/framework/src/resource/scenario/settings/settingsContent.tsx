@@ -10,7 +10,6 @@ interface SettingsContentProps {
 
 export function SettingsContent({ activeCategory }: SettingsContentProps) {
     const handleSettingChange = (settingName: string, value: any) => {
-        console.log(`Setting ${settingName} changed to:`, value)
         if (settingName === "highSpeed") {
             if (value === "on") {
                 store.set('highSpeedMode', true)

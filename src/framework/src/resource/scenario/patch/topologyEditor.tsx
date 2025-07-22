@@ -49,6 +49,7 @@ import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
 import TopologyLayer from "@/components/mapContainer/TopologyLayer"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from "./types"
+import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils"
 
 const topologyTips = [
     { tip: 'Hold Shift to select/deselect grids with Brush or Box.' },
@@ -103,21 +104,6 @@ export default function TopologyEditor(
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
     const gridInfo = useRef<GridCheckingInfo | null>(null)
-
-    useEffect(() => {
-        if (!topologyLayer) {
-            return;
-        }
-        const checkLayerReady = () => {
-            if (topologyLayer?.isReady) {
-                console.log("拓扑图层已准备就绪")
-            } else {
-                console.log("拓扑图层正在初始化中...")
-                setTimeout(checkLayerReady, 500);
-            }
-        };
-        checkLayerReady()
-    }, [topologyLayer]);
 
     useEffect(() => {
         const map = store.get<mapboxgl.Map>('map')!
@@ -254,11 +240,9 @@ export default function TopologyEditor(
         const waitForMapLoad = () => {
             return new Promise<void>((resolve) => {
                 if (map.loaded()) {
-                    console.log('map loaded')
                     resolve()
                 } else {
                     map.once('load', () => {
-                        console.log('map loaded')
                         resolve()
                     })
                 }
@@ -272,7 +256,6 @@ export default function TopologyEditor(
                 const checkClg = () => {
                     const clg = store.get<NHLayerGroup>('clg')!
                     if (clg) {
-                        console.log('clg loaded')
                         resolve(clg)
                     } else {
                         setTimeout(checkClg, 100)
@@ -283,7 +266,6 @@ export default function TopologyEditor(
         }
 
         const clg = await waitForClg()
-        console.log(clg)
 
         const gridContext: GridContext = {
             srcCS: `EPSG:${pageContext.current.patch?.epsg}`,
@@ -309,6 +291,11 @@ export default function TopologyEditor(
         }
 
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        const boundsOn4326 = convertToWGS84(pageContext.current.patch!.bounds, pageContext.current.patch!.epsg.toString())
+        map.fitBounds(boundsOn4326, {
+            duration: 1000,
+            padding: {top: 50, bottom: 50, left: 100, right: 100}
+        });
     }
 
     const unloadContext = (node: SceneNode) => {
@@ -318,7 +305,6 @@ export default function TopologyEditor(
         pageContext.current.editingState.select = selectTab
         pageContext.current.editingState.pick = pickingTab
         pageContext.current.isChecking = checkSwitchOn
-        // pageContext.current.topologyLayer = topologyLayer
     }
 
     const handleSelectAllClick = () => {
@@ -524,7 +510,6 @@ export default function TopologyEditor(
 
     const toggleCheckSwitch = () => {
         if (checkSwitchOn === pageContext.current!.isChecking) {
-            console.log('toggleCheckSwitch')
             const newCheckState = !checkSwitchOn
             setCheckSwitchOn(newCheckState)
             pageContext.current!.isChecking = newCheckState
@@ -537,7 +522,6 @@ export default function TopologyEditor(
 
     const handleSaveTopologyState = () => {
         const core: GridCore = pageContext.current.gridCore!
-        console.log(core.gridNum)
         core.save(() => {
             toast.success('Topology edit state saved successfully')
         })

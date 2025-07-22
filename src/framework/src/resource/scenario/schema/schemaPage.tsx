@@ -88,7 +88,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
 
     const unloadContext = (node: SceneNode) => {
         clearMapMarkers()
-        triggerRepaint
+        triggerRepaint()
     }
 
     const handleSchemaDelete = async () => {
@@ -212,7 +212,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                 <div className='space-y-2'>
                                     <Input
                                         id='name'
-                                        value={pageContext.current.schema?.name}
+                                        value={pageContext.current.schema?.name || ''}
                                         placeholder={t('Enter new schema name')}
                                         className={`w-full text-black border-gray-300 }`}
                                         readOnly={true}
@@ -250,7 +250,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                 <div className='space-y-2'>
                                     <Textarea
                                         id='description'
-                                        value={pageContext.current.schema?.description}
+                                        value={pageContext.current.schema?.description || ''}
                                         readOnly={!pageContext.current.isEditing}
                                         placeholder={t('Enter schema description')}
                                         className={`w-full text-black border-gray-300`}
@@ -275,7 +275,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                         id='epsg'
                                         placeholder={t('Enter EPSG code (e.g. 4326)')}
                                         className={`text-black w-full border-gray-300}`}
-                                        value={pageContext.current.schema?.epsg}
+                                        value={pageContext.current.schema?.epsg?.toString() || ''}
                                         readOnly={true}
                                     />
                                 </div>
@@ -297,7 +297,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                 id='lon'
                                                 type='number'
                                                 step='0.000001'
-                                                value={coordinateOn4326.current?.[0].toString()}
+                                                value={coordinateOn4326.current?.[0]?.toString() || ''}
                                                 readOnly={true}
                                                 placeholder={t('Enter longitude')}
                                                 className={`w-3/4 border-gray-300`}
@@ -311,7 +311,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                 id='lat'
                                                 type='number'
                                                 step='0.000001'
-                                                value={coordinateOn4326.current?.[1].toString()}
+                                                value={coordinateOn4326.current?.[1]?.toString() || ''}
                                                 readOnly={true}
                                                 placeholder={t('Enter latitude')}
                                                 className={`w-3/4 border-gray-300`}
@@ -376,7 +376,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                     <input
                                                         type='number'
                                                         className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
-                                                        value={layer[0]}
+                                                        value={layer[0] ?? ''}
                                                         placeholder={t('Width')}
                                                         readOnly={true}
                                                     />
@@ -386,7 +386,7 @@ export default function SchemaPage({ node }: SchemaPageProps) {
                                                     <input
                                                         type='number'
                                                         className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
-                                                        value={layer[1]}
+                                                        value={layer[1] ?? ''}
                                                         placeholder={t('Height')}
                                                         readOnly={true}
                                                     />

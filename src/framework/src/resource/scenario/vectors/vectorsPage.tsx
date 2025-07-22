@@ -1,6 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react"
 import store from "@/store"
-import mapboxgl from "mapbox-gl"
 import MapboxDraw from "@mapbox/mapbox-gl-draw"
 import {
 	Dialog,
@@ -12,59 +11,46 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { VectorsPageContext } from "./vectors"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { FeatureData, VectorsPageProps } from "./types"
+import { SceneNode } from "@/components/resourceScene/scene"
 import MapContainer from "@/components/mapContainer/mapContainer"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-	FilePlus2,
-	RotateCcw,
-	MousePointer,
+	Dot,
+	Move,
+	Save,
+	Redo,
+	Undo,
 	Minus,
 	Square,
-	Edit3,
-	Move,
 	Trash2,
-	Save,
-	Undo,
-	Redo,
-	Dot,
+	FilePlus2,
+	RotateCcw,
+	ChevronUp,
 	Paintbrush,
 	FolderOpen,
-	ChevronUp,
-	ChevronDown
+	ChevronDown,
+	MousePointer,
 } from "lucide-react"
 import {
 	Select,
-	SelectContent,
 	SelectItem,
-	SelectTrigger,
 	SelectValue,
+	SelectContent,
+	SelectTrigger,
 } from "@/components/ui/select"
-import { VectorsPageContext } from "./vectors"
-import { SceneNode } from "@/components/resourceScene/scene"
-
-// 点图层样式
-const pointLayer = {
-	id: 'points',
-	type: 'circle',
-	source: 'points',
-	paint: {
-		'circle-radius': 6,
-		'circle-color': '#007cbf',
-		'circle-stroke-width': 1,
-		'circle-stroke-color': '#fff',
-	},
-}
 
 const featureColorMap = [
 	{ value: "sky-500", color: "#0ea5e9", name: "Sky" },
 	{ value: "green-500", color: "#22c55e", name: "Green" },
 	{ value: "red-500", color: "#ef4444", name: "Red" },
 	{ value: "purple-500", color: "#a855f7", name: "Purple" },
-	{ value: "yellow-500", color: "#eab308", name: "Yellow" },
+	{ value: "yellow-300", color: "#FFDF20", name: "Yellow" },
+	{ value: "orange-500", color: "#FF6900", name: "Orange" },
 	{ value: "pink-500", color: "#ec4899", name: "Pink" },
 	{ value: "indigo-500", color: "#6366f1", name: "Indigo" }
 ]
@@ -79,6 +65,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const [featureData, setFeatureData] = useState<FeatureData | null>(null)
 	const [selectedTool, setSelectedTool] = useState<string>("select")
 	const [isCardExpanded, setIsCardExpanded] = useState(true)
+	const [vectorColor, setVectorColor] = useState<string | null>(null)
 
 	const pageContext = useRef<VectorsPageContext | null>(null)
 
@@ -101,7 +88,6 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 				color: pc.featureData.color
 			})
 			setSelectedTool("select")
-			console.log('触发了')
 		} else {
 			setCreateDialogOpen(true)
 			setSelectedTool("select")
@@ -109,7 +95,14 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	}
 
 	const unloadContext = () => {
-		return
+		// Get the draw instance from the store
+		const drawInstance = store.get<MapboxDraw>("mapDraw")
+		if (drawInstance) {
+			// Delete all features from the drawing
+			drawInstance.deleteAll()
+		}
+		// Reset the page context reference
+		pageContext.current = null
 	}
 
 	useEffect(() => {
@@ -120,7 +113,6 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		// Set up draw.create event handler
 		const handleDrawCreate = (e: any) => {
 			if (selectedTool === "draw" && isDrawing) {
-				console.log("Feature created:", e.features[0])
 
 				// Re-enter drawing mode for continuous drawing
 				setTimeout(() => {
@@ -144,7 +136,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 			// If we exited a drawing mode and we're supposed to be drawing
 			if (selectedTool === "draw" && isDrawing &&
 				e.mode === "simple_select" &&
-				!e.oldMode.startsWith("direct_select")) {
+				(e.oldMode && !e.oldMode.startsWith("direct_select"))) {
 
 				// Re-enter drawing mode
 				setTimeout(() => {
@@ -200,7 +192,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	}, [selectedTool, featureData])
 
 	const handleCreateFeature = () => {
-		if ( !pageContext.current!.featureData.name.trim()
+		if (!pageContext.current!.featureData.name.trim()
 			// || !pageContext.current!.featureData.savePath.trim()
 			|| !pageContext.current!.featureData.epsg
 		) {
@@ -216,16 +208,21 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		}
 
 		const vectorColor = featureColorMap.find(item => item.value === newFeature.color)?.color
-		console.log(vectorColor)
-		store.set('vectorColor', vectorColor)
 
 		setFeatureData(newFeature)
+		setVectorColor(vectorColor!)
 		pageContext.current!.hasFeature = true
 		setCreateDialogOpen(false)
+	
+		triggerRepaint()
 	}
 
 	const handleReset = () => {
 		const pc = pageContext.current!
+		const drawInstance = store.get<MapboxDraw>("mapDraw")
+		if (drawInstance) {
+			drawInstance.deleteAll()
+		}
 		pc.hasFeature = false
 		pc.featureData = {
 			type: "point",
@@ -258,7 +255,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const getFeatureTypeIcon = (type: string) => {
 		switch (type) {
 			case "point":
-				return <Dot className="w-6 h-6 bg-blue-500"/>
+				return <Dot className="w-6 h-6 text-blue-500" />
 			case "line":
 				return <Minus className="w-6 h-6 text-green-500" />
 			case "polygon":
@@ -557,7 +554,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 					)}
 
 					{/* Map container placeholder */}
-					<MapContainer node={node} style='w-full h-full' />
+					<MapContainer node={node} style='w-full h-full' color={vectorColor} />
 				</div>
 			</div>
 		</>

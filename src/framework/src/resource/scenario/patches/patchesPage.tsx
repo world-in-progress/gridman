@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import * as apis from '@/core/apis/apis'
 import { validatePatchForm } from './utils'
 import { Input } from '@/components/ui/input'
+import { useTranslation } from 'react-i18next'
 import { PatchesPageContext } from './patches'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,7 +13,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { PatchesPageProps, PatchMeta, RectangleCoordinates } from './types'
-import { useTranslation } from 'react-i18next'
 import {
     addMapLineBetweenPoints,
     addMapMarker,
@@ -431,7 +431,7 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Input
                                         id='schema'
-                                        value={pageContext.current.schema?.name}
+                                        value={pageContext.current.schema?.name || ''}
                                         readOnly={true}
                                         placeholder={t('Schema Name')}
                                         className={`text-black w-full border-gray-300`}
@@ -448,7 +448,7 @@ export default function PatchesPage({
                                 <div className='space-y-2'>
                                     <Input
                                         id='epsg'
-                                        value={pageContext.current.schema?.epsg.toString()}
+                                        value={(pageContext.current.schema?.epsg?.toString()) || ''}
                                         readOnly={true}
                                         placeholder={t('EPSG Code')}
                                         className={`text-black w-full border-gray-300`}
