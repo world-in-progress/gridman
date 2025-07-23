@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react"
+import React, { useEffect, useReducer, useRef, useState } from "react"
 import store from "@/store"
 import MapboxDraw from "@mapbox/mapbox-gl-draw"
 import {
@@ -35,6 +35,14 @@ import {
 	FolderOpen,
 	ChevronDown,
 	MousePointer,
+	ExternalLink,
+	Copy,
+	Globe,
+	Tag,
+	Palette,
+	MapPin,
+	Info,
+	Mouse,
 } from "lucide-react"
 import {
 	Select,
@@ -43,6 +51,7 @@ import {
 	SelectContent,
 	SelectTrigger,
 } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 
 const featureColorMap = [
 	{ value: "sky-500", color: "#0ea5e9", name: "Sky" },
@@ -55,6 +64,43 @@ const featureColorMap = [
 	{ value: "indigo-500", color: "#6366f1", name: "Indigo" }
 ]
 
+const toolsConfig = {
+	select: {
+		id: "select",
+		icon: MousePointer,
+		title: "Selection Tool",
+		description: "Click to select features",
+		bgColor: "bg-orange-100",
+		iconColor: "text-orange-600"
+	},
+	draw: {
+		id: "draw",
+		icon: Paintbrush,
+		title: "Drawing Tool",
+		description: "Draw {type} features",
+		bgColor: "bg-green-100",
+		iconColor: "text-green-600"
+	},
+	move: {
+		id: "move",
+		icon: Move,
+		title: "Move Tool",
+		description: "Move selected features",
+		bgColor: "bg-blue-100",
+		iconColor: "text-blue-600"
+	},
+	delete: {
+		id: "delete",
+		icon: Trash2,
+		title: "Delete Tool",
+		description: "Delete selected features",
+		bgColor: "bg-red-100",
+		iconColor: "text-red-600"
+	}
+};
+
+type ToolType = "select" | "draw" | "move" | "delete";
+
 export default function VectorsPage({ node }: VectorsPageProps) {
 
 	const [, triggerRepaint] = useReducer(x => x + 1, 0)
@@ -63,8 +109,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const [resetDialogOpen, setResetDialogOpen] = useState(false)
 	const [createDialogOpen, setCreateDialogOpen] = useState(false)
 	const [featureData, setFeatureData] = useState<FeatureData | null>(null)
-	const [selectedTool, setSelectedTool] = useState<string>("select")
-	const [isCardExpanded, setIsCardExpanded] = useState(true)
+	const [selectedTool, setSelectedTool] = useState<ToolType>("select");
 	const [vectorColor, setVectorColor] = useState<string | null>(null)
 
 	const pageContext = useRef<VectorsPageContext | null>(null)
@@ -79,36 +124,30 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const loadContext = async (node: SceneNode) => {
 		pageContext.current = await node.getPageContext() as VectorsPageContext
 		const pc = pageContext.current
-		console.log(pc.featureData.color)
 		if (pc.hasFeature) {
 			setFeatureData(pc.featureData)
 
 			const vectorColor = featureColorMap.find(item => item.value === pc.featureData.color)?.color
 			setVectorColor(vectorColor!)
 
-			// 延迟添加绘图，确保地图和 MapboxDraw 实例已准备就绪
 			setTimeout(() => {
 				if (pc.drawFeature && pc.drawFeature.features && pc.drawFeature.features.length > 0) {
-					console.log("尝试添加特征", pc.drawFeature)
 					const drawInstance = store.get<MapboxDraw>("mapDraw")
 					if (drawInstance) {
-						// 过滤掉无效的几何图形（比如只有两个点的多边形）
 						const validFeatures = {
 							type: "FeatureCollection" as const,
 							features: pc.drawFeature.features.filter(feature => {
-								// 对于多边形，至少需要4个坐标点（首尾相同形成闭环）
 								if (feature.geometry.type === "Polygon") {
 									return feature.geometry.coordinates[0].length >= 4;
 								}
 								return true;
 							})
 						};
-						
+
 						try {
-							drawInstance.add(validFeatures);
-							console.log("特征添加成功");
+							drawInstance.add(validFeatures)
 						} catch (error) {
-							console.error("添加特征时出错:", error);
+							console.error("Failed to add feature:", error);
 						}
 					}
 				}
@@ -123,15 +162,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	}
 
 	const unloadContext = () => {
-		// Get the draw instance from the store
 		const drawInstance = store.get<MapboxDraw>("mapDraw")
 		if (drawInstance) {
 			pageContext.current!.drawFeature = drawInstance.getAll()
-			// Delete all features from the drawing
 			drawInstance.deleteAll()
 		}
-		// // Reset the page context reference
-		// pageContext.current = null
 	}
 
 	useEffect(() => {
@@ -139,11 +174,9 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		const drawInstance = store.get<MapboxDraw>("mapDraw")
 		if (!map || !drawInstance || !featureData) return
 
-		// Set up draw.create event handler
 		const handleDrawCreate = (e: any) => {
 			if (selectedTool === "draw" && isDrawing) {
 
-				// Re-enter drawing mode for continuous drawing
 				setTimeout(() => {
 					switch (featureData.type) {
 						case "point":
@@ -160,9 +193,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 			}
 		}
 
-		// Setup modechange handler for more robust monitoring of mode changes
 		const handleModeChange = (e: any) => {
-			// If we exited a drawing mode and we're supposed to be drawing
 			if (selectedTool === "draw" && isDrawing &&
 				e.mode === "simple_select" &&
 				(e.oldMode && !e.oldMode.startsWith("direct_select"))) {
@@ -288,13 +319,6 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		}
 	}
 
-	const toolbarItems = [
-		{ id: "select", icon: MousePointer, title: "Select Features" },
-		{ id: 'draw', icon: Paintbrush, title: "Draw Features" },
-		{ id: "move", icon: Move, title: "Move Features" },
-		{ id: "delete", icon: Trash2, title: "Delete Features" },
-	]
-
 	const getFeatureTypeIcon = (type: string) => {
 		switch (type) {
 			case "point":
@@ -308,23 +332,8 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		}
 	}
 
-	const getFeatureTypeLabel = (type: string) => {
-		switch (type) {
-			case "point":
-				return "Point Feature"
-			case "line":
-				return "Line Feature"
-			case "polygon":
-				return "Polygon Feature"
-			default:
-				return type
-		}
-	}
-
 	const handleSaveFeature = async () => {
 		if (!pageContext.current?.hasFeature) return
-
-
 	}
 
 	return (
@@ -530,87 +539,150 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 					{/* Vector tools */}
 					<div className="flex items-center gap-1 px-2">
-						{toolbarItems.map((item) => {
-							const IconComponent = item.icon
-							return (
-								<Button
-									key={item.id}
-									variant={selectedTool === item.id ? "default" : "ghost"}
-									size="sm"
-									className="h-8 w-8 p-0 cursor-pointer"
-									onClick={() => setSelectedTool(item.id)}
-									title={item.title}
-								>
-									<IconComponent />
-								</Button>
-							)
-						})}
+						{Object.values(toolsConfig).map((tool) => (
+							<Button
+								key={tool.id}
+								variant={selectedTool === tool.id ? "default" : "ghost"}
+								size="sm"
+								className="h-8 w-8 p-0 cursor-pointer"
+								onClick={() => setSelectedTool(tool.id as ToolType)}
+								title={tool.title}
+							>
+								{React.createElement(tool.icon)}
+							</Button>
+						))}
 					</div>
 				</div>
 
-				<div className="w-full flex-1 relative">
-					{/* Feature meta information column */}
-					{pageContext.current?.hasFeature && (
-						<Card className="absolute bg-white/75 backdrop-blur-2xl bottom-4 left-2 w-80 z-50 shadow-lg transition-all duration-200">
-							<button
-								className="absolute flex items-center justify-center right-2 top-2 h-8 w-8 p-0 z-10 cursor-pointer hover:border-2 hover:border-gray-300 rounded-md"
-								onClick={() => setIsCardExpanded(!isCardExpanded)}
-							>
-								{isCardExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-							</button>
-							<CardHeader className="cursor-pointer" onClick={() => setIsCardExpanded(!isCardExpanded)}>
-								<CardTitle className="text-xl flex items-center gap-2 -my-2">
-									{getFeatureTypeIcon(pageContext.current!.featureData.type)}
-									Feature Information
-								</CardTitle>
-							</CardHeader>
-							{isCardExpanded && (
-								<CardContent className="space-y-4 -mt-2">
+				{pageContext.current?.hasFeature && (
+					<div className="w-full flex-1 relative">
+						<div className="absolute top-0 left-0 w-80 h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
+							{/* Header */}
+							<div className="p-6 bg-white border-b border-slate-200">
+								<div className="flex items-center gap-3">
+									<div className="p-2 bg-blue-100 rounded-lg">
+										{getFeatureTypeIcon(pageContext.current.featureData.type)}
+									</div>
 									<div>
-										<Label className="text-muted-foreground">Type</Label>
-										<div className="flex items-center gap-2 mt-1">
-											{getFeatureTypeIcon(pageContext.current!.featureData.type)}
-											<span className="font-medium">{getFeatureTypeLabel(pageContext.current!.featureData.type)}</span>
+										<h2 className="text-lg font-semibold text-slate-900">Feature Information</h2>
+										<p className="text-sm text-slate-500">Editing <span className="font-bold">[{pageContext.current.featureData.type}]</span> details</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Content */}
+							<div className="flex-1 p-2 space-y-2 overflow-y-auto">
+								{/* Feature Type Card */}
+								<Card className="border-slate-200 shadow-sm">
+									<CardContent className="space-y-6">
+										{/* Visual Properties Section */}
+										<div>
+											<div className="flex items-center gap-2 mb-3">
+												<Palette className="w-4 h-4 text-slate-500" />
+												<span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Visual Properties</span>
+											</div>
+											<div className="ml-6 space-y-3">
+												{/* Name */}
+												<div className="flex items-center justify-between">
+													<span className="text-sm text-slate-600">Name</span>
+													<div className="flex items-center gap-2 mr-1">
+														<span className="font-semibold text-slate-900">{pageContext.current.featureData.name}</span>
+													</div>
+												</div>
+												{/* type */}
+												<div className="flex items-center justify-between">
+													<span className="text-sm text-slate-600">Type</span>
+													<div className="flex items-center gap-2">
+														{getFeatureTypeIcon(pageContext.current.featureData.type)}
+														<Badge variant="secondary" className={`text-xs font-semibold`}>
+															{pageContext.current.featureData.type}
+														</Badge>
+													</div>
+												</div>
+												{/* Color */}
+												<div className="flex items-center justify-between">
+													<span className="text-sm text-slate-600">Color</span>
+													<div className="flex items-center gap-2">
+														<div className={`w-24 h-6 rounded-full border-2 border-white shadow-sm bg-${pageContext.current!.featureData.color}`}></div>
+														<Badge variant="secondary" className={`text-xs text-${pageContext.current!.featureData.color}`}>
+															{pageContext.current!.featureData.color.split('-')[0]}
+														</Badge>
+													</div>
+												</div>
+
+											</div>
 										</div>
-									</div>
 
-									<div>
-										<Label className="text-muted-foreground">Color</Label>
-										<div className="flex items-center gap-2 mt-1">
-											<div className={`w-32 h-4 bg-${pageContext.current!.featureData.color}`}></div>
-											<span className={`text-${pageContext.current!.featureData.color} font-bold`}>{pageContext.current!.featureData.color.split('-')[0]}</span>
+										{/* Divider */}
+										<div className="border-t border-slate-100"></div>
+
+										{/* Technical Details Section */}
+										<div>
+											<div className="flex items-center gap-2 mb-3">
+												<Globe className="w-4 h-4 text-slate-500" />
+												<span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Technical Details</span>
+											</div>
+											<div className="ml-6 space-y-4">
+												{/* EPSG */}
+												<div>
+													<span className="text-sm text-slate-600">Coordinate System</span>
+													<div className="bg-slate-100 rounded-lg p-2 mt-1">
+														<code className="text-xs font-mono text-slate-700">EPSG: {pageContext.current.featureData.epsg}</code>
+													</div>
+												</div>
+
+												{/* Save Path */}
+												<div>
+													<span className="text-sm text-slate-600">Save Location</span>
+													<div className="bg-slate-100 rounded-lg p-2 mt-1">
+														<div className="flex items-center gap-2">
+															<FolderOpen className="w-3 h-3 text-slate-500" />
+															<code className="text-xs font-mono text-slate-700 truncate">
+																{pageContext.current.featureData.savePath}
+															</code>
+														</div>
+													</div>
+												</div>
+											</div>
 										</div>
-									</div>
+									</CardContent>
+								</Card>
 
-									<div>
-										<Label className="text-muted-foreground">Name</Label>
-										<div className="mt-1 font-medium">{pageContext.current!.featureData.name}</div>
-									</div>
-
-									<div>
-										<Label className="text-muted-foreground">EPSG</Label>
-										<div className="mt-1 font-medium">{pageContext.current!.featureData.epsg}</div>
-									</div>
-
-									<div>
-										<Label className="text-muted-foreground">Save Path</Label>
-										<div className="mt-1 font-mono text-xs p-2 rounded">{pageContext.current!.featureData.savePath}</div>
-									</div>
-
-									<div className="pt-2 border-t">
-										<Label className="text-muted-foreground">Current Tool</Label>
-										<div className="mt-1 font-medium capitalize">
-											{toolbarItems.find((item) => item.id === selectedTool)?.title || selectedTool}
+								{/* Current Tool */}
+								<Card className="border-slate-200 shadow-sm">
+									<CardHeader>
+										<div className="flex items-center gap-2">
+											<Mouse className="w-4 h-4 text-slate-600" />
+											<Label className="text-sm font-medium text-slate-700">Active Tool</Label>
 										</div>
-									</div>
-								</CardContent>
-							)}
-						</Card>
-					)}
+									</CardHeader>
+									<CardContent className="pt-0 -mt-4">
+										<div className="flex items-center gap-3">
+											<div className={`p-2 ${toolsConfig[selectedTool]?.bgColor || "bg-slate-100"} rounded-lg`}>
+												{React.createElement(toolsConfig[selectedTool]?.icon || MousePointer, {
+													className: `w-4 h-4 ${toolsConfig[selectedTool]?.iconColor || "text-slate-600"}`
+												})}
+											</div>
+											<div>
+												<span className="font-semibold text-slate-900">
+													{toolsConfig[selectedTool]?.title || "Unknown Tool"}
+												</span>
+												<p className="text-xs text-slate-500">
+													{selectedTool === "draw"
+														? toolsConfig[selectedTool]?.description.replace('{type}', pageContext.current?.featureData.type || "")
+														: toolsConfig[selectedTool]?.description}
+												</p>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							</div>
+						</div>
 
-					{/* Map container placeholder */}
-					<MapContainer node={node} style='w-full h-full' color={vectorColor} />
-				</div>
+						{/* Map container placeholder */}
+						<MapContainer node={node} style='w-full h-full' color={vectorColor} />
+					</div>
+				)}
 			</div>
 		</>
 	)
