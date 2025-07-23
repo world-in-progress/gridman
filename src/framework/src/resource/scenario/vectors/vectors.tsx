@@ -10,6 +10,7 @@ import VectorsInformation from './vectorsInformation'
 
 export class VectorsPageContext extends DefaultPageContext {
     hasFeature: boolean
+    drawFeature: GeoJSON.FeatureCollection | null
     featureData: {
         type: "point" | "line" | "polygon"
         name: string
@@ -22,6 +23,7 @@ export class VectorsPageContext extends DefaultPageContext {
     constructor() {
         super()
         this.hasFeature = false
+        this.drawFeature = null
         this.featureData = {
             type: "point",
             name: '',
