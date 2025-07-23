@@ -37,10 +37,25 @@ export interface ProcessGroupMeta {
     solution_address: string
 }
 
-export interface SimulationMeta {
+export interface ProcessGroupResponse {
+    result: string
+    group_id: string
+}
+
+export interface CreateSimulationMeta {
+    name: string
+    solution_name: string
+}
+
+export interface StartSimulationMeta {
     solution_name: string
     simulation_name: string
-    solution_address: string
+    simulation_address: string
+}
+
+export interface StopSimulationMeta {
+    solution_name: string
+    simulation_name: string
 }
 
 export interface GetSimulationResultBaseRequest {

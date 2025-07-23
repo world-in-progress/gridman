@@ -1,4 +1,4 @@
-import IAPI, { BaseResponse, SimulationEnv, DiscoverBaseResponse, GetSimulationResultBaseRequest, ProcessGroupMeta, SimulationMeta, SimulationResultMeta, SolutionMeta } from "./types";
+import IAPI, { BaseResponse, SimulationEnv, DiscoverBaseResponse, ProcessGroupResponse, GetSimulationResultBaseRequest, ProcessGroupMeta, CreateSimulationMeta, SimulationResultMeta, SolutionMeta, StartSimulationMeta, StopSimulationMeta } from "./types";
 import { getResourcePrefix } from './prefix'
 
 const API_PREFIX = "/api/"
@@ -74,7 +74,7 @@ export const cloneEnv: IAPI<SimulationEnv, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = await response.json()
+            const responseData: string = (await response.json()).task_id
             return responseData
         } catch (error) {
             throw new Error(`Failed to clone env: ${error}`)
@@ -82,10 +82,59 @@ export const cloneEnv: IAPI<SimulationEnv, string> = {
     }
 }
 
-// Step 4: Build Process Group: /api/model/build_process_group
-export const buildProcessGroup: IAPI<ProcessGroupMeta, string> = {
+// Step 4: Get Clone Progress: /api/model/clone_progress/{task_id}
+export const cloneProgress: IAPI<string, string> = {
     api: `${API_PREFIX}`,
-    fetch: async (process_group: ProcessGroupMeta, isResource: boolean): Promise<string> => {
+    fetch: async (task_id: string, isResource: boolean): Promise<string> => {
+        try {
+            const api = getResourcePrefix(isResource) + cloneProgress.api + 'model/clone_progress/' + task_id
+            const response = await fetch(api, {
+                method: 'GET',
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: string = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to get clone progress: ${error}`)
+        }
+    }
+}
+
+// Step 5: Create Simulation: /api/simulation/create
+export const createSimulation: IAPI<CreateSimulationMeta, BaseResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (simulation: CreateSimulationMeta, isResource: boolean): Promise<BaseResponse> => {
+        try {
+            const api = getResourcePrefix(isResource) + createSimulation.api + 'simulation/create'
+            console.log(api)
+            const response = await fetch(api, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(simulation)
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: BaseResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to create simulation: ${error}`)
+        }
+    }
+}
+
+// Step 6: Build Process Group: /api/model/build_process_group
+export const buildProcessGroup: IAPI<ProcessGroupMeta, ProcessGroupResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (process_group: ProcessGroupMeta, isResource: boolean): Promise<ProcessGroupResponse> => {
         try {
             const api = getResourcePrefix(isResource) + buildProcessGroup.api + 'model/build_process_group'
             const response = await fetch(api, {
@@ -100,7 +149,7 @@ export const buildProcessGroup: IAPI<ProcessGroupMeta, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = await response.json()
+            const responseData: ProcessGroupResponse = await response.json()
             return responseData
         } catch (error) {
             throw new Error(`Failed to build process group: ${error}`)
@@ -108,10 +157,10 @@ export const buildProcessGroup: IAPI<ProcessGroupMeta, string> = {
     }
 }
 
-// Step 5: Start Simulation: /api/model/start_simulation
-export const startSimulation: IAPI<SimulationMeta, string> = {
+// Step 7: Start Simulation: /api/model/start_simulation
+export const startSimulation: IAPI<StartSimulationMeta, string> = {
     api: `${API_PREFIX}`,
-    fetch: async (simulation: SimulationMeta, isResource: boolean): Promise<string> => {
+    fetch: async (simulation: StartSimulationMeta, isResource: boolean): Promise<string> => {
         try {
             const api = getResourcePrefix(isResource) + startSimulation.api + 'model/start_simulation'
             const response = await fetch(api, {
@@ -126,7 +175,7 @@ export const startSimulation: IAPI<SimulationMeta, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = await response.json()
+            const responseData: string = (await response.json()).result
             return responseData
         } catch (error) {
             throw new Error(`Failed to start simulation: ${error}`)
@@ -134,7 +183,7 @@ export const startSimulation: IAPI<SimulationMeta, string> = {
     }
 }
 
-// Step 6: Get Result: /api/simulation/result/{simulation_name}/{step}
+// Step 8: Get Result: /api/simulation/result/{simulation_name}/{step}
 export const getSimulationResult: IAPI<GetSimulationResultBaseRequest, SimulationResultMeta> = {
     api: `${API_PREFIX}`,
     fetch: async (request: GetSimulationResultBaseRequest, isResource: boolean): Promise<SimulationResultMeta> => {
@@ -153,10 +202,10 @@ export const getSimulationResult: IAPI<GetSimulationResultBaseRequest, Simulatio
         }
     }
 }
-// Step 7: Stop Simulation: /api/model/stop_simulation
-export const stopSimulation: IAPI<SimulationEnv, string> = {
+// Step 9: Stop Simulation: /api/model/stop_simulation
+export const stopSimulation: IAPI<StopSimulationMeta, string> = {
     api: `${API_PREFIX}`,
-    fetch: async (simulation_env: SimulationEnv, isResource: boolean): Promise<string> => {
+    fetch: async (simulation_env: StopSimulationMeta, isResource: boolean): Promise<string> => {
         try {
             const api = getResourcePrefix(isResource) + stopSimulation.api + 'model/stop_simulation'
             const response = await fetch(api, {
@@ -171,7 +220,7 @@ export const stopSimulation: IAPI<SimulationEnv, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = await response.json()
+            const responseData: string = (await response.json()).result
             return responseData
         } catch (error) {
             throw new Error(`Failed to stop simulation: ${error}`)
