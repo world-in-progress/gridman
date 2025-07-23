@@ -79,30 +79,59 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 	const loadContext = async (node: SceneNode) => {
 		pageContext.current = await node.getPageContext() as VectorsPageContext
 		const pc = pageContext.current
+		console.log(pc.featureData.color)
 		if (pc.hasFeature) {
-			setFeatureData({
-				type: pc.featureData.type,
-				name: pc.featureData.name,
-				epsg: pc.featureData.epsg,
-				savePath: pc.featureData.savePath,
-				color: pc.featureData.color
-			})
+			setFeatureData(pc.featureData)
+
+			const vectorColor = featureColorMap.find(item => item.value === pc.featureData.color)?.color
+			setVectorColor(vectorColor!)
+
+			// 延迟添加绘图，确保地图和 MapboxDraw 实例已准备就绪
+			setTimeout(() => {
+				if (pc.drawFeature && pc.drawFeature.features && pc.drawFeature.features.length > 0) {
+					console.log("尝试添加特征", pc.drawFeature)
+					const drawInstance = store.get<MapboxDraw>("mapDraw")
+					if (drawInstance) {
+						// 过滤掉无效的几何图形（比如只有两个点的多边形）
+						const validFeatures = {
+							type: "FeatureCollection" as const,
+							features: pc.drawFeature.features.filter(feature => {
+								// 对于多边形，至少需要4个坐标点（首尾相同形成闭环）
+								if (feature.geometry.type === "Polygon") {
+									return feature.geometry.coordinates[0].length >= 4;
+								}
+								return true;
+							})
+						};
+						
+						try {
+							drawInstance.add(validFeatures);
+							console.log("特征添加成功");
+						} catch (error) {
+							console.error("添加特征时出错:", error);
+						}
+					}
+				}
+			}, 500);
+
 			setSelectedTool("select")
 		} else {
 			setCreateDialogOpen(true)
 			setSelectedTool("select")
 		}
+		triggerRepaint()
 	}
 
 	const unloadContext = () => {
 		// Get the draw instance from the store
 		const drawInstance = store.get<MapboxDraw>("mapDraw")
 		if (drawInstance) {
+			pageContext.current!.drawFeature = drawInstance.getAll()
 			// Delete all features from the drawing
 			drawInstance.deleteAll()
 		}
-		// Reset the page context reference
-		pageContext.current = null
+		// // Reset the page context reference
+		// pageContext.current = null
 	}
 
 	useEffect(() => {
@@ -185,6 +214,19 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 				default:
 					break
 			}
+		} else if (selectedTool === "delete") {
+			setIsDrawing(false)
+			// Get selected features and delete them
+			const selectedFeatures = drawInstance.getSelectedIds()
+			if (selectedFeatures.length > 0) {
+				drawInstance.delete(selectedFeatures)
+				// Reset to select mode after deletion
+				setSelectedTool("select")
+			} else {
+				// If no features are selected, switch back to select mode
+				drawInstance.changeMode("simple_select")
+				setSelectedTool("select")
+			}
 		} else {
 			setIsDrawing(false)
 			drawInstance.changeMode("simple_select")
@@ -212,8 +254,9 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		setFeatureData(newFeature)
 		setVectorColor(vectorColor!)
 		pageContext.current!.hasFeature = true
+		pageContext.current!.featureData = newFeature
+		console.log(pageContext.current!.featureData.color)
 		setCreateDialogOpen(false)
-	
 		triggerRepaint()
 	}
 
@@ -276,6 +319,12 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 			default:
 				return type
 		}
+	}
+
+	const handleSaveFeature = async () => {
+		if (!pageContext.current?.hasFeature) return
+
+
 	}
 
 	return (
@@ -454,7 +503,13 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 						>
 							{pageContext.current?.hasFeature ? <RotateCcw className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
 						</Button>
-						<Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Save">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 w-8 p-0 cursor-pointer"
+							onClick={handleSaveFeature}
+							disabled={!pageContext.current?.hasFeature}
+							title="Save">
 							<Save className="h-4 w-4" />
 						</Button>
 					</div>

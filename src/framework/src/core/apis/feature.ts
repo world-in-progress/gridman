@@ -4,20 +4,22 @@ import {
 	FeatureSaveResponse,
 	FeatureGetJsonBody,
 	FeatureGetJsonResponse,
-	FeatureList,
 	FeatureUpdatePropertyBody,
 } from "../feature/types";
+import getPrefix from "./prefix";
 
-const API_PREFIX = "/local/api/feature";
+const API_PREFIX = "/api/feature";
 
 export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
-	api: `${API_PREFIX}/save`,
-	fetch: async (query: FeatureSaveBody): Promise<FeatureSaveResponse> => {
+	api: `${API_PREFIX}`,
+	// api: `${API_PREFIX}/save`,
+	fetch: async (featureInfo: FeatureSaveBody, isRemote: boolean): Promise<FeatureSaveResponse> => {
 		try {
-			const response = await fetch(saveFeature.api, {
+			const api = getPrefix(isRemote) + saveFeature.api + '/save'
+			const response = await fetch(api, {
 				method: "POST",
+				body: JSON.stringify(featureInfo),
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(query),
 			});
 
 			if (!response.ok) {

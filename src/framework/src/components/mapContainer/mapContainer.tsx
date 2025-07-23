@@ -49,7 +49,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
 
         const handleDrawCreate = (e: any) => {
             if (isProcessingDrawEvent) return
-            
+
             isProcessingDrawEvent = true
             try {
                 if (e.features && e.features.length > 0) {
@@ -81,7 +81,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 attributionControl: false,
                 boxZoom: false,
             })
-            mapInstance.on('load', async() => {
+            mapInstance.on('load', async () => {
                 const layerGroup = new NHLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
                 mapInstance.addLayer(layerGroup)
@@ -93,7 +93,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 mapInstance.setFog({})
             })
 
-            const drawColor = color || '#0ea5e9'
+            const drawColor = color || '#F06B00'
 
             drawInstance = new MapboxDraw({
                 displayControlsDefault: false,
@@ -102,7 +102,6 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                     ...MapboxDraw.modes,
                     draw_rectangle: DrawRectangle,
                 },
-                // Use custom styles when color is provided or for vectors page
                 styles: [
                     // Active point style
                     {
@@ -135,7 +134,8 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                         },
                         'paint': {
                             'line-color': drawColor,
-                            'line-width': 2
+                            'line-width': 2,
+                            ...(!color ? { 'line-dasharray': [2, 2] } : {})
                         }
                     },
                     // Polygon fill style
@@ -146,7 +146,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                         'paint': {
                             'fill-color': drawColor,
                             'fill-outline-color': drawColor,
-                            'fill-opacity': 0.3
+                            ...(color ? { 'fill-opacity': 0.3 } : { 'fill-opacity': 0.1 })
                         }
                     },
                     // Polygon outline style
@@ -160,7 +160,8 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                         },
                         'paint': {
                             'line-color': drawColor,
-                            'line-width': 2
+                            'line-width': 2,
+                            ...(!color ? { 'line-dasharray': [2, 2] } : {})
                         }
                     },
                     // Vertex style
@@ -215,8 +216,8 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
                 store.set('mapDraw', null)
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [color]) // Add color to dependency array to re-initialize when color changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [color])
 
     return (
         <div className={style ?? 'relative w-full h-full'} ref={mapWrapperRef} />
