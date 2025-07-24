@@ -6,25 +6,20 @@ import { FilePlus2, Info } from "lucide-react";
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import LumsInformation from "./lumsInformation";
 import LumsPage from "./lumsPage";
+import { LUMData } from "./types";
 
 export class LumsPageContext extends DefaultPageContext {
     hasLUM: boolean
-    lumInfo:  {
-        name: string,
-        epsg: string,
-        sourceKey: string
-    }
-    uploadLum: string = ''
-    uploadVectors: string[] = []
+    rawLumInfo: LUMData
+    uploadVectors: string[]
 
     constructor() {
         super()
 
         this.hasLUM = false
-        this.lumInfo = {
+        this.rawLumInfo = {
             name: '',
-            epsg: '',
-            sourceKey: ''
+            path: ''
         }
         this.uploadVectors = []
     }

@@ -116,7 +116,10 @@ export interface PatchMeta {
 }
 
 export interface FeatureMeta {
-    resource_path: string
+    name: string
+    type: string
+    color: string
+    epsg: string
 }
 
 export interface MultiPatchMeta {
