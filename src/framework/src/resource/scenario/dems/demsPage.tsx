@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { FolderOpen, Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import store from '@/store'
+import TerrainByProxyTile from './terrainLayer/terrainLayer'
 
 export default function DemsPage({ node }: DemsPageProps) {
 
@@ -25,6 +26,7 @@ export default function DemsPage({ node }: DemsPageProps) {
   const pageContext = useRef<DemsPageContext | null>(null)
 
   const map = useRef<mapboxgl.Map | null>(null)
+  const terrainLayer = useRef<TerrainByProxyTile | null>(null)
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -65,29 +67,34 @@ export default function DemsPage({ node }: DemsPageProps) {
     if (!map.current) return
     const demName = pageContext.current!.demData.name
     const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, demName)
-    map.current.addSource(demName + 'source', {
-      type: "raster",
-      tiles: [tileUrl],
-      tileSize: 256,
-      maxzoom: 18,
-      minzoom: 0,
-      scheme: "xyz",
-    })
-    map.current.addLayer({
-      id: demName + 'layer',
-      type: "raster",
-      source: demName + 'source',
-      paint: {
-        "raster-opacity": 0.8,
-      },
-    })
+    terrainLayer.current = new TerrainByProxyTile(demName, tileUrl, demName)
+    map.current.addLayer(terrainLayer.current);
+    
+    // map.current.addSource(demName + 'source', {
+    //   type: "raster",
+    //   tiles: [tileUrl],
+    //   tileSize: 256,
+    //   maxzoom: 18,
+    //   minzoom: 0,
+    //   scheme: "xyz",
+    // })
+    // map.current.addLayer({
+    //   id: demName + 'layer',
+    //   type: "raster",
+    //   source: demName + 'source',
+    //   paint: {
+    //     "raster-opacity": 0.8,
+    //   },
+    // })
   }
 
   const removeDEMLayer = () => {
     if (!map.current) return
     const demName = pageContext.current!.demData.name
-    map.current.removeLayer(demName + 'layer')
-    map.current.removeSource(demName + 'source')
+    // map.current.removeLayer(demName + 'layer')
+    // map.current.removeSource(demName + 'source')
+    map.current.removeLayer(demName);
+    terrainLayer.current = null;
   }
 
   const handleCreateDEM = async () => {
