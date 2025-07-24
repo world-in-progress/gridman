@@ -9,7 +9,6 @@ export const createSolution: IAPI<SolutionMeta, BaseResponse> = {
     fetch: async (solution: SolutionMeta, isResource: boolean): Promise<BaseResponse> => {
         try {
             const api = getResourcePrefix(isResource) + createSolution.api + 'solution/create'
-            console.log(api)
             const response = await fetch(api, {
                 method: 'POST',
                 headers: {
