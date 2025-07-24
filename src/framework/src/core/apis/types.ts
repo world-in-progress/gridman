@@ -163,3 +163,46 @@ export interface GridInfo {
     }[]
 }
 
+export interface CreateRasterMeta {
+    name: string
+    path: string
+}
+
+export interface RasterMeta {
+    success: boolean,
+    message: string,
+    data: {
+        bbox: [number, number, number, number],
+        epsg: number,
+        min_value: number,
+        max_value: number,
+        nodata_value: number,
+        width: number,
+        height: number,
+        dtype: string,
+        transform: [number, number, number, number, number, number],
+        crs: string
+    }
+}
+
+export type RasterOperation = "set" | "add" | "substract" | "max_fill"
+
+// TODO: Change to node key
+export interface UpdateRasterMeta {
+    rasterName: string,
+    feature: object,
+    operation: RasterOperation,
+    value?: number
+}
+
+export interface SamplingMeta {
+    rasterName: string,
+    x: number,
+    y: number,
+}
+
+export interface SamplingValueMeta {
+    success: boolean
+    value: number
+}
+
