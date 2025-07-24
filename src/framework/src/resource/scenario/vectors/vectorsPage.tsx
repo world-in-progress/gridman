@@ -1,5 +1,6 @@
 import React, { useEffect, useReducer, useRef, useState } from "react"
 import store from "@/store"
+import * as apis from '@/core/apis/apis'
 import MapboxDraw from "@mapbox/mapbox-gl-draw"
 import {
 	Dialog,
@@ -15,7 +16,7 @@ import { VectorsPageContext } from "./vectors"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { FeatureData, VectorsPageProps } from "./types"
-import { SceneNode } from "@/components/resourceScene/scene"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import MapContainer from "@/components/mapContainer/mapContainer"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -45,6 +46,7 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 const featureColorMap = [
 	{ value: "sky-500", color: "#0ea5e9", name: "Sky" },
@@ -257,7 +259,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		}
 	}, [selectedTool, featureData])
 
-	const handleCreateFeature = () => {
+	const handleCreateFeature = async () => {
 		if (!pageContext.current!.featureData.name.trim()
 			// || !pageContext.current!.featureData.savePath.trim()
 			|| !pageContext.current!.featureData.epsg
@@ -266,11 +268,10 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		}
 
 		const newFeature: FeatureData = {
-			type: pageContext.current!.featureData.type,
 			name: pageContext.current!.featureData.name,
-			epsg: pageContext.current!.featureData.epsg,
-			savePath: pageContext.current!.featureData.savePath,
+			type: pageContext.current!.featureData.type,
 			color: pageContext.current!.featureData.color,
+			epsg: pageContext.current!.featureData.epsg,
 		}
 
 		const vectorColor = featureColorMap.find(item => item.value === newFeature.color)?.color
@@ -279,7 +280,16 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		setVectorColor(vectorColor!)
 		pageContext.current!.hasFeature = true
 		pageContext.current!.featureData = newFeature
-		console.log(pageContext.current!.featureData.color)
+		const createFeatureRes = await apis.feature.createFeature.fetch(newFeature, node.tree.isPublic)
+		if (!createFeatureRes.success) {
+			toast.error(createFeatureRes.message)
+			return
+		} else {
+			const tree = node.tree as SceneTree
+			await tree.alignNodeInfo(node, true)
+			tree.notifyDomUpdate()
+			toast.success(createFeatureRes.message)
+		}
 		setCreateDialogOpen(false)
 		triggerRepaint()
 	}
@@ -295,7 +305,6 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 			type: "point",
 			name: "",
 			epsg: "",
-			savePath: "",
 			color: "sky-500"
 		}
 		setResetDialogOpen(false)
@@ -327,6 +336,22 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 	const handleSaveFeature = async () => {
 		if (!pageContext.current?.hasFeature) return
+		const drawInstance = store.get<MapboxDraw>("mapDraw")!
+		if (!drawInstance) return
+		pageContext.current!.drawFeature = drawInstance.getAll()
+		console.log(pageContext.current!.drawFeature)
+
+		const saveFeatureBody = {
+			name: pageContext.current!.featureData.name,
+			feature_json: pageContext.current!.drawFeature,
+		}
+		const saveFeatureRes = await apis.feature.saveFeature.fetch(saveFeatureBody, node.tree.isPublic)
+
+		if (!saveFeatureRes.success) {
+			toast.error(saveFeatureRes.message)
+		} else {
+			toast.success(saveFeatureRes.message)
+		}
 	}
 
 	return (
@@ -432,7 +457,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							/>
 						</div>
 
-						<div className="space-y-2">
+						{/* <div className="space-y-2">
 							<Label htmlFor="savePath" className="text-sm font-medium">
 								Local Save Path
 								<span className="text-red-500">*</span>
@@ -455,7 +480,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 								}}
 								className="hidden"
 							/>
-						</div>
+						</div> */}
 					</div>
 
 					<DialogFooter className="flex gap-2">
@@ -597,7 +622,10 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 												<div className="flex items-center justify-between">
 													<span className="text-sm text-slate-600">Color</span>
 													<div className="flex items-center gap-2">
-														<div className={`w-24 h-6 rounded-full border-2 border-white shadow-sm bg-${pageContext.current!.featureData.color}`}></div>
+														<div className="w-24 h-6 rounded-full border-2 border-white shadow-sm" 
+														     style={{ backgroundColor: featureColorMap.find(item => 
+														       item.value === pageContext.current!.featureData.color)?.color }}>
+														</div>
 														<Badge variant="secondary" className={`text-xs text-${pageContext.current!.featureData.color}`}>
 															{pageContext.current!.featureData.color.split('-')[0]}
 														</Badge>
@@ -626,7 +654,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 												</div>
 
 												{/* Save Path */}
-												<div>
+												{/* <div>
 													<span className="text-sm text-slate-600">Save Location</span>
 													<div className="bg-slate-100 rounded-lg p-2 mt-1">
 														<div className="flex items-center gap-2">
@@ -636,7 +664,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 															</code>
 														</div>
 													</div>
-												</div>
+												</div> */}
 											</div>
 										</div>
 									</CardContent>

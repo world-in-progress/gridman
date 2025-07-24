@@ -1,14 +1,6 @@
 export interface FeatureSaveBody {
-  feature_property: FeatureProperty;
-  feature_json: Record<string, any>;
-}
-
-export interface FeatureProperty {
-  id: string;
   name: string;
-  type: string;
-  icon: string;
-  symbology: string;
+  feature_json: Record<string, any>;
 }
 
 export interface FeatureUpdatePropertyBody {

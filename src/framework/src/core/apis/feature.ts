@@ -8,11 +8,33 @@ import {
 } from "../feature/types";
 import getPrefix from "./prefix";
 
-const API_PREFIX = "/api/feature";
+const API_PREFIX = "/api/feature"
+
+export const createFeature: IAPI<FeatureMeta, BaseResponse> = {
+	api: `${API_PREFIX}`,
+	fetch: async (featureMeta: FeatureMeta, isRemote: boolean): Promise<BaseResponse> => {
+		try {
+			const api = getPrefix(isRemote) + createFeature.api + '/create'
+			const response = await fetch(api, {
+				method: 'POST',
+				body: JSON.stringify(featureMeta),
+				headers: { 'Content-Type': 'application/json' }
+			})
+			
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const responseData: BaseResponse = await response.json();
+			return responseData;
+		} catch (error) {
+			throw new Error(`Failed to create feature: ${error}`);
+		}
+	}
+}
 
 export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
 	api: `${API_PREFIX}`,
-	// api: `${API_PREFIX}/save`,
 	fetch: async (featureInfo: FeatureSaveBody, isRemote: boolean): Promise<FeatureSaveResponse> => {
 		try {
 			const api = getPrefix(isRemote) + saveFeature.api + '/save'

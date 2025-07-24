@@ -3,11 +3,11 @@ import { DemData, DemsPageProps } from './types'
 import * as apis from '@/core/apis/apis'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import {
-  Dialog,
-  DialogTitle,
-  DialogFooter,
-  DialogContent,
-  DialogDescription,
+    Dialog,
+    DialogTitle,
+    DialogFooter,
+    DialogContent,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { SceneNode } from "@/components/resourceScene/scene"
@@ -113,7 +113,7 @@ export default function DemsPage({ node }: DemsPageProps) {
       return
     }
 
-    const getCogTifRes = await apis.raster.getCogTif.fetch(newDEM.name, false)
+        const getCogTifRes = await apis.raster.getCogTif.fetch(newDEM.name, false)
 
     if (!getCogTifRes.success) {
       console.log(getCogTifRes)
@@ -121,7 +121,7 @@ export default function DemsPage({ node }: DemsPageProps) {
       return
     }
 
-    setIsCreating(false)
+        setIsCreating(false)
 
     setCreateDialogOpen(false)
     pageContext.current!.hasDEM = true
@@ -222,8 +222,8 @@ export default function DemsPage({ node }: DemsPageProps) {
         </div>
       )}
 
-      {/* Map container placeholder */}
-      <MapContainer node={node} style='flex-1 bg-slate-700 relative' />
-    </div>
-  )
+            {/* Map container placeholder */}
+            <MapContainer node={node} style='flex-1 bg-slate-700 relative' />
+        </div>
+    )
 }

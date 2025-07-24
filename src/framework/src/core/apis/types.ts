@@ -116,7 +116,10 @@ export interface PatchMeta {
 }
 
 export interface FeatureMeta {
-    resource_path: string
+    name: string
+    type: string
+    color: string
+    epsg: string
 }
 
 export interface MultiPatchMeta {
@@ -165,7 +168,8 @@ export interface GridInfo {
 
 export interface CreateRasterMeta {
     name: string
-    path: string
+    type: string
+    original_tif_path: string
 }
 
 export interface RasterMeta {
