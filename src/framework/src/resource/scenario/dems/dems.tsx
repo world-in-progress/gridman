@@ -9,10 +9,19 @@ import DemsPage from "./demsPage";
 import DemsInformation from "./demsInformation";
 
 export class DemsPageContext extends DefaultPageContext {
-
+    hasDEM: boolean
+    demData: {
+        name: string
+        path: string
+    }
 
     constructor() {
         super()
+        this.hasDEM = false
+        this.demData = {
+            name: '',
+            path: ''
+        }
     }
 
     static async create(node: ISceneNode): Promise<DemsPageContext> {
@@ -28,7 +37,9 @@ export enum DemsMenuItem {
 export default class DemsScenariNode extends DefaultScenarioNode {
     static classKey: string = 'root.dems'
     semanticPath: string = 'root.dems'
-    children: string[] = []
+    children: string[] = [
+        'dem'
+    ]
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {
         return (
@@ -37,7 +48,7 @@ export default class DemsScenariNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, DemsMenuItem.DEM_EDIT)}>
-                    <FilePlus2 className='w-4 h-4' />Create New Grid
+                    <FilePlus2 className='w-4 h-4' />DEM Editor
                 </ContextMenuItem>
             </ContextMenuContent>
         )
