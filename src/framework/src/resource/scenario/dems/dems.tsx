@@ -14,6 +14,7 @@ export class DemsPageContext extends DefaultPageContext {
         name: string
         path: string
     }
+    bbox: number[]
 
     constructor() {
         super()
@@ -22,6 +23,7 @@ export class DemsPageContext extends DefaultPageContext {
             name: '',
             path: ''
         }
+        this.bbox = []
     }
 
     static async create(node: ISceneNode): Promise<DemsPageContext> {

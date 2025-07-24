@@ -1,10 +1,7 @@
 import { mat4, vec4, vec3 } from "gl-matrix"
 import { createShader, createTexture2D, loadImage, createFrameBuffer, createRenderBuffer, enableAllExtensions, createVBO, createIBO, createCustomMipmapTexture2D, createFboPoolforMipmapTexture, calculateMipmapLevels, createShaderFromCode } from "./glLib"
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as dat from 'dat.gui'
-import earcut from 'earcut'
-import axios from "axios"
-import bbox from '@turf/bbox'
+import gll from '@/core/gl/glLib'
+
 import { MercatorCoordinate } from "mapbox-gl";
 
 class LRUCache {
@@ -40,21 +37,9 @@ class LRUCache {
 }
 
 
-//////////////////////////
-import debugCode from './shader/debug.glsl'
-import maskCode from './shader/mask.glsl'
-import surfaceNormCode from './shader/surfaceNorm.glsl'
-import meshCode from './shader/mesh.glsl'
-import contourCode from './shader/contour.glsl'
-import surfaceNoTileCode from './shader/waterSurfaceNoTile.glsl'
-import showCode from './shader/show.glsl'
-import modelCode from './shader/model.glsl'
-import smoothingCode from './shader/smoothing.glsl'
-import depthRestoreCode from './shader/depthRestore.glsl'
-
 export default class TerrainByProxyTile {
 
-    constructor(_id, _source, _name, _params) {
+    constructor(_id, _source, _name, _bbox, _params) {
 
         this.id = _id;
         this.source = _source;
@@ -65,6 +50,7 @@ export default class TerrainByProxyTile {
 
         // this.maskURL = '/mask/CJ.geojson'
         this.maskURL = `${import.meta.env.VITE_MASK_URL}/all.geojson`;
+        this.bbox = _bbox
         // this.maskURL = '/mask/1.geojson'
 
         this.isReady = false
@@ -76,7 +62,7 @@ export default class TerrainByProxyTile {
         this.azimuthDeg = 135.0
         this.u_offset_x = 1.5
         this.u_offset_y = 1.5
-        this.exaggeration = 4.0
+        this.exaggeration = 0.001
         this.withContour = 1.0
         this.withLighting = 1.0
         this.mixAlpha = 0.0
@@ -98,7 +84,7 @@ export default class TerrainByProxyTile {
         this.smoothingPassCount = 0
         this.u_threshold = -2
 
-        this.loadSettings();
+        // this.loadSettings();
         this.defaultParams = _params;
 
         this.modelConfig = null
@@ -115,51 +101,11 @@ export default class TerrainByProxyTile {
         // })
     }
 
-    async loadSettings() {
-        try {
-            const response = await axios.get('/underwater/settings.json');
-            const settings = response.data;
-
-            // 只加载地形相关设置
-            if (settings.terrain) {
-                const terrain = settings.terrain;
-                this.exaggeration = terrain.exaggeration !== undefined ? terrain.exaggeration : this.exaggeration;
-                this.withContour = terrain.withContour !== undefined ? terrain.withContour : this.withContour;
-                this.withLighting = terrain.withLighting !== undefined ? terrain.withLighting : this.withLighting;
-                this.mixAlpha = terrain.mixAlpha !== undefined ? terrain.mixAlpha : this.mixAlpha;
-                this.diffPower = terrain.diffPower !== undefined ? terrain.diffPower : this.diffPower;
-                this.elevationRange = terrain.elevationRange || this.elevationRange;
-
-                if (terrain.colors) {
-                    this.shallowColor = terrain.colors.shallow || this.shallowColor;
-                    this.deepColor = terrain.colors.deep || this.deepColor;
-                }
-
-                this.SamplerParams = terrain.samplerParams || this.SamplerParams;
-                this.LightPos = terrain.lightPos || this.LightPos;
-                this.specularPower = terrain.specularPower !== undefined ? terrain.specularPower : this.specularPower;
-            }
-
-            const res = await axios.get('/models/settings.json');
-            this.modelConfig = res.data;
-
-            const posResponse = await axios.get(this.modelConfig.modelPosUrl);
-            const geojson = posResponse.data;
-
-            // 提取所有点要素的坐标
-            this.modelPositions = geojson.features
-                .filter(feature => feature.geometry.type === 'Point')
-                .map(feature => feature.geometry.coordinates);
-        } catch (error) {
-            console.warn('加载水下地形设置失败，使用默认值:', error);
-        }
-    }
-
     initProxy(map) {
         map.addSource(this.id + "-underwater-dem", {
             'type': 'raster-dem',
             tiles: [this.source],
-            'tileSize': 512,
+            'tileSize': 256,
             'maxzoom': 14
         })
 
@@ -179,7 +125,7 @@ export default class TerrainByProxyTile {
         this.LightPosY = this.LightPos[1]
         this.LightPosZ = this.LightPos[2]
 
-
+/*
         this.gui = new dat.GUI()
         this.gui.add(this, 'exaggeration', 0, 100).step(1).onChange((value) => { this.map.setTerrain({ 'exaggeration': value }); this.map.triggerRepaint(); })
         this.gui.add(this, 'withContour', 0, 1).step(1).onChange(() => { })
@@ -209,7 +155,7 @@ export default class TerrainByProxyTile {
         this.gui.add(this, 'u_offset_x', -5, 5, 0.1).onChange(() => { })
         this.gui.add(this, 'u_offset_y', -5, 5, 0.1).onChange(() => { })
 
-        this.gui.add(this, 'u_threshold', -4, 2, 0.01).onChange(() => { })
+        this.gui.add(this, 'u_threshold', -4, 2, 0.01).onChange(() => { })*/
     }
 
 
@@ -225,8 +171,6 @@ export default class TerrainByProxyTile {
         this.demStore = new LRUCache(100)
         // this.initGUI()
 
-        this.maskgeojson = (await axios.get(this.maskURL)).data
-
         this.initProxy(map)
 
         this.canvasWidth = gl.canvas.width
@@ -234,17 +178,15 @@ export default class TerrainByProxyTile {
 
         ///////////////////////////////////////////////////
         ///////////////// Load shaders
-        this.maskProgram = createShaderFromCode(gl, maskCode)
-        this.surfaceNormProgram = createShaderFromCode(gl, surfaceNormCode)
-        this.meshProgram = createShaderFromCode(gl, meshCode)
-        this.smoothingProgram = createShaderFromCode(gl, smoothingCode)
-        this.contourProgram = createShaderFromCode(gl, contourCode)
-        // this.surfaceProgram = createShaderFromCode(gl, surfaceCode)
-        this.surfaceNoTileProgram = createShaderFromCode(gl, surfaceNoTileCode)
-        this.showProgram = createShaderFromCode(gl, showCode)
-        this.modelProgram = createShaderFromCode(gl, modelCode)
-        this.depthRestoreProgram = createShaderFromCode(gl, depthRestoreCode)
 
+        this.maskProgram = await gll.createShader(gl, '/shaders/dems/mask.glsl')
+        this.surfaceNormProgram = await gll.createShader(gl, '/shaders/dems/surfaceNorm.glsl')
+        this.meshProgram = await gll.createShader(gl, '/shaders/dems/mesh.glsl')
+        this.smoothingProgram = await gll.createShader(gl, '/shaders/dems/smoothing.glsl')
+        this.contourProgram = await gll.createShader(gl, '/shaders/dems/contour.glsl')
+        this.surfaceNoTileProgram = await gll.createShader(gl, '/shaders/dems/waterSurfaceNoTile.glsl')
+        this.showProgram = await gll.createShader(gl, '/shaders/dems/show.glsl')
+        this.depthRestoreProgram = await gll.createShader(gl, '/shaders/dems/depthRestore.glsl')
 
 
 
@@ -255,12 +197,6 @@ export default class TerrainByProxyTile {
         this.maskTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.R8, gl.RED, gl.UNSIGNED_BYTE)
 
         /// surface normal pass ///
-        const normalBitmap1 = await loadImage('/underwater/images/WaterNormal1.png')
-        const normalBitmap2 = await loadImage('/underwater/images/WaterNormal2.png')
-        this.normalTexture1 = createTexture2D(gl, normalBitmap1.width, normalBitmap1.height,
-            gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, normalBitmap1, gl.LINEAR, false, true)
-        this.normalTexture2 = createTexture2D(gl, normalBitmap2.width, normalBitmap2.height,
-            gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, normalBitmap2, gl.LINEAR, false, true)
         this.surfaceNormTexure = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE)
 
         /// mesh pass ///
@@ -276,7 +212,7 @@ export default class TerrainByProxyTile {
 
         /// contour pass ///
         // const paletteBitmap = await loadImage('/underwater/images/contourPalette1D.png')
-        const paletteBitmap = await loadImage('/underwater/images/palette2.png')
+        const paletteBitmap = await loadImage('/images/dems/palette2.png')
         this.paletteTexture = createTexture2D(gl, paletteBitmap.width, paletteBitmap.height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, paletteBitmap, gl.LINEAR)
         this.contourCanvasTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE)
 
@@ -295,7 +231,9 @@ export default class TerrainByProxyTile {
         //// mask pass ////
         this.maskFbo = createFrameBuffer(gl, [this.maskTexture], null, null)
 
-        let { vertexData, indexData } = parseMultipolygon(this.maskgeojson)
+        let { vertexData, indexData } = parseBBOX(this.bbox)
+        console.log(this.bbox)
+        console.log(vertexData, indexData)
         let maskPosBuffer = createVBO(gl, vertexData)
         let maskIdxBuffer = createIBO(gl, indexData) //Uint16 --> gl.UNSIGNED_SHORT
         this.maskElements = indexData.length
@@ -311,8 +249,7 @@ export default class TerrainByProxyTile {
 
         //// surface normal pass ////
         this.surfaceNormFbo = createFrameBuffer(gl, [this.surfaceNormTexure], null, null)
-        let bbox = getGeoBBOX(this.maskgeojson)
-        let surfaceNormBuffer = createVBO(gl, bbox)
+        let surfaceNormBuffer = createVBO(gl, this.bbox)
         this.surfaceNormVAO = gl.createVertexArray()
         gl.bindVertexArray(this.surfaceNormVAO)
         gl.enableVertexAttribArray(0)
@@ -355,20 +292,7 @@ export default class TerrainByProxyTile {
         this.surfaceFbo = createFrameBuffer(gl, [this.surfaceCanvasTexture], null, null)
 
 
-
-        //// model ////
-        const loader = new GLTFLoader();
-        let gltf = this.gltf = await loader.loadAsync('/models/model/wind_turbine/scene.gltf')
-        let supportMesh = gltf.scene.children[0].children[0].children[0].children[0].children[0]
-        let bladesMesh = gltf.scene.children[0].children[0].children[0].children[1].children[0]
-        bladesMesh.needRotate = true
-        this.meshes = [this.initMeshforModel(supportMesh), this.initMeshforModel(bladesMesh)]
-
-
-
-
-
-        await this.initDebug()
+        // await this.initDebug()
 
         this.map.painter.terrain.useVertexMorphing = false
         this.isReady = true
@@ -650,15 +574,6 @@ export default class TerrainByProxyTile {
             gl.useProgram(this.surfaceNormProgram)
             gl.bindVertexArray(this.surfaceNormVAO)
 
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.normalTexture1)
-            gl.activeTexture(gl.TEXTURE1)
-            gl.bindTexture(gl.TEXTURE_2D, this.normalTexture2)
-
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNormProgram, 'u_normalTexture1'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNormProgram, 'u_normalTexture2'), 1)
-            gl.uniform1f(gl.getUniformLocation(this.surfaceNormProgram, 'u_time'), nowTime)
-            gl.uniform4fv(gl.getUniformLocation(this.surfaceNormProgram, 'SamplerParams'), this.SamplerParams)
             gl.uniformMatrix4fv(gl.getUniformLocation(this.surfaceNormProgram, 'u_matrix'), false, matrix)
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -732,9 +647,7 @@ export default class TerrainByProxyTile {
             // gl.bindTexture(gl.TEXTURE_2D, this.finalMeshTexture)
             gl.activeTexture(gl.TEXTURE1)
             gl.bindTexture(gl.TEXTURE_2D, this.surfaceCanvasTexture)
-            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'showTexture1'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'showTexture2'), 1)
-            gl.uniform1f(gl.getUniformLocation(this.showProgram, 'mixAlpha'), this.mixAlpha)
+
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
             // this.doDebug(this.maskTexture)
@@ -769,48 +682,6 @@ export default class TerrainByProxyTile {
             gl.colorMask(true, true, true, true);
         }
 
-        // Pass 7.2: Model Pass
-        {
-            if (this.modelPositions.length > 0) {
-                gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-                gl.enable(gl.DEPTH_TEST)
-
-                gl.useProgram(this.modelProgram)
-                gl.uniformMatrix4fv(gl.getUniformLocation(this.modelProgram, 'uMatrix'), false, mercatorMatrix)
-                gl.uniform3fv(gl.getUniformLocation(this.modelProgram, 'uLightPosition'), this.LightPos)
-
-                this.modelPositions.forEach(position => {
-                    this.meshes.forEach((mesh, index) => {
-                        const { modelMatrix, normalMatrix } = this.calculateModelMatrix(
-                            position,
-                            mesh,
-                            mesh.needRotate,
-                            index === 2
-                        );
-
-                        gl.uniformMatrix4fv(
-                            gl.getUniformLocation(this.modelProgram, "uModelMatrix"),
-                            false,
-                            modelMatrix
-                        );
-                        gl.uniformMatrix4fv(
-                            gl.getUniformLocation(this.modelProgram, "uNormalMatrix"),
-                            false,
-                            normalMatrix
-                        );
-
-                        gl.activeTexture(gl.TEXTURE0);
-                        gl.bindTexture(gl.TEXTURE_2D, mesh.texture);
-                        gl.bindVertexArray(mesh.vao);
-                        gl.drawElements(gl.TRIANGLES, mesh.geometry.index.count, gl.UNSIGNED_INT, 0);
-                    });
-                });
-            }
-
-        }
-
-
-
         this.map.triggerRepaint()
     }
 
@@ -839,108 +710,6 @@ export default class TerrainByProxyTile {
         return accumulatedDrapes
     }
 
-
-    calcMatrixforModel(modelConfig, mesh, rotate = false) {
-        let mercatorPos = MercatorCoordinate.fromLngLat(modelConfig.modelPos, 0)
-        let modelMatrix = mat4.create()
-        mat4.translate(modelMatrix, modelMatrix, [mercatorPos.x, mercatorPos.y, 0])
-        mat4.scale(modelMatrix, modelMatrix, [modelConfig.modelScale, modelConfig.modelScale, modelConfig.modelScale])
-        mat4.rotateX(modelMatrix, modelMatrix, 0.5 * Math.PI)
-        mat4.rotateY(modelMatrix, modelMatrix, modelConfig.modelZRotate)
-        mat4.multiply(modelMatrix, modelMatrix, mesh.matrixWorld.elements)
-        rotate && mat4.rotateZ(modelMatrix, modelMatrix, this.frame * 0.05)
-
-        let normalMatrix = mat4.create()
-        mat4.invert(normalMatrix, modelMatrix)
-        mat4.transpose(normalMatrix, normalMatrix)
-        return {
-            modelMatrix,
-            normalMatrix
-        }
-    }
-
-    calculateModelMatrix(position, mesh, rotate = false, offsetRotate = false) {
-        // 获取位置的经纬度和高程
-        const lng = position[0];
-        const lat = position[1];
-        // 获取地形高度
-        const elevation = this.map.queryTerrainElevation([lng, lat], { exaggerated: true });
-        // 使用高度创建mercator坐标
-        const mercatorPos = MercatorCoordinate.fromLngLat(position, elevation);
-        let modelMatrix = mat4.create();
-
-        mat4.translate(modelMatrix, modelMatrix, [mercatorPos.x, mercatorPos.y, mercatorPos.z]);
-        mat4.scale(modelMatrix, modelMatrix, [
-            this.modelConfig.modelScale,
-            this.modelConfig.modelScale,
-            this.modelConfig.modelScale
-        ]);
-        mat4.rotateX(modelMatrix, modelMatrix, 0.5 * Math.PI);
-        mat4.rotateY(modelMatrix, modelMatrix, this.modelConfig.modelZRotate);
-        mat4.multiply(modelMatrix, modelMatrix, mesh.matrixWorld.elements);
-
-        if (rotate) {
-            mat4.rotateZ(modelMatrix, modelMatrix, this.frame * 0.05);
-        }
-        if (offsetRotate) {
-            mat4.rotateZ(modelMatrix, modelMatrix, Math.PI);
-        }
-
-        let normalMatrix = mat4.create();
-        mat4.invert(normalMatrix, modelMatrix);
-        mat4.transpose(normalMatrix, normalMatrix);
-
-        return { modelMatrix, normalMatrix };
-    }
-
-    initMeshforModel(mesh) {
-        let gl = this.gl;
-        const vertPosBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertPosBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.geometry.attributes.position.array, gl.STATIC_DRAW);
-
-        const normalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.geometry.attributes.normal.array, gl.STATIC_DRAW);
-
-        const uvBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.geometry.attributes.uv.array, gl.STATIC_DRAW);
-
-        const indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.geometry.index.array, gl.STATIC_DRAW);//uint32
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-
-        let vao = mesh.vao = gl.createVertexArray();
-        gl.bindVertexArray(vao);
-        gl.enableVertexAttribArray(0);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertPosBuffer);
-        gl.vertexAttribPointer(0, mesh.geometry.attributes.position.itemSize, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(1);
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-        gl.vertexAttribPointer(1, mesh.geometry.attributes.normal.itemSize, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(2);
-        gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-        gl.vertexAttribPointer(2, mesh.geometry.attributes.uv.itemSize, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bindVertexArray(null);
-
-        // addon
-        const imageBitmap = mesh.material.map.source.data;
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, imageBitmap.width, imageBitmap.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-
-        mesh.texture = texture;
-        return mesh
-    }
-
     createTerrainGridsVao(element = 128) {
         let gl = this.gl
         let grid = createGrid(8192, element + 1)
@@ -964,9 +733,9 @@ export default class TerrainByProxyTile {
 
 
 
-    async initDebug() {
-        this.debugProgram = createShaderFromCode(this.gl, debugCode)
-    }
+    // async initDebug() {
+    //     this.debugProgram = createShaderFromCode(this.gl, debugCode)
+    // }
     // temp
     doDebug(texture) {
         let gl = this.gl
@@ -1027,60 +796,26 @@ export default class TerrainByProxyTile {
 
 
 //#region helper functions
-function parseMultipolygon(geojson) {
-    // 存储所有多边形的顶点和索引
-    let allVertices = [];
-    let allIndices = [];
-    let indexOffset = 0;
+function parseBBOX(bbox) {
+    const [xmin, ymin, xmax, ymax] = bbox;
 
-    // 遍历所有features
-    for (let feature of geojson.features) {
-        // 检查几何类型
-        const geometry = feature.geometry;
+    // 顶点顺序：左下、右下、右上、左上
+    const vertexData = [
+        xmin, ymin, // 0: 左下
+        xmax, ymin, // 1: 右下
+        xmax, ymax, // 2: 右上
+        xmin, ymax  // 3: 左上
+    ];
 
-        if (geometry.type === "MultiPolygon") {
-            // 处理MultiPolygon类型 - 有多个多边形 [polygon, polygon, ...]
-            for (let polygon of geometry.coordinates) {
-                // 对每个多边形应用earcut
-                for (let ring of polygon) {
-                    const data = earcut.flatten([ring]);
-                    const triangles = earcut(data.vertices, data.holes, data.dimensions);
-
-                    // 添加顶点
-                    const flatVertices = data.vertices;
-                    allVertices.push(...flatVertices);
-
-                    // 调整索引偏移并添加三角形索引
-                    for (let i = 0; i < triangles.length; i++) {
-                        allIndices.push(triangles[i] + indexOffset);
-                    }
-
-                    // 更新索引偏移
-                    indexOffset += flatVertices.length / data.dimensions;
-                }
-            }
-        } else if (geometry.type === "Polygon") {
-            // 处理Polygon类型 - 一个多边形 [外环, 内环1, 内环2, ...]
-            const data = earcut.flatten(geometry.coordinates);
-            const triangles = earcut(data.vertices, data.holes, data.dimensions);
-
-            // 添加顶点
-            const flatVertices = data.vertices;
-            allVertices.push(...flatVertices);
-
-            // 调整索引偏移并添加三角形索引
-            for (let i = 0; i < triangles.length; i++) {
-                allIndices.push(triangles[i] + indexOffset);
-            }
-
-            // 更新索引偏移
-            indexOffset += flatVertices.length / data.dimensions;
-        }
-    }
+    // 两个三角形：0-1-2, 2-3-0
+    const indexData = [
+        0, 1, 2,
+        2, 3, 0
+    ];
 
     return {
-        vertexData: allVertices,
-        indexData: allIndices,
+        vertexData,
+        indexData
     };
 }
 
