@@ -15,7 +15,6 @@ export class VectorsPageContext extends DefaultPageContext {
         type: "point" | "line" | "polygon"
         name: string
         epsg: string
-        savePath: string
         color: string
     }
 
@@ -28,7 +27,6 @@ export class VectorsPageContext extends DefaultPageContext {
             type: "point",
             name: '',
             epsg: '',
-            savePath: "",
             color: 'sky-500'
         }
     }
