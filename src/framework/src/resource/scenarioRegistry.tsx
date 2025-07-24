@@ -11,6 +11,7 @@ import SettingsScenarioNode, { SettingsPageContext } from './scenario/settings/s
 import SimulationScenarioNode, { SimulationPageContext } from './scenario/simulation/simulation'
 import VectorsScenarioNode, { VectorsPageContext } from './scenario/vectors/vectors'
 import GridsScenariNode, { GridsPageContext } from './scenario/grids/grids'
+import DemsScenariNode, { DemsPageContext } from './scenario/dems/dems'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -25,6 +26,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [SettingsScenarioNode.classKey]: SettingsScenarioNode,
     [SimulationScenarioNode.classKey]: SimulationScenarioNode,
     [VectorsScenarioNode.classKey]: VectorsScenarioNode,
+    [DemsScenariNode.classKey]: DemsScenariNode
 }
 
 const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext> = {
@@ -37,6 +39,7 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [SettingsScenarioNode.classKey]: SettingsPageContext,
     [SimulationScenarioNode.classKey]: SimulationPageContext,
     [VectorsScenarioNode.classKey]: VectorsPageContext,
+    [DemsScenariNode.classKey]: DemsPageContext
 }
 
 export const SCENARIO_NODE_REGISTRY = new Proxy(_SCENARIO_NODE_REGISTRY, {
