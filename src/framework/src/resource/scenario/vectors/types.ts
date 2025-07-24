@@ -11,7 +11,6 @@ export interface VectorsInformationProps {
 export interface FeatureData {
     type: "point" | "line" | "polygon"
     name: string
-    epsg: string
-    savePath: string
+    epsg: string    
     color: string
 }
