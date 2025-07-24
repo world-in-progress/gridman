@@ -10,33 +10,10 @@ import getPrefix from "./prefix";
 
 const API_PREFIX = "/api/feature";
 
-export const createFeature: IAPI<FeatureMeta, BaseResponse> = {
+export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
 	api: `${API_PREFIX}`,
-	fetch: async (featureMeta: FeatureMeta, isRemote: boolean): Promise<BaseResponse> => {
-		try {
-			const api = getPrefix(isRemote) + createFeature.api + '/create'
-			const response = await fetch(api, { 
-				method: 'POST', 
-				body: JSON.stringify(featureMeta), 
-				headers: { 'Content-Type': 'application/json' } 
-			})
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-
-			const responseData: BaseResponse = await response.json();
-			return responseData;
-
-		} catch (error) {
-			throw new Error(`Failed to create feature: ${error}`);
-		}
-	}
-}
-
-export const saveFeature: IAPI<FeatureSaveBody, BaseResponse> = {
-	api: `${API_PREFIX}`,
-	fetch: async (featureInfo: FeatureSaveBody, isRemote: boolean): Promise<BaseResponse> => {
+	// api: `${API_PREFIX}/save`,
+	fetch: async (featureInfo: FeatureSaveBody, isRemote: boolean): Promise<FeatureSaveResponse> => {
 		try {
 			const api = getPrefix(isRemote) + saveFeature.api + '/save'
 			const response = await fetch(api, {
@@ -49,15 +26,15 @@ export const saveFeature: IAPI<FeatureSaveBody, BaseResponse> = {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
 
-			const responseData: FeatureSaveResponse = await response.json()
-			return responseData
+			const responseData: FeatureSaveResponse = await response.json();
+			console.log("responseData: ", responseData);
+			return responseData;
 		} catch (error) {
 			throw new Error(`Failed to save feature: ${error}`);
 		}
 	},
 };
 
-///////////////////////////////////////////////////////////////////////////////////
 export const deleteFeature: IAPI<{ id: string }, void> = {
 	api: `${API_PREFIX}`,
 	fetch: async (query: { id: string }): Promise<void> => {

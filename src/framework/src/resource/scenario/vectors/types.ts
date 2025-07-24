@@ -12,5 +12,6 @@ export interface FeatureData {
     type: "point" | "line" | "polygon"
     name: string
     epsg: string
+    savePath: string
     color: string
 }
