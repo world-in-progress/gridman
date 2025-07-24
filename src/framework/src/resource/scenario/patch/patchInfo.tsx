@@ -56,7 +56,7 @@ export default function PatchInfo({
 			pageContext.current = context
 			if (pageContext.current.patch!.bounds) {
 				const patchBoundsOn4326 = convertToWGS84(pageContext.current.patch!.bounds, pageContext.current.patch!.epsg.toString())
-				addMapPatchBounds(patchBoundsOn4326, undefined, {
+				addMapPatchBounds(patchBoundsOn4326, undefined, false, {
 					fillColor: '#00D5FF',
 					lineColor: '#FFFF00',
 					opacity: 0.3,
