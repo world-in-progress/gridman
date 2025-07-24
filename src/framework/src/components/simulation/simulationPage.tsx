@@ -41,34 +41,35 @@ export default function Simulation() {
 
     // Subscribe to simulation manager
     useEffect(() => {
+        console.log('init')
+        // Distribute status to UI
+        const updateAllStatus = () => {
+            const status = simulationManager.getAllStatus()
+            console.log("status", status)
+            setSolutionName(status.solutionName)
+            setSimulationName(status.simulationName)
+            setCurrentTaskIndex(simulationManager.currentTask)
+            setWorkflowStatus({
+                createSolution: status.workflowStatus[0].status,
+                createSimulation: status.workflowStatus[1].status,
+                startSimulation: status.workflowStatus[2].status,
+                simulation: status.simulationStatus.status,
+            })
+            setWorkflowProgress({
+                createSolution: status.workflowStatus[0].progress,
+                createSimulation: status.workflowStatus[1].progress,
+                startSimulation: status.workflowStatus[2].progress,
+            })
+            setCurrentStep(status.simulationStatus.step)
+            setActionTypes(status.activeActionTypeList)
+        }
+
         const unsubscribe = simulationManager.subscribe(updateAllStatus)
         return () => {
             simulationManager.reset()
             unsubscribe()
         }
-    }, [])
-
-    // Distribute status to UI
-    const updateAllStatus = () => {
-        const status = simulationManager.getAllStatus()
-        console.log("status", status)
-        setSolutionName(status.solutionName)
-        setSimulationName(status.simulationName)
-        setCurrentTaskIndex(simulationManager.currentTask)
-        setWorkflowStatus({
-            createSolution: status.workflowStatus[0].status,
-            createSimulation: status.workflowStatus[1].status,
-            startSimulation: status.workflowStatus[2].status,
-            simulation: status.simulationStatus.status,
-        })
-        setWorkflowProgress({
-            createSolution: status.workflowStatus[0].progress,
-            createSimulation: status.workflowStatus[1].progress,
-            startSimulation: status.workflowStatus[2].progress,
-        })
-        setCurrentStep(status.simulationStatus.step)
-        setActionTypes(status.activeActionTypeList)
-    }
+    }, [simulationManager])
 
     const createSolution = async (solutionName: string, modelType: string, actionTypes: string[]) => {
         await simulationManager.createSolution(solutionName, modelType, actionTypes)
