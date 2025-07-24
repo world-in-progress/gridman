@@ -6,5 +6,6 @@ export interface LumsPageProps {
 
 export interface LUMData {
     name: string
-    path: string
+    type: string
+    original_tif_path: string
 }

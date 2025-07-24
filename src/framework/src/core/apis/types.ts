@@ -168,7 +168,8 @@ export interface GridInfo {
 
 export interface CreateRasterMeta {
     name: string
-    path: string
+    type: string
+    original_tif_path: string
 }
 
 export interface RasterMeta {

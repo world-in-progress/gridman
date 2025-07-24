@@ -19,7 +19,8 @@ export class LumsPageContext extends DefaultPageContext {
         this.hasLUM = false
         this.rawLumInfo = {
             name: '',
-            path: ''
+            type: 'lum',
+            original_tif_path: ''
         }
         this.uploadVectors = []
     }

@@ -15,7 +15,8 @@ export const createRaster: IAPI<CreateRasterMeta, BaseResponse> = {
                 },
                 body: JSON.stringify({
                     name: rasterInfo.name,
-                    original_tif_path: rasterInfo.path,
+                    type: rasterInfo.type,
+                    original_tif_path: rasterInfo.original_tif_path,
                 })
             })
 
@@ -34,9 +35,9 @@ export const createRaster: IAPI<CreateRasterMeta, BaseResponse> = {
 
 export const getCogTif: IAPI<string, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (rasterName: string, isRemote: boolean): Promise<BaseResponse> => {
+    fetch: async (node_key: string, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const api = getPrefix(isRemote) + getCogTif.api + `/cog_tif/${rasterName}`
+            const api = getPrefix(isRemote) + getCogTif.api + `/cog_tif/${node_key}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {

@@ -26,7 +26,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { LumsPageContext } from './lums'
-import { SceneNode } from '@/components/resourceScene/scene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { cn } from '@/utils/utils'
 import { useTranslation } from 'react-i18next'
@@ -71,7 +71,7 @@ export default function LumsPage({ node }: LumsPageProps) {
     }
 
     const handleLumInfoConfirm = async () => {
-        if (pageContext.current && pageContext.current.rawLumInfo.name.trim() && pageContext.current.rawLumInfo.path.trim()) {
+        if (pageContext.current && pageContext.current.rawLumInfo.name.trim() && pageContext.current.rawLumInfo.original_tif_path.trim()) {
             pageContext.current.hasLUM = true
             setShowLumDialog(false)
             triggerRepaint()
@@ -79,10 +79,11 @@ export default function LumsPage({ node }: LumsPageProps) {
 
         const newLUM: LUMData = {
             name: pageContext.current!.rawLumInfo.name,
-            path: pageContext.current!.rawLumInfo.path,
+            type: 'lum',
+            original_tif_path: pageContext.current!.rawLumInfo.original_tif_path,
         }
 
-        store.get<{on: Function, off: Function}>('isLoading')!.on()
+        
         const createCogTifRes = await apis.raster.createRaster.fetch(newLUM, node.tree.isPublic)
 
         if (!createCogTifRes.success) {
@@ -90,7 +91,15 @@ export default function LumsPage({ node }: LumsPageProps) {
             return
         }
 
-        const getCogTifRes = await apis.raster.getCogTif.fetch(newLUM.name, node.tree.isPublic)
+        const tree = node.tree as SceneTree
+        await tree.alignNodeInfo(node, true)
+        tree.notifyDomUpdate()
+
+        store.get<{on: Function, off: Function}>('isLoading')!.on()
+
+        const nodeKey = createCogTifRes.message
+
+        const getCogTifRes = await apis.raster.getCogTif.fetch(nodeKey, node.tree.isPublic)
 
         if (!getCogTifRes.success) {
             toast.error(getCogTifRes.message)
@@ -162,14 +171,11 @@ export default function LumsPage({ node }: LumsPageProps) {
             // 重置LUM信息
             pageContext.current.rawLumInfo = {
                 name: '',
-                path: ''
+                type: 'lum',
+                original_tif_path: ''
             }
             pageContext.current.uploadVectors = []
-            pageContext.current.hasLUM = false // 重置标志
-            pageContext.current.rawLumInfo = {
-                name: '',
-                path: ''
-            }
+            pageContext.current.hasLUM = false 
             setShowLumDialog(true)
             setShowResetConfirm(false)
             triggerRepaint()
@@ -184,7 +190,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                 if (filePath) {
                     if (filePath.toLowerCase().endsWith('.tif') || filePath.toLowerCase().endsWith('.tiff')) {
                         console.log('Selected file path:', filePath);
-                        pageContext.current!.rawLumInfo.path = filePath
+                        pageContext.current!.rawLumInfo.original_tif_path = filePath
                         triggerRepaint()
                     } else {
                         toast.error('Please select a TIF file');
@@ -235,10 +241,10 @@ export default function LumsPage({ node }: LumsPageProps) {
                             <div className="flex col-span-3 gap-2">
                                 <Input
                                     id="sourceKey"
-                                    value={pageContext.current?.rawLumInfo.path}
+                                    value={pageContext.current?.rawLumInfo.original_tif_path}
                                     readOnly={true}
                                     onChange={(e) => {
-                                        pageContext.current!.rawLumInfo.path = e.target.value
+                                        pageContext.current!.rawLumInfo.original_tif_path = e.target.value
                                         triggerRepaint()
                                     }}
                                     className="flex-1"
@@ -370,7 +376,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                                                         <div className="flex items-center gap-2">
                                                             <FolderOpen className="w-3 h-3 text-slate-500" />
                                                             <code className="text-xs font-mono text-slate-700 truncate">
-                                                                {pageContext.current?.rawLumInfo.path || ''}
+                                                                {pageContext.current?.rawLumInfo.original_tif_path || ''}
                                                             </code>
                                                         </div>
                                                     </div>
