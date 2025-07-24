@@ -120,3 +120,7 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
         }
     }
 }
+
+export const getTileUrl = (isRemote: boolean, rasterName: string) => {
+  return getPrefix(isRemote) + `${API_PREFIX}/tile/${rasterName}/{z}/{x}/{y}.png`
+}
