@@ -30,18 +30,11 @@ import {
 	Trash2,
 	FilePlus2,
 	RotateCcw,
-	ChevronUp,
 	Paintbrush,
 	FolderOpen,
-	ChevronDown,
 	MousePointer,
-	ExternalLink,
-	Copy,
 	Globe,
-	Tag,
 	Palette,
-	MapPin,
-	Info,
 	Mouse,
 } from "lucide-react"
 import {
@@ -554,8 +547,9 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 					</div>
 				</div>
 
-				{pageContext.current?.hasFeature && (
-					<div className="w-full flex-1 relative">
+
+				<div className="w-full flex-1 relative">
+					{pageContext.current?.hasFeature && (
 						<div className="absolute top-0 left-0 w-80 h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
 							{/* Header */}
 							<div className="p-6 bg-white border-b border-slate-200">
@@ -678,11 +672,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 								</Card>
 							</div>
 						</div>
+					)}
+					{/* Map container placeholder */}
+					<MapContainer node={node} style='w-full h-full' color={vectorColor} />
+				</div>
 
-						{/* Map container placeholder */}
-						<MapContainer node={node} style='w-full h-full' color={vectorColor} />
-					</div>
-				)}
 			</div>
 		</>
 	)
