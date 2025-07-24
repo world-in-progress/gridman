@@ -55,7 +55,22 @@ ipcMain.handle('dialog:openFile', async () => {
     return null;
   }
   return filePaths[0];
-});
+})
+
+ipcMain.handle('dialog:openTiffFile', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: 'TIF Files', extensions: ['tif', 'tiff'] },
+      { name: 'All Files', extensions: ['*'] }
+    ],
+  });
+
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  return filePaths[0];
+})
 
 app.whenReady().then(() => {
   createWindow();

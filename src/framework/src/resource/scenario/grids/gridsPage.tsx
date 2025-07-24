@@ -61,7 +61,7 @@ const gridTips = [
 ]
 
 export default function GridsPage({ node }: GridsPageProps) {
-    const { t } = useTranslation('patchesPage')
+    const { t } = useTranslation('gridsPage')
     const [isDragOver, setIsDragOver] = useState(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
