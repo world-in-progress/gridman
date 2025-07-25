@@ -27,7 +27,7 @@ export class VectorsPageContext extends DefaultPageContext {
             type: "point",
             name: '',
             epsg: '',
-            color: 'sky-500'
+            color: '#0ea5e9'
         }
     }
 

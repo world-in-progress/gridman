@@ -339,10 +339,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		const drawInstance = store.get<MapboxDraw>("mapDraw")!
 		if (!drawInstance) return
 		pageContext.current!.drawFeature = drawInstance.getAll()
-		console.log(pageContext.current!.drawFeature)
+
+		const nodeKey = node.key + '.' + pageContext.current!.featureData.name
 
 		const saveFeatureBody = {
-			name: pageContext.current!.featureData.name,
+			node_key: nodeKey,
 			feature_json: pageContext.current!.drawFeature,
 		}
 		const saveFeatureRes = await apis.feature.saveFeature.fetch(saveFeatureBody, node.tree.isPublic)
@@ -456,31 +457,6 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 								className="w-full"
 							/>
 						</div>
-
-						{/* <div className="space-y-2">
-							<Label htmlFor="savePath" className="text-sm font-medium">
-								Local Save Path
-								<span className="text-red-500">*</span>
-							</Label>
-							<Button
-								variant="outline"
-								onClick={() => document.getElementById("savePath")?.click()}
-								className="w-full justify-start text-muted-foreground cursor-pointer"
-							>
-								{pageContext.current?.featureData.savePath || "Select folder for saving"}
-								<FolderOpen className="w-4 h-4 ml-auto" />
-							</Button>
-							<Input
-								id="savePath"
-								type="file"
-								value={pageContext.current?.featureData.savePath}
-								onChange={(e) => {
-									pageContext.current!.featureData.savePath = e.target.value
-									triggerRepaint()
-								}}
-								className="hidden"
-							/>
-						</div> */}
 					</div>
 
 					<DialogFooter className="flex gap-2">

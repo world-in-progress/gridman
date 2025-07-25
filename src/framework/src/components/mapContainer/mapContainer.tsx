@@ -41,6 +41,7 @@ const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
     const mapWrapperRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        console.log('color', color)
         mapboxgl.accessToken = import.meta.env.VITE_MAP_TOKEN
         let mapInstance: mapboxgl.Map
         let resizer: ResizeObserver | null = null
