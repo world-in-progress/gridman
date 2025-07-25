@@ -7,8 +7,8 @@ import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import VectorPage from "./vectorPage";
 import VectorInformation from "./vectorInformation";
 import DefaultPageContext from "@/core/context/default";
-import { getFeatureData } from "@/core/apis/feature";
 import { toast } from "sonner";
+import store from "@/store";
 
 export class VectorPageContext extends DefaultPageContext {
 
@@ -31,8 +31,8 @@ export class VectorPageContext extends DefaultPageContext {
         const n = node as SceneNode
         const context = new VectorPageContext()
 
-        console.log('触发了')
         try {
+            store.get<{on: Function, off: Function}>('isLoading')?.on()
             const nodeMeta = await apis.feature.getFeatureData.fetch(n.key, n.tree.isPublic)
             context.featureData = nodeMeta.data
             context.drawFeature = nodeMeta.data.feature_json

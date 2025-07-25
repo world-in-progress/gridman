@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from "@/components/ui/card"
 import { SceneNode } from '@/components/resourceScene/scene'
 import MapContainer from '@/components/mapContainer/mapContainer'
+import { RasterOperation, UpdateRasterData } from '@/core/apis/types'
 
 const REORDER_TYPE = 'application/x-lum-reorder'
 
@@ -113,7 +114,11 @@ export default function LumPage({ node }: LumPageProps) {
     }
 
     const unloadContext = () => {
-        console.log('组件卸载')
+        const map = store.get<mapboxgl.Map>('map')
+        if (map) {
+            map.removeLayer(node.key + 'layer')
+            map.removeSource(node.key + 'source')
+        }
     }
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -140,11 +145,19 @@ export default function LumPage({ node }: LumPageProps) {
             if (!isAlreadySelected) {
                 // TODO:add vector to map
                 const vectorData = (await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)).data as Vectordata
+
+                const updateRasterData: UpdateRasterData = {
+                    feature_node_key: nodeKey,
+                    operation: 'set',
+                    value: null
+                }
                 const uploadVector = {
                     node_key: nodeKey,
-                    data: vectorData
+                    data: vectorData,
+                    updateRasterData: updateRasterData
                 }
                 pageContext.current?.uploadVectors.push(uploadVector)
+                pageContext.current?.updateRasterMeta.updates.push(updateRasterData)
                 console.log(pageContext.current?.uploadVectors)
                 triggerRepaint()
             }
@@ -207,6 +220,16 @@ export default function LumPage({ node }: LumPageProps) {
         }
     }
 
+    // 添加处理输入值变化的函数
+    const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        if (!pageContext.current) return
+
+        // 更新对应资源的 updateRasterData.value
+        pageContext.current.uploadVectors[index].updateRasterData.value = Number(e.target.value)
+        triggerRepaint()
+    }
+
+    // 修改拖动处理函数，确保同步更新 updateRasterMeta.updates
     const handleItemDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
         // Check if this is an internal reordering operation
         if (e.dataTransfer.types.includes(REORDER_TYPE)) {
@@ -216,11 +239,20 @@ export default function LumPage({ node }: LumPageProps) {
             if (draggedIndex === null || draggedIndex === index) return
 
             if (pageContext.current) {
+                // 更新 uploadVectors 顺序
                 const items = [...pageContext.current.uploadVectors]
                 const draggedItem = items[draggedIndex]
                 items.splice(draggedIndex, 1)
                 items.splice(index, 0, draggedItem)
                 pageContext.current.uploadVectors = items
+
+                // 同步更新 updateRasterMeta.updates 顺序
+                // const updates = [...pageContext.current.updateRasterMeta.updates]
+                // const draggedUpdate = updates[draggedIndex]
+                // updates.splice(draggedIndex, 1)
+                // updates.splice(index, 0, draggedUpdate)
+                // pageContext.current.updateRasterMeta.updates = updates
+
                 setDraggedIndex(index)
                 triggerRepaint()
             }
@@ -251,6 +283,27 @@ export default function LumPage({ node }: LumPageProps) {
                 return <Square className="w-6 h-6" />
             default:
                 return null
+        }
+    }
+
+    const handleSetLUM = async () => {
+        if (!pageContext.current) return
+
+        // 清空当前的 updates 数组
+        pageContext.current.updateRasterMeta.updates = []
+
+        // 遍历 uploadVectors，按顺序将 updateRasterData 添加到 updates 数组
+        pageContext.current.uploadVectors.forEach(vector => {
+            pageContext.current?.updateRasterMeta.updates.push(vector.updateRasterData)
+        })
+
+        // 执行更新操作
+        try {
+            await apis.raster.updateRasterByFeature.fetch({ node_key: node.key, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
+            toast.success('LUM successfully updated')
+        } catch (error) {
+            console.error('Failed to update LUM:', error)
+            toast.error('Failed to update LUM')
         }
     }
 
@@ -449,6 +502,8 @@ export default function LumPage({ node }: LumPageProps) {
                                                                 <Input
                                                                     className="h-7 text-xs flex-1"
                                                                     placeholder="Enter value"
+                                                                    value={resource.updateRasterData.value || ''}
+                                                                    onChange={(e) => handleValueChange(e, index)}
                                                                     onClick={(e) => e.stopPropagation()}
                                                                 />
                                                             </div>
@@ -478,6 +533,7 @@ export default function LumPage({ node }: LumPageProps) {
                                                 variant="default"
                                                 size="sm"
                                                 className=" bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointe shadow-sm"
+                                                onClick={handleSetLUM}
                                                 disabled={!pageContext.current?.uploadVectors.length}
                                             >
                                                 <SquareCheck className="w-4 h-4" />Assign

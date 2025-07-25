@@ -127,6 +127,7 @@ export default function VectorPage({ node }: VectorPageProps) {
                 drawInstance.deleteAll()
 
                 drawInstance.add(pageContext.current!.drawFeature!)
+                store.get<{on: Function, off: Function}>('isLoading')?.off()
             }
 
             if (map.loaded()) {
