@@ -16,6 +16,7 @@ import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
 import Hello from './hello/hello'
+import Floods from './floods/floods'
 import { useTranslation } from 'react-i18next';
 import SettingsPage from './settingPage/settingsPage'
 import DefaultScenarioNode from '@/core/scenario/default'
@@ -671,7 +672,8 @@ function FrameworkComponent() {
                 )}
 
                 {/* Hello Page */}
-                {nodeStack.current.length === 0 && <Hello />}
+                {/* {nodeStack.current.length === 0 && <Hello />} */}
+                {nodeStack.current.length === 0 && <Floods />}
             </div>
         </div >
     )
