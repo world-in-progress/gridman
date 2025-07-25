@@ -6,6 +6,7 @@ import { FilePlus2, Info } from "lucide-react";
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import LumInformation from "./lumInformation";
 import LumPage from "./lumPage";
+import { UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
 
 export interface Vectordata {
     name: string,
@@ -20,12 +21,17 @@ export class LumPageContext extends DefaultPageContext {
     uploadVectors: {
         node_key: string,
         data: Vectordata
+        updateRasterData: UpdateRasterData
     } []
+    updateRasterMeta: UpdateRasterMeta
 
     constructor() {
         super()
 
         this.uploadVectors = []
+        this.updateRasterMeta = {
+            updates: []
+        }
     }
 
     static async create(): Promise<LumPageContext> {

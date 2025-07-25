@@ -73,17 +73,17 @@ export const getRasterMetaData: IAPI<string, RasterMeta> = {
     }
 }
 
-export const updateRasterByFeature: IAPI<UpdateRasterMeta, BaseResponse> = {
+export const updateRasterByFeature: IAPI<{node_key: string, updateRasterMeta: UpdateRasterMeta}, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (updateRasterInfo: UpdateRasterMeta, isRemote: boolean): Promise<BaseResponse> => {
+    fetch: async (query: {node_key: string, updateRasterMeta:UpdateRasterMeta}, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_feature/${updateRasterInfo.rasterName}`
+            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_features/${query.node_key}`
             const response = await fetch(api, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(updateRasterInfo)
+                body: JSON.stringify(query.updateRasterMeta)
             })
 
             if (!response.ok) {
