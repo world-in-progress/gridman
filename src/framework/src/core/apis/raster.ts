@@ -55,9 +55,9 @@ export const getCogTif: IAPI<string, BaseResponse> = {
 
 export const getRasterMetaData: IAPI<string, RasterMeta> = {
     api: `${API_PREFIX}`,
-    fetch: async (rasterName: string, isRemote: boolean): Promise<RasterMeta> => {
+    fetch: async (nodeKey: string, isRemote: boolean): Promise<RasterMeta> => {
         try {
-            const api = getPrefix(isRemote) + getRasterMetaData.api + `/metadata/${rasterName}`
+            const api = getPrefix(isRemote) + getRasterMetaData.api + `/metadata/${nodeKey}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {
@@ -77,7 +77,7 @@ export const updateRasterByFeature: IAPI<{node_key: string, updateRasterMeta: Up
     api: `${API_PREFIX}`,
     fetch: async (query: {node_key: string, updateRasterMeta:UpdateRasterMeta}, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_features/${query.node_key}`
+            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_feature/${query.node_key}`
             const response = await fetch(api, {
                 method: 'POST',
                 headers: {
@@ -103,8 +103,8 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
     api: `${API_PREFIX}`,
     fetch: async (samplingInfo: SamplingMeta, isRemote: boolean): Promise<SamplingValueMeta> => {
         try {
-            const { rasterName, x, y } = samplingInfo
-            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${rasterName}/${x}/${y}`
+            const { nodeKey, x, y } = samplingInfo
+            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${nodeKey}/${x}/${y}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {
@@ -121,6 +121,6 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
     }
 }
 
-export const getTileUrl = (isRemote: boolean, rasterName: string) => {
-  return getPrefix(isRemote) + `${API_PREFIX}/tile/${rasterName}/{z}/{x}/{y}.png`
+export const getTileUrl = (isRemote: boolean, nodeKey: string) => {
+  return getPrefix(isRemote) + `${API_PREFIX}/tile/${nodeKey}/{z}/{x}/{y}.png`
 }

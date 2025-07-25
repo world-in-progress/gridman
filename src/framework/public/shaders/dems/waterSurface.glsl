@@ -80,64 +80,10 @@ const vec3 LightColor = vec3(1.0, 1.0, 1.0);
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 // const float specularPower = 512.0;
 
-////////////////////////////////////////////
-/////////// Sampler for height 
-////////////////////////////////////////////
-float samplerHeight(vec2 uv) {
-    vec2 pos = (u_dem_size * (uv * u_dem_scale + u_dem_tl) + 1.0) / (u_dem_size + 2.0);
-    float m = texture(u_depethTexture, pos).r;
-    float normlizeHeight = (m - u_elevationRange.x) / (u_elevationRange.y - u_elevationRange.x);
-
-    return smoothstep(0.0, 1.0, normlizeHeight);
-}
-
-////////////////////////////////////////////
-/////////// Sampler for normal 
-////////////////////////////////////////////
-
-vec3 getNormalFromMap2(vec2 uv) {
-
-    return texture(u_surfaceNormalTexture, uv).xyz;
-}
-float validFragment(vec2 uv) {
-    return texture(u_maskTexture, uv).r;
-}
-
 void main() {
     // vec2 screenUV = (v_positionCS / v_positionCS.w).xy * 0.5 + 0.5;
-    vec2 screenUV = gl_FragCoord.xy / u_screenSize;
-    /*
-        01  11
-        00  10
-    */
-    if(validFragment(screenUV) == 0.0) {
-        return;
-    }
 
-    /////////// waterDepth ///////////
-    vec3 viewVector = v_positionWS - u_cameraPos.xyz;
-
-    float waterDepth = samplerHeight(v_uv);
-
-    vec3 waterColor = vec3(0.0);
-    waterColor = mix(shallowColor, deepColor, waterDepth) / 255.0;
-
-    /////////// noraml and Blinn-Phong ///////////
-    // vec3 normalWS = getNormalFromMap(v_uv);
-    vec3 normalWS = getNormalFromMap2(screenUV);
-
-    vec3 lightDir = normalize(LightPos - vec3(0.0));
-    vec3 viewDir = normalize(-1.0 * viewVector);
-
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float NdotH = clamp(dot(normalWS, halfwayDir), 0.0, 1.0);
-    vec3 specular = LightColor * specularColor * pow(NdotH, specularPower);
-
-    waterColor += specular;
-
-
-    float alpha = 0.5;
-    FragColor = vec4(waterColor, alpha);
+    FragColor = vec4(1.0, 0.0, 0.0, alpha);
 
     // FragColor = vec4(waterDepth, 0.5 ,0.5, 1.0);
 
