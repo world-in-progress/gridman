@@ -41,13 +41,6 @@ export default function LumsPage({ node }: LumsPageProps) {
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [showLumDialog, setShowLumDialog] = useState(false)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
-    // const [lumInfo, setLumInfo] = useState<{
-    //     name: string,
-    //     path: string
-    // }>({
-    //     name: '',
-    //     path: ''
-    // })
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -83,7 +76,7 @@ export default function LumsPage({ node }: LumsPageProps) {
             original_tif_path: pageContext.current!.rawLumInfo.original_tif_path,
         }
 
-        
+
         const createCogTifRes = await apis.raster.createRaster.fetch(newLUM, node.tree.isPublic)
 
         if (!createCogTifRes.success) {
@@ -95,7 +88,7 @@ export default function LumsPage({ node }: LumsPageProps) {
         await tree.alignNodeInfo(node, true)
         tree.notifyDomUpdate()
 
-        store.get<{on: Function, off: Function}>('isLoading')!.on()
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
 
         const nodeKey = createCogTifRes.message
 
@@ -104,7 +97,25 @@ export default function LumsPage({ node }: LumsPageProps) {
         if (!getCogTifRes.success) {
             toast.error(getCogTifRes.message)
         } else {
-            store.get<{on: Function, off: Function}>('isLoading')!.off()
+            const map = store.get<mapboxgl.Map>('map')
+            const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, nodeKey)
+            map?.addSource(nodeKey + 'source', {
+                type: "raster",
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 18,
+                minzoom: 0,
+                scheme: "xyz",
+            })
+            map?.addLayer({
+                id: nodeKey + 'layer',
+                type: "raster",
+                source: nodeKey + 'source',
+                paint: {
+                    "raster-opacity": 0.8,
+                },
+            })
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
             toast.success('getCogTifRes.message')
         }
     }
@@ -175,7 +186,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                 original_tif_path: ''
             }
             pageContext.current.uploadVectors = []
-            pageContext.current.hasLUM = false 
+            pageContext.current.hasLUM = false
             setShowLumDialog(true)
             setShowResetConfirm(false)
             triggerRepaint()

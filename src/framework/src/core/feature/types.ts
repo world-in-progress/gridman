@@ -1,5 +1,5 @@
 export interface FeatureSaveBody {
-  name: string;
+  node_key: string;
   feature_json: Record<string, any>;
 }
 
@@ -22,7 +22,7 @@ export interface FeatureGetJsonBody {
 export interface FeatureGetJsonResponse {
   success: boolean;
   message: string;
-  feature_json: Record<string, any>;
+  data: Record<string, any>;
 }
 
 export interface FeatureList {

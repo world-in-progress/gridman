@@ -20,7 +20,7 @@ export const createFeature: IAPI<FeatureMeta, BaseResponse> = {
 				body: JSON.stringify(featureMeta),
 				headers: { 'Content-Type': 'application/json' }
 			})
-			
+
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
@@ -55,22 +55,43 @@ export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
 			throw new Error(`Failed to save feature: ${error}`);
 		}
 	},
-};
+}
 
-export const deleteFeature: IAPI<{ id: string }, void> = {
+export const getFeatureData: IAPI<string, FeatureGetJsonResponse> = {
 	api: `${API_PREFIX}`,
-	fetch: async (query: { id: string }): Promise<void> => {
-		const response = await fetch(`${deleteFeature.api}/${query.id}`, {
-			method: "DELETE",
-		});
+	fetch: async (node_key: string, isRemote: boolean): Promise<FeatureGetJsonResponse> => {
+		try {
+			const api = getPrefix(isRemote) + getFeatureData.api + `/${node_key}`
+			const response = await fetch(api, { method: "GET" })
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
+			const responseData: FeatureGetJsonResponse = await response.json();
+			return responseData;
+		} catch (error) {
+			throw new Error(`Failed to get feature data: ${error}`);
 		}
+	}
+}
 
-		const responseData: BaseResponse = await response.json();
-		if (!responseData.success) {
-			throw new Error(`Failed to delete feature: ${responseData.message}`);
+export const deleteFeature: IAPI<string, BaseResponse> = {
+	api: `${API_PREFIX}`,
+	fetch: async (node_key: string, isRemote: boolean): Promise<BaseResponse> => {
+		try {
+			const api = getPrefix(isRemote) + deleteFeature.api + `/${node_key}`
+			const response = await fetch(api, {
+				method: "DELETE",
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const responseData: BaseResponse = await response.json()
+			return responseData
+		} catch (error) {
+			throw new Error(`Failed to delete feature: ${error}`);
 		}
 	},
 };
@@ -103,26 +124,7 @@ export const updateFeatureProperty: IAPI<
 	},
 };
 
-export const getFeatureJson: IAPI<FeatureGetJsonBody, FeatureGetJsonResponse> =
-{
-	api: `${API_PREFIX}/get_feature_json`,
-	fetch: async (
-		query: FeatureGetJsonBody
-	): Promise<FeatureGetJsonResponse> => {
-		const response = await fetch(getFeatureJson.api, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(query),
-		});
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
-		}
-
-		const responseData: FeatureGetJsonResponse = await response.json();
-		return responseData;
-	},
-};
 
 export const setCurrentPatchFeature: IAPI<
 	{ projectName: string; patchName: string },
