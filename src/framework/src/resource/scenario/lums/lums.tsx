@@ -5,13 +5,20 @@ import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-men
 import { FilePlus2, Info } from "lucide-react";
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import LumsInformation from "./lumsInformation";
-import LumsPage from "./lumsPage";
-import { LUMData } from "./types";
+import LumsPage from "./lumsPage"
+import { LUMData } from "./types"
+import { UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
+import { Vectordata } from "../lum/lum";
 
 export class LumsPageContext extends DefaultPageContext {
     hasLUM: boolean
     rawLumInfo: LUMData
-    uploadVectors: string[]
+    uploadVectors: {
+        node_key: string,
+        data: Vectordata
+        updateRasterData: UpdateRasterData
+    }[]
+    updateRasterMeta: UpdateRasterMeta
 
     constructor() {
         super()
@@ -23,6 +30,9 @@ export class LumsPageContext extends DefaultPageContext {
             original_tif_path: ''
         }
         this.uploadVectors = []
+        this.updateRasterMeta = {
+            updates: []
+        }
     }
 
     static async create(node: ISceneNode): Promise<LumsPageContext> {

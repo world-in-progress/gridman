@@ -14,6 +14,7 @@ export class VectorPageContext extends DefaultPageContext {
 
     drawFeature: GeoJSON.FeatureCollection | null
     featureData: Record<string, any>
+    isRuined: boolean
 
     constructor() {
         super()
@@ -24,6 +25,7 @@ export class VectorPageContext extends DefaultPageContext {
             epsg: '',
             color: ''
         }
+        this.isRuined = false
     }
 
     static async create(node: ISceneNode): Promise<VectorPageContext> {
@@ -32,7 +34,6 @@ export class VectorPageContext extends DefaultPageContext {
         const context = new VectorPageContext()
 
         try {
-            store.get<{on: Function, off: Function}>('isLoading')?.on()
             const nodeMeta = await apis.feature.getFeatureData.fetch(n.key, n.tree.isPublic)
             context.featureData = nodeMeta.data
             context.drawFeature = nodeMeta.data.feature_json
@@ -80,10 +81,13 @@ export default class VectorScenarioNode extends DefaultScenarioNode {
                 break
             case VectorMenuItem.EDIT_THIS_VECTOR:
                 (nodeSelf as SceneNode).pageId = 'default'
+                store.get<{ on: Function, off: Function }>('isLoading')?.on()
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case VectorMenuItem.DELETE_THIS_VECTOR:
+                store.get<{ on: Function, off: Function }>('isLoading')?.on()
                 const deleteResponse = await apis.feature.deleteFeature.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
+                store.get<{ on: Function, off: Function }>('isLoading')?.off()
                 if (deleteResponse.success) {
                     toast.success(deleteResponse.message)
                     await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)

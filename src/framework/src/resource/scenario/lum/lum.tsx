@@ -2,18 +2,20 @@ import DefaultPageContext from "@/core/context/default";
 import DefaultScenarioNode from "@/core/scenario/default";
 import { ISceneNode } from "@/core/scene/iscene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
-import { FilePlus2, Info } from "lucide-react";
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
-import LumInformation from "./lumInformation";
-import LumPage from "./lumPage";
-import { UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
+import { FilePlus2, Info } from "lucide-react"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+import LumInformation from "./lumInformation"
+import LumPage from "./lumPage"
+import * as apis from '@/core/apis/apis'
+import { RasterMeta, UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
+import store from "@/store";
 
 export interface Vectordata {
     name: string,
     type: string,
     color: string,
     epsg: string,
-    feature_json: Record<string, any>
+    feature_json: GeoJSON.FeatureCollection
 }
 
 export class LumPageContext extends DefaultPageContext {
@@ -22,8 +24,9 @@ export class LumPageContext extends DefaultPageContext {
         node_key: string,
         data: Vectordata
         updateRasterData: UpdateRasterData
-    } []
+    }[]
     updateRasterMeta: UpdateRasterMeta
+    lumInfo: RasterMeta['data'] | null
 
     constructor() {
         super()
@@ -32,10 +35,22 @@ export class LumPageContext extends DefaultPageContext {
         this.updateRasterMeta = {
             updates: []
         }
+        this.lumInfo = null
     }
 
-    static async create(): Promise<LumPageContext> {
-        return new LumPageContext()
+    static async create(node: ISceneNode): Promise<LumPageContext> {
+        const n = node as SceneNode
+        const context = new LumPageContext()
+
+        try {
+            const rasterInfo = (await apis.raster.getRasterMetaData.fetch(node.key, node.tree.isPublic))
+            const lumInfo = rasterInfo.data
+            context.lumInfo = lumInfo
+        } catch (error) {
+            console.error('Process lum data failed:', error)
+        }
+
+        return context
     }
 }
 
@@ -66,6 +81,7 @@ export default class LumScenarioNode extends DefaultScenarioNode {
         switch (menuItem) {
             case LumMenuItem.LUM_EDIT:
                 (nodeSelf as SceneNode).pageId = 'default'
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case LumMenuItem.LUM_INFORMATION:

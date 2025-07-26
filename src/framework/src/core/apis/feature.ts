@@ -48,11 +48,10 @@ export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
 
-			const responseData: FeatureSaveResponse = await response.json();
-			console.log("responseData: ", responseData);
+			const responseData: FeatureSaveResponse = await response.json()
 			return responseData;
 		} catch (error) {
-			throw new Error(`Failed to save feature: ${error}`);
+			throw new Error(`Failed to save feature: ${error}`)
 		}
 	},
 }
