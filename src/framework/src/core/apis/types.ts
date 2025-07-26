@@ -192,18 +192,19 @@ export interface RasterMeta {
 export type RasterOperation = "set" | "add" | "substract" | "max_fill"
 
 // TODO: Change to node key
-export interface UpdateRasterData {
-    feature_node_key: string,
+export interface UpdateRasterMeta {
+    nodeKey: string,
+    feature: object,
     operation: RasterOperation,
     value: number | null
 }
 
 export interface UpdateRasterMeta {
-    updates: UpdateRasterData[]
+    updates: UpdateRasterMeta[]
 }
 
 export interface SamplingMeta {
-    rasterName: string,
+    nodeKey: string,
     x: number,
     y: number,
 }
