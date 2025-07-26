@@ -198,7 +198,7 @@ export interface UpdateRasterData {
 }
 
 export interface UpdateRasterMeta {
-    updates: UpdateRasterMeta[]
+    updates: UpdateRasterData[]
 }
 
 export interface SamplingMeta {
