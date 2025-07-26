@@ -55,9 +55,9 @@ export const getCogTif: IAPI<string, BaseResponse> = {
 
 export const getRasterMetaData: IAPI<string, RasterMeta> = {
     api: `${API_PREFIX}`,
-    fetch: async (nodeKey: string, isRemote: boolean): Promise<RasterMeta> => {
+    fetch: async (node_key: string, isRemote: boolean): Promise<RasterMeta> => {
         try {
-            const api = getPrefix(isRemote) + getRasterMetaData.api + `/metadata/${nodeKey}`
+            const api = getPrefix(isRemote) + getRasterMetaData.api + `/metadata/${node_key}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {
@@ -77,7 +77,7 @@ export const updateRasterByFeature: IAPI<{node_key: string, updateRasterMeta: Up
     api: `${API_PREFIX}`,
     fetch: async (query: {node_key: string, updateRasterMeta:UpdateRasterMeta}, isRemote: boolean): Promise<BaseResponse> => {
         try {
-            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_feature/${query.node_key}`
+            const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_features/${query.node_key}`
             const response = await fetch(api, {
                 method: 'POST',
                 headers: {
