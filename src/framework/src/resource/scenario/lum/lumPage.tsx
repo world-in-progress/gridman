@@ -157,7 +157,7 @@ export default function LumPage({ node }: LumPageProps) {
                     updateRasterData: updateRasterData
                 }
                 pageContext.current?.uploadVectors.push(uploadVector)
-                pageContext.current?.updateRasterMeta.updates.push(updateRasterData)
+                // pageContext.current?.updateRasterMeta.updates.push(updateRasterData)
                 console.log(pageContext.current?.uploadVectors)
                 triggerRepaint()
             }
@@ -318,9 +318,12 @@ export default function LumPage({ node }: LumPageProps) {
                             Are you sure you want to reset the LUM editor? All unsaved content will be lost.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmReset} className="bg-red-500 hover:bg-red-600">
+                    <AlertDialogFooter className='flex gap-6'>
+                        <AlertDialogCancel className='cursor-pointer'>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmReset}
+                            className="bg-red-500 hover:bg-red-600 cursor-pointer"
+                        >
                             Reset
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -340,9 +343,7 @@ export default function LumPage({ node }: LumPageProps) {
                                 <p className="text-sm text-slate-500">Edit Details</p>
                             </div>
                             <Button
-                                variant="destructive"
                                 className='cursor-pointer bg-sky-500 hover:bg-sky-600 shadow-sm'
-
                                 onClick={handleReset}
                             >
                                 <Fullscreen className="w-4 h-4" />Scale To Layer
@@ -532,7 +533,7 @@ export default function LumPage({ node }: LumPageProps) {
                                             <Button
                                                 variant="default"
                                                 size="sm"
-                                                className=" bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointe shadow-sm"
+                                                className=" bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
                                                 onClick={handleSetLUM}
                                                 disabled={!pageContext.current?.uploadVectors.length}
                                             >

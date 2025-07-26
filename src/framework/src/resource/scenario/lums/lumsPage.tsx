@@ -9,6 +9,12 @@ import {
     Globe,
     Palette,
     X,
+    SquareCheck,
+    FileIcon,
+    Upload,
+    Dot,
+    Minus,
+    Square,
 } from "lucide-react"
 import { Button } from '@/components/ui/button'
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +38,18 @@ import { cn } from '@/utils/utils'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import store from '@/store'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog"
+import { UpdateRasterData } from '@/core/apis/types'
+import { Vectordata } from '../lum/lum'
+
+const REORDER_TYPE = 'application/x-lum-reorder'
 
 export default function LumsPage({ node }: LumsPageProps) {
 
@@ -41,6 +59,7 @@ export default function LumsPage({ node }: LumsPageProps) {
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [showLumDialog, setShowLumDialog] = useState(false)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -134,18 +153,104 @@ export default function LumsPage({ node }: LumsPageProps) {
         e.preventDefault()
         setIsDragOver(false)
 
+        if (e.dataTransfer.types.includes(REORDER_TYPE)) return
+
         const nodeKey = e.dataTransfer.getData('text/plain')
-        console.log(nodeKey.split('.')[1])
         if (nodeKey.split('.')[1] === 'vectors') {
-            const isAlreadySelected = pageContext.current?.uploadVectors.some((resource) => resource === nodeKey)
+            const isAlreadySelected = pageContext.current?.uploadVectors.some((resource) => resource.node_key === nodeKey)
             if (!isAlreadySelected) {
-                pageContext.current?.uploadVectors.push(nodeKey)
                 // TODO:add vector to map
+                const vectorData = (await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)).data as Vectordata
+
+                const updateRasterData: UpdateRasterData = {
+                    feature_node_key: nodeKey,
+                    operation: 'set',
+                    value: null
+                }
+                const uploadVector = {
+                    node_key: nodeKey,
+                    data: vectorData,
+                    updateRasterData: updateRasterData
+                }
+                pageContext.current?.uploadVectors.push(uploadVector)
+                // pageContext.current?.updateRasterMeta.updates.push(updateRasterData)
+                console.log(pageContext.current?.uploadVectors)
                 triggerRepaint()
             }
         } else {
             toast.error('Please select the correct feature in vectors')
         }
+    }
+
+    // Rename these functions to avoid collision with the drop zone handlers
+    const handleItemDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        // Mark this as an internal reordering operation
+        setDraggedIndex(index)
+        e.dataTransfer.setData(REORDER_TYPE, index.toString())
+        // Set a clear effect
+        e.dataTransfer.effectAllowed = 'move'
+    }
+
+    const handleItemDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        // Check if this is an internal reordering operation
+        if (e.dataTransfer.types.includes(REORDER_TYPE)) {
+            e.preventDefault()
+            e.stopPropagation() // Prevent parent handlers
+            e.dataTransfer.dropEffect = 'move'
+        }
+    }
+
+    // 添加处理输入值变化的函数
+    const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        if (!pageContext.current) return
+
+        // 更新对应资源的 updateRasterData.value
+        pageContext.current.uploadVectors[index].updateRasterData.value = Number(e.target.value)
+        triggerRepaint()
+    }
+
+    // 修改拖动处理函数，确保同步更新 updateRasterMeta.updates
+    const handleItemDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+        // Check if this is an internal reordering operation
+        if (e.dataTransfer.types.includes(REORDER_TYPE)) {
+            e.preventDefault()
+            e.stopPropagation()
+
+            if (draggedIndex === null || draggedIndex === index) return
+
+            if (pageContext.current) {
+                // 更新 uploadVectors 顺序
+                const items = [...pageContext.current.uploadVectors]
+                const draggedItem = items[draggedIndex]
+                items.splice(draggedIndex, 1)
+                items.splice(index, 0, draggedItem)
+                pageContext.current.uploadVectors = items
+
+                // 同步更新 updateRasterMeta.updates 顺序
+                // const updates = [...pageContext.current.updateRasterMeta.updates]
+                // const draggedUpdate = updates[draggedIndex]
+                // updates.splice(draggedIndex, 1)
+                // updates.splice(index, 0, draggedUpdate)
+                // pageContext.current.updateRasterMeta.updates = updates
+
+                setDraggedIndex(index)
+                triggerRepaint()
+            }
+        }
+    }
+
+    // Add this handler to actually handle the drop on the item itself
+    const handleItemDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        // Check if this is our internal reordering operation
+        if (e.dataTransfer.types.includes(REORDER_TYPE)) {
+            e.preventDefault()
+            e.stopPropagation()
+            setDraggedIndex(null)
+        }
+    }
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null)
     }
 
     const handleVectorRemove = (index: number) => {
@@ -179,7 +284,6 @@ export default function LumsPage({ node }: LumsPageProps) {
 
     const confirmReset = () => {
         if (pageContext.current) {
-            // 重置LUM信息
             pageContext.current.rawLumInfo = {
                 name: '',
                 type: 'lum',
@@ -220,16 +324,48 @@ export default function LumsPage({ node }: LumsPageProps) {
         setShowLumDialog(open)
     }
 
+    const getFeatureTypeIcon = (type: string) => {
+        switch (type) {
+            case "point":
+                return <Dot className="w-6 h-6 " />
+            case "line":
+                return <Minus className="w-6 h-6 " />
+            case "polygon":
+                return <Square className="w-6 h-6" />
+            default:
+                return null
+        }
+    }
+
+    const handleSetLUM = async () => {
+        if (!pageContext.current) return
+
+        pageContext.current.updateRasterMeta.updates = []
+
+        pageContext.current.uploadVectors.forEach(vector => {
+            pageContext.current?.updateRasterMeta.updates.push(vector.updateRasterData)
+        })
+
+        const nodeKey = node.key + '.' + pageContext.current.rawLumInfo.name
+        try {
+            await apis.raster.updateRasterByFeature.fetch({ node_key: nodeKey, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
+            toast.success('LUM successfully updated')
+        } catch (error) {
+            console.error('Failed to update LUM:', error)
+            toast.error('Failed to update LUM')
+        }
+    }
+
     return (
         <div className="w-full h-full flex flex-col bg-gray-50">
-            <AlertDialog open={showLumDialog} onOpenChange={handleDialogOpenChange}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Create New LUM</AlertDialogTitle>
-                        <AlertDialogDescription>
+            <Dialog open={showLumDialog} onOpenChange={handleDialogOpenChange}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create New LUM</DialogTitle>
+                        <DialogDescription>
                             Please fill in the basic information for the LUM
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
+                        </DialogDescription>
+                    </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="name" className="text-right">
@@ -262,7 +398,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                                 />
                                 <Button
                                     variant="secondary"
-                                    className='cursor-pointer'
+                                    className='cursor-pointer hover:bg-slate-200'
                                     size="icon"
                                     onClick={handleFileSelect}
                                     title="Browse file"
@@ -272,12 +408,24 @@ export default function LumsPage({ node }: LumsPageProps) {
                             </div>
                         </div>
                     </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLumInfoConfirm}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                    <DialogFooter className='flex gap-6'>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowLumDialog(false)}
+                            className='cursor-pointer'
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleLumInfoConfirm}
+                            disabled={!pageContext.current?.rawLumInfo.name.trim() || !pageContext.current?.rawLumInfo.original_tif_path.trim()}
+                            className='cursor-pointer'
+                        >
+                            Confirm
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
                 <AlertDialogContent>
@@ -287,9 +435,12 @@ export default function LumsPage({ node }: LumsPageProps) {
                             Are you sure you want to reset the LUM editor? All unsaved content will be lost.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmReset} className="bg-red-500 hover:bg-red-600">
+                    <AlertDialogFooter className='flex gap-6'>
+                        <AlertDialogCancel className='cursor-pointer'>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmReset}
+                            className="bg-red-500 hover:bg-red-600 cursor-pointer"
+                        >
                             Reset
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -297,7 +448,7 @@ export default function LumsPage({ node }: LumsPageProps) {
             </AlertDialog>
 
             <div className="w-full flex-1 relative">
-                <div className="absolute top-0 left-0 w-80 h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
+                <div className="absolute top-0 left-0 w-[20vw] h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
                     {/* Header */}
                     <div className="p-6 bg-white border-b border-slate-200">
                         <div className="flex items-center gap-3">
@@ -311,8 +462,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                             {pageContext.current?.hasLUM && (
                                 <Button
                                     variant="destructive"
-                                    className='cursor-pointer bg-red-500 hover:bg-red-600'
-                                    size="sm"
+                                    className='cursor-pointer bg-red-500 hover:bg-red-600 shadow-sm'
                                     onClick={handleReset}
                                 >
                                     <RotateCcw className="w-4 h-4 mr-1" /> Reset
@@ -339,7 +489,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                             <>
                                 {/* Feature Type Card */}
                                 <Card className="border-slate-200 shadow-sm">
-                                    <CardContent className="space-y-6">
+                                    <CardContent className="space-y-4">
                                         {/* Visual Properties Section */}
                                         <div>
                                             <div className="flex items-center gap-2 mb-3">
@@ -352,7 +502,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                                                     <span className="text-sm text-slate-600">Name</span>
                                                     <div className="flex items-center gap-2 mr-1">
                                                         <span className="font-semibold text-slate-900">
-                                                            {pageContext.current?.rawLumInfo.name || "LUM"}
+                                                            {node.name}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -387,7 +537,7 @@ export default function LumsPage({ node }: LumsPageProps) {
                                                         <div className="flex items-center gap-2">
                                                             <FolderOpen className="w-3 h-3 text-slate-500" />
                                                             <code className="text-xs font-mono text-slate-700 truncate">
-                                                                {pageContext.current?.rawLumInfo.original_tif_path || ''}
+                                                                {node.key}
                                                             </code>
                                                         </div>
                                                     </div>
@@ -398,50 +548,134 @@ export default function LumsPage({ node }: LumsPageProps) {
                                 </Card>
 
                                 {/* Vectors Upload Area */}
-                                <Card className="border-slate-200 shadow-sm mb-6">
-                                    <CardHeader>
-                                        <CardTitle className="text-lg font-medium">Vectors Upload Area</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div
-                                            className={cn(
-                                                'border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-200 transition-colors',
-                                                isDragOver && 'border-blue-400 bg-gray-100',
-                                            )}
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={handleDrop}
-                                        >
-                                            {pageContext.current?.uploadVectors.length === 0 ? (
-                                                <div className='relative min-h-[200px]'>
-                                                    <div className='absolute inset-0 flex flex-col justify-center items-center text-gray-400'>
-                                                        <p className='text-lg mb-2'>Drag resources here</p>
-                                                        <p className='text-sm'>Drag files from the left resource manager here</p>
+                                <Card className="border-slate-200 shadow-sm">
+                                    <CardContent className="space-y-4">
+                                        {/* Upload Section Header */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <FileIcon className="w-4 h-4 text-slate-500" />
+                                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Vector Upload</span>
+                                            </div>
+                                            {/* Operation Instructions */}
+                                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                                <span className="text-sm font-medium text-blue-700 block mb-2">Instructions:</span>
+                                                <ol className="space-y-2 text-xs text-blue-700 pl-5 list-decimal">
+                                                    <li>Drag resources from vectors folder to the area below to load.</li>
+                                                    <li>Drag uploaded resource items to arrange the assignment order.</li>
+                                                    <li>Click the assign button after confirming the assignment order.</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="border-t border-slate-100"></div>
+
+                                        {/* Drop Zone */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Upload className="w-4 h-4 text-slate-500" />
+                                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Drop Zone</span>
+                                            </div>
+
+                                            <div
+                                                className={cn(
+                                                    "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                                    isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                                )}
+                                                onDragOver={handleDragOver}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={handleDrop}
+                                            >
+                                                {!pageContext.current?.uploadVectors.length ? (
+                                                    <div className="h-[300px] flex flex-col justify-center items-center text-slate-400">
+                                                        <Upload className="w-8 h-8 mb-2" />
+                                                        <p className="text-sm font-medium mb-1">Drag vector files here</p>
+                                                        <p className="text-xs text-center">Drop files from the resource manager</p>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex-col space-y-3">
-                                                    {pageContext.current.uploadVectors.map((resource, index) => (
-                                                        <div
-                                                            key={resource}
-                                                            className="bg-gray-100 border border-gray-300 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-50 transition-colors"
-                                                        >
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-gray-700 text-sm font-medium truncate">{resource.split('.').pop()}</p>
-                                                                <p className="text-gray-500 text-xs truncate">{resource}</p>
-                                                            </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="ml-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:text-white cursor-pointer"
-                                                                onClick={() => handleVectorRemove(index)}
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </Button>
+                                                ) : (
+                                                    <div className="max-h-[300px] overflow-y-auto pr-1">
+                                                        <div className="space-y-2">
+                                                            {pageContext.current?.uploadVectors.map((resource, index) => (
+                                                                <div
+                                                                    key={resource.node_key}
+                                                                    className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                                                    onClick={() => handleVectorClick(resource.node_key)}
+                                                                    draggable
+                                                                    onDragStart={(e) => handleItemDragStart(e, index)}
+                                                                    onDragOver={(e) => handleItemDragOver(e, index)}
+                                                                    onDragEnter={(e) => handleItemDragEnter(e, index)}
+                                                                    onDragEnd={handleDragEnd}
+                                                                    onDrop={handleItemDrop}
+                                                                    style={{ opacity: draggedIndex === index ? 0.5 : 1 }}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                                            <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span>
+                                                                            <p className="text-slate-900 text-sm font-medium truncate">
+                                                                                {resource.node_key.split(".").pop()}
+                                                                            </p>
+                                                                            <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                                                {resource.data.epsg}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="ml-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                handleVectorRemove(index)
+                                                                            }}
+                                                                        >
+                                                                            <X className="h-3 w-3" />
+                                                                        </Button>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                                            assign
+                                                                        </Badge>
+                                                                        <Input
+                                                                            className="h-7 text-xs flex-1"
+                                                                            placeholder="Enter value"
+                                                                            value={resource.updateRasterData.value || ''}
+                                                                            onChange={(e) => handleValueChange(e, index)}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Upload Status */}
+                                            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                                                <span>
+                                                    {pageContext.current?.uploadVectors.length || 0} files uploaded
+                                                </span>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className=" bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                                        onClick={() => pageContext.current!.uploadVectors = []}
+                                                        disabled={!pageContext.current?.uploadVectors.length}
+                                                    >
+                                                        <RotateCcw className="w-4 h-4" />Reset
+                                                    </Button>
+                                                    <Button
+                                                        variant="default"
+                                                        size="sm"
+                                                        className=" bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                                        onClick={handleSetLUM}
+                                                        disabled={!pageContext.current?.uploadVectors.length}
+                                                    >
+                                                        <SquareCheck className="w-4 h-4" />Assign
+                                                    </Button>
+
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
