@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { FeatureData } from '../vectors/types'
 
 const featureColorMap = [
     { value: "sky-500", color: "#0ea5e9", name: "Sky" },
@@ -106,6 +107,7 @@ export default function VectorPage({ node }: VectorPageProps) {
     const [ruinDialogOpen, setRuinDialogOpen] = useState(false)
     const [selectedTool, setSelectedTool] = useState<ToolType>("select");
     const [vectorColor, setVectorColor] = useState<string | null>(null)
+    const [featureData, setFeatureData] = useState<FeatureData | null>(null)
 
     const pageContext = useRef<VectorPageContext | null>(null)
 
@@ -127,7 +129,7 @@ export default function VectorPage({ node }: VectorPageProps) {
                 drawInstance.deleteAll()
 
                 drawInstance.add(pageContext.current!.drawFeature!)
-                store.get<{on: Function, off: Function}>('isLoading')?.off()
+                store.get<{ on: Function, off: Function }>('isLoading')?.off()
             }
 
             if (map.loaded()) {
@@ -144,149 +146,104 @@ export default function VectorPage({ node }: VectorPageProps) {
 
         if (pc.featureData && pc.drawFeature) {
             const vectorColor = featureColorMap.find(item => item.value === pc.featureData.color)?.color
-            console.log(vectorColor)
             setVectorColor(vectorColor!)
+            setFeatureData(pc.featureData! as FeatureData)
         }
 
         triggerRepaint()
     }
 
     const unloadContext = () => {
-        const drawInstance = store.get<MapboxDraw>("mapDraw")
-        if (drawInstance) {
-            drawInstance.deleteAll()
+        if (!pageContext.current?.isRuined) {
+            handleSaveFeature()
         }
     }
 
-    // useEffect(() => {
-    //     const map = store.get<mapboxgl.Map>("map")
-    //     const drawInstance = store.get<MapboxDraw>("mapDraw")
-    // if (!map || !drawInstance || !featureData) return
+    useEffect(() => {
+        const map = store.get<mapboxgl.Map>("map")
+        const drawInstance = store.get<MapboxDraw>("mapDraw")
+        if (!map || !drawInstance || !featureData) return
 
-    // const handleDrawCreate = (e: any) => {
-    //     if (selectedTool === "draw" && isDrawing) {
+        const handleDrawCreate = (e: any) => {
+            if (selectedTool === "draw" && isDrawing) {
 
-    //         setTimeout(() => {
-    //             switch (featureData.type) {
-    //                 case "point":
-    //                     drawInstance.changeMode("draw_point")
-    //                     break
-    //                 case "line":
-    //                     drawInstance.changeMode("draw_line_string")
-    //                     break
-    //                 case "polygon":
-    //                     drawInstance.changeMode("draw_polygon")
-    //                     break
-    //             }
-    //         }, 10)
-    //     }
-    // }
+                setTimeout(() => {
+                    switch (featureData.type) {
+                        case "point":
+                            drawInstance.changeMode("draw_point")
+                            break
+                        case "line":
+                            drawInstance.changeMode("draw_line_string")
+                            break
+                        case "polygon":
+                            drawInstance.changeMode("draw_polygon")
+                            break
+                    }
+                }, 10)
+            }
+        }
 
-    // const handleModeChange = (e: any) => {
-    //     if (selectedTool === "draw" && isDrawing &&
-    //         e.mode === "simple_select" &&
-    //         (e.oldMode && !e.oldMode.startsWith("direct_select"))) {
+        const handleModeChange = (e: any) => {
+            if (selectedTool === "draw" && isDrawing &&
+                e.mode === "simple_select" &&
+                (e.oldMode && !e.oldMode.startsWith("direct_select"))) {
+                setTimeout(() => {
+                    switch (featureData.type) {
+                        case "point":
+                            drawInstance.changeMode("draw_point")
+                            break
+                        case "line":
+                            drawInstance.changeMode("draw_line_string")
+                            break
+                        case "polygon":
+                            drawInstance.changeMode("draw_polygon")
+                            break
+                    }
+                }, 50)
+            }
+        }
+        map.on("draw.create", handleDrawCreate)
+        map.on("draw.modechange", handleModeChange)
+        return () => {
+            map.off("draw.create", handleDrawCreate)
+            map.off("draw.modechange", handleModeChange)
+        }
+    }, [selectedTool, featureData, isDrawing])
 
-    //         // Re-enter drawing mode
-    //         setTimeout(() => {
-    //             switch (featureData.type) {
-    //                 case "point":
-    //                     drawInstance.changeMode("draw_point")
-    //                     break
-    //                 case "line":
-    //                     drawInstance.changeMode("draw_line_string")
-    //                     break
-    //                 case "polygon":
-    //                     drawInstance.changeMode("draw_polygon")
-    //                     break
-    //             }
-    //         }, 50)
-    //     }
-    // }
+    useEffect(() => {
+        const drawInstance = store.get<MapboxDraw>("mapDraw")
+        if (!drawInstance || !featureData) return
 
-    //     // Add event listeners
-    //     map.on("draw.create", handleDrawCreate)
-    //     map.on("draw.modechange", handleModeChange)
-
-    //     return () => {
-    //         // Clean up event listeners
-    //         map.off("draw.create", handleDrawCreate)
-    //         map.off("draw.modechange", handleModeChange)
-    //     }
-    // }, [selectedTool, featureData, isDrawing])
-
-    // useEffect(() => {
-    //     const drawInstance = store.get<MapboxDraw>("mapDraw")
-    //     if (!drawInstance || !featureData) return
-
-    //     if (selectedTool === "draw") {
-    //         setIsDrawing(true)
-    //         switch (featureData.type) {
-    //             case "point":
-    //                 drawInstance.changeMode("draw_point")
-    //                 break
-    //             case "line":
-    //                 drawInstance.changeMode("draw_line_string")
-    //                 break
-    //             case "polygon":
-    //                 drawInstance.changeMode("draw_polygon")
-    //                 break
-    //             default:
-    //                 break
-    //         }
-    //     } else if (selectedTool === "delete") {
-    //         setIsDrawing(false)
-    //         // Get selected features and delete them
-    //         const selectedFeatures = drawInstance.getSelectedIds()
-    //         if (selectedFeatures.length > 0) {
-    //             drawInstance.delete(selectedFeatures)
-    //             // Reset to select mode after deletion
-    //             setSelectedTool("select")
-    //         } else {
-    //             // If no features are selected, switch back to select mode
-    //             drawInstance.changeMode("simple_select")
-    //             setSelectedTool("select")
-    //         }
-    //     } else {
-    //         setIsDrawing(false)
-    //         drawInstance.changeMode("simple_select")
-    //     }
-    // }, [selectedTool, featureData])
-
-    // const handleCreateFeature = async () => {
-    //     if (!pageContext.current!.featureData.name.trim()
-    //         // || !pageContext.current!.featureData.savePath.trim()
-    //         || !pageContext.current!.featureData.epsg
-    //     ) {
-    //         return
-    //     }
-
-    //     const newFeature: FeatureData = {
-    //         name: pageContext.current!.featureData.name,
-    //         type: pageContext.current!.featureData.type,
-    //         color: pageContext.current!.featureData.color,
-    //         epsg: pageContext.current!.featureData.epsg,
-    //     }
-
-    //     const vectorColor = featureColorMap.find(item => item.value === newFeature.color)?.color
-
-    //     setFeatureData(newFeature)
-    //     setVectorColor(vectorColor!)
-    //     pageContext.current!.hasFeature = true
-    //     pageContext.current!.featureData = newFeature
-    //     const createFeatureRes = await apis.feature.createFeature.fetch(newFeature, node.tree.isPublic)
-    //     if (!createFeatureRes.success) {
-    //         toast.error(createFeatureRes.message)
-    //         return
-    //     } else {
-    //         const tree = node.tree as SceneTree
-    //         await tree.alignNodeInfo(node, true)
-    //         tree.notifyDomUpdate()
-    //         toast.success(createFeatureRes.message)
-    //     }
-    //     setCreateDialogOpen(false)
-    //     triggerRepaint()
-    // }
+        if (selectedTool === "draw") {
+            setIsDrawing(true)
+            switch (featureData.type) {
+                case "point":
+                    drawInstance.changeMode("draw_point")
+                    break
+                case "line":
+                    drawInstance.changeMode("draw_line_string")
+                    break
+                case "polygon":
+                    drawInstance.changeMode("draw_polygon")
+                    break
+                default:
+                    break
+            }
+        } else if (selectedTool === "delete") {
+            setIsDrawing(false)
+            const selectedFeatures = drawInstance.getSelectedIds()
+            if (selectedFeatures.length > 0) {
+                drawInstance.delete(selectedFeatures)
+                setSelectedTool("select")
+            } else {
+                drawInstance.changeMode("simple_select")
+                setSelectedTool("select")
+            }
+        } else {
+            setIsDrawing(false)
+            drawInstance.changeMode("simple_select")
+        }
+    }, [selectedTool, featureData])
 
     const handleReset = () => {
         const pc = pageContext.current!
@@ -294,6 +251,7 @@ export default function VectorPage({ node }: VectorPageProps) {
         if (drawInstance) {
             drawInstance.deleteAll()
         }
+        handleSaveFeature()
         setResetDialogOpen(false)
         setSelectedTool("select")
         triggerRepaint()
@@ -302,9 +260,10 @@ export default function VectorPage({ node }: VectorPageProps) {
     const handleRuin = async () => {
         const deleteResponse = await apis.feature.deleteFeature.fetch(node.key, node.tree.isPublic)
         if (deleteResponse.success) {
-            toast.success(deleteResponse.message)
+            pageContext.current!.isRuined = true
             const tree = node.tree as SceneTree
             await tree.removeNode(node)
+            toast.success(deleteResponse.message)
         } else {
             toast.error(deleteResponse.message)
         }
@@ -333,19 +292,23 @@ export default function VectorPage({ node }: VectorPageProps) {
     const handleSaveFeature = async () => {
         const drawInstance = store.get<MapboxDraw>("mapDraw")!
         if (!drawInstance) return
+        store.get<{ on: Function, off: Function }>('isLoading')?.on()
         pageContext.current!.drawFeature = drawInstance.getAll()
-        console.log(pageContext.current!.drawFeature)
 
         const saveFeatureBody = {
             node_key: node.key,
             feature_json: pageContext.current!.drawFeature,
         }
         const saveFeatureRes = await apis.feature.saveFeature.fetch(saveFeatureBody, node.tree.isPublic)
-
-        if (!saveFeatureRes.success) {
-            toast.error(saveFeatureRes.message)
+        store.get<{ on: Function, off: Function }>('isLoading')?.off()
+        if (resetDialogOpen) {
+            toast.info("All features have been cleared")
         } else {
-            toast.success(saveFeatureRes.message)
+            if (!saveFeatureRes.success) {
+                toast.error(saveFeatureRes.message)
+            } else {
+                toast.success(saveFeatureRes.message)
+            }
         }
     }
 
@@ -531,19 +494,6 @@ export default function VectorPage({ node }: VectorPageProps) {
                                                     <code className="text-xs font-mono text-slate-700">EPSG: {pageContext.current?.featureData.epsg}</code>
                                                 </div>
                                             </div>
-
-                                            {/* Save Path */}
-                                            {/* <div>
-													<span className="text-sm text-slate-600">Save Location</span>
-													<div className="bg-slate-100 rounded-lg p-2 mt-1">
-														<div className="flex items-center gap-2">
-															<FolderOpen className="w-3 h-3 text-slate-500" />
-															<code className="text-xs font-mono text-slate-700 truncate">
-																{pageContext.current.featureData.savePath}
-															</code>
-														</div>
-													</div>
-												</div> */}
                                         </div>
                                     </div>
                                 </CardContent>

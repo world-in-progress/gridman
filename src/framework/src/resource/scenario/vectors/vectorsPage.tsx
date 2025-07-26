@@ -158,9 +158,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 	const unloadContext = () => {
 		const drawInstance = store.get<MapboxDraw>("mapDraw")
-		if (drawInstance) {
-			pageContext.current!.drawFeature = drawInstance.getAll()
-			drawInstance.deleteAll()
+
+		if (pageContext.current!.hasFeature) {
+			if (drawInstance) {
+				handleSaveFeature()
+			}
 		}
 	}
 
@@ -282,13 +284,13 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		pageContext.current!.featureData = newFeature
 		const createFeatureRes = await apis.feature.createFeature.fetch(newFeature, node.tree.isPublic)
 		if (!createFeatureRes.success) {
-			toast.error(createFeatureRes.message)
+			toast.error(`Failed to create vector ${newFeature.name}`)
 			return
 		} else {
 			const tree = node.tree as SceneTree
 			await tree.alignNodeInfo(node, true)
 			tree.notifyDomUpdate()
-			toast.success(createFeatureRes.message)
+			toast.success(`Vector ${newFeature.name} created successfully`)
 		}
 		setCreateDialogOpen(false)
 		triggerRepaint()
@@ -338,6 +340,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		if (!pageContext.current?.hasFeature) return
 		const drawInstance = store.get<MapboxDraw>("mapDraw")!
 		if (!drawInstance) return
+		store.get<{ on: Function, off: Function }>('isLoading')?.on()
 		pageContext.current!.drawFeature = drawInstance.getAll()
 
 		const nodeKey = node.key + '.' + pageContext.current!.featureData.name
@@ -349,8 +352,10 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		const saveFeatureRes = await apis.feature.saveFeature.fetch(saveFeatureBody, node.tree.isPublic)
 
 		if (!saveFeatureRes.success) {
+			store.get<{ on: Function, off: Function }>('isLoading')?.off()
 			toast.error(saveFeatureRes.message)
 		} else {
+			store.get<{ on: Function, off: Function }>('isLoading')?.off()
 			toast.success(saveFeatureRes.message)
 		}
 	}
@@ -521,10 +526,22 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 
 					{/* Edit operations */}
 					<div className="flex items-center gap-1 px-2">
-						<Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Undo">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 w-8 p-0 cursor-pointer"
+							title="Undo"
+							disabled={!pageContext.current?.hasFeature}
+						>
 							<Undo className="h-4 w-4" />
 						</Button>
-						<Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Redo">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 w-8 p-0 cursor-pointer"
+							title="Redo"
+							disabled={!pageContext.current?.hasFeature}
+						>
 							<Redo className="h-4 w-4" />
 						</Button>
 					</div>
@@ -538,6 +555,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 								key={tool.id}
 								variant={selectedTool === tool.id ? "default" : "ghost"}
 								size="sm"
+								disabled={!pageContext.current?.hasFeature}
 								className="h-8 w-8 p-0 cursor-pointer"
 								onClick={() => setSelectedTool(tool.id as ToolType)}
 								title={tool.title}
@@ -598,9 +616,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 												<div className="flex items-center justify-between">
 													<span className="text-sm text-slate-600">Color</span>
 													<div className="flex items-center gap-2">
-														<div className="w-24 h-6 rounded-full border-2 border-white shadow-sm" 
-														     style={{ backgroundColor: featureColorMap.find(item => 
-														       item.value === pageContext.current!.featureData.color)?.color }}>
+														<div className="w-24 h-6 rounded-full border-2 border-white shadow-sm"
+															style={{
+																backgroundColor: featureColorMap.find(item =>
+																	item.value === pageContext.current!.featureData.color)?.color
+															}}>
 														</div>
 														<Badge variant="secondary" className={`text-xs text-${pageContext.current!.featureData.color}`}>
 															{pageContext.current!.featureData.color.split('-')[0]}
