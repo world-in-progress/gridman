@@ -1,8 +1,9 @@
 import { mat4, vec4, vec3 } from "gl-matrix"
-import { createShader, createTexture2D, loadImage, createFrameBuffer, createRenderBuffer, enableAllExtensions, createVBO, createIBO, createCustomMipmapTexture2D, createFboPoolforMipmapTexture, calculateMipmapLevels, createShaderFromCode } from "./glLib"
-import gll from '@/core/gl/glLib'
+import gll from "@/core/gl/glLib"
+// import gll from '@/core/gl/glLib'
+// import * as dat from 'dat.gui'
 
-import { MercatorCoordinate } from "mapbox-gl";
+const { createShader, enableAllExtensions, createTexture2D, loadImage, createArrayBuffer, createIndexBuffer, createFrameBuffer} = gll
 
 class LRUCache {
     constructor(capacity) {
@@ -63,10 +64,8 @@ export default class TerrainByProxyTile {
         this.u_offset_x = 1.5
         this.u_offset_y = 1.5
         this.exaggeration = 1
-        this.withContour = 1.0
         this.withLighting = 1.0
-        this.mixAlpha = 1.0
-        this.elevationRange = [-15.513999999999996, 4.3745000000000003]
+        this.elevationRange = [0, 500]
         // this.elevationRange = [-15.514, 10.0]
         this.diffPower = 1.1
         this.use_skirt = 1.0
@@ -74,15 +73,10 @@ export default class TerrainByProxyTile {
         this.shallowColor = [50, 25, 0];
         this.deepColor = [175, 175, 175];
 
-
-        this.SamplerParams = [13.6, -11.5, 1.56, -22.4]
-        this.LightPos = [-0.03, 0.1, 0.86]
-        this.specularPower = 40
-        this.interval = 1.0
+        this.LightPos = [-0.1, -0.12, 0.25]
         this.ep = -3
         // this.smoothingPassCount = 3
         this.smoothingPassCount = 0
-        this.u_threshold = -2
 
         // this.loadSettings();
         this.defaultParams = _params;
@@ -91,14 +85,14 @@ export default class TerrainByProxyTile {
         this.modelPositions = [];
 
 
-        // window.addEventListener('keydown', (event) => {
-        //     this.debugKey = event.key
-        //     this.map.triggerRepaint()
+        window.addEventListener('keydown', (event) => {
+            this.debugKey = event.key
+            this.map.triggerRepaint()
 
-        //     if (this.debugKey === 'w') {
-        //         this.map.showTerrainWireframe = !this.map.showTerrainWireframe
-        //     }
-        // })
+            if (this.debugKey === 'w') {
+                this.map.showTerrainWireframe = !this.map.showTerrainWireframe
+            }
+        })
     }
 
     initProxy(map) {
@@ -117,45 +111,32 @@ export default class TerrainByProxyTile {
 
         this._shallowColor = `rgb(${this.shallowColor[0]}, ${this.shallowColor[1]}, ${this.shallowColor[2]})`
         this._deepColor = `rgb(${this.deepColor[0]}, ${this.deepColor[1]}, ${this.deepColor[2]})`
-        this.SamplerParams0 = this.SamplerParams[0]
-        this.SamplerParams1 = this.SamplerParams[1]
-        this.SamplerParams2 = this.SamplerParams[2]
-        this.SamplerParams3 = this.SamplerParams[3]
         this.LightPosX = this.LightPos[0]
         this.LightPosY = this.LightPos[1]
         this.LightPosZ = this.LightPos[2]
 
-/*
-        this.gui = new dat.GUI()
-        this.gui.add(this, 'exaggeration', 0, 100).step(1).onChange((value) => { this.map.setTerrain({ 'exaggeration': value }); this.map.triggerRepaint(); })
-        this.gui.add(this, 'withContour', 0, 1).step(1).onChange(() => { })
-        this.gui.add(this, 'withLighting', 0, 1).step(1).onChange(() => { })
+
+        // this.gui = new dat.GUI()
+        // this.gui.add(this, 'exaggeration', 0, 100).step(1).onChange((value) => { this.map.setTerrain({ 'exaggeration': value }); this.map.triggerRepaint(); })
+        // this.gui.add(this, 'withLighting', 0, 1).step(1).onChange(() => { })
 
 
-        this.gui.addColor(this, '_shallowColor').name('deepColor').onChange(value => { this.shallowColor = parseRGB(value) })
-        this.gui.addColor(this, '_deepColor').name('shallowColor').onChange(value => { this.deepColor = parseRGB(value) })
+        // this.gui.addColor(this, '_shallowColor').name('deepColor').onChange(value => { this.shallowColor = parseRGB(value) })
+        // this.gui.addColor(this, '_deepColor').name('shallowColor').onChange(value => { this.deepColor = parseRGB(value) })
 
-        this.gui.add(this, 'SamplerParams0', 0, 30, 0.01).onChange(value => { this.SamplerParams[0] = value })
-        this.gui.add(this, 'SamplerParams1', -100, 100, 0.1).onChange(value => { this.SamplerParams[1] = value })
-        this.gui.add(this, 'SamplerParams2', 0, 30, 0.01).onChange(value => { this.SamplerParams[2] = value })
-        this.gui.add(this, 'SamplerParams3', -100, 100, 0.1).onChange(value => { this.SamplerParams[3] = value })
+        // this.gui.add(this, 'LightPosX', -1, 1, 0.01).onChange(value => { this.LightPos[0] = value })
+        // this.gui.add(this, 'LightPosY', -1, 1, 0.01).onChange(value => { this.LightPos[1] = value })
+        // this.gui.add(this, 'LightPosZ', 0, 2, 0.01).onChange(value => { this.LightPos[2] = value })
 
-        this.gui.add(this, 'LightPosX', -1, 1, 0.01).onChange(value => { this.LightPos[0] = value })
-        this.gui.add(this, 'LightPosY', -1, 1, 0.01).onChange(value => { this.LightPos[1] = value })
-        this.gui.add(this, 'LightPosZ', 0, 2, 0.01).onChange(value => { this.LightPos[2] = value })
+        // this.gui.add(this, "ep", -3.0, 3.0, 1.0).onChange(() => { })
+        // this.gui.add(this, "smoothingPassCount", 0, 8, 1).onChange(() => { })
+        // this.gui.add(this, "use_skirt", 0, 1, 1).onChange(() => { })
+        // this.gui.add(this, 'u_offset_x', -5, 5, 0.1).onChange(() => { })
+        // this.gui.add(this, 'u_offset_y', -5, 5, 0.1).onChange(() => { })
 
-        this.gui.add(this, 'specularPower', 0, 50, 1).onChange(() => { })
-
-        this.gui.add(this, "mixAlpha", 0, 1, 0.01).onChange(() => { })
-
-        this.gui.add(this, "interval", 0.1, 10, 0.1).onChange(() => { })
-        this.gui.add(this, "ep", -3.0, 3.0, 1.0).onChange(() => { })
-        this.gui.add(this, "smoothingPassCount", 0, 8, 1).onChange(() => { })
-        this.gui.add(this, "use_skirt", 0, 1, 1).onChange(() => { })
-        this.gui.add(this, 'u_offset_x', -5, 5, 0.1).onChange(() => { })
-        this.gui.add(this, 'u_offset_y', -5, 5, 0.1).onChange(() => { })
-
-        this.gui.add(this, 'u_threshold', -4, 2, 0.01).onChange(() => { })*/
+        // this.gui.domElement.style.position = 'absolute';
+        // this.gui.domElement.style.top = '10vh';
+        // this.gui.domElement.style.right = '1vw';
     }
 
 
@@ -169,7 +150,7 @@ export default class TerrainByProxyTile {
         this.gl = gl
         enableAllExtensions(gl)
         this.demStore = new LRUCache(100)
-        // this.initGUI()
+        this.initGUI()
 
         this.initProxy(map)
 
@@ -179,52 +160,32 @@ export default class TerrainByProxyTile {
         ///////////////////////////////////////////////////
         ///////////////// Load shaders
 
-        this.maskProgram = await gll.createShader(gl, '/shaders/dems/mask.glsl')
-        this.surfaceNormProgram = await gll.createShader(gl, '/shaders/dems/surfaceNorm.glsl')
-        this.meshProgram = await gll.createShader(gl, '/shaders/dems/mesh.glsl')
-        this.smoothingProgram = await gll.createShader(gl, '/shaders/dems/smoothing.glsl')
-        this.contourProgram = await gll.createShader(gl, '/shaders/dems/contour.glsl')
-        this.surfaceNoTileProgram = await gll.createShader(gl, '/shaders/dems/waterSurfaceNoTile.glsl')
-        this.showProgram = await gll.createShader(gl, '/shaders/dems/show.glsl')
-        this.depthRestoreProgram = await gll.createShader(gl, '/shaders/dems/depthRestore.glsl')
-        this.debugProgram = await gll.createShader(gl, '/shaders/dems/debug.glsl')
-
-
-
+        this.maskProgram = await createShader(gl, '/shaders/dems/mask.glsl')
+        this.meshProgram = await createShader(gl, '/shaders/dems/mesh.glsl')
+        this.smoothingProgram = await createShader(gl, '/shaders/dems/smoothing.glsl')
+        this.showProgram = await createShader(gl, '/shaders/dems/show.glsl')
+        this.debugProgram = await createShader(gl, '/shaders/dems/debug.glsl')
 
         ///////////////////////////////////////////////////
         ///////////////// create textures
         /// mask pass ///
-        this.maskTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.R8, gl.RED, gl.UNSIGNED_BYTE)
-
-        /// surface normal pass ///
-        this.surfaceNormTexure = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE)
+        this.maskTexture = createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.R8, gl.RED, gl.UNSIGNED_BYTE)
 
         /// mesh pass ///
-        this.meshTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT)
-        const depthTexture = this.meshDepthTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.DEPTH_COMPONENT32F, gl.DEPTH_COMPONENT, gl.FLOAT)
-        this.emptyDEMTexture = createTexture2D(gl, 1, 1, gl.R32F, gl.RED, gl.FLOAT, new Float32Array([this.elevationRange[0]]))
+        this.meshTexture = createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT)
+        const depthTexture = this.meshDepthTexture = createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.DEPTH_COMPONENT32F, gl.DEPTH_COMPONENT, gl.FLOAT)
+        this.emptyDEMTexture = createTexture2D(gl, 0, 1, 1, gl.R32F, gl.RED, gl.FLOAT, new Float32Array([this.elevationRange[0]]))
 
         /// smoothing pass ///
-        this.smoothingTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT)
-        this.tempSmoothingTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT);
+        this.smoothingTexture = createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT)
+        this.tempSmoothingTexture = createTexture2D(gl, 0, this.canvasWidth, this.canvasHeight, gl.RGBA32F, gl.RGBA, gl.FLOAT);
 
         this.finalMeshTexture = null
 
-        /// contour pass ///
+        /// show pass ///
         // const paletteBitmap = await loadImage('/underwater/images/contourPalette1D.png')
-        const paletteBitmap = await loadImage('/images/dems/palette2.png')
-        this.paletteTexture = createTexture2D(gl, paletteBitmap.width, paletteBitmap.height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, paletteBitmap, gl.LINEAR)
-        this.contourCanvasTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE)
-
-        /// water surface pass ///
-        this.surfaceCanvasTexture = createTexture2D(gl, this.canvasWidth, this.canvasHeight, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE)
-
-
-
-
-
-
+        const paletteBitmap = await loadImage('/images/dems/palette.png')
+        this.paletteTexture = createTexture2D(gl, 0, paletteBitmap.width, paletteBitmap.height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, paletteBitmap)
 
         ///////////////////////////////////////////////////
         ///////////////// Prepare buffers
@@ -233,10 +194,9 @@ export default class TerrainByProxyTile {
         this.maskFbo = createFrameBuffer(gl, [this.maskTexture], null, null)
 
         let { vertexData, indexData } = parseBBOX(this.bbox)
-        console.log(this.bbox)
-        console.log(vertexData, indexData)
-        let maskPosBuffer = createVBO(gl, vertexData)
-        let maskIdxBuffer = createIBO(gl, indexData) //Uint16 --> gl.UNSIGNED_SHORT
+
+        let maskPosBuffer = createArrayBuffer(gl, new Float32Array(vertexData))
+        let maskIdxBuffer = createIndexBuffer(gl, new Uint16Array(indexData)) //Uint16 --> gl.UNSIGNED_SHORT
         this.maskElements = indexData.length
 
         this.maskVao = gl.createVertexArray()
@@ -245,17 +205,6 @@ export default class TerrainByProxyTile {
         gl.bindBuffer(gl.ARRAY_BUFFER, maskPosBuffer)
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, maskIdxBuffer)
-        gl.bindVertexArray(null)
-
-
-        //// surface normal pass ////
-        this.surfaceNormFbo = createFrameBuffer(gl, [this.surfaceNormTexure], null, null)
-        let surfaceNormBuffer = createVBO(gl, this.bbox)
-        this.surfaceNormVAO = gl.createVertexArray()
-        gl.bindVertexArray(this.surfaceNormVAO)
-        gl.enableVertexAttribArray(0)
-        gl.bindBuffer(gl.ARRAY_BUFFER, surfaceNormBuffer)
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
         gl.bindVertexArray(null)
 
 
@@ -284,13 +233,6 @@ export default class TerrainByProxyTile {
             2.0 / 16.0, 4.0 / 16.0, 2.0 / 16.0,
             1.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0
         ]
-
-
-        //// contour pass /////
-        this.contourFbo = createFrameBuffer(gl, [this.contourCanvasTexture], null, null)
-
-        //// water surface pass ////
-        this.surfaceFbo = createFrameBuffer(gl, [this.surfaceCanvasTexture], null, null)
 
 
         // await this.initDebug()
@@ -359,8 +301,8 @@ export default class TerrainByProxyTile {
             gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'u_offset_x'), this.u_offset_x)
             gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'u_offset_y'), this.u_offset_y)
             gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'ep'), this.ep)
-            for (const coord of tileIDs) {
 
+            for (const coord of tileIDs) {
                 const tile = sourceCache.getTile(coord);
                 const z = tile.tileID.toUnwrapped().canonical.z
 
@@ -440,7 +382,7 @@ export default class TerrainByProxyTile {
 
 
             ///////////////////////////////////////////
-            // Pass 3.5: smoothing pass 
+            // Pass 2: smoothing pass 
             //////////////////////////////////////////
             if (this.smoothingPassCount > 0) {
                 let currentSmoothingSourceTexture = this.meshTexture
@@ -488,11 +430,8 @@ export default class TerrainByProxyTile {
 
         }
 
-
-
-
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 2: generate mask texture
+        // Pass 3: generate mask texture
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         {
@@ -512,21 +451,18 @@ export default class TerrainByProxyTile {
 
         }
 
-
-
-
-
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 3: contour pass --> contourCanvasTexture 
+        // Pass 4: show pass --> contourCanvasTexture 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.contourFbo)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
             gl.viewport(0.0, 0.0, gl.canvas.width, gl.canvas.height)
 
-            gl.disable(gl.BLEND)
+            gl.enable(gl.BLEND)
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
-            gl.useProgram(this.contourProgram)
+            gl.useProgram(this.showProgram)
 
             gl.activeTexture(gl.TEXTURE0)
             // if (this.debugKey === '1')
@@ -540,160 +476,18 @@ export default class TerrainByProxyTile {
             gl.bindTexture(gl.TEXTURE_2D, this.maskTexture)
 
 
-            gl.uniform1i(gl.getUniformLocation(this.contourProgram, 'meshTexture'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.contourProgram, 'paletteTexture'), 1)
-            gl.uniform1i(gl.getUniformLocation(this.contourProgram, 'maskTexture'), 2)
-            gl.uniform2fv(gl.getUniformLocation(this.contourProgram, 'e'), this.elevationRange)
-            gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'interval'), this.interval)
-            // gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'withContour'), this.withContour)
-            gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'withContour'), 0.0)
-            gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'withLighting'), this.withLighting)
-            gl.uniform3fv(gl.getUniformLocation(this.contourProgram, 'LightPos'), this.LightPos)
-            gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'diffPower'), this.diffPower)
-            gl.uniform3fv(gl.getUniformLocation(this.contourProgram, 'shallowColor'), this.shallowColor)
-            gl.uniform3fv(gl.getUniformLocation(this.contourProgram, 'deepColor'), this.deepColor)
-            gl.uniform1f(gl.getUniformLocation(this.contourProgram, 'u_threshold'), this.u_threshold)
-
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
-        }
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 4: water surface normal pass 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        {
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceNormFbo)
-            gl.viewport(0.0, 0.0, this.canvasWidth, this.canvasHeight)
-            gl.clearColor(0.0, 0.0, 0.0, 0.0)
-            gl.clear(gl.COLOR_BUFFER_BIT)
-            gl.useProgram(this.surfaceNormProgram)
-            gl.bindVertexArray(this.surfaceNormVAO)
-
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.normalTexture1)
-            gl.activeTexture(gl.TEXTURE1)
-            gl.bindTexture(gl.TEXTURE_2D, this.normalTexture2)
-
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNormProgram, 'u_normalTexture1'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNormProgram, 'u_normalTexture2'), 1)
-            gl.uniform1f(gl.getUniformLocation(this.surfaceNormProgram, 'u_time'), nowTime)
-            gl.uniform4fv(gl.getUniformLocation(this.surfaceNormProgram, 'SamplerParams'), this.SamplerParams)
-
-            gl.uniformMatrix4fv(gl.getUniformLocation(this.surfaceNormProgram, 'u_matrix'), false, matrix)
-
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-        }
-
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 5: water surface pass 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.surfaceFbo)
-            gl.viewport(0.0, 0.0, this.canvasWidth, this.canvasHeight)
-            gl.clearColor(0.0, 0.0, 0.0, 0.0)
-            gl.clear(gl.COLOR_BUFFER_BIT)
-            gl.disable(gl.BLEND)
-
-            gl.useProgram(this.surfaceNoTileProgram);
-            gl.bindVertexArray(this.surfaceNormVAO)
-
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.meshTexture)
-            gl.activeTexture(gl.TEXTURE1)
-            gl.bindTexture(gl.TEXTURE_2D, this.maskTexture)
-            gl.activeTexture(gl.TEXTURE2)
-            gl.bindTexture(gl.TEXTURE_2D, this.surfaceNormTexure)
-
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_depethTexture'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_maskTexture'), 1)
-            gl.uniform1i(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_surfaceNormalTexture'), 2)
-            gl.uniform3fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_cameraPos'), cameraPos)
-            gl.uniform1f(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_time'), nowTime)
-            gl.uniform2fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_elevationRange'), this.elevationRange)
-            gl.uniform2fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_screenSize'), [this.canvasWidth, this.canvasHeight])
-            gl.uniform3fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'shallowColor'), this.shallowColor)
-            gl.uniform3fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'deepColor'), this.deepColor)
-            gl.uniform4fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'SamplerParams'), this.SamplerParams)
-            gl.uniform3fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'LightPos'), this.LightPos)
-            gl.uniform1f(gl.getUniformLocation(this.surfaceNoTileProgram, 'specularPower'), this.specularPower)
-            gl.uniformMatrix4fv(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_matrix'), false, matrix)
-            gl.uniform1f(gl.getUniformLocation(this.surfaceNoTileProgram, 'u_threshold'), this.u_threshold)
-
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-        }
-
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 6: final mixing show pass 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        {
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-            gl.viewport(0.0, 0.0, gl.canvas.width, gl.canvas.height)
-
-            gl.enable(gl.BLEND)
-            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-            // gl.enable(gl.BLEND);
-            // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-            gl.useProgram(this.showProgram)
-
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.contourCanvasTexture)
-            // gl.bindTexture(gl.TEXTURE_2D, this.maskTexture)
-            // gl.bindTexture(gl.TEXTURE_2D, this.finalMeshTexture)
-            gl.activeTexture(gl.TEXTURE1)
-            gl.bindTexture(gl.TEXTURE_2D, this.surfaceCanvasTexture)
-
-            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'showTexture1'), 0)
-            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'showTexture2'), 1)
-            gl.uniform1f(gl.getUniformLocation(this.showProgram, 'mixAlpha'), this.mixAlpha)
+            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'meshTexture'), 0)
+            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'paletteTexture'), 1)
+            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'maskTexture'), 2)
+            gl.uniform2fv(gl.getUniformLocation(this.showProgram, 'e'), this.elevationRange)
+            gl.uniform1f(gl.getUniformLocation(this.showProgram, 'withLighting'), this.withLighting)
+            gl.uniform3fv(gl.getUniformLocation(this.showProgram, 'LightPos'), this.LightPos)
+            gl.uniform1f(gl.getUniformLocation(this.showProgram, 'diffPower'), this.diffPower)
+            gl.uniform3fv(gl.getUniformLocation(this.showProgram, 'shallowColor'), this.shallowColor)
+            gl.uniform3fv(gl.getUniformLocation(this.showProgram, 'deepColor'), this.deepColor)
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
-            // this.doDebug(this.maskTexture)
-            // this.doDebug(this.meshTexture)
-            // this.doDebug(this.surfaceCanvasTexture)
-            // this.doDebug(this.contourCanvasTexture)
-        }
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Pass 7: Model Render Pass
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // Pass 7.1: Depth Restore
-        {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
-            gl.colorMask(false, false, false, false)
-            gl.depthMask(true)
-
-            gl.enable(gl.DEPTH_TEST)
-            gl.clear(gl.DEPTH_BUFFER_BIT)
-
-            gl.useProgram(this.depthRestoreProgram)
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, this.meshDepthTexture)
-            gl.uniform1i(gl.getUniformLocation(this.depthRestoreProgram, 'depthTexture'), 0)
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-            // 恢复color输出
-            gl.colorMask(true, true, true, true);
         }
 
         this.map.triggerRepaint()
@@ -727,8 +521,9 @@ export default class TerrainByProxyTile {
     createTerrainGridsVao(element = 128) {
         let gl = this.gl
         let grid = createGrid(8192, element + 1)
-        let posBuffer = createVBO(gl, grid.vertices)
-        let idxBuffer = createIBO(gl, grid.indices)
+        console.log(grid)
+        let posBuffer = createArrayBuffer(gl, new Float32Array(grid.vertices))
+        let idxBuffer = createIndexBuffer(gl, new Uint16Array(grid.indices))
         let meshElements = grid.indices.length
 
         let meshVao = gl.createVertexArray()
@@ -778,10 +573,7 @@ export default class TerrainByProxyTile {
     getParams() {
         return {
             exaggeration: this.exaggeration,
-            withContour: this.withContour,
             withLighting: this.withLighting,
-            mixAlpha: this.mixAlpha,
-            specularPower: this.specularPower,
             lightPos: this.LightPos
         };
     }
@@ -1083,20 +875,4 @@ function parseRGB(rgbString) {
     }
 }
 
-function getGeoBBOX(geojson) {
-    const _bbox = bbox(geojson)
-    // [
-    //     120.04373606134682,
-    //     31.173901952209473,
-    //     121.96623240116922,
-    //     32.08401085804678
-    // ]
-
-    const lb = [_bbox[0], _bbox[1]]
-    const rb = [_bbox[2], _bbox[1]]
-    const lt = [_bbox[0], _bbox[3]]
-    const rt = [_bbox[2], _bbox[3]]
-
-    return [lb, rb, lt, rt].flat()
-}
 //#endregion
