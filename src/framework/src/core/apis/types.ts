@@ -202,13 +202,18 @@ export interface UpdateRasterMeta {
 }
 
 export interface SamplingMeta {
-    nodeKey: string,
+    node_key: string,
     x: number,
     y: number,
 }
 
 export interface SamplingValueMeta {
     success: boolean
-    value: number
+    message: string
+    data: {
+        x: number,
+        y: number,
+        value: number
+    }
 }
 

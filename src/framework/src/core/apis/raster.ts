@@ -73,9 +73,9 @@ export const getRasterMetaData: IAPI<string, RasterMeta> = {
     }
 }
 
-export const updateRasterByFeature: IAPI<{node_key: string, updateRasterMeta: UpdateRasterMeta}, BaseResponse> = {
+export const updateRasterByFeature: IAPI<{ node_key: string, updateRasterMeta: UpdateRasterMeta }, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (query: {node_key: string, updateRasterMeta:UpdateRasterMeta}, isRemote: boolean): Promise<BaseResponse> => {
+    fetch: async (query: { node_key: string, updateRasterMeta: UpdateRasterMeta }, isRemote: boolean): Promise<BaseResponse> => {
         try {
             const api = getPrefix(isRemote) + updateRasterByFeature.api + `/update_by_features/${query.node_key}`
             const response = await fetch(api, {
@@ -103,16 +103,16 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
     api: `${API_PREFIX}`,
     fetch: async (samplingInfo: SamplingMeta, isRemote: boolean): Promise<SamplingValueMeta> => {
         try {
-            const { nodeKey, x, y } = samplingInfo
-            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${nodeKey}/${x}/${y}`
+            const { node_key, x, y } = samplingInfo
+            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${node_key}/${x}/${y}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const { success, message } = await response.json()
-            const responseData: SamplingValueMeta = { success, value: Number(message) }
+            const { success, message, data } = await response.json()
+            const responseData: SamplingValueMeta = { success, message, data }
             return responseData
 
         } catch (error) {
@@ -121,6 +121,24 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
     }
 }
 
-export const getTileUrl = (isRemote: boolean, nodeKey: string) => {
-  return getPrefix(isRemote) + `${API_PREFIX}/tile/${nodeKey}/{z}/{x}/{y}.png`
+export const getTileUrl = (isRemote: boolean, node_key: string) => {
+    return getPrefix(isRemote) + `${API_PREFIX}/tile/${node_key}/{z}/{x}/{y}.png`
+}
+
+export const deleteRaster: IAPI<string, BaseResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (node_key: string, isRemote: boolean): Promise<BaseResponse> => {
+        try {
+            const api = getPrefix(isRemote) + deleteRaster.api + `/${node_key}`
+            const response = await fetch(api, { method: 'DELETE' })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+            const responseData: BaseResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to delete raster: ${error}`)
+        }
+    }
 }

@@ -89,11 +89,12 @@ export default class VectorScenarioNode extends DefaultScenarioNode {
                 const deleteResponse = await apis.feature.deleteFeature.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
                 store.get<{ on: Function, off: Function }>('isLoading')?.off()
                 if (deleteResponse.success) {
-                    toast.success(deleteResponse.message)
                     await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    toast.success(deleteResponse.message)
                 } else {
                     toast.error(deleteResponse.message)
                 }
+                break
         }
     }
 

@@ -26,26 +26,17 @@ import {
     Save,
     Redo,
     Undo,
+    Globe,
+    Mouse,
     Minus,
     Square,
     Trash2,
-    FilePlus2,
+    Delete,
+    Palette,
     RotateCcw,
     Paintbrush,
-    FolderOpen,
     MousePointer,
-    Globe,
-    Palette,
-    Mouse,
-    Delete,
 } from "lucide-react"
-import {
-    Select,
-    SelectItem,
-    SelectValue,
-    SelectContent,
-    SelectTrigger,
-} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { FeatureData } from '../vectors/types'
@@ -292,6 +283,8 @@ export default function VectorPage({ node }: VectorPageProps) {
     const handleSaveFeature = async () => {
         const drawInstance = store.get<MapboxDraw>("mapDraw")!
         if (!drawInstance) return
+        setIsDrawing(false)
+        drawInstance.changeMode("simple_select")
         store.get<{ on: Function, off: Function }>('isLoading')?.on()
         pageContext.current!.drawFeature = drawInstance.getAll()
 
@@ -358,7 +351,10 @@ export default function VectorPage({ node }: VectorPageProps) {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 cursor-pointer"
-                            onClick={handleRuinClick}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRuinClick();
+                            }}
                             title={"Clear all features"}
                         >
                             <Delete className="h-4 w-4 rotate-180 text-red-500 font-bold" />
@@ -367,7 +363,10 @@ export default function VectorPage({ node }: VectorPageProps) {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 cursor-pointer"
-                            onClick={handleResetClick}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleResetClick();
+                            }}
                             title={"Clear all features"}
                         >
                             <RotateCcw className="h-4 w-4" />
@@ -376,7 +375,11 @@ export default function VectorPage({ node }: VectorPageProps) {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 cursor-pointer"
-                            onClick={handleSaveFeature}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedTool("select")
+                                handleSaveFeature()
+                            }}
                             title="Save">
                             <Save className="h-4 w-4" />
                         </Button>
@@ -386,10 +389,10 @@ export default function VectorPage({ node }: VectorPageProps) {
 
                     {/* Edit operations */}
                     <div className="flex items-center gap-1 px-2">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Undo">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" onClick={(e) => e.stopPropagation()} title="Undo">
                             <Undo className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" title="Redo">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" onClick={(e) => e.stopPropagation()} title="Redo">
                             <Redo className="h-4 w-4" />
                         </Button>
                     </div>
@@ -404,7 +407,10 @@ export default function VectorPage({ node }: VectorPageProps) {
                                 variant={selectedTool === tool.id ? "default" : "ghost"}
                                 size="sm"
                                 className="h-8 w-8 p-0 cursor-pointer"
-                                onClick={() => setSelectedTool(tool.id as ToolType)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTool(tool.id as ToolType);
+                                }}
                                 title={tool.title}
                             >
                                 {React.createElement(tool.icon)}
