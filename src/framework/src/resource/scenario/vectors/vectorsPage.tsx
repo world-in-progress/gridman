@@ -340,6 +340,8 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 		if (!pageContext.current?.hasFeature) return
 		const drawInstance = store.get<MapboxDraw>("mapDraw")!
 		if (!drawInstance) return
+		setIsDrawing(false)
+		drawInstance.changeMode("simple_select")
 		store.get<{ on: Function, off: Function }>('isLoading')?.on()
 		pageContext.current!.drawFeature = drawInstance.getAll()
 
@@ -506,7 +508,10 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							variant="ghost"
 							size="sm"
 							className="h-8 w-8 p-0 cursor-pointer"
-							onClick={handleFilePlusClick}
+							onClick={(e) => {
+								e.stopPropagation();
+								handleFilePlusClick();
+							}}
 							title={pageContext.current?.hasFeature ? "Reset and create new feature" : "Create new feature"}
 						>
 							{pageContext.current?.hasFeature ? <RotateCcw className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
@@ -515,7 +520,11 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							variant="ghost"
 							size="sm"
 							className="h-8 w-8 p-0 cursor-pointer"
-							onClick={handleSaveFeature}
+							onClick={(e) => {
+								e.stopPropagation()
+								setSelectedTool("select")
+								handleSaveFeature();
+							}}
 							disabled={!pageContext.current?.hasFeature}
 							title="Save">
 							<Save className="h-4 w-4" />
@@ -530,6 +539,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							variant="ghost"
 							size="sm"
 							className="h-8 w-8 p-0 cursor-pointer"
+							onClick={(e) => e.stopPropagation()}
 							title="Undo"
 							disabled={!pageContext.current?.hasFeature}
 						>
@@ -539,6 +549,7 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 							variant="ghost"
 							size="sm"
 							className="h-8 w-8 p-0 cursor-pointer"
+							onClick={(e) => e.stopPropagation()}
 							title="Redo"
 							disabled={!pageContext.current?.hasFeature}
 						>
@@ -557,7 +568,10 @@ export default function VectorsPage({ node }: VectorsPageProps) {
 								size="sm"
 								disabled={!pageContext.current?.hasFeature}
 								className="h-8 w-8 p-0 cursor-pointer"
-								onClick={() => setSelectedTool(tool.id as ToolType)}
+								onClick={(e) => {
+									e.stopPropagation();
+									setSelectedTool(tool.id as ToolType);
+								}}
 								title={tool.title}
 							>
 								{React.createElement(tool.icon)}

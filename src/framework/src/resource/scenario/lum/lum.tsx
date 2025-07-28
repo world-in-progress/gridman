@@ -2,13 +2,14 @@ import DefaultPageContext from "@/core/context/default";
 import DefaultScenarioNode from "@/core/scenario/default";
 import { ISceneNode } from "@/core/scene/iscene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
-import { FilePlus2, Info } from "lucide-react"
+import { Delete, FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import LumInformation from "./lumInformation"
 import LumPage from "./lumPage"
 import * as apis from '@/core/apis/apis'
 import { RasterMeta, UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
 import store from "@/store";
+import { toast } from "sonner";
 
 export interface Vectordata {
     name: string,
@@ -27,6 +28,7 @@ export class LumPageContext extends DefaultPageContext {
     }[]
     updateRasterMeta: UpdateRasterMeta
     lumInfo: RasterMeta['data'] | null
+    rasterOpacity: number
 
     constructor() {
         super()
@@ -36,6 +38,7 @@ export class LumPageContext extends DefaultPageContext {
             updates: []
         }
         this.lumInfo = null
+        this.rasterOpacity = 0.8
     }
 
     static async create(node: ISceneNode): Promise<LumPageContext> {
@@ -56,7 +59,8 @@ export class LumPageContext extends DefaultPageContext {
 
 export enum LumMenuItem {
     LUM_INFORMATION = 'LUM Information',
-    LUM_EDIT = 'Edit this LUM'
+    EDIT_THIS_LUM = 'Edit this LUM',
+    DELETE_THIS_LUM = 'Delete this LUM'
 }
 
 export default class LumScenarioNode extends DefaultScenarioNode {
@@ -70,16 +74,20 @@ export default class LumScenarioNode extends DefaultScenarioNode {
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumMenuItem.LUM_INFORMATION)}>
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumMenuItem.LUM_EDIT)}>
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumMenuItem.EDIT_THIS_LUM)}>
                     <FilePlus2 className='w-4 h-4' />Edit this LUM
+                </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => { handleContextMenu(nodeSelf, LumMenuItem.DELETE_THIS_LUM) }}>
+                    <Delete className='w-4 h-4 text-white rotate-180' />
+                    <span className='text-white'>Delete this vector</span>
                 </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
+    async handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): Promise<void> {
         switch (menuItem) {
-            case LumMenuItem.LUM_EDIT:
+            case LumMenuItem.EDIT_THIS_LUM:
                 (nodeSelf as SceneNode).pageId = 'default'
                 store.get<{ on: Function, off: Function }>('isLoading')!.on()
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
@@ -87,6 +95,17 @@ export default class LumScenarioNode extends DefaultScenarioNode {
             case LumMenuItem.LUM_INFORMATION:
                 (nodeSelf as SceneNode).pageId = 'information'
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
+            case LumMenuItem.DELETE_THIS_LUM:
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+                const deleteResponse = await apis.raster.deleteRaster.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                if (deleteResponse.success) {
+                    await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    toast.success(deleteResponse.message)
+                } else {
+                    toast.error(deleteResponse.message)
+                }
                 break
         }
     }
