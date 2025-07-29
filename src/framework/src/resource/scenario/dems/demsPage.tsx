@@ -9,13 +9,23 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { DemsPageContext } from './dems'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SceneNode } from "@/components/resourceScene/scene"
 import { convertCoordinate } from '@/components/mapContainer/utils'
-import { FolderOpen, Loader2Icon } from 'lucide-react'
+import { FilePlus2, FolderOpen, Loader2Icon, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import store from '@/store'
 import TerrainByProxyTile from './terrainLayer/terrainLayer'
@@ -30,7 +40,8 @@ export default function DemsPage({ node }: DemsPageProps) {
 
   const terrainLayer = useRef<TerrainByProxyTile | null>(null)
 
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [showDemDialog, setShowDemDialog] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
 
   const [demData, setDemData] = useState<{
@@ -47,7 +58,6 @@ export default function DemsPage({ node }: DemsPageProps) {
   useEffect(() => {
     loadContext(node as SceneNode)
   }, [node])
-
 
   useEffect(() => {
     const removeDEMLayer = () => {
@@ -70,9 +80,27 @@ export default function DemsPage({ node }: DemsPageProps) {
     if (pc.hasDEM) {
       setDemData(pc.demData)
     } else {
-      setCreateDialogOpen(true)
+      setShowDemDialog(true)
     }
     triggerRepaint()
+  }
+
+  const handleReset = () => {
+    setShowResetConfirm(true)
+  }
+
+  const confirmReset = () => {
+    if (pageContext.current) {
+      pageContext.current.demData = {
+        name: '',
+        path: ''
+      }
+      pageContext.current.hasDEM = false
+      pageContext.current.bbox = []
+      setShowDemDialog(true)
+      setShowResetConfirm(false)
+      triggerRepaint()
+    }
   }
 
   const addDEMLayer = () => {
@@ -82,23 +110,6 @@ export default function DemsPage({ node }: DemsPageProps) {
     const tileUrl = apis.raster.getTileUrl(isPublic, nodeKey)
     terrainLayer.current = new TerrainByProxyTile(demName, tileUrl, demName, pageContext.current!.bbox)
     map.addLayer(terrainLayer.current);
-
-    // map.current.addSource(demName + 'source', {
-    //   type: "raster",
-    //   tiles: [tileUrl],
-    //   tileSize: 256,
-    //   maxzoom: 18,
-    //   minzoom: 0,
-    //   scheme: "xyz",
-    // })
-    // map.current.addLayer({
-    //   id: demName + 'layer',
-    //   type: "raster",
-    //   source: demName + 'source',
-    //   paint: {
-    //     "raster-opacity": 0.8,
-    //   },
-    // })
   }
 
   const handleCreateDEM = async () => {
@@ -154,7 +165,7 @@ export default function DemsPage({ node }: DemsPageProps) {
 
     setIsCreating(false)
 
-    setCreateDialogOpen(false)
+    setShowDemDialog(false)
     pageContext.current!.hasDEM = true
     pageContext.current!.demData = newDEM
 
@@ -187,7 +198,7 @@ export default function DemsPage({ node }: DemsPageProps) {
 
   return (
     <div className="flex w-full relative bg-gray-50" >
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog open={showDemDialog} onOpenChange={setShowDemDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogTitle>Create New DEM</DialogTitle>
           <DialogDescription>Fill in DEM information to create a new DEM</DialogDescription>
@@ -233,7 +244,7 @@ export default function DemsPage({ node }: DemsPageProps) {
             </div>
           </div>
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" className="cursor-pointer" onClick={() => setCreateDialogOpen(false)}>
+            <Button variant="outline" className="cursor-pointer" onClick={() => setShowDemDialog(false)}>
               Cancel
             </Button>
             <Button
@@ -247,11 +258,58 @@ export default function DemsPage({ node }: DemsPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {pageContext.current?.hasDEM && (
-        <div className="w-80 h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
 
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Reset</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reset the DEM editor? All unsaved content will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='flex gap-6'>
+            <AlertDialogCancel className='cursor-pointer'>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReset}
+              className="bg-red-500 hover:bg-red-600 cursor-pointer"
+            >
+              Reset
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="w-80 h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl z-40 flex flex-col border-r border-slate-200">
+
+        {/* Header */}
+        <div className="p-6 bg-white border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FilePlus2 className='w-4 h-4' />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-slate-900">DEM Editor</h2>
+              <p className="text-sm text-slate-500">Edit Details</p>
+            </div>
+            {pageContext.current?.hasDEM && (
+              <Button
+                variant="destructive"
+                className='cursor-pointer bg-red-500 hover:bg-red-600 shadow-sm'
+                onClick={handleReset}
+              >
+                <RotateCcw className="w-4 h-4 mr-1" /> Reset
+              </Button>
+            )}
+          </div>
         </div>
-      )}
+        {/* <div className="flex-1 p-2 space-y-2 overflow-y-auto">
+          {pageContext.current?.hasDEM && (
+            <>
+
+            </>
+          )}
+        </div> */}
+      </div>
 
       {/* Map container placeholder */}
       <MapContainer node={node} style='flex-1 bg-slate-700 relative' />

@@ -40,7 +40,7 @@ class LRUCache {
 
 export default class TerrainByProxyTile {
 
-    constructor(_id, _source, _name, _bbox, _params) {
+    constructor(_id, _source, _bbox, _params) {
 
         this.id = _id;
         this.source = _source;
@@ -246,39 +246,7 @@ export default class TerrainByProxyTile {
     onRemove(map) {
         map.setTerrain(null);
         map.removeSource(this.id + "-underwater-dem");
-    
-        // 卸载渲染相关资源
-        const gl = this.gl;
-        if (gl) {
-            // 删除 shader program
-            gl.deleteProgram(this.maskProgram);
-            gl.deleteProgram(this.meshProgram);
-            gl.deleteProgram(this.smoothingProgram);
-            gl.deleteProgram(this.showProgram);
-            gl.deleteProgram(this.debugProgram);
-    
-            // 删除 texture
-            gl.deleteTexture(this.maskTexture);
-            gl.deleteTexture(this.meshTexture);
-            gl.deleteTexture(this.meshDepthTexture);
-            gl.deleteTexture(this.emptyDEMTexture);
-            gl.deleteTexture(this.smoothingTexture);
-            gl.deleteTexture(this.tempSmoothingTexture);
-            gl.deleteTexture(this.paletteTexture);
-            gl.deleteTexture(this.finalMeshTexture);
-    
-            // 删除 framebuffer
-            gl.deleteFramebuffer(this.maskFbo);
-            gl.deleteFramebuffer(this.meshFbo);
-            gl.deleteFramebuffer(this.smoothingFbo);
-            gl.deleteFramebuffer(this.tempSmoothingFbo);
-    
-            // 删除 VAO
-            gl.deleteVertexArray(this.maskVao);
-            gl.deleteVertexArray(this.meshVao_128);
-            gl.deleteVertexArray(this.meshVao_64);
-            gl.deleteVertexArray(this.meshVao_32);
-        }
+
         // this.gui.destroy();
     }
 
@@ -553,6 +521,7 @@ export default class TerrainByProxyTile {
     createTerrainGridsVao(element = 128) {
         let gl = this.gl
         let grid = createGrid(8192, element + 1)
+        console.log(grid)
         let posBuffer = createArrayBuffer(gl, new Float32Array(grid.vertices))
         let idxBuffer = createIndexBuffer(gl, new Uint16Array(grid.indices))
         let meshElements = grid.indices.length

@@ -122,7 +122,7 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
 }
 
 export const getTileUrl = (isRemote: boolean, node_key: string) => {
-    return getPrefix(isRemote) + `${API_PREFIX}/tile/${node_key}/{z}/{x}/{y}.png`
+    return getPrefix(isRemote) + `${API_PREFIX}/tile/${node_key}/terrainrgb/1/{z}/{x}/{y}.png`
 }
 
 export const deleteRaster: IAPI<string, BaseResponse> = {
