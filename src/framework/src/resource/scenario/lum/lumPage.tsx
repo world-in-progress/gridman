@@ -13,6 +13,8 @@ import {
     TentTree,
     MapPin,
     Crosshair,
+    Eye,
+    EyeOff,
 } from "lucide-react"
 import store from '@/store'
 import { toast } from 'sonner'
@@ -55,7 +57,7 @@ const featureColorMap = [
     { value: "indigo-500", color: "#6366f1", name: "Indigo" }
 ]
 
-const lumTypeMap = [
+export const lumTypeMap = [
     { value: 1, type: 'Building', color: '#FFFF00', rgba: [255, 255, 0, 1] },
     { value: 2, type: 'Road', color: '#D6D6D6', rgba: [214, 214, 214, 1] },
     { value: 3, type: 'Farmland', color: '#00CC00', rgba: [0, 204, 0, 1] },
@@ -134,13 +136,11 @@ export default function LumPage({ node }: LumPageProps) {
         const map = store.get<mapboxgl.Map>('map')
         if (!map) return
 
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key)
-
         if (map.isStyleLoaded()) {
-            addSourceAndLayer(map, node.key, tileUrl)
+            addSourceAndLayer(map, node.key)
         } else {
             map.once('style.load', () => {
-                addSourceAndLayer(map, node.key, tileUrl)
+                addSourceAndLayer(map, node.key)
             })
         }
 
@@ -178,7 +178,14 @@ export default function LumPage({ node }: LumPageProps) {
         })
     }
 
-    const addSourceAndLayer = (map: mapboxgl.Map, nodeKey: string, tileUrl: string) => {
+    const addSourceAndLayer = (map: mapboxgl.Map, nodeKey: string) => {
+        if (map.getLayer(nodeKey + 'layer')) {
+            map.removeLayer(nodeKey + 'layer')
+            map.removeSource(nodeKey + 'source')
+        }
+
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'uint8')
+
         map.addSource(nodeKey + 'source', {
             type: "raster",
             tiles: [tileUrl],
@@ -194,7 +201,20 @@ export default function LumPage({ node }: LumPageProps) {
             source: nodeKey + 'source',
             paint: {
                 "raster-opacity": pageContext.current?.rasterOpacity,
+                'raster-color': [
+                    'step',
+                    ['raster-value'],
+                    'rgba(0,0,0,0)',          // 默认颜色
+                    0.14285, 'rgba(255,255,0,1)',  // >=10的值
+                    0.28570, 'rgba(214,214,214,1)', // >=20的值
+                    0.42855, 'rgba(0,204,0,1)',    // >=30的值
+                    0.57140, 'rgba(0,255,128,1)',  // >=40的值
+                    0.71425, 'rgba(231,152,82,1)', // >=50的值
+                    0.85710, 'rgba(0,255,255,1)',  // >=60的值
+                    1.00000, 'rgba(0,153,204,1)'   // >=70的值
+                ]
             },
+
         })
 
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
@@ -266,12 +286,12 @@ export default function LumPage({ node }: LumPageProps) {
                     operation: 'set',
                     value: null
                 }
-                const uploadVector = {
+                pageContext.current?.uploadVectors.push({
                     node_key: nodeKey,
                     data: vectorData,
                     updateRasterData: updateRasterData,
-                }
-                pageContext.current?.uploadVectors.push(uploadVector)
+                    visible: true
+                })
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
                 triggerRepaint()
             } else {
@@ -312,30 +332,30 @@ export default function LumPage({ node }: LumPageProps) {
                     switch (feature.geometry.type) {
                         case 'Point':
                             const point = feature.geometry.coordinates;
-                            minX = Math.min(minX, point[0]);
-                            maxX = Math.max(maxX, point[0]);
-                            minY = Math.min(minY, point[1]);
-                            maxY = Math.max(maxY, point[1]);
-                            break;
+                            minX = Math.min(minX, point[0])
+                            maxX = Math.max(maxX, point[0])
+                            minY = Math.min(minY, point[1])
+                            maxY = Math.max(maxY, point[1])
+                            break
 
                         case 'LineString':
                             feature.geometry.coordinates.forEach(coord => {
-                                minX = Math.min(minX, coord[0]);
-                                maxX = Math.max(maxX, coord[0]);
-                                minY = Math.min(minY, coord[1]);
-                                maxY = Math.max(maxY, coord[1]);
-                            });
-                            break;
+                                minX = Math.min(minX, coord[0])
+                                maxX = Math.max(maxX, coord[0])
+                                minY = Math.min(minY, coord[1])
+                                maxY = Math.max(maxY, coord[1])
+                            })
+                            break
 
                         case 'Polygon':
                             feature.geometry.coordinates.forEach(ring => {
                                 ring.forEach(coord => {
-                                    minX = Math.min(minX, coord[0]);
-                                    maxX = Math.max(maxX, coord[0]);
-                                    minY = Math.min(minY, coord[1]);
-                                    maxY = Math.max(maxY, coord[1]);
-                                });
-                            });
+                                    minX = Math.min(minX, coord[0])
+                                    maxX = Math.max(maxX, coord[0])
+                                    minY = Math.min(minY, coord[1])
+                                    maxY = Math.max(maxY, coord[1])
+                                })
+                            })
                             break
                     }
                 }
@@ -347,6 +367,23 @@ export default function LumPage({ node }: LumPageProps) {
                 duration: 1000,
             })
         }
+    }
+
+    const toggleVectorVisibility = (resourceKey: string) => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const vectorIndex = pageContext.current?.uploadVectors.findIndex(v => v.node_key === resourceKey)
+        if (vectorIndex === undefined || vectorIndex < 0) return
+
+        const resource = pageContext.current!.uploadVectors[vectorIndex]
+        resource.visible = !resource.visible
+
+        const layerId = `${resource.node_key}-layer`
+        const visibility = resource.visible ? 'visible' : 'none'
+
+        map.setLayoutProperty(layerId, 'visibility', visibility)
+        triggerRepaint()
     }
 
     const handleItemDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -418,6 +455,9 @@ export default function LumPage({ node }: LumPageProps) {
     const handleSetLUM = async () => {
         if (!pageContext.current) return
 
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
         pageContext.current.updateRasterMeta.updates = []
 
         pageContext.current.uploadVectors.forEach(vector => {
@@ -428,6 +468,7 @@ export default function LumPage({ node }: LumPageProps) {
         try {
             await apis.raster.updateRasterByFeature.fetch({ node_key: node.key, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
             toast.success('LUM successfully updated')
+            addSourceAndLayer(map, node.key)
         } catch (error) {
             console.error('Failed to update LUM:', error)
             toast.error('Failed to update LUM')
@@ -698,6 +739,20 @@ export default function LumPage({ node }: LumPageProps) {
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
+                                                                    className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        toggleVectorVisibility(resource.node_key)
+                                                                    }}
+                                                                >
+                                                                    {resource.visible ?
+                                                                        <Eye className="h-3 w-3" /> :
+                                                                        <EyeOff className="h-3 w-3" />
+                                                                    }
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
                                                                     className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
                                                                     onClick={(e) => {
                                                                         handleVectorPin(resource.node_key)
@@ -742,7 +797,7 @@ export default function LumPage({ node }: LumPageProps) {
                                         </span>
                                         <div className="flex gap-2">
                                             <Button
-                                                variant="ghost"
+                                                variant="destructive"
                                                 size="sm"
                                                 className=" bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
                                                 onClick={handleResetDropZone}
