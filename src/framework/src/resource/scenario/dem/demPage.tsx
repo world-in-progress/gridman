@@ -13,6 +13,8 @@ import {
     MapPin,
     Crosshair,
     Mountain,
+    Eye,
+    EyeOff,
 } from "lucide-react"
 import store from '@/store'
 import { toast } from 'sonner'
@@ -28,6 +30,7 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from '@/components/ui/alert-dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import * as apis from '@/core/apis/apis'
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -45,6 +48,26 @@ import TerrainByProxyTile from './terrainLayer/terrainLayer'
 import mapboxgl from 'mapbox-gl'
 
 const REORDER_TYPE = 'application/x-dem-reorder'
+
+const featureColorMap = [
+    { value: "sky-500", color: "#0ea5e9", name: "Sky" },
+    { value: "green-500", color: "#22c55e", name: "Green" },
+    { value: "red-500", color: "#ef4444", name: "Red" },
+    { value: "purple-500", color: "#a855f7", name: "Purple" },
+    { value: "yellow-300", color: "#FFDF20", name: "Yellow" },
+    { value: "orange-500", color: "#FF6900", name: "Orange" },
+    { value: "pink-500", color: "#ec4899", name: "Pink" },
+    { value: "indigo-500", color: "#6366f1", name: "Indigo" }
+]
+
+const operationColorMap = {
+    set: "bg-blue-200",
+    add: "bg-green-200",
+    subtract: "bg-red-200",
+    max_fill: "bg-orange-200",
+};
+
+export type RasterOperation = "set" | "add" | "subtract" | "max_fill"
 
 export default function DemPage({ node }: DemPageProps) {
 
@@ -128,7 +151,7 @@ export default function DemPage({ node }: DemPageProps) {
 
         pageContext.current = await node.getPageContext() as DemPageContext
 
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key)
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb')
 
         const computeBBOX = () => {
             console.log(pageContext.current)
@@ -171,8 +194,17 @@ export default function DemPage({ node }: DemPageProps) {
 
     const unloadContext = () => {
         const map = store.get<mapboxgl.Map>('map')
-        if (map && terrainLayer.current) {
-            map.removeLayer(terrainLayer.current?.id)
+        if (map) {
+            terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
+
+            pageContext.current?.uploadVectors.forEach(vector => {
+                if (map.getLayer(`${vector.node_key}-layer`)) {
+                    map.removeLayer(`${vector.node_key}-layer`)
+                }
+                if (map.getSource(`${vector.node_key}-source`)) {
+                    map.removeSource(`${vector.node_key}-source`)
+                }
+            })
         }
     }
 
@@ -187,7 +219,7 @@ export default function DemPage({ node }: DemPageProps) {
         } else {
             toast.error(deleteResponse.message)
         }
-     }
+    }
 
     const fitDemBounds = () => {
         const map = store.get<mapboxgl.Map>('map')
@@ -213,6 +245,131 @@ export default function DemPage({ node }: DemPageProps) {
     }
 
     const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragOver(false)
+
+        if (e.dataTransfer.types.includes(REORDER_TYPE)) {
+            return
+        }
+
+        const nodeKey = e.dataTransfer.getData('text/plain')
+        if (nodeKey.split('.')[1] === 'vectors') {
+            const isAlreadySelected = pageContext.current?.uploadVectors.some((resource) => resource.node_key === nodeKey)
+            if (!isAlreadySelected) {
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                const map = store.get<mapboxgl.Map>('map')
+
+                if (!map) return
+
+                const vectorData = (await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)).data as Vectordata
+                const vectorColor = featureColorMap.find(c => c.value === vectorData.color)!.color
+
+                const sourceId = `${nodeKey}-source`
+                const layerId = `${nodeKey}-layer`
+
+                map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: vectorData.feature_json
+                })
+                map.addLayer({
+                    id: layerId,
+                    type: 'fill',
+                    source: sourceId,
+                    paint: {
+                        'fill-outline-color': vectorColor,
+                        'fill-color': vectorColor,
+                        'fill-opacity': 0.5
+                    }
+                })
+
+                const updateRasterData: UpdateRasterData = {
+                    feature_node_key: nodeKey,
+                    operation: 'set',
+                    value: null
+                }
+                pageContext.current?.uploadVectors.push({
+                    node_key: nodeKey,
+                    data: vectorData,
+                    updateRasterData: updateRasterData,
+                    visible: true
+                })
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+            } else {
+                toast.info('Vector already selected')
+            }
+        } else {
+            toast.error('Please select the correct feature in vectors')
+        }
+    }
+
+    const handleVectorRemove = (index: number) => {
+        if (!pageContext.current) return
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const resource = pageContext.current.uploadVectors[index]
+
+        map.removeLayer(`${resource.node_key}-layer`)
+        map.removeSource(`${resource.node_key}-source`)
+
+        pageContext.current.uploadVectors = pageContext.current.uploadVectors.filter((_, i) => i !== index)
+
+        triggerRepaint()
+    }
+
+    const handleVectorPin = (resourceKey: string) => {
+
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const vectorResource = pageContext.current?.uploadVectors.find(vector => vector.node_key === resourceKey)
+
+        if (vectorResource && vectorResource.data.feature_json) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
+            vectorResource.data.feature_json.features.forEach(feature => {
+                if (feature.geometry) {
+                    switch (feature.geometry.type) {
+                        case 'Point':
+                            {
+                                const point = feature.geometry.coordinates;
+                                minX = Math.min(minX, point[0])
+                                maxX = Math.max(maxX, point[0])
+                                minY = Math.min(minY, point[1])
+                                maxY = Math.max(maxY, point[1])
+                                break
+                            }
+                        case 'LineString':
+                            feature.geometry.coordinates.forEach(coord => {
+                                minX = Math.min(minX, coord[0])
+                                maxX = Math.max(maxX, coord[0])
+                                minY = Math.min(minY, coord[1])
+                                maxY = Math.max(maxY, coord[1])
+                            })
+                            break
+
+                        case 'Polygon':
+                            feature.geometry.coordinates.forEach(ring => {
+                                ring.forEach(coord => {
+                                    minX = Math.min(minX, coord[0])
+                                    maxX = Math.max(maxX, coord[0])
+                                    minY = Math.min(minY, coord[1])
+                                    maxY = Math.max(maxY, coord[1])
+                                })
+                            })
+                            break
+                    }
+                }
+            });
+
+
+            map.fitBounds([[minX, minY], [maxX, maxY]], {
+                padding: 80,
+                duration: 1000,
+            })
+        }
     }
 
     const handleItemDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -229,7 +386,14 @@ export default function DemPage({ node }: DemPageProps) {
         }
     }
 
-    const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const handleOperationTypeChange = (index: number, value: string) => {
+        if (!pageContext.current) return
+
+        pageContext.current.uploadVectors[index].updateRasterData.operation = value as RasterOperation
+        triggerRepaint()
+    }
+
+    const handleOperationValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (!pageContext.current) return
 
         pageContext.current.uploadVectors[index].updateRasterData.value = Number(e.target.value)
@@ -268,9 +432,75 @@ export default function DemPage({ node }: DemPageProps) {
         setDraggedIndex(null)
     }
 
-    const handleResetDropZone = () => { }
+    const getFeatureTypeIcon = (type: string) => {
+        switch (type) {
+            case "point":
+                return <Dot className="w-6 h-6 " />
+            case "line":
+                return <Minus className="w-6 h-6 " />
+            case "polygon":
+                return <Square className="w-6 h-6" />
+            default:
+                return null
+        }
+    }
 
-    const handleSetDEM = () => { }
+    const handleResetDropZone = () => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        pageContext.current!.uploadVectors.forEach(vector => {
+            map.removeLayer(`${vector.node_key}-layer`)
+            map.removeSource(`${vector.node_key}-source`)
+        })
+
+        pageContext.current!.uploadVectors = []
+
+        triggerRepaint()
+    }
+
+    const handleSetDEM = async () => {
+        if (!pageContext.current) return
+
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        pageContext.current.updateRasterMeta.updates = []
+
+        pageContext.current.uploadVectors.forEach(vector => {
+            pageContext.current?.updateRasterMeta.updates.push(vector.updateRasterData)
+        })
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
+        try {
+            console.log(pageContext.current.updateRasterMeta)
+            await apis.raster.updateRasterByFeature.fetch({ node_key: node.key, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
+            toast.success('DEM successfully updated')
+            map.triggerRepaint()
+        } catch (error) {
+            console.error('Failed to update DEM:', error)
+            toast.error('Failed to update DEM')
+        } finally {
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        }
+    }
+
+    function toggleVectorVisibility(resourceKey: string) {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const vectorIndex = pageContext.current?.uploadVectors.findIndex(v => v.node_key === resourceKey)
+        if (vectorIndex === undefined || vectorIndex < 0) return
+
+        const resource = pageContext.current!.uploadVectors[vectorIndex]
+        resource.visible = !resource.visible
+
+        const layerId = `${resource.node_key}-layer`
+        const visibility = resource.visible ? 'visible' : 'none'
+
+        map.setLayoutProperty(layerId, 'visibility', visibility)
+        triggerRepaint()
+    }
 
     return (
         <div className="w-full h-full flex flex-row bg-gray-50">
@@ -492,6 +722,20 @@ export default function DemPage({ node }: DemPageProps) {
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
+                                                                    className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        toggleVectorVisibility(resource.node_key)
+                                                                    }}
+                                                                >
+                                                                    {resource.visible ?
+                                                                        <Eye className="h-3 w-3" /> :
+                                                                        <EyeOff className="h-3 w-3" />
+                                                                    }
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
                                                                     className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
                                                                     onClick={(e) => {
                                                                         handleVectorPin(resource.node_key)
@@ -511,16 +755,28 @@ export default function DemPage({ node }: DemPageProps) {
                                                                 </Button>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
-                                                                    set
-                                                                </Badge>
-                                                                <Input
-                                                                    className="h-7 text-xs flex-1"
-                                                                    placeholder="Enter value"
-                                                                    value={resource.updateRasterData.value || ''}
-                                                                    onChange={(e) => handleValueChange(e, index)}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
+                                                                <Select
+                                                                    defaultValue="set"
+                                                                    onValueChange={(value) => handleOperationTypeChange(index, value)}
+                                                                >
+                                                                    <SelectTrigger className={`text-xs w-25 ${operationColorMap[pageContext.current!.uploadVectors[index].updateRasterData.operation]}`}>
+                                                                        <SelectValue placeholder="select an operation" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem className="bg-blue-200 text-xs text-gray-800 my-1" value="set">Set</SelectItem>
+                                                                        <SelectItem className="bg-green-200 text-xs text-gray-800 my-1" value="add">Add</SelectItem>
+                                                                        <SelectItem className="bg-red-200 text-xs text-gray-800 my-1" value="subtract">Subtract</SelectItem>
+                                                                        <SelectItem className="bg-orange-200 text-xs text-gray-800 my-1" value="max_fill">Max Fill</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                {pageContext.current!.uploadVectors[index].updateRasterData.operation !== 'max_fill'
+                                                                    && <Input
+                                                                        className="h-9 text-xs flex-1"
+                                                                        placeholder="Enter value"
+                                                                        value={resource.updateRasterData.value || 0}
+                                                                        onChange={(e) => handleOperationValueChange(e, index)}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />}
                                                             </div>
                                                         </div>
                                                     ))}

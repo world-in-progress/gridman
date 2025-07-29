@@ -24,8 +24,9 @@ export interface Vectordata {
 export class DemPageContext extends DefaultPageContext {
 
     uploadVectors: {
-        node_key: string,
+        node_key: string
         data: Vectordata
+        visible: boolean
         updateRasterData: UpdateRasterData
     }[]
     updateRasterMeta: UpdateRasterMeta

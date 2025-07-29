@@ -189,7 +189,7 @@ export interface RasterMeta {
     }
 }
 
-export type RasterOperation = "set" | "add" | "substract" | "max_fill"
+export type RasterOperation = "set" | "add" | "subtract" | "max_fill"
 
 export interface UpdateRasterData {
     feature_node_key: string,

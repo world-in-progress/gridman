@@ -521,7 +521,6 @@ export default class TerrainByProxyTile {
     createTerrainGridsVao(element = 128) {
         let gl = this.gl
         let grid = createGrid(8192, element + 1)
-        console.log(grid)
         let posBuffer = createArrayBuffer(gl, new Float32Array(grid.vertices))
         let idxBuffer = createIndexBuffer(gl, new Uint16Array(grid.indices))
         let meshElements = grid.indices.length
