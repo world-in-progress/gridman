@@ -17,9 +17,9 @@ function enableAllExtensions(gl: WebGL2RenderingContext) {
 async function createShader(gl: WebGL2RenderingContext, url: string) {
     let shaderCode = ''
     await fetch(url)
-    .then(response => response.text())
-    .then(data => shaderCode += data)
-    
+        .then(response => response.text())
+        .then(data => shaderCode += data)
+
     const vertexShaderStage = compileShader(gl, shaderCode, gl.VERTEX_SHADER)!
     const fragmentShaderStage = compileShader(gl, shaderCode, gl.FRAGMENT_SHADER)!
 
@@ -35,12 +35,12 @@ async function createShader(gl: WebGL2RenderingContext, url: string) {
     return shader
 
     function compileShader(gl: WebGL2RenderingContext, source: string, type: number) {
-    
+
         const versionDefinition = '#version 300 es\n'
         const module = gl.createShader(type)!
         if (type === gl.VERTEX_SHADER) source = versionDefinition + '#define VERTEX_SHADER\n' + source
         else if (type === gl.FRAGMENT_SHADER) source = versionDefinition + '#define FRAGMENT_SHADER\n' + source
-    
+
         gl.shaderSource(module, source)
         gl.compileShader(module)
         if (!gl.getShaderParameter(module, gl.COMPILE_STATUS)) {
@@ -48,13 +48,13 @@ async function createShader(gl: WebGL2RenderingContext, url: string) {
             gl.deleteShader(module)
             return null
         }
-    
+
         return module
     }
 }
 
 function createArrayBuffer(gl: WebGL2RenderingContext, dataOrSize: ArrayBuffer | ArrayBufferView | number, usage: number = gl.STATIC_DRAW) {
-    
+
     const buffer = gl.createBuffer()
     if (!buffer) {
         console.error('Failed to create buffer')
@@ -69,6 +69,13 @@ function createArrayBuffer(gl: WebGL2RenderingContext, dataOrSize: ArrayBuffer |
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     return buffer
+}
+
+function createIndexBuffer(gl: WebGL2RenderingContext, indexArray: ArrayBufferView, usage: number = gl.STATIC_DRAW, offset: number = 0) {
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexArray, usage, offset, indexArray.byteLength / 2 - offset);
+    return indexBuffer;
 }
 
 function updateArrayBufferByArray(gl: WebGL2RenderingContext, buffer: WebGLBuffer, array: ArrayBufferView, bufferOffset: number = 0, arrayOffset: number = 0, length?: number) {
@@ -109,7 +116,7 @@ function createFrameBuffer(gl: WebGL2RenderingContext, textures: WebGLTexture[],
 }
 
 function createTexture2D(gl: WebGL2RenderingContext, level: number, width: number, height: number, internalFormat: number, format: number, type: number, resource?: ArrayBufferView | ImageBitmap, generateMips = false): WebGLTexture {
-    
+
     const texture = gl.createTexture()!
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
@@ -120,9 +127,9 @@ function createTexture2D(gl: WebGL2RenderingContext, level: number, width: numbe
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
     if (resource) {
-        resource instanceof ImageBitmap 
-        ? gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
-        : gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
+        resource instanceof ImageBitmap
+            ? gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
+            : gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format!, type!, resource)
     }
     else {
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, format, type, null)
@@ -134,7 +141,7 @@ function createTexture2D(gl: WebGL2RenderingContext, level: number, width: numbe
 }
 
 function createTexture2DArray(gl: WebGL2RenderingContext, level: number, layers: number, width: number, height: number, internalFormat: number): WebGLTexture {
-    
+
     const texture = gl.createTexture()!
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture)
     gl.texStorage3D(gl.TEXTURE_2D_ARRAY, level, internalFormat, width, height, layers)
@@ -149,7 +156,7 @@ function createTexture2DArray(gl: WebGL2RenderingContext, level: number, layers:
 }
 
 function fillSubTexture2DByArray(gl: WebGL2RenderingContext, texture: WebGLTexture, level: number, xOffset: number, yOffset: number, width: number, height: number, format: number, type: number, array: ArrayBufferView, srcOffset = 0): void {
-    
+
     // Bind the texture
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
@@ -161,7 +168,7 @@ function fillSubTexture2DByArray(gl: WebGL2RenderingContext, texture: WebGLTextu
 }
 
 function fillSubTexture2DArrayByArray(gl: WebGL2RenderingContext, texture: WebGLTexture, level: number, xOffset: number, yOffset: number, zOffset: number, width: number, height: number, depth: number, format: number, type: number, array: ArrayBufferView, srcOffset = 0): void {
-    
+
     // Bind the texture
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture)
 
@@ -173,7 +180,7 @@ function fillSubTexture2DArrayByArray(gl: WebGL2RenderingContext, texture: WebGL
 }
 
 function fillTexture2DByArray(gl: WebGL2RenderingContext, texture: WebGLTexture, width: number, height: number, internalFormat: number, format: number, type: number, array: ArrayBufferView): void {
-    
+
     // Bind the texture
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
@@ -240,7 +247,7 @@ function getMaxMipLevel(width: number, height: number) {
 async function loadF32Image(url: string) {
     const response = await fetch(url)
     const blob = await response.blob()
-    const bitmap = await createImageBitmap(blob, {imageOrientation: "flipY", premultiplyAlpha: "none", colorSpaceConversion: "default"})
+    const bitmap = await createImageBitmap(blob, { imageOrientation: "flipY", premultiplyAlpha: "none", colorSpaceConversion: "default" })
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
     const gl = canvas.getContext("webgl2")!
     const pixelData = new Uint8Array(bitmap.width * bitmap.height * 4)
@@ -282,6 +289,7 @@ const gll = {
     getMaxMipLevel,
     createTexture2D,
     createArrayBuffer,
+    createIndexBuffer,
     createFrameBuffer,
     createRenderBuffer,
     enableAllExtensions,
