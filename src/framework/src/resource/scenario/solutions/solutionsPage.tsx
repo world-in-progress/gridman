@@ -1,48 +1,31 @@
-import { ISceneNode } from '@/core/scene/iscene'
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import {
     X,
-    Dot,
+    Dam,
+    Eye,
     Info,
-    Minus,
-    Square,
+    MapPin,
     Upload,
     RotateCcw,
-    Fullscreen,
-    SquareCheck,
-    Delete,
-    TentTree,
-    MapPin,
-    Crosshair,
-    Eye,
-    EyeOff,
-    Dam,
+    TrafficCone,
+    Box,
+    BrushCleaning,
 } from "lucide-react"
 import { SolutionsPageProps } from './types'
 import { Card, CardContent } from "@/components/ui/card"
-import {
-    AlertDialog,
-    AlertDialogTitle,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogContent,
-    AlertDialogTrigger,
-    AlertDialogDescription,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from "@/components/ui/input"
-import { Slider } from '@/components/ui/slider'
 import { cn } from '@/utils/utils'
-import MapContainer from '@/components/mapContainer/mapContainer'
 import { SceneNode } from '@/components/resourceScene/scene'
 import { SolutionsPageContext } from './solutions'
 import { toast } from 'sonner'
 import store from '@/store'
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const REORDER_TYPE = 'application/x-lum-reorder'
+
 
 export default function SolutionsPage({ node }: SolutionsPageProps) {
 
@@ -76,7 +59,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         setIsDragOver(false)
     }
 
-    const handleDrop = async (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent, type: string) => {
         e.preventDefault()
         setIsDragOver(false)
 
@@ -85,31 +68,88 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         }
 
         const nodeKey = e.dataTransfer.getData('text/plain')
+
         // Upload Grid
-        if (nodeKey.split('.')[1] === 'grids') {
-            const isAlreadySelected = pageContext.current?.uploadResourcesNodeKey.grid === nodeKey
-            if (!isAlreadySelected) {
+        if (type === 'grid') {
+            if (nodeKey.split('.')[4] === 'grids') {
+                if (pageContext.current?.solutionData?.env.grid_node_key) {
+                    toast.warning('Grid already selected')
+                    return
+                }
+
                 store.get<{ on: Function, off: Function }>('isLoading')!.on()
 
-                const map = store.get<mapboxgl.Map>('map')
+                pageContext.current!.solutionData!.env.grid_node_key = nodeKey
 
+                const map = store.get<mapboxgl.Map>('map')
                 if (!map) return
 
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
                 triggerRepaint()
+                toast.success('Grid uploaded successfully')
             } else {
-                toast.info('Grid already selected')
+                toast.error('Please select the correct grid in grids')
             }
-        } else {
-            toast.error('Please select the correct grid in grids')
+        } else if (type === 'dem') {
+
+        } else if (type === 'lum') {
+
         }
-
-        // Upload DEM
-
-        // Upload LUM
     }
 
+    const handleResourceRemove = (type: string) => {
+        if (type === 'grid') {
+            pageContext.current!.solutionData!.env.grid_node_key = ''
+        } else if (type === 'dem') {
+            pageContext.current!.solutionData!.env.dem_node_key = ''
+        } else if (type === 'lum') {
+            pageContext.current!.solutionData!.env.lum_node_key = ''
+        } else if (type === 'rainfall') {
+            pageContext.current!.solutionData!.env.rainfall_node_key = ''
+        } else if (type === 'gate') {
+            pageContext.current!.solutionData!.env.gate_node_key = ''
+        } else if (type === 'tide') {
+            pageContext.current!.solutionData!.env.tide_node_key = ''
+        } else if (type === 'inp') {
+            pageContext.current!.solutionData!.env.inp_node_key = ''
+        }
+        triggerRepaint()
+    }
 
+    const handleResetDropZone = () => {
+        if (pageContext.current) {
+            pageContext.current.solutionData!.env = {
+                grid_node_key: '',
+                dem_node_key: '',
+                lum_node_key: '',
+                rainfall_node_key: '',
+                gate_node_key: '',
+                tide_node_key: '',
+                inp_node_key: '',
+            }
+            triggerRepaint()
+            toast.info('Reset drop zone')
+        }
+    }
+
+    const handleResetForm = () => {
+        if (pageContext.current) {
+            pageContext.current.solutionData = {
+                name: '',
+                env: {
+                    grid_node_key: '',
+                    dem_node_key: '',
+                    lum_node_key: '',
+                    rainfall_node_key: '',
+                    gate_node_key: '',
+                    tide_node_key: '',
+                    inp_node_key: '',
+                },
+                action_types: [],
+            }
+            triggerRepaint()
+        }
+    }
 
     return (
         <div className="w-full h-full flex flex-row bg-gray-50">
@@ -124,272 +164,700 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             <h2 className="text-lg font-semibold text-slate-900">Create New Solution</h2>
                             <p className="text-sm text-slate-500">New Solution Details</p>
                         </div>
-                        {/* <div className='flex items-center gap-2'>
+                        <div className='flex items-center gap-2'>
                             <Button
                                 variant='destructive'
                                 className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                                onClick={handleResetForm}
                             >
-                                <Delete className="w-4 h-4 rotate-180" />Delete
+                                <RotateCcw className="w-4 h-4" />Reset
                             </Button>
-                            <Button
-                                className='cursor-pointer bg-sky-500 hover:bg-sky-600 shadow-sm'
-                                onClick={fitLumBounds}
-                            >
-                                <Fullscreen className="w-4 h-4" />Scale
-                            </Button>
-                        </div> */}
+                        </div>
                     </div>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 p-2 space-y-2 overflow-y-auto">
-                    {/* LUM Information Card */}
+                    {/* Solution Information Card */}
                     <Card className="border-slate-200 shadow-sm">
                         <CardContent>
                             <div className="flex items-center gap-2 mb-2">
                                 <Info className="w-4 h-4 text-slate-500" />
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">LUM Information</span>
-                                {/* <div className="ml-auto">
-                                    <Button
-                                        className={`cursor-pointer shadow-sm h-8 w-8 ${identifyActive ? 'bg-sky-500 hover:bg-sky-600 text-white' : 'bg-slate-300 hover:bg-sky-300'}`}
-                                        onClick={() => {
-                                            setIdentifyActive(!identifyActive)
-                                        }}
-                                        title="Identify Raster Value"
-                                    >
-                                        <Crosshair className="w-3 h-3" />
-                                    </Button>
-                                </div> */}
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Basic Information</span>
                             </div>
                             <div className="ml-6 space-y-2">
                                 {/* Name */}
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-slate-600">Name</span>
                                     <div className="flex items-center gap-2 mr-1">
-                                        {/* <span className="font-semibold text-slate-900">
-                                            {node.name}
-                                        </span> */}
                                         <Input
                                             placeholder='Enter name'
+                                            className='w-50'
                                         />
                                     </div>
                                 </div>
-                                {/* EPSG */}
-                                {/* <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600">EPSG</span>
-                                    <div className="flex items-center">
-                                        <Badge variant="secondary" className={`text-xs font-semibold`}>
-                                            {pageContext.current?.lumInfo?.epsg}
-                                        </Badge>
+                                {/* Type */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Type</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <Select>
+                                            <SelectTrigger className="w-50">
+                                                <SelectValue placeholder="Theme" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="flood">洪水-管道联合模拟</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                </div> */}
-                                {/* Legend */}
-                                {/* <div className="flex items-start">
-                                    <span className="text-sm text-slate-600 w-20 items-center">Legend</span>
-                                    <div className="grid grid-cols-2 gap-2 flex-1 mt-1">
-                                        {lumTypeMap.map((item) => (
-                                            <div key={item.value} className="flex items-center gap-1">
-                                                <div
-                                                    className="w-4 h-4 rounded-sm ml-6"
-                                                    style={{ backgroundColor: item.color }}
-                                                />
-                                                <span className="text-xs text-slate-700">{item.type}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div> */}
-                                {/* Opacity */}
-                                {/* <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600">Opacity</span>
-                                    <div className="flex items-center gap-2">
-                                        <Slider
-                                            value={[Math.round(pageContext.current?.rasterOpacity! * 100)]}
-                                            max={100}
-                                            step={5}
-                                            className='w-36 cursor-pointer'
-                                            onValueChange={(value) => {
-                                                const opacity = Math.round(value[0]) / 100;
-                                                pageContext.current!.rasterOpacity = opacity;
-                                                updateRasterOpacity(opacity);
-                                                triggerRepaint();
-                                            }}
-                                        />
-                                        <Badge variant="secondary" className={`w-10 text-xs font-semibold`}>
-                                            {Math.round(pageContext.current?.rasterOpacity! * 100)}%
-                                        </Badge>
-                                    </div>
-                                </div> */}
+                                </div>
                             </div>
-
-                            {/* Pixel identification info */}
-                            {/* <div className="flex items-center gap-2 mb-2 mt-4 border-t border-slate-100 pt-4">
-                                <Crosshair className="w-4 h-4 text-slate-500" />
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Pixel Identification</span>
-                            </div>
-                            <div className="space-y-2 ml-6">
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-slate-600">Coordinate X:</span>
-                                    <span className="text-sm font-medium">{pixelInfo.x}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-slate-600">Coordinate Y:</span>
-                                    <span className="text-sm font-medium">{pixelInfo.y}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-slate-600">Value:</span>
-                                    <div>
-                                        {pixelInfo.value !== null ? (
-                                            <Badge variant="secondary">
-                                                {pixelInfo.value}
-                                            </Badge>
-                                        ) : (
-                                            <span className="text-sm italic text-slate-400">No Data</span>
-                                        )}
-                                    </div>
-                                </div>
-                                {pixelInfo.value !== null && (
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-slate-600">Type:</span>
-                                        <div>
-                                            {pixelInfo.value >= 1 && pixelInfo.value <= 7 ? (
-                                                <div className="flex items-center gap-2">
-                                                    <div
-                                                        className="w-3 h-3 rounded-sm"
-                                                        style={{ backgroundColor: lumTypeMap[pixelInfo.value - 1].color }}
-                                                    />
-                                                    <span className="text-sm">{lumTypeMap[pixelInfo.value - 1].type}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm italic text-slate-400">Unknown</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div> */}
                         </CardContent>
                     </Card>
 
-                    {/* Vectors Upload Area */}
+                    {/* Resource Upload Area */}
                     <Card className="border-slate-200 shadow-sm">
                         <CardContent className="space-y-4">
-                            {/* Upload Section Header */}
+                            {/* Upload Status */}
+                            <div className=" flex items-center justify-between text-xs text-slate-500">
+                                <div className="flex items-center gap-2">
+                                    <Box className='w-4 h-4' />
+                                    <span className='text-sm font-medium text-slate-500 uppercase tracking-wide'>Resources Upload</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                    onClick={handleResetDropZone}
+                                >
+                                    <BrushCleaning className="w-4 h-4" />Clear
+                                </Button>
+                            </div>
+                            {/* Grid */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
                                     <Upload className="w-4 h-4 text-slate-500" />
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Vector Upload Drop Zone</span>
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Grid Drop Zone</span>
                                 </div>
-
-                                {/* Drop Zone */}
-                                <div>
-                                    <div
-                                        className={cn(
-                                            "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
-                                            isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
-                                        )}
-                                        onDragOver={handleDragOver}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={handleDrop}
-                                    >
-                                        {!pageContext.current?.uploadResourcesNodeKey.grid ? (
-                                            <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
-                                                <Upload className="w-8 h-8 mb-2" />
-                                                <p className="text-sm font-medium mb-1">Drag vector files here</p>
-                                                <p className="text-xs text-center">Drop files from the resource manager</p>
-                                            </div>
-                                        ) : (
-                                            <div className="h-full overflow-y-auto pr-1">
-                                                <div
-                                                    className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex-1 flex items-center gap-2 min-w-0">
-                                                            {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
-                                                            <p className="text-slate-900 text-sm font-medium truncate">
-                                                                {pageContext.current.uploadResourcesNodeKey.grid.split(".").pop()}
-                                                            </p>
-                                                            {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
-                                                                {resource.data.epsg}
-                                                            </Badge> */}
-                                                        </div>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                        // onClick={(e) => {
-                                                        //     e.stopPropagation()
-                                                        //     toggleVectorVisibility(resource.node_key)
-                                                        // }}
-                                                        >
-                                                            {/* {resource.visible ?
-                                                                <Eye className="h-3 w-3" /> :
-                                                                <EyeOff className="h-3 w-3" />
-                                                            } */}
-                                                            <Eye className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
-                                                        // onClick={(e) => {
-                                                        //     handleVectorPin(resource.node_key)
-                                                        // }}
-                                                        >
-                                                            <MapPin className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        // onClick={(e) => {
-                                                        //     handleVectorRemove(index)
-                                                        // }}
-                                                        >
-                                                            <X className="h-3 w-3" />
-                                                        </Button>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.grid_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag Grid node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData?.env.grid_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
-                                                            set
-                                                        </Badge>
-                                                        <Input
-                                                            className="h-7 text-xs flex-1"
-                                                            placeholder="Enter value"
-                                                            // value={resource.updateRasterData.value || ''}
-                                                            // onChange={(e) => handleValueChange(e, index)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        />
-                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-
-                                    {/* Upload Status */}
-                                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                                        {/* <span>
-                                            {pageContext.current?.uploadVectors.length || 0} vectors uploaded
-                                        </span> */}
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className=" bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
-                                            // onClick={handleResetDropZone}
-                                            // disabled={!pageContext.current?.uploadVectors.length}
-                                            >
-                                                <RotateCcw className="w-4 h-4" />Reset
-                                            </Button>
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                                className=" bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
-                                            // onClick={handleSetLUM}
-                                            // disabled={!pageContext.current?.uploadVectors.length}
-                                            >
-                                                <SquareCheck className="w-4 h-4" />Set
-                                            </Button>
-
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Dem */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">DEM Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.dem_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag DEM node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.dem_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* LUM */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">LUM Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.lum_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag LUM node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.lum_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Rainfall */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Rainfall Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.rainfall_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag Rainfall node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.rainfall_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* gate */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Gate Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.gate_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag Gate node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.gate_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Tide */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tide Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.tide_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag Tide node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.tide_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {/* INP */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">INP Drop Zone</span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                    )}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                >
+                                    {!pageContext.current?.solutionData?.env.inp_node_key ? (
+                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                            <Upload className="w-8 h-8 mb-2" />
+                                            <p className="text-sm font-medium mb-1">Drag INP node here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full overflow-y-auto pr-1">
+                                            <div
+                                                className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 group hover:shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                        {/* <span className={`text-${resource.data.color}`}>{getFeatureTypeIcon(resource.data.type)}</span> */}
+                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                            {pageContext.current.solutionData.env.inp_node_key.split(".").pop()}
+                                                        </p>
+                                                        {/* <Badge variant="secondary" className={`text-xs text-gray-800`}>
+                                                            {resource.data.epsg}
+                                                        </Badge> */}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     e.stopPropagation()
+                                                    //     toggleVectorVisibility(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        {/* {resource.visible ?
+                                                            <Eye className="h-3 w-3" /> :
+                                                            <EyeOff className="h-3 w-3" />
+                                                        } */}
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                    // onClick={(e) => {
+                                                    //     handleVectorPin(resource.node_key)
+                                                    // }}
+                                                    >
+                                                        <MapPin className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
+                                                        onClick={() => handleResourceRemove('grid')}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
+                                                        set
+                                                    </Badge>
+                                                    <Input
+                                                        className="h-7 text-xs flex-1"
+                                                        placeholder="Enter value"
+                                                        // value={resource.updateRasterData.value || ''}
+                                                        // onChange={(e) => handleValueChange(e, index)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                        </CardContent>
+                    </Card>
+
+                    {/* Action Types */}
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardContent>
+                            <div className="flex items-center gap-2 mb-2">
+                                <TrafficCone className="w-4 h-4 text-slate-500" />
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Action Types</span>
+                            </div>
+                            <div className="ml-6">
+                                {/* Type */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Type</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <Select>
+                                            <SelectTrigger className="w-50">
+                                                <SelectValue placeholder="Theme" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="flood">洪水-管道联合模拟</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
                             </div>
@@ -403,5 +871,6 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 <MapContainer node={node} style='w-full h-full' />
             </div>
         </div >
+
     )
 }

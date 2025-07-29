@@ -8,19 +8,35 @@ import SolutionsPage from "./solutionsPage"
 import SolutionsInformation from "./solutionsInformation"
 
 export class SolutionsPageContext extends DefaultPageContext {
-    name: string
-    uploadResourcesNodeKey: {
-        grid: string,
-        dem: string,
-        lum: string,
+    solutionData: {
+        name: string;
+        env: {
+            grid_node_key: string;
+            dem_node_key: string;
+            lum_node_key: string;
+            rainfall_node_key: string;
+            gate_node_key: string;
+            tide_node_key: string;
+            inp_node_key: string;
+        };
+        action_types: string[];
     }
+
     constructor() {
         super()
-        this.name = ''
-        this.uploadResourcesNodeKey = {
-            grid: '',
-            dem: '',
-            lum: ''
+
+        this.solutionData = {
+            name: '',
+            env: {
+                grid_node_key: '',
+                dem_node_key: '',
+                lum_node_key: '',
+                rainfall_node_key: '',
+                gate_node_key: '',
+                tide_node_key: '',
+                inp_node_key: '',
+            },
+            action_types: [],
         }
     }
 
