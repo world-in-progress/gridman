@@ -36,7 +36,7 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
     }
 }
 
-const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
+export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, ref) => {
     const { style, node, color } = props
     const mapWrapperRef = useRef<HTMLDivElement>(null)
 

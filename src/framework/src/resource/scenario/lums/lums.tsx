@@ -1,35 +1,31 @@
-import DefaultPageContext from "@/core/context/default";
-import DefaultScenarioNode from "@/core/scenario/default";
+import DefaultPageContext from "@/core/context/default"
+import DefaultScenarioNode from "@/core/scenario/default"
 import { ISceneNode } from "@/core/scene/iscene"
-import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
-import { FilePlus2, Info } from "lucide-react";
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
-import LumsInformation from "./lumsInformation";
+import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
+import { FilePlus2, Info } from "lucide-react"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+import LumsInformation from "./lumsInformation"
 import LumsPage from "./lumsPage"
-import { LUMData } from "./types"
-import { UpdateRasterData, UpdateRasterMeta } from "@/core/apis/types";
-import { Vectordata } from "../lum/lum";
+import { NewLUMData } from "./types"
+import { UpdateRasterMeta } from "@/core/apis/types"
+import { MapContainer } from "@/components/mapContainer/mapContainer"
 
 export class LumsPageContext extends DefaultPageContext {
     hasLUM: boolean
-    rawLumInfo: LUMData
-    uploadVectors: {
-        node_key: string,
-        data: Vectordata
-        updateRasterData: UpdateRasterData
-    }[]
+    newLumInfo: NewLUMData
     updateRasterMeta: UpdateRasterMeta
 
     constructor() {
         super()
 
         this.hasLUM = false
-        this.rawLumInfo = {
+        this.newLumInfo = {
             name: '',
+            epsg: '',
+            nodeKey: '',
             type: 'lum',
             original_tif_path: ''
         }
-        this.uploadVectors = []
         this.updateRasterMeta = {
             updates: []
         }
@@ -42,7 +38,7 @@ export class LumsPageContext extends DefaultPageContext {
 
 export enum LumsMenuItem {
     LUM_INFORMATION = 'LUM Information',
-    LUM_EDIT = 'LUM Editor'
+    CREATE_NEW_LUM = 'Create New LUM'
 }
 
 export default class LumsScenariNode extends DefaultScenarioNode {
@@ -58,8 +54,8 @@ export default class LumsScenariNode extends DefaultScenarioNode {
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumsMenuItem.LUM_INFORMATION)}>
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
-                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumsMenuItem.LUM_EDIT)}>
-                    <FilePlus2 className='w-4 h-4' />LUM Editor
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, LumsMenuItem.CREATE_NEW_LUM)}>
+                    <FilePlus2 className='w-4 h-4' />Create New LUM
                 </ContextMenuItem>
             </ContextMenuContent>
         )
@@ -67,7 +63,7 @@ export default class LumsScenariNode extends DefaultScenarioNode {
 
     handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
         switch (menuItem) {
-            case LumsMenuItem.LUM_EDIT:
+            case LumsMenuItem.CREATE_NEW_LUM:
                 (nodeSelf as SceneNode).pageId = 'default'
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
@@ -78,7 +74,7 @@ export default class LumsScenariNode extends DefaultScenarioNode {
         }
     }
 
-    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
+    renderPage(nodeSelf: ISceneNode, menuItem: any, mapContainer?: typeof MapContainer): React.JSX.Element | null {
 
         switch ((nodeSelf as SceneNode).pageId) {
             case 'default':
