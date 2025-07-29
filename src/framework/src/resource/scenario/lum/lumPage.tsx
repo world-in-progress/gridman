@@ -184,7 +184,7 @@ export default function LumPage({ node }: LumPageProps) {
             map.removeSource(nodeKey + 'source')
         }
 
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'uint8')
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'uint8', new Date().getTime().toString())
 
         map.addSource(nodeKey + 'source', {
             type: "raster",
@@ -293,13 +293,13 @@ export default function LumPage({ node }: LumPageProps) {
                     visible: true
                 })
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
-                triggerRepaint()
             } else {
                 toast.info('Vector already selected')
             }
         } else {
             toast.error('Please select the correct feature in vectors')
         }
+        triggerRepaint()
     }
 
     const handleVectorRemove = (index: number) => {
@@ -367,6 +367,7 @@ export default function LumPage({ node }: LumPageProps) {
                 duration: 1000,
             })
         }
+        triggerRepaint()
     }
 
     const toggleVectorVisibility = (resourceKey: string) => {
@@ -433,10 +434,12 @@ export default function LumPage({ node }: LumPageProps) {
             e.stopPropagation()
             setDraggedIndex(null)
         }
+        triggerRepaint()
     }
 
     const handleDragEnd = () => {
         setDraggedIndex(null)
+        triggerRepaint()
     }
 
     const getFeatureTypeIcon = (type: string) => {
@@ -756,6 +759,7 @@ export default function LumPage({ node }: LumPageProps) {
                                                                     className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
                                                                     onClick={(e) => {
                                                                         handleVectorPin(resource.node_key)
+                                                                        console.log(resource.data.color)
                                                                     }}
                                                                 >
                                                                     <MapPin className="h-3 w-3" />
