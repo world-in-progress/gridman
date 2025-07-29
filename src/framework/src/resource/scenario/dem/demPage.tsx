@@ -151,7 +151,7 @@ export default function DemPage({ node }: DemPageProps) {
 
         pageContext.current = await node.getPageContext() as DemPageContext
 
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb')
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
 
         const computeBBOX = () => {
             console.log(pageContext.current)
@@ -232,7 +232,9 @@ export default function DemPage({ node }: DemPageProps) {
         })
     }
 
-    const updateRasterOpacity = (opacity) => { }
+    const updateRasterOpacity = (opacity: number) => {
+        return
+     }
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()

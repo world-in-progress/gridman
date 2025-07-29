@@ -11,15 +11,15 @@ export class SolutionsPageContext extends DefaultPageContext {
     solutionData: {
         name: string;
         env: {
-            grid_node_key: string;
-            dem_node_key: string;
-            lum_node_key: string;
-            rainfall_node_key: string;
-            gate_node_key: string;
-            tide_node_key: string;
-            inp_node_key: string;
-        };
-        action_types: string[];
+            grid_node_key: string
+            dem_node_key: string
+            lum_node_key: string
+            rainfall_node_key: string
+            gate_node_key: string
+            tide_node_key: string
+            inp_node_key: string
+        }
+        action_types: string[]
     }
 
     constructor() {

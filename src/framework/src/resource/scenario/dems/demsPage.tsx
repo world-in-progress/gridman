@@ -107,7 +107,7 @@ export default function DemsPage({ node }: DemsPageProps) {
     if (!map) return
 
     const demName = pageContext.current!.demData.name
-    const tileUrl = apis.raster.getTileUrl(isPublic, nodeKey)
+    const tileUrl = apis.raster.getTileUrl(isPublic, nodeKey, 'terrainrgb', new Date().getTime().toString())
     terrainLayer.current = new TerrainByProxyTile(demName, tileUrl, demName, pageContext.current!.bbox)
     map.addLayer(terrainLayer.current);
   }

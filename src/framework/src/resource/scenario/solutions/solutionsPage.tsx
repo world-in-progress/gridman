@@ -7,9 +7,11 @@ import {
     MapPin,
     Upload,
     RotateCcw,
+    SquareCheck,
     TrafficCone,
     Box,
     BrushCleaning,
+    CheckCircle,
 } from "lucide-react"
 import { SolutionsPageProps } from './types'
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,6 +25,7 @@ import { toast } from 'sonner'
 import store from '@/store'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const REORDER_TYPE = 'application/x-lum-reorder'
 
@@ -161,7 +164,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             <Dam className='w-6 h-6' />
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-lg font-semibold text-slate-900">Create New Solution</h2>
+                            <h2 className="text-md font-semibold text-slate-900">Create New Solution</h2>
                             <p className="text-sm text-slate-500">New Solution Details</p>
                         </div>
                         <div className='flex items-center gap-2'>
@@ -183,7 +186,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                         <CardContent>
                             <div className="flex items-center gap-2 mb-2">
                                 <Info className="w-4 h-4 text-slate-500" />
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Basic Information</span>
+                                <span className="text-sm font-medium text-slate-500 uppercase tracking-wide">Basic Information</span>
                             </div>
                             <div className="ml-6 space-y-2">
                                 {/* Name */}
@@ -202,12 +205,41 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     <div className="flex items-center gap-2 mr-1">
                                         <Select>
                                             <SelectTrigger className="w-50">
-                                                <SelectValue placeholder="Theme" />
+                                                <SelectValue placeholder="Select Mode Type" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="flood">洪水-管道联合模拟</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                            {/* Action Types */}
+                            <div className="mt-4 pt-3 border-t border-slate-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <TrafficCone className="w-4 h-4 text-slate-500" />
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Action Types</span>
+                                </div>
+                                <div className="ml-6 space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="add-fence" className='w-4 h-4 cursor-pointer' />
+                                        <label htmlFor="add-fence" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                            add fence
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="transfer-water" className='w-4 h-4 cursor-pointer' />
+                                        <label htmlFor="transfer-water" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                            transfer water
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="add-gate" className='w-4 h-4 cursor-pointer' />
+                                        <label htmlFor="add-gate" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                            add gate
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -837,32 +869,18 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
                         </CardContent>
                     </Card>
-
-                    {/* Action Types */}
-                    <Card className="border-slate-200 shadow-sm">
-                        <CardContent>
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrafficCone className="w-4 h-4 text-slate-500" />
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Action Types</span>
-                            </div>
-                            <div className="ml-6">
-                                {/* Type */}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600">Type</span>
-                                    <div className="flex items-center gap-2 mr-1">
-                                        <Select>
-                                            <SelectTrigger className="w-50">
-                                                <SelectValue placeholder="Theme" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="flood">洪水-管道联合模拟</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div>
+                        <Button
+                            className="w-full bg-sky-500 hover:bg-sky-600 text-white font-medium py-2 text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                            onClick={() => {
+                                // 创建解决方案的处理逻辑
+                                toast.success('解决方案创建成功');
+                            }}
+                        >
+                            <CheckCircle className="w-5 h-5" />
+                            Create New Solution
+                        </Button>
+                    </div>
                 </div>
             </div>
 

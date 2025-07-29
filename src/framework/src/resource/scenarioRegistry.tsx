@@ -17,6 +17,10 @@ import VectorScenarioNode, { VectorPageContext } from './scenario/vector/vector'
 import LumScenarioNode, { LumPageContext } from './scenario/lum/lum'
 import DemScenarioNode, { DemPageContext } from './scenario/dem/dem'
 import SolutionsScenariNode, { SolutionsPageContext } from './scenario/solutions/solutions'
+import GatesScenariNode, { GatesPageContext } from './scenario/gates/gates'
+import InpsScenariNode, { InpsPageContext } from './scenario/inps/inps'
+import RainfallsScenariNode, { RainfallsPageContext } from './scenario/rainfalls/rainfalls'
+import TidesScenariNode, { TidesPageContext } from './scenario/tides/tides'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -36,7 +40,11 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DemScenarioNode.classKey]: DemScenarioNode,
     [LumsScenariNode.classKey]: LumsScenariNode,
     [LumScenarioNode.classKey]: LumScenarioNode,
-    [SolutionsScenariNode.classKey]: SolutionsScenariNode
+    [SolutionsScenariNode.classKey]: SolutionsScenariNode,
+    [GatesScenariNode.classKey]: GatesScenariNode,
+    [InpsScenariNode.classKey]: InpsScenariNode,
+    [RainfallsScenariNode.classKey]: RainfallsScenariNode,
+    [TidesScenariNode.classKey]: TidesScenariNode,
 }
 
 const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext> = {
@@ -54,7 +62,11 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [DemScenarioNode.classKey]: DemPageContext,
     [LumsScenariNode.classKey]: LumsPageContext,
     [LumScenarioNode.classKey]: LumPageContext,
-    [SolutionsScenariNode.classKey]: SolutionsPageContext
+    [SolutionsScenariNode.classKey]: SolutionsPageContext,
+    [GatesScenariNode.classKey]: GatesPageContext,
+    [InpsScenariNode.classKey]: InpsPageContext,
+    [RainfallsScenariNode.classKey]: RainfallsPageContext,
+    [TidesScenariNode.classKey]: TidesPageContext
 }
 
 export const SCENARIO_NODE_REGISTRY = new Proxy(_SCENARIO_NODE_REGISTRY, {
