@@ -3,7 +3,7 @@ import { mat4, vec4, vec3 } from "gl-matrix"
 import gll from '../../../../core/gl/glLib'
 // import * as dat from 'dat.gui'
 
-const { createShader, enableAllExtensions, createTexture2D, loadImage, createArrayBuffer, createIndexBuffer, createFrameBuffer} = gll
+const { createShader, enableAllExtensions, createTexture2D, loadImage, createArrayBuffer, createIndexBuffer, createFrameBuffer } = gll
 
 class LRUCache {
     constructor(capacity) {
@@ -40,7 +40,7 @@ class LRUCache {
 
 export default class TerrainByProxyTile {
 
-    constructor(_id, _source, _bbox, _params) {
+    constructor(_id, _source, _bbox, _elevationRange = [0, 500], _params) {
 
         this.id = _id;
         this.source = _source;
@@ -49,10 +49,7 @@ export default class TerrainByProxyTile {
         this.frame = 0.0
         this.debugKey = ''
 
-        // this.maskURL = '/mask/CJ.geojson'
-        this.maskURL = `${import.meta.env.VITE_MASK_URL}/all.geojson`;
         this.bbox = _bbox
-        // this.maskURL = '/mask/1.geojson'
 
         this.isReady = false
 
@@ -64,8 +61,11 @@ export default class TerrainByProxyTile {
         this.u_offset_x = 1.5
         this.u_offset_y = 1.5
         this.exaggeration = 1
+        this.opacity = 80
+        this.palette = 0
+        this.reversePalette = false
         this.withLighting = 1.0
-        this.elevationRange = [0, 500]
+        this.elevationRange = _elevationRange
         // this.elevationRange = [-15.514, 10.0]
         this.diffPower = 1.1
         this.use_skirt = 1.0
@@ -184,7 +184,7 @@ export default class TerrainByProxyTile {
 
         /// show pass ///
         // const paletteBitmap = await loadImage('/underwater/images/contourPalette1D.png')
-        const paletteBitmap = await loadImage('/images/dems/palette.png')
+        const paletteBitmap = await this.getPaletteImage(this.palette)
         this.paletteTexture = createTexture2D(gl, 0, paletteBitmap.width, paletteBitmap.height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, paletteBitmap)
 
         ///////////////////////////////////////////////////
@@ -247,7 +247,38 @@ export default class TerrainByProxyTile {
         map.setTerrain(null);
         map.removeSource(this.id + "-underwater-dem");
 
-        // this.gui.destroy();
+        // 卸载渲染相关资源
+        const gl = this.gl;
+        if (gl) {
+            // 删除 shader program
+            gl.deleteProgram(this.maskProgram);
+            gl.deleteProgram(this.meshProgram);
+            gl.deleteProgram(this.smoothingProgram);
+            gl.deleteProgram(this.showProgram);
+            gl.deleteProgram(this.debugProgram);
+
+            // 删除 texture
+            gl.deleteTexture(this.maskTexture);
+            gl.deleteTexture(this.meshTexture);
+            gl.deleteTexture(this.meshDepthTexture);
+            gl.deleteTexture(this.emptyDEMTexture);
+            gl.deleteTexture(this.smoothingTexture);
+            gl.deleteTexture(this.tempSmoothingTexture);
+            gl.deleteTexture(this.paletteTexture);
+            gl.deleteTexture(this.finalMeshTexture);
+
+            // 删除 framebuffer
+            gl.deleteFramebuffer(this.maskFbo);
+            gl.deleteFramebuffer(this.meshFbo);
+            gl.deleteFramebuffer(this.smoothingFbo);
+            gl.deleteFramebuffer(this.tempSmoothingFbo);
+
+            // 删除 VAO
+            gl.deleteVertexArray(this.maskVao);
+            gl.deleteVertexArray(this.meshVao_128);
+            gl.deleteVertexArray(this.meshVao_64);
+            gl.deleteVertexArray(this.meshVao_32);
+        }
     }
 
 
@@ -481,6 +512,8 @@ export default class TerrainByProxyTile {
             gl.uniform1i(gl.getUniformLocation(this.showProgram, 'maskTexture'), 2)
             gl.uniform2fv(gl.getUniformLocation(this.showProgram, 'e'), this.elevationRange)
             gl.uniform1f(gl.getUniformLocation(this.showProgram, 'withLighting'), this.withLighting)
+            gl.uniform1f(gl.getUniformLocation(this.showProgram, 'opacity'), this.opacity / 100)
+            gl.uniform1i(gl.getUniformLocation(this.showProgram, 'reverse'), this.reversePalette ? 1 : 0)
             gl.uniform3fv(gl.getUniformLocation(this.showProgram, 'LightPos'), this.LightPos)
             gl.uniform1f(gl.getUniformLocation(this.showProgram, 'diffPower'), this.diffPower)
             gl.uniform3fv(gl.getUniformLocation(this.showProgram, 'shallowColor'), this.shallowColor)
@@ -572,12 +605,15 @@ export default class TerrainByProxyTile {
     getParams() {
         return {
             exaggeration: this.exaggeration,
-            withLighting: this.withLighting,
+            opacity: this.opacity,
+            palette: this.palette,
+            reversePalette: this.reversePalette,
+            // withLighting: this.withLighting,
             lightPos: this.LightPos
         };
     }
 
-    updateParams(updateSet) {
+    async updateParams(updateSet) {
         console.log(updateSet)
         if (!updateSet || typeof updateSet !== 'object') return;
         // 遍历更新参数
@@ -591,13 +627,23 @@ export default class TerrainByProxyTile {
                 this.LightPos[0] = value[0];
                 this.LightPos[1] = value[1];
                 this.LightPos[2] = value[2];
+            } else if (key === 'palette') {
+                let gl = this.gl
+                const paletteBitmap = await this.getPaletteImage(value)
+                this.gl.deleteTexture(this.paletteTexture);
+                this.paletteTexture = createTexture2D(gl, 0, paletteBitmap.width, paletteBitmap.height, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, paletteBitmap)
             }
 
             this.map.triggerRepaint();
         }
     }
-}
 
+    async getPaletteImage(paletteIndex) {
+        const paletteBitmap = await loadImage(`/images/dems/palettes/${paletteIndex}.png`)
+        return paletteBitmap
+    }
+
+}
 
 
 //#region helper functions
