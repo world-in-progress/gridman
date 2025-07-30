@@ -8,8 +8,20 @@ import RainfallsPage from "./rainfallsPage"
 import RainfallsInformation from "./rainfallsInformation"
 
 export class RainfallsPageContext extends DefaultPageContext {
+    rainfallData: {
+        name: string
+        type: string
+        src_path: string
+    }
+
     constructor() {
         super()
+        
+        this.rainfallData = {
+            name: '',
+            type: 'rainfall',
+            src_path: ''
+        }
     }
 
     static async create(node: ISceneNode): Promise<RainfallsPageContext> {

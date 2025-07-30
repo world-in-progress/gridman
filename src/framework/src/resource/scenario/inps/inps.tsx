@@ -8,8 +8,20 @@ import InpsPage from "./inpsPage"
 import InpsInformation from "./inpsInformation"
 
 export class InpsPageContext extends DefaultPageContext {
+    inpData: {
+        name: string
+        type: string
+        src_path: string
+    }
+
     constructor() {
         super()
+
+        this.inpData = {
+            name: '',
+            type: 'inp',
+            src_path: ''
+        }
     }
 
     static async create(node: ISceneNode): Promise<InpsPageContext> {

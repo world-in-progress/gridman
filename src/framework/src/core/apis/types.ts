@@ -17,6 +17,7 @@ export interface SolutionMeta {
     env: {
         [key: string]: string
     }
+    action_types: string[]
 }
 
 export interface DiscoverBaseResponse {
@@ -217,3 +218,8 @@ export interface SamplingValueMeta {
     }
 }
 
+export interface CommonMeta {
+    name: string
+    type: string
+    src_path: string
+}

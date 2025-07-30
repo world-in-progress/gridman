@@ -20,6 +20,7 @@ export class SolutionsPageContext extends DefaultPageContext {
             inp_node_key: string
         }
         action_types: string[]
+        type: string
     }
 
     constructor() {
@@ -37,6 +38,7 @@ export class SolutionsPageContext extends DefaultPageContext {
                 inp_node_key: '',
             },
             action_types: [],
+            type: ''
         }
     }
 

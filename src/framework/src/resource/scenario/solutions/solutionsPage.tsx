@@ -7,25 +7,44 @@ import {
     MapPin,
     Upload,
     RotateCcw,
-    SquareCheck,
     TrafficCone,
     Box,
     BrushCleaning,
     CheckCircle,
+    SquaresUnite,
+    Mountain,
+    MountainSnow,
+    TentTree,
+    CloudRainWind,
+    Construction,
+    Waves,
+    Clipboard,
 } from "lucide-react"
+import * as apis from '@/core/apis/apis'
 import { SolutionsPageProps } from './types'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from "@/components/ui/input"
 import { cn } from '@/utils/utils'
-import { SceneNode } from '@/components/resourceScene/scene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { SolutionsPageContext } from './solutions'
 import { toast } from 'sonner'
 import store from '@/store'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { SolutionMeta } from '@/core/apis/types'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const REORDER_TYPE = 'application/x-lum-reorder'
 
@@ -35,6 +54,8 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
     const [isDragOver, setIsDragOver] = useState(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<SolutionsPageContext | null>(null)
+    const [resetFormDialogOpen, setResetFormDialogOpen] = useState(false)
+    const [resetDropZoneDialogOpen, setResetDropZoneDialogOpen] = useState(false)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -84,9 +105,6 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
                 pageContext.current!.solutionData!.env.grid_node_key = nodeKey
 
-                const map = store.get<mapboxgl.Map>('map')
-                if (!map) return
-
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
                 triggerRepaint()
                 toast.success('Grid uploaded successfully')
@@ -94,9 +112,108 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 toast.error('Please select the correct grid in grids')
             }
         } else if (type === 'dem') {
+            if (nodeKey.split('.')[1] === 'dems') {
+                if (pageContext.current?.solutionData?.env.dem_node_key) {
+                    toast.warning('DEM already selected')
+                    return
+                }
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.dem_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('DEM uploaded successfully')
+            } else {
+                toast.error('Please select the correct DEM in dems')
+            }
 
         } else if (type === 'lum') {
+            if (nodeKey.split('.')[1] === 'lums') {
+                if (pageContext.current?.solutionData?.env.lum_node_key) {
+                    toast.warning('LUM already selected')
+                    return
+                }
 
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.lum_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('LUM uploaded successfully')
+            } else {
+                toast.error('Please select the correct LUM in lums')
+            }
+        } else if (type === 'rainfall') {
+            if (nodeKey.split('.')[1] === 'rainfalls') {
+                if (pageContext.current?.solutionData?.env.rainfall_node_key) {
+                    toast.warning('Rainfall already selected')
+                    return
+                }
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.rainfall_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('Rainfall uploaded successfully')
+            } else {
+                toast.error('Please select the correct Rainfall in rainfalls')
+            }
+        } else if (type === 'gate') {
+            if (nodeKey.split('.')[1] === 'gates') {
+                if (pageContext.current?.solutionData?.env.gate_node_key) {
+                    toast.warning('Gate already selected')
+                    return
+                }
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.gate_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('Gate uploaded successfully')
+            } else {
+                toast.error('Please select the correct Gate in gates')
+            }
+        } else if (type === 'tide') {
+            if (nodeKey.split('.')[1] === 'tides') {
+                if (pageContext.current?.solutionData?.env.tide_node_key) {
+                    toast.warning('Tide already selected')
+                    return
+                }
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.tide_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('Tide uploaded successfully')
+            } else {
+                toast.error('Please select the correct Tide in tides')
+            }
+        } else if (type === 'inp') {
+            if (nodeKey.split('.')[1] === 'inps') {
+                if (pageContext.current?.solutionData?.env.inp_node_key) {
+                    toast.warning('Inp already selected')
+                    return
+                }
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+                pageContext.current!.solutionData!.env.inp_node_key = nodeKey
+
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                triggerRepaint()
+                toast.success('Inp uploaded successfully')
+            } else {
+                toast.error('Please select the correct Inp in inps')
+            }
         }
     }
 
@@ -149,9 +266,32 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                     inp_node_key: '',
                 },
                 action_types: [],
+                type: '',
             }
             triggerRepaint()
         }
+    }
+
+    const handleCreateSolution = async () => {
+
+        const solution = {
+            name: pageContext.current?.solutionData?.name,
+            env: pageContext.current?.solutionData?.env,
+            action_types: pageContext.current?.solutionData?.action_types,
+        } as SolutionMeta
+
+        const createSolutionRes = await apis.solution.createSolution.fetch(solution, node.tree.isPublic)
+
+        if (createSolutionRes.success) {
+            const tree = node.tree as SceneTree
+            await tree.alignNodeInfo(node, true)
+            tree.notifyDomUpdate()
+
+            toast.success('Create Solution Success')
+        } else {
+            toast.error('Create Solution Failed')
+        }
+
     }
 
     return (
@@ -171,7 +311,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             <Button
                                 variant='destructive'
                                 className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                onClick={handleResetForm}
+                                onClick={() => setResetFormDialogOpen(true)}
                             >
                                 <RotateCcw className="w-4 h-4" />Reset
                             </Button>
@@ -196,6 +336,11 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                         <Input
                                             placeholder='Enter name'
                                             className='w-50'
+                                            value={pageContext.current?.solutionData?.name}
+                                            onChange={(e) => {
+                                                pageContext.current!.solutionData!.name = e.target.value
+                                                triggerRepaint()
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -203,7 +348,15 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-slate-600">Type</span>
                                     <div className="flex items-center gap-2 mr-1">
-                                        <Select>
+                                        <Select
+                                            value={pageContext.current?.solutionData?.type || ''}
+                                            onValueChange={(value) => {
+                                                if (pageContext.current) {
+                                                    pageContext.current.solutionData!.type = value;
+                                                    triggerRepaint();
+                                                }
+                                            }}
+                                        >
                                             <SelectTrigger className="w-50">
                                                 <SelectValue placeholder="Select Mode Type" />
                                             </SelectTrigger>
@@ -220,24 +373,63 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             <div className="mt-4 pt-3 border-t border-slate-200">
                                 <div className="flex items-center gap-2 mb-2">
                                     <TrafficCone className="w-4 h-4 text-slate-500" />
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Action Types</span>
+                                    <span className="text-sm font-medium text-slate-500 uppercase tracking-wide">Action Types</span>
                                 </div>
-                                <div className="ml-6 space-y-2">
+                                <div className="ml-6 grid grid-cols-2 gap-2">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="add-fence" className='w-4 h-4 cursor-pointer' />
-                                        <label htmlFor="add-fence" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                        <Checkbox
+                                            id="add_fence"
+                                            className='w-4 h-4 cursor-pointer'
+                                            checked={pageContext.current?.solutionData?.action_types.includes('add_fence')}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    pageContext.current!.solutionData!.action_types.push('add_fence')
+                                                } else {
+                                                    pageContext.current!.solutionData!.action_types =
+                                                        pageContext.current!.solutionData!.action_types.filter(type => type !== 'add_fence')
+                                                }
+                                                triggerRepaint()
+                                            }}
+                                        />
+                                        <label htmlFor="add_fence" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
                                             add fence
                                         </label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="transfer-water" className='w-4 h-4 cursor-pointer' />
-                                        <label htmlFor="transfer-water" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                        <Checkbox
+                                            id="transfer_water"
+                                            className='w-4 h-4 cursor-pointer'
+                                            checked={pageContext.current?.solutionData?.action_types.includes('transfer_water')}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    pageContext.current!.solutionData!.action_types.push('transfer_water')
+                                                } else {
+                                                    pageContext.current!.solutionData!.action_types =
+                                                        pageContext.current!.solutionData!.action_types.filter(type => type !== 'transfer_water')
+                                                }
+                                                triggerRepaint()
+                                            }}
+                                        />
+                                        <label htmlFor="transfer_water" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
                                             transfer water
                                         </label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="add-gate" className='w-4 h-4 cursor-pointer' />
-                                        <label htmlFor="add-gate" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
+                                        <Checkbox
+                                            id="add_gate"
+                                            className='w-4 h-4 cursor-pointer'
+                                            checked={pageContext.current?.solutionData?.action_types.includes('add_gate')}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    pageContext.current!.solutionData!.action_types.push('add_gate')
+                                                } else {
+                                                    pageContext.current!.solutionData!.action_types =
+                                                        pageContext.current!.solutionData!.action_types.filter(type => type !== 'add_gate')
+                                                }
+                                                triggerRepaint()
+                                            }}
+                                        />
+                                        <label htmlFor="add_gate" className="text-sm font-medium leading-none cursor-pointer text-slate-600">
                                             add gate
                                         </label>
                                     </div>
@@ -259,7 +451,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     variant="ghost"
                                     size="sm"
                                     className="bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
-                                    onClick={handleResetDropZone}
+                                    onClick={() => setResetDropZoneDialogOpen(true)}
                                 >
                                     <BrushCleaning className="w-4 h-4" />Clear
                                 </Button>
@@ -267,7 +459,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* Grid */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <SquaresUnite className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Grid Drop Zone</span>
                                 </div>
                                 <div
@@ -353,7 +545,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* Dem */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <MountainSnow className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">DEM Drop Zone</span>
                                 </div>
                                 <div
@@ -363,7 +555,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'dem')}
                                 >
                                     {!pageContext.current?.solutionData?.env.dem_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -414,7 +606,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('dem')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -439,7 +631,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* LUM */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <TentTree className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">LUM Drop Zone</span>
                                 </div>
                                 <div
@@ -449,7 +641,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'lum')}
                                 >
                                     {!pageContext.current?.solutionData?.env.lum_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -500,7 +692,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('lum')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -525,7 +717,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* Rainfall */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <CloudRainWind className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Rainfall Drop Zone</span>
                                 </div>
                                 <div
@@ -535,7 +727,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'rainfall')}
                                 >
                                     {!pageContext.current?.solutionData?.env.rainfall_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -586,7 +778,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('rainfall')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -611,7 +803,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* gate */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <Construction className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Gate Drop Zone</span>
                                 </div>
                                 <div
@@ -621,7 +813,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'gate')}
                                 >
                                     {!pageContext.current?.solutionData?.env.gate_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -672,7 +864,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('gate')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -697,7 +889,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* Tide */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <Waves className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tide Drop Zone</span>
                                 </div>
                                 <div
@@ -707,7 +899,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'tide')}
                                 >
                                     {!pageContext.current?.solutionData?.env.tide_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -758,7 +950,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('tide')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -783,7 +975,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             {/* INP */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Upload className="w-4 h-4 text-slate-500" />
+                                    <Clipboard className="w-4 h-4 text-slate-500" />
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">INP Drop Zone</span>
                                 </div>
                                 <div
@@ -793,7 +985,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     )}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, 'grid')}
+                                    onDrop={(e) => handleDrop(e, 'inp')}
                                 >
                                     {!pageContext.current?.solutionData?.env.inp_node_key ? (
                                         <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
@@ -844,7 +1036,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0  hover:text-red-500 cursor-pointer"
-                                                        onClick={() => handleResourceRemove('grid')}
+                                                        onClick={() => handleResourceRemove('inp')}
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
@@ -872,10 +1064,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                     <div>
                         <Button
                             className="w-full bg-sky-500 hover:bg-sky-600 text-white font-medium py-2 text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                            onClick={() => {
-                                // 创建解决方案的处理逻辑
-                                toast.success('解决方案创建成功');
-                            }}
+                            onClick={handleCreateSolution}
                         >
                             <CheckCircle className="w-5 h-5" />
                             Create New Solution
@@ -888,6 +1077,48 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             <div className="w-full h-full flex-1">
                 <MapContainer node={node} style='w-full h-full' />
             </div>
+
+            {/* Alert Dialog for Form Reset */}
+            <AlertDialog open={resetFormDialogOpen} onOpenChange={setResetFormDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确认重置表单？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            此操作将清空所有已输入的表单数据，包括资源区域的所有选择。该操作无法撤销。
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleResetForm}
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            确认重置
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Alert Dialog for Drop Zone Reset */}
+            <AlertDialog open={resetDropZoneDialogOpen} onOpenChange={setResetDropZoneDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确认清空资源区域？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            此操作将清空所有已选择的资源项目。该操作无法撤销。
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleResetDropZone}
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            确认清空
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div >
 
     )

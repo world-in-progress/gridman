@@ -10,11 +10,8 @@ import GatesInformation from "./gatesInformation"
 export class GatesPageContext extends DefaultPageContext {
     gateData: {
         name: string;
-        properties: {
-            location: string;
-            type: string;
-            status: string;
-        }
+        type: string;
+        src_path: string;
     }
 
     constructor() {
@@ -22,11 +19,8 @@ export class GatesPageContext extends DefaultPageContext {
 
         this.gateData = {
             name: '',
-            properties: {
-                location: '',
-                type: '',
-                status: '',
-            }
+            type: 'gate',
+            src_path: '',
         }
     }
 
