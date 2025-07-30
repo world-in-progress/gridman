@@ -10,6 +10,7 @@ import SolutionsInformation from "./solutionsInformation"
 export class SolutionsPageContext extends DefaultPageContext {
     solutionData: {
         name: string;
+        model_type: string
         env: {
             grid_node_key: string
             dem_node_key: string
@@ -20,7 +21,6 @@ export class SolutionsPageContext extends DefaultPageContext {
             inp_node_key: string
         }
         action_types: string[]
-        type: string
     }
 
     constructor() {
@@ -28,6 +28,7 @@ export class SolutionsPageContext extends DefaultPageContext {
 
         this.solutionData = {
             name: '',
+            model_type: '',
             env: {
                 grid_node_key: '',
                 dem_node_key: '',
@@ -38,7 +39,6 @@ export class SolutionsPageContext extends DefaultPageContext {
                 inp_node_key: '',
             },
             action_types: [],
-            type: ''
         }
     }
 

@@ -70,7 +70,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
     }
 
     const unloadContext = () => {
-        console.log('组件卸载')
+        console.log('Component unmounted')
     }
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -256,6 +256,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         if (pageContext.current) {
             pageContext.current.solutionData = {
                 name: '',
+                model_type: '',
                 env: {
                     grid_node_key: '',
                     dem_node_key: '',
@@ -266,7 +267,6 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                     inp_node_key: '',
                 },
                 action_types: [],
-                type: '',
             }
             triggerRepaint()
         }
@@ -276,9 +276,12 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
         const solution = {
             name: pageContext.current?.solutionData?.name,
+            model_type: pageContext.current?.solutionData?.model_type,
             env: pageContext.current?.solutionData?.env,
             action_types: pageContext.current?.solutionData?.action_types,
         } as SolutionMeta
+
+        console.log(solution)
 
         const createSolutionRes = await apis.solution.createSolution.fetch(solution, node.tree.isPublic)
 
@@ -349,10 +352,10 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     <span className="text-sm text-slate-600">Type</span>
                                     <div className="flex items-center gap-2 mr-1">
                                         <Select
-                                            value={pageContext.current?.solutionData?.type || ''}
+                                            value={pageContext.current?.solutionData?.model_type || ''}
                                             onValueChange={(value) => {
                                                 if (pageContext.current) {
-                                                    pageContext.current.solutionData!.type = value;
+                                                    pageContext.current.solutionData!.model_type = value;
                                                     triggerRepaint();
                                                 }
                                             }}
@@ -361,7 +364,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                 <SelectValue placeholder="Select Mode Type" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="flood">洪水-管道联合模拟</SelectItem>
+                                                <SelectItem value="flood_pipe">洪水-管道联合模拟</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -1082,18 +1085,18 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             <AlertDialog open={resetFormDialogOpen} onOpenChange={setResetFormDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>确认重置表单？</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Form Reset?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            此操作将清空所有已输入的表单数据，包括资源区域的所有选择。该操作无法撤销。
+                            This action will clear all form data entered, including all selections in the resource area. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                             onClick={handleResetForm}
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >
-                            确认重置
+                            Confirm Reset
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1103,18 +1106,18 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             <AlertDialog open={resetDropZoneDialogOpen} onOpenChange={setResetDropZoneDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>确认清空资源区域？</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Clearing Resource Area?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            此操作将清空所有已选择的资源项目。该操作无法撤销。
+                            This action will clear all selected resource items. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                             onClick={handleResetDropZone}
                             className="bg-red-500 hover:bg-red-600 text-white"
                         >
-                            确认清空
+                            Confirm Clear
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

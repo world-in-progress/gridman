@@ -187,3 +187,21 @@ export const getFeatureMeta: IAPI<void, FeatureMeta> = {
 	},
 };
 
+export const getFeatureJsonComputation: IAPI<string, FeatureGetJsonResponse> = {
+	api: `${API_PREFIX}`,
+	fetch: async (node_key: string, isRemote: boolean): Promise<FeatureGetJsonResponse> => {
+		try {
+			const api = getPrefix(isRemote) + getFeatureJsonComputation.api + `/${node_key}`
+			const response = await fetch(api, { method: "GET" })
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const responseData: FeatureGetJsonResponse = await response.json();
+			return responseData;
+		} catch (error) {
+			throw new Error(`Failed to get feature json computation: ${error}`);	
+		}
+	}
+}
