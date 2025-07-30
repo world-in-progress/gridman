@@ -15,6 +15,8 @@ import {
     Mountain,
     Eye,
     EyeOff,
+    Settings,
+    Palette
 } from "lucide-react"
 import store from '@/store'
 import { toast } from 'sonner'
@@ -36,6 +38,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { UpdateRasterData } from '@/core/apis/types'
 import { Card, CardContent } from "@/components/ui/card"
 import { convertCoordinate, convertToWGS84 } from '@/components/mapContainer/utils'
@@ -46,6 +49,7 @@ import { DemPageProps } from './types'
 import { DemPageContext, Vectordata } from './dem'
 import TerrainByProxyTile from './terrainLayer/terrainLayer'
 import mapboxgl from 'mapbox-gl'
+import PaletteSelector from "./paletteSelector"
 
 const REORDER_TYPE = 'application/x-dem-reorder'
 
@@ -81,8 +85,88 @@ export default function DemPage({ node }: DemPageProps) {
     const [isDragOver, setIsDragOver] = useState(false)
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
     const [pixelInfo, setPixelInfo] = useState<{ x: number, y: number, value: number | null } | null>(null)
+    const [showVisCard, setShowVisCard] = useState(true)
+
+    const [visualizationSettings, setVisualizationSettings] = useState<
+        {
+            exaggeration: number
+            opacity: number
+            palette: number
+            reversePalette: boolean
+            lightPos: [number, number, number]
+        }
+    >({
+        exaggeration: 4,
+        opacity: 80,
+        palette: 0,
+        reversePalette: false,
+        lightPos: [-0.1, 0.3, 0.25]
+    });
 
     useEffect(() => {
+        const loadContext = async (node: SceneNode) => {
+            const map = store.get<mapboxgl.Map>('map')
+            if (!map) return
+    
+            pageContext.current = await node.getPageContext() as DemPageContext
+    
+            const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb')
+    
+            const computeBBOX = () => {
+                console.log(pageContext.current)
+                const bbox = pageContext.current!.demInfo!.bbox
+                const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
+                const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
+                if (LB && TR) {
+                    const bbox84 = [LB.x, LB.y, TR.x, TR.y]
+                    return bbox84
+                } else {
+                    return null
+                }
+            }
+    
+            const loadDemLayer = () => {
+                terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!)
+                map.addLayer(terrainLayer.current);
+                fitDemBounds()
+            }
+    
+            bbox84.current = computeBBOX()
+    
+            if (!bbox84.current) {
+                toast.error('Failed to get bounding box')
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                return
+            }
+            if (map.isStyleLoaded()) {
+                loadDemLayer()
+            } else {
+                map.once('style.load', () => {
+                    loadDemLayer()
+                })
+            }
+    
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+            toast.success('DEM loaded successfully')
+            triggerRepaint()
+        }
+
+        const unloadContext = () => {
+            const map = store.get<mapboxgl.Map>('map')
+            if (map) {
+                terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
+    
+                pageContext.current?.uploadVectors.forEach(vector => {
+                    if (map.getLayer(`${vector.node_key}-layer`)) {
+                        map.removeLayer(`${vector.node_key}-layer`)
+                    }
+                    if (map.getSource(`${vector.node_key}-source`)) {
+                        map.removeSource(`${vector.node_key}-source`)
+                    }
+                })
+            }
+        }
+        
         loadContext(node as SceneNode)
         return () => {
             unloadContext()
@@ -145,68 +229,10 @@ export default function DemPage({ node }: DemPageProps) {
         }
     }, [identifyActive, node.key, node.tree.isPublic])
 
-    const loadContext = async (node: SceneNode) => {
-        const map = store.get<mapboxgl.Map>('map')
-        if (!map) return
+    useEffect(() => {
+        terrainLayer.current?.updateParams(visualizationSettings)
+    }, [visualizationSettings])
 
-        pageContext.current = await node.getPageContext() as DemPageContext
-
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
-
-        const computeBBOX = () => {
-            console.log(pageContext.current)
-            const bbox = pageContext.current!.demInfo!.bbox
-            const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
-            const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
-            if (LB && TR) {
-                const bbox84 = [LB.x, LB.y, TR.x, TR.y]
-                return bbox84
-            } else {
-                return null
-            }
-        }
-
-        const loadDemLayer = () => {
-            terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!)
-            map.addLayer(terrainLayer.current);
-            fitDemBounds()
-        }
-
-        bbox84.current = computeBBOX()
-
-        if (!bbox84.current) {
-            toast.error('Failed to get bounding box')
-            store.get<{ on: Function, off: Function }>('isLoading')!.off()
-            return
-        }
-        if (map.isStyleLoaded()) {
-            loadDemLayer()
-        } else {
-            map.once('style.load', () => {
-                loadDemLayer()
-            })
-        }
-
-        store.get<{ on: Function, off: Function }>('isLoading')!.off()
-        toast.success('DEM loaded successfully')
-        triggerRepaint()
-    }
-
-    const unloadContext = () => {
-        const map = store.get<mapboxgl.Map>('map')
-        if (map) {
-            terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
-
-            pageContext.current?.uploadVectors.forEach(vector => {
-                if (map.getLayer(`${vector.node_key}-layer`)) {
-                    map.removeLayer(`${vector.node_key}-layer`)
-                }
-                if (map.getSource(`${vector.node_key}-source`)) {
-                    map.removeSource(`${vector.node_key}-source`)
-                }
-            })
-        }
-    }
 
     const handleDeleteDEM = async () => {
         if (!pageContext.current) return
@@ -232,9 +258,7 @@ export default function DemPage({ node }: DemPageProps) {
         })
     }
 
-    const updateRasterOpacity = (opacity: number) => {
-        return
-     }
+    // const updateRasterOpacity = (opacity) => { }
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()
@@ -594,25 +618,40 @@ export default function DemPage({ node }: DemPageProps) {
                                         </Badge>
                                     </div>
                                 </div>
-                                {/* Opacity */}
+                                {/* min value */}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600">Opacity</span>
-                                    <div className="flex items-center gap-2">
-                                        <Slider
-                                            value={[Math.round(pageContext.current?.rasterOpacity! * 100)]}
-                                            max={100}
-                                            step={5}
-                                            className='w-36 cursor-pointer'
-                                            onValueChange={(value) => {
-                                                const opacity = Math.round(value[0]) / 100;
-                                                pageContext.current!.rasterOpacity = opacity;
-                                                updateRasterOpacity(opacity);
-                                                triggerRepaint();
-                                            }}
-                                        />
-                                        <Badge variant="secondary" className={`w-10 text-xs font-semibold`}>
-                                            {Math.round(pageContext.current?.rasterOpacity! * 100)}%
-                                        </Badge>
+                                    <span className="text-sm text-slate-600">Minimum Value</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <span className="text-sm text-slate-900">
+                                            {pageContext.current?.demInfo?.min_value}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* max value */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Maximum Value</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <span className="text-sm text-slate-900">
+                                            {pageContext.current?.demInfo?.max_value}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* width */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Width</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <span className="text-sm text-slate-900">
+                                            {pageContext.current?.demInfo?.width}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* height */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Height</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <span className="text-sm text-slate-900">
+                                            {pageContext.current?.demInfo?.height}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -761,14 +800,14 @@ export default function DemPage({ node }: DemPageProps) {
                                                                     defaultValue="set"
                                                                     onValueChange={(value) => handleOperationTypeChange(index, value)}
                                                                 >
-                                                                    <SelectTrigger className={`text-xs w-25 ${operationColorMap[pageContext.current!.uploadVectors[index].updateRasterData.operation]}`}>
-                                                                        <SelectValue placeholder="select an operation" />
+                                                                    <SelectTrigger className={`text-xs w-25 ${operationColorMap[pageContext.current!.uploadVectors[index].updateRasterData.operation]} cursor-pointer`}>
+                                                                        <SelectValue placeholder="select an operation" className="cursor-pointer" />
                                                                     </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem className="bg-blue-200 text-xs text-gray-800 my-1" value="set">Set</SelectItem>
-                                                                        <SelectItem className="bg-green-200 text-xs text-gray-800 my-1" value="add">Add</SelectItem>
-                                                                        <SelectItem className="bg-red-200 text-xs text-gray-800 my-1" value="subtract">Subtract</SelectItem>
-                                                                        <SelectItem className="bg-orange-200 text-xs text-gray-800 my-1" value="max_fill">Max Fill</SelectItem>
+                                                                    <SelectContent className="cursor-pointer">
+                                                                        <SelectItem className="bg-blue-200 text-xs text-gray-800 my-1 cursor-pointer" value="set">Set</SelectItem>
+                                                                        <SelectItem className="bg-green-200 text-xs text-gray-800 my-1 cursor-pointer" value="add">Add</SelectItem>
+                                                                        <SelectItem className="bg-red-200 text-xs text-gray-800 my-1 cursor-pointer" value="subtract">Subtract</SelectItem>
+                                                                        <SelectItem className="bg-orange-200 text-xs text-gray-800 my-1 cursor-pointer" value="max_fill">Max Fill</SelectItem>
                                                                     </SelectContent>
                                                                 </Select>
                                                                 {pageContext.current!.uploadVectors[index].updateRasterData.operation !== 'max_fill'
@@ -820,6 +859,100 @@ export default function DemPage({ node }: DemPageProps) {
                     </Card>
                 </div>
             </div>
+
+            {/* 右下角悬浮按钮，控制Card显隐 */}
+            <button
+                className="fixed bottom-6 right-6 z-60 bg-white border border-slate-200 rounded-full shadow-lg p-3 hover:bg-slate-100 transition-colors"
+                style={{ display: showVisCard ? 'none' : 'block' }}
+                onClick={() => setShowVisCard(true)}
+                title="Show Visualization Settings"
+            >
+                <Settings className="w-6 h-6 text-slate-600 cursor-pointer" />
+            </button>
+            {showVisCard && (
+                <Card
+                    className="fixed bottom-6 right-6 w-96 z-50 border-slate-200 shadow-lg bg-white"
+                >
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <Palette className="w-5 h-5 text-slate-500" />
+                            <span className="text-sm font-medium text-slate-500 uppercase tracking-wide">Visualization Settings</span>
+                            <button
+                                className="ml-auto p-1 rounded hover:bg-slate-200"
+                                onClick={() => setShowVisCard(false)}
+                                title="Close"
+                            >
+                                <X className="w-4 h-4 text-slate-400 cursor-pointer"/>
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <span className="block text-sm text-slate-600 my-1">Palette</span>
+                                <PaletteSelector defaultValue={0}
+                                    onValueChange={(index) => setVisualizationSettings(prev => ({ ...prev, palette: index }))}
+                                    className="cursor-pointer"
+                                />
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-xs text-slate-500 w-13 text-right">Reverse</span>
+                                    <Switch
+                                        onCheckedChange={(checked) => setVisualizationSettings(prev => ({ ...prev, reversePalette: checked }))}
+                                        defaultChecked={false}
+                                        className="cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="block text-sm text-slate-600 my-1">Exaggeration</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-400 w-6 text-right">0</span>
+                                    <Slider value={[visualizationSettings.exaggeration]} min={0} max={20} step={0.5} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, exaggeration: v[0] }))} />
+                                    <span className="text-xs text-slate-400 w-6 text-left">20</span>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.exaggeration}</Badge>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="block text-sm text-slate-600 my-1">Opacity</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-400 w-6 text-right">0</span>
+                                    <Slider value={[visualizationSettings.opacity]} min={0} max={100} step={1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, opacity: v[0] }))} />
+                                    <span className="text-xs text-slate-400 w-6 text-left">100</span>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.opacity}%</Badge>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="block text-sm text-slate-600 my-1">Light Source Position</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500 w-5 text-right">X</span>
+                                    <span className="text-xs text-slate-400 w-3 text-right">-1</span>
+                                    <Slider value={[visualizationSettings.lightPos[0]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [v[0], prev.lightPos[1], prev.lightPos[2]] }))} />
+                                    <span className="text-xs text-slate-400 w-6 text-left">1</span>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[0].toFixed(2)}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500 w-5 text-right">Y</span>
+                                    <span className="text-xs text-slate-400 w-3 text-right">-1</span>
+                                    <Slider value={[visualizationSettings.lightPos[1]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], v[0], prev.lightPos[2]] }))} />
+                                    <span className="text-xs text-slate-400 w-6 text-left">1</span>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[1].toFixed(2)}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500 w-5 text-right">Z</span>
+                                    <span className="text-xs text-slate-400 w-3 text-right">0</span>
+                                    <Slider value={[visualizationSettings.lightPos[2]]} min={0} max={2} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], prev.lightPos[1], v[0]] }))} />
+                                    <span className="text-xs text-slate-400 w-6 text-left">2</span>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[2].toFixed(2)}</Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Map container placeholder */}
             <div className="w-full h-full flex-1">

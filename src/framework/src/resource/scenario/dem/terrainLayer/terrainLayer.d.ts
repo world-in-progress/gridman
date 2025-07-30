@@ -10,4 +10,19 @@ export default class TerrainByProxyTile implements CustomLayerInterface {
   onAdd(map: Map, gl: WebGLRenderingContext): void;
   render(gl: WebGLRenderingContext, matrix: number[]): void;
   onRemove?(map: Map): void;
+  getParams(): {
+    exaggeration: number;
+    opacity: number;
+    palette: number;
+    reversePalette: boolean;
+    lightPos: [number, number, number];
+  };
+  updateParams(updateSet: Partial<{
+    exaggeration: number;
+    opacity: number;
+    lightPos: [number, number, number];
+    palette: number;
+    reversePalette: boolean;
+    [key: string]: any;
+  }>): void;
 }
