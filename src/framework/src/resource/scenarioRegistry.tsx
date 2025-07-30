@@ -23,6 +23,7 @@ import RainfallsScenariNode, { RainfallsPageContext } from './scenario/rainfalls
 import TidesScenariNode, { TidesPageContext } from './scenario/tides/tides'
 import GridScenarioNode, { GridPageContext } from './scenario/grid/grid'
 import SolutionScenarioNode, { SolutionPageContext } from './scenario/solution/solution'
+import SimulationsScenarioNode, { SimulationsPageContext } from './scenario/simulations/simulations'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -36,6 +37,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [GridScenarioNode.classKey]: GridScenarioNode,
     [IconScenarioNode.classKey]: IconScenarioNode,
     [SettingsScenarioNode.classKey]: SettingsScenarioNode,
+    [SimulationsScenarioNode.classKey]: SimulationsScenarioNode,
     [SimulationScenarioNode.classKey]: SimulationScenarioNode,
     [VectorsScenarioNode.classKey]: VectorsScenarioNode,
     [VectorScenarioNode.classKey]: VectorScenarioNode,
@@ -60,6 +62,7 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [GridsScenariNode.classKey]: GridsPageContext,
     [GridScenarioNode.classKey]: GridPageContext,
     [SettingsScenarioNode.classKey]: SettingsPageContext,
+    [SimulationsScenarioNode.classKey]: SimulationsPageContext,
     [SimulationScenarioNode.classKey]: SimulationPageContext,
     [VectorsScenarioNode.classKey]: VectorsPageContext,
     [VectorScenarioNode.classKey]: VectorPageContext,

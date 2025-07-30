@@ -2,21 +2,49 @@ import DefaultPageContext from "@/core/context/default"
 import DefaultScenarioNode from "@/core/scenario/default"
 import { ISceneNode } from "@/core/scene/iscene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
-import { Delete, FilePlus2, Info } from "lucide-react"
+import { Delete, FilePlus2, Info, PersonStanding } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import * as apis from '@/core/apis/apis'
 import store from "@/store"
 import { toast } from "sonner"
 import SolutionPage from "./solutionPage"
 import SolutionInformation from "./solutionInformation"
+import { SolutionMeta } from "@/core/apis/types"
+
+export interface HumanAction {
+    id: string;
+    node_key: string;
+    action_type: string;
+    elevation_delta: string;
+    landuse_type: string;
+    geometry: any
+    registered: boolean
+}
 
 export class SolutionPageContext extends DefaultPageContext {
+    solutionData: SolutionMeta
+    humanActions: HumanAction[]
+
     constructor() {
         super()
+        this.solutionData = {
+            name: '',
+            model_type: '',
+            env: {
+                grid_node_key: '',
+            },
+            action_types: [],
+        }
+        this.humanActions = []
     }
 
     static async create(node: ISceneNode): Promise<SolutionPageContext> {
-        return new SolutionPageContext()
+        const n = node as SceneNode
+        const context = new SolutionPageContext()
+        const solution = await apis.solution.getSolutionByNodeKey.fetch(node.key, node.tree.isPublic)
+        context.solutionData = solution.data
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        return context
     }
 }
 
@@ -38,7 +66,7 @@ export default class SolutionScenarioNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Solution Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SolutionMenuItem.ADD_HUMAN_ACTION)}>
-                    <Info className='w-4 h-4' />Add Human Action
+                    <PersonStanding className='w-4 h-4' />Add Human Action
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => { handleContextMenu(nodeSelf, SolutionMenuItem.DELETE_THIS_SOLUTION) }}>
                     <Delete className='w-4 h-4 text-white rotate-180' />
@@ -63,6 +91,7 @@ export default class SolutionScenarioNode extends DefaultScenarioNode {
                 break
             case SolutionMenuItem.ADD_HUMAN_ACTION:
                 (nodeSelf as SceneNode).pageId = 'default'
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case SolutionMenuItem.SOLUTION_INFORMATION:

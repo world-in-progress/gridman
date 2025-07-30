@@ -11,13 +11,18 @@ export interface BaseResponse {
     message: string
 }
 
-
 export interface SolutionMeta {
     name: string
+    model_type: string
     env: {
         [key: string]: string
     }
     action_types: string[]
+}
+
+export interface SolutionMetaResponse {
+    success: boolean
+    data: SolutionMeta
 }
 
 export interface DiscoverBaseResponse {
@@ -222,4 +227,14 @@ export interface CommonMeta {
     name: string
     type: string
     src_path: string
+}
+
+export interface HumanAction {
+    node_key: string
+    action_type: string
+    params: {
+        elevation_delta: number
+        landuse_type: number
+        feature: Record<string, any>
+    }
 }
