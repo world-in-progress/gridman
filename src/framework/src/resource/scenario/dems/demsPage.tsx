@@ -257,6 +257,7 @@ export default function DemsPage({ node }: DemsPageProps) {
                   size="icon"
                   onClick={handleFileSelect}
                   title="Browse file"
+                  className='cursor-pointer'
                 >
                   <FolderOpen className="h-4 w-4" />
                 </Button>
