@@ -284,7 +284,7 @@ export default function LumPage({ node }: LumPageProps) {
                 const updateRasterData: UpdateRasterData = {
                     feature_node_key: nodeKey,
                     operation: 'set',
-                    value: null
+                    value: 0
                 }
                 pageContext.current?.uploadVectors.push({
                     node_key: nodeKey,
@@ -331,13 +331,14 @@ export default function LumPage({ node }: LumPageProps) {
                 if (feature.geometry) {
                     switch (feature.geometry.type) {
                         case 'Point':
-                            const point = feature.geometry.coordinates;
-                            minX = Math.min(minX, point[0])
-                            maxX = Math.max(maxX, point[0])
-                            minY = Math.min(minY, point[1])
-                            maxY = Math.max(maxY, point[1])
-                            break
-
+                            {
+                                const point = feature.geometry.coordinates;
+                                minX = Math.min(minX, point[0])
+                                maxX = Math.max(maxX, point[0])
+                                minY = Math.min(minY, point[1])
+                                maxY = Math.max(maxY, point[1])
+                                break
+                            }
                         case 'LineString':
                             feature.geometry.coordinates.forEach(coord => {
                                 minX = Math.min(minX, coord[0])

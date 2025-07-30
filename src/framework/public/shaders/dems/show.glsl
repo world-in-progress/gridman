@@ -38,6 +38,8 @@ uniform vec3 LightPos;
 uniform float diffPower;
 uniform vec3 shallowColor;
 uniform vec3 deepColor;
+uniform float opacity;
+uniform int reverse;
 
 out vec4 fragColor;
 
@@ -76,7 +78,7 @@ vec3 colorMapping(float elevation) {
     // return mix(deepColor, shallowColor, normalizedElevation) / 255.0;
     normalizedElevation = clamp(normalizedElevation, 0.0, 1.0);
 
-    vec2 paletteUV = vec2(normalizedElevation, 0.5);
+    vec2 paletteUV = vec2(mix(normalizedElevation, 1.0 - normalizedElevation, float(reverse)), 0.5);
     return texture(paletteTexture, paletteUV).rgb;
 
 }
@@ -125,9 +127,10 @@ void main() {
     float alpha = M.r < 9999.0 ? 1.0 : 0.0;
     float originalElevation = M.r;
     float normalizedElevation = (M.r - e.x) / (e.y - e.x);
-    alpha = alpha * normalizedElevation * 0.4 + 0.5;// 越低越透明
+    // alpha = alpha * normalizedElevation * 0.5 + 0.5;// 越低越透明
 
-    fragColor = vec4(outColor, alpha);
+    // fragColor = vec4(outColor, alpha * opacity);
+    fragColor = vec4(outColor, opacity);
 }
 
 #endif
