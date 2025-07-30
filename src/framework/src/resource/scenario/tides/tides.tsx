@@ -8,8 +8,20 @@ import TidesPage from "./tidesPage"
 import TidesInformation from "./tidesInformation"
 
 export class TidesPageContext extends DefaultPageContext {
+    tideData: {
+        name: string
+        type: string
+        src_path: string
+    }
+
     constructor() {
         super()
+        
+        this.tideData = {
+            name: '',
+            type: 'tide',
+            src_path: ''
+        }
     }
 
     static async create(node: ISceneNode): Promise<TidesPageContext> {

@@ -18,8 +18,8 @@ export enum SimulationMenuItem {
 }
 
 export default class SimulationScenarioNode extends DefaultScenarioNode {
-    static classKey: string = 'root.instances'
-    semanticPath: string = 'root.instances'
+    static classKey: string = 'root.simulation'
+    semanticPath: string = 'root.simulation'
     children: string[] = []
 
     renderMenu(nodeSelf: ISceneNode, handleContextMenu: (node: ISceneNode, menuItem: any) => void): React.JSX.Element | null {

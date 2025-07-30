@@ -40,7 +40,6 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog"
 import { lumTypeMap } from '../lum/lumPage'
-import { convertToWGS84 } from '@/components/mapContainer/utils'
 
 export default function LumsPage({ node }: LumsPageProps) {
 

@@ -1,30 +1,23 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import {
-    X,
-    Info,
-    MapPin,
-    Upload,
     RotateCcw,
     CheckCircle,
+    FolderOpen,
 } from "lucide-react"
 import { GatesPageProps } from './types'
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from "@/components/ui/input"
-import { cn } from '@/utils/utils'
 import { SceneNode } from '@/components/resourceScene/scene'
 import { GatesPageContext } from './gates'
 import { toast } from 'sonner'
 import store from '@/store'
 import MapContainer from '@/components/mapContainer/mapContainer'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import * as apis from '@/core/apis/apis'
 
-const REORDER_TYPE = 'application/x-gate-reorder'
 
 export default function GatesPage({ node }: GatesPageProps) {
 
-    const [isDragOver, setIsDragOver] = useState(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<GatesPageContext | null>(null)
 
@@ -44,37 +37,24 @@ export default function GatesPage({ node }: GatesPageProps) {
         console.log('组件卸载')
     }
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault()
-        setIsDragOver(true)
-    }
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault()
-        setIsDragOver(false)
-    }
-
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault()
-        setIsDragOver(false)
-
-        if (e.dataTransfer.types.includes(REORDER_TYPE)) {
-            return
-        }
-
-        const nodeKey = e.dataTransfer.getData('text/plain')
-        
-        // TODO: 根据需要处理拖放功能
-        toast.info('Gate drop functionality to be implemented')
-    }
-
-    const handleSaveGate = () => {
+    const handleSaveGate = async () => {
         if (!pageContext.current?.gateData.name) {
             toast.warning('Please enter gate name')
             return
         }
-        
-        // TODO: 实现保存网闸数据的功能
+
+        const gateData = {
+            name: pageContext.current?.gateData.name,
+            type: 'gate',
+            src_path: pageContext.current?.gateData.src_path
+        }
+
+        const response = await apis.common.createCommon.fetch(gateData, node.tree.isPublic)
+        if (response.success) {
+            toast.success('Gate saved successfully')
+        } else {
+            toast.error('Failed to save gate')
+        }
         toast.success('Gate saved successfully')
     }
 
@@ -85,90 +65,91 @@ export default function GatesPage({ node }: GatesPageProps) {
         }
     }
 
-    const handleTypeChange = (value: string) => {
-        if (pageContext.current) {
-            pageContext.current.gateData.properties.type = value
-            triggerRepaint()
-        }
-    }
-
     const handleReset = () => {
         if (pageContext.current) {
             pageContext.current.gateData = {
                 name: '',
-                properties: {
-                    location: '',
-                    type: '',
-                    status: '',
-                }
+                type: 'gate',
+                src_path: '',
             }
             triggerRepaint()
             toast.info('Form reset')
         }
     }
 
+    const handleFileSelect = async () => {
+        if (window.electronAPI && typeof window.electronAPI.openTxtFileDialog === 'function') {
+            try {
+                const filePath = await window.electronAPI.openTxtFileDialog()
+                if (filePath) {
+                    if (pageContext.current) {
+                        pageContext.current.gateData.src_path = filePath
+                        triggerRepaint()
+                    }
+                }
+            } catch (error) {
+                console.error('Error opening file dialog:', error)
+                toast.error('文件选择对话框打开失败')
+            }
+        } else {
+            toast.error('文件选择功能不可用')
+        }
+    }
+
     return (
         <div className='relative w-full h-full flex flex-col'>
-            <div className='absolute z-30 top-0 left-0 w-full p-4'>
-                <Card className='w-full'>
+            <div className='absolute z-30 top-0 left-0 p-4 w-80'>
+                <Card className='w-full shadow-md'>
+                    <CardHeader>
+                        <CardTitle>Create New Gate</CardTitle>
+                    </CardHeader>
                     <CardContent className='p-4'>
                         <div className='flex flex-col gap-4'>
-                            <div className='flex flex-row gap-2 items-center'>
-                                <div className='w-20 font-bold'>名称</div>
+                            <div className='flex flex-col sm:flex-row gap-2 items-start sm:items-center'>
+                                <div className='w-20 font-bold'>Name</div>
                                 <Input
-                                    className='flex-1'
+                                    className='flex-1 w-full'
                                     value={pageContext.current?.gateData.name || ''}
                                     onChange={handleNameChange}
-                                    placeholder='输入网闸名称'
+                                    placeholder='Enter gate name'
                                 />
                             </div>
-                            
-                            <div className='flex flex-row gap-2 items-center'>
-                                <div className='w-20 font-bold'>类型</div>
-                                <Select
-                                    value={pageContext.current?.gateData.properties.type || ''}
-                                    onValueChange={handleTypeChange}
-                                >
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="选择网闸类型" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="floodgate">防洪闸</SelectItem>
-                                        <SelectItem value="tidegate">潮汐闸</SelectItem>
-                                        <SelectItem value="drainage">排水闸</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className='flex flex-col sm:flex-row gap-2 items-start sm:items-center'>
+                                <div className='w-20 font-bold'>File Path</div>
+                                <div className="flex flex-1 gap-2">
+                                    <Input
+                                        className='flex-1'
+                                        value={pageContext.current?.gateData.src_path || ''}
+                                        readOnly={true}
+                                        placeholder='Select file path'
+                                    />
+                                    <Button
+                                        variant="secondary"
+                                        className='cursor-pointer hover:bg-slate-200'
+                                        size="icon"
+                                        onClick={handleFileSelect}
+                                        title="Browse file"
+                                    >
+                                        <FolderOpen className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className='flex flex-row gap-2 justify-end'>
-                                <Button variant='outline' className='gap-1' onClick={handleReset}>
-                                    <RotateCcw className='w-4 h-4' />重置
+                                <Button variant='outline' className='gap-1 bg-red-500 hover:bg-red-600 text-white' onClick={handleReset}>
+                                    <RotateCcw className='w-4 h-4 text-white' />Reset
                                 </Button>
-                                <Button className='gap-1' onClick={handleSaveGate}>
-                                    <CheckCircle className='w-4 h-4' />保存
+                                <Button className='gap-1 bg-sky-500 hover:bg-sky-600 text-white' onClick={handleSaveGate}>
+                                    <CheckCircle className='w-4 h-4 text-white' />Save
                                 </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
-            
+
             <div className='flex-1 relative'>
                 <MapContainer node={node} />
-                <div
-                    className={cn(
-                        'absolute z-20 top-24 left-1/2 -translate-x-1/2 transition-all p-4 rounded-xl border-2 border-dashed',
-                        isDragOver ? 'bg-blue-100 border-blue-500' : 'bg-white border-gray-300'
-                    )}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                >
-                    <div className='flex flex-col items-center gap-2'>
-                        <Upload className='w-6 h-6' />
-                        <div className='text-sm'>拖拽要素到此处以上传</div>
-                    </div>
-                </div>
             </div>
         </div>
     )
