@@ -87,6 +87,20 @@ export default function DemPage({ node }: DemPageProps) {
     const [pixelInfo, setPixelInfo] = useState<{ x: number, y: number, value: number | null } | null>(null)
     const [showVisCard, setShowVisCard] = useState(true)
 
+    const initialVisualizationSettings = useRef<{
+        exaggeration: number
+        opacity: number
+        palette: number
+        reversePalette: boolean
+        lightPos: [number, number, number]
+    }>({
+        exaggeration: 4,
+        opacity: 80,
+        palette: 0,
+        reversePalette: false,
+        lightPos: [-0.1, 0.3, 0.25] as [number, number, number]
+    });
+
     const [visualizationSettings, setVisualizationSettings] = useState<
         {
             exaggeration: number
@@ -95,23 +109,20 @@ export default function DemPage({ node }: DemPageProps) {
             reversePalette: boolean
             lightPos: [number, number, number]
         }
-    >({
-        exaggeration: 4,
-        opacity: 80,
-        palette: 0,
-        reversePalette: false,
-        lightPos: [-0.1, 0.3, 0.25]
-    });
+    >(initialVisualizationSettings.current);
 
     useEffect(() => {
         const loadContext = async (node: SceneNode) => {
             const map = store.get<mapboxgl.Map>('map')
             if (!map) return
-    
+
             pageContext.current = await node.getPageContext() as DemPageContext
-    
-            const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb')
-    
+
+            const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
+            const minValue = pageContext.current?.demInfo?.min_value
+            const maxValue = pageContext.current?.demInfo?.max_value
+            const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number]: undefined
+
             const computeBBOX = () => {
                 console.log(pageContext.current)
                 const bbox = pageContext.current!.demInfo!.bbox
@@ -124,15 +135,15 @@ export default function DemPage({ node }: DemPageProps) {
                     return null
                 }
             }
-    
+
             const loadDemLayer = () => {
-                terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!)
+                terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
                 map.addLayer(terrainLayer.current);
                 fitDemBounds()
             }
-    
+
             bbox84.current = computeBBOX()
-    
+
             if (!bbox84.current) {
                 toast.error('Failed to get bounding box')
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
@@ -145,7 +156,7 @@ export default function DemPage({ node }: DemPageProps) {
                     loadDemLayer()
                 })
             }
-    
+
             store.get<{ on: Function, off: Function }>('isLoading')!.off()
             toast.success('DEM loaded successfully')
             triggerRepaint()
@@ -155,7 +166,7 @@ export default function DemPage({ node }: DemPageProps) {
             const map = store.get<mapboxgl.Map>('map')
             if (map) {
                 terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
-    
+
                 pageContext.current?.uploadVectors.forEach(vector => {
                     if (map.getLayer(`${vector.node_key}-layer`)) {
                         map.removeLayer(`${vector.node_key}-layer`)
@@ -166,7 +177,7 @@ export default function DemPage({ node }: DemPageProps) {
                 })
             }
         }
-        
+
         loadContext(node as SceneNode)
         return () => {
             unloadContext()
@@ -684,24 +695,6 @@ export default function DemPage({ node }: DemPageProps) {
                                                 )}
                                             </div>
                                         </div>
-                                        {pixelInfo.value !== null && (
-                                            <div className="flex justify-between">
-                                                <span className="text-sm text-slate-600">Type:</span>
-                                                <div>
-                                                    {/* {pixelInfo.value >= 1 && pixelInfo.value <= 7 ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <div
-                                                                className="w-3 h-3 rounded-sm"
-                                                                style={{ backgroundColor: lumTypeMap[pixelInfo.value - 1].color }}
-                                                            />
-                                                            <span className="text-sm">{lumTypeMap[pixelInfo.value - 1].type}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-sm italic text-slate-400">Unknown</span>
-                                                    )} */}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 </>
                             )}
@@ -882,7 +875,7 @@ export default function DemPage({ node }: DemPageProps) {
                                 onClick={() => setShowVisCard(false)}
                                 title="Close"
                             >
-                                <X className="w-4 h-4 text-slate-400 cursor-pointer"/>
+                                <X className="w-4 h-4 text-slate-400 cursor-pointer" />
                             </button>
                         </div>
                         <div className="space-y-4">

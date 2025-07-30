@@ -9,21 +9,9 @@ import DemsPage from "./demsPage";
 import DemsInformation from "./demsInformation";
 
 export class DemsPageContext extends DefaultPageContext {
-    hasDEM: boolean
-    demData: {
-        name: string
-        path: string
-    }
-    bbox: number[]
 
     constructor() {
         super()
-        this.hasDEM = false
-        this.demData = {
-            name: '',
-            path: ''
-        }
-        this.bbox = []
     }
 
     static async create(node: ISceneNode): Promise<DemsPageContext> {
@@ -33,7 +21,7 @@ export class DemsPageContext extends DefaultPageContext {
 
 export enum DemsMenuItem {
     DEMS_INFORMATION = 'Dems Information',
-    DEM_EDIT = 'DEM Editor'
+    DEM_EDIT = 'Create New DEM'
 }
 
 export default class DemsScenariNode extends DefaultScenarioNode {
@@ -50,7 +38,7 @@ export default class DemsScenariNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, DemsMenuItem.DEM_EDIT)}>
-                    <FilePlus2 className='w-4 h-4' />DEM Editor
+                    <FilePlus2 className='w-4 h-4' />Create New DEM
                 </ContextMenuItem>
             </ContextMenuContent>
         )

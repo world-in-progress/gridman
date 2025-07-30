@@ -100,16 +100,18 @@ export default class DemScenarioNode extends DefaultScenarioNode {
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
             case DemMenuItem.DELETE_THIS_DEM:
-                store.get<{ on: Function, off: Function }>('isLoading')!.on()
-                const deleteResponse = await apis.raster.deleteRaster.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
-                store.get<{ on: Function, off: Function }>('isLoading')!.off()
-                if (deleteResponse.success) {
-                    await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
-                    toast.success(deleteResponse.message)
-                } else {
-                    toast.error(deleteResponse.message)
+                {
+                    store.get<{ on: Function, off: Function }>('isLoading')!.on()
+                    const deleteResponse = await apis.raster.deleteRaster.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
+                    store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                    if (deleteResponse.success) {
+                        await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                        toast.success(deleteResponse.message)
+                    } else {
+                        toast.error(deleteResponse.message)
+                    }
+                    break
                 }
-                break
         }
     }
 

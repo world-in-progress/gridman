@@ -40,7 +40,7 @@ class LRUCache {
 
 export default class TerrainByProxyTile {
 
-    constructor(_id, _source, _bbox, _params) {
+    constructor(_id, _source, _bbox, _elevationRange = [0, 500], _params) {
 
         this.id = _id;
         this.source = _source;
@@ -49,10 +49,7 @@ export default class TerrainByProxyTile {
         this.frame = 0.0
         this.debugKey = ''
 
-        // this.maskURL = '/mask/CJ.geojson'
-        this.maskURL = `${import.meta.env.VITE_MASK_URL}/all.geojson`;
         this.bbox = _bbox
-        // this.maskURL = '/mask/1.geojson'
 
         this.isReady = false
 
@@ -68,7 +65,7 @@ export default class TerrainByProxyTile {
         this.palette = 0
         this.reversePalette = false
         this.withLighting = 1.0
-        this.elevationRange = [0, 500]
+        this.elevationRange = _elevationRange
         // this.elevationRange = [-15.514, 10.0]
         this.diffPower = 1.1
         this.use_skirt = 1.0
@@ -645,7 +642,7 @@ export default class TerrainByProxyTile {
         const paletteBitmap = await loadImage(`/images/dems/palettes/${paletteIndex}.png`)
         return paletteBitmap
     }
-    
+
 }
 
 

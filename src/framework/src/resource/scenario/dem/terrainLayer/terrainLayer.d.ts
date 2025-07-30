@@ -1,7 +1,7 @@
 import { Map, CustomLayerInterface } from "mapbox-gl";
 
 export default class TerrainByProxyTile implements CustomLayerInterface {
-  constructor(id: string, tileUrl: string, bbox: number[])
+  constructor(id: string, tileUrl: string, bbox: number[], elevationRange?:[number, number], defaultParams?: object)
 
   readonly id: string;
   readonly type: 'custom';
