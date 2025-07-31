@@ -51,87 +51,124 @@ import {
 const REORDER_TYPE = 'application/x-lum-reorder'
 
 export default function SimulationsPage({ node }: SimulationsPageProps) {
-    const pageContext = useRef<SimulationsPageContext>(new SimulationsPageContext());
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
-    const [isDragOver, setIsDragOver] = useState(false);
+
+    const pageContext = useRef<SimulationsPageContext | null>(null)
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [isSolutionDragOver, setIsSolutionDragOver] = useState(false);
     const [resetFormDialogOpen, setResetFormDialogOpen] = useState(false);
-    const [resetDropZoneDialogOpen, setResetDropZoneDialogOpen] = useState(false);
 
-    const triggerRepaint = () => {
-        forceUpdate();
-    };
-
-    // 初始化数据
     useEffect(() => {
-        if (!pageContext.current.solutionData) {
-            pageContext.current.solutionData = {
-                name: '',
-                model_type: '',
-                action_types: [],
-                env: {
-                    grid_node_key: '',
-                    solution_node_key: ''
-                }
-            };
+        loadContext(node as SceneNode)
+
+        return () => {
+            unloadContext()
         }
-        triggerRepaint();
-    }, []);
+    }, [])
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(true);
-    };
+    const loadContext = async (node: SceneNode) => {
+        pageContext.current = await node.getPageContext() as SimulationsPageContext
 
-    const handleSolutionDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsSolutionDragOver(true);
-    };
+        triggerRepaint()
+    }
 
-    const handleDragLeave = () => {
-        setIsDragOver(false);
-    };
-
-    const handleSolutionDragLeave = () => {
-        setIsSolutionDragOver(false);
-    };
+    const unloadContext = () => {
+        console.log('Component unmounted')
+    }
 
     const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
+
+        e.preventDefault()
+
         setIsSolutionDragOver(false);
 
-        const nodeKey = e.dataTransfer.getData('text/plain');
-        if (!nodeKey) return
+        const nodeKey = e.dataTransfer.getData('text/plain')
+        if (!nodeKey || !pageContext.current) return
 
         store.get<{ on: Function, off: Function }>('isLoading')!.on()
         const solutionData = await apis.solution.getSolutionByNodeKey.fetch(nodeKey, node.tree.isPublic)
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
 
         pageContext.current.solutionData = solutionData.data
-
+        pageContext.current.solutionNodeKey = nodeKey
         console.log(pageContext.current.solutionData)
         toast.success(`Solution added successfully`);
         triggerRepaint();
     };
 
     const handleResourceRemove = () => {
-        pageContext.current.solutionData!.name = ''
-        triggerRepaint();
+        if (!pageContext.current) return
+        pageContext.current.solutionData = null
+        triggerRepaint()
         toast.success(`Solution removed successfully`);
     }
 
-    const handleStartSimulation = () => {
-        // 启动模拟的逻辑
+    const handleStartSimulation = async () => {
+        if (!pageContext.current) return
+
+        let serviceAddress = ''
+
+        // Step 1: Discover service
+        const discoverServiceRes = await apis.simulation.discoverProxy.fetch(pageContext.current.solutionNodeKey, node.tree.isPublic)
+        if (!discoverServiceRes.success) {
+            toast.error(discoverServiceRes.message)
+            return
+        } else {
+            serviceAddress = discoverServiceRes.address
+        }
+
+        console.log(serviceAddress)
+
+        const solutionEnv = {
+            solution_node_key: pageContext.current.solutionNodeKey,
+            solution_address: serviceAddress
+        }
+
+        // Step 2: Clone package
+        const clonePackageRes = await apis.simulation.clonePackage.fetch(solutionEnv, false)
+        // clonePackageRes return task.id
+        // TODO: Update progress bar
+
+        // Step 3: Build process group
+        const processGroupMeta = {
+            solution_node_key: pageContext.current.solutionNodeKey,
+            simulation_name: pageContext.current.name,
+            group_type: 'flood_pipe',
+            solution_address: serviceAddress
+        }
+
+        const buildProcessGroupRes = await apis.simulation.buildProcessGroup.fetch(processGroupMeta, false)
+        console.log(buildProcessGroupRes)
+        // return result and group_id
+
+        // Step 4: Start simulation
+
+        const startSimulationMeta = {
+            solution_node_key: pageContext.current.solutionNodeKey,
+            simulation_name: pageContext.current.name,
+        }
+        const startSimulationRes = await apis.simulation.startSimulation.fetch(startSimulationMeta, false)
+        console.log(startSimulationRes)
+
         toast.success('Simulation started');
     };
 
-    const handleStopSimulation = () => {
-        // 停止模拟的逻辑
-        toast.error('Simulation stopped');
+    const handleStopSimulation = async () => {
+
+        if (!pageContext.current) return
+
+        const simulation_node_key = node.key + '.' + pageContext.current.name
+
+        const stopSimulationMeta = {
+            solution_node_key: pageContext.current.solutionNodeKey,
+            simulation_node_key: simulation_node_key
+        }
+
+        const stopSimulationRes = await apis.simulation.stopSimulation.fetch(stopSimulationMeta, false)
+        toast.info('Simulation stopped');
     };
 
     const resetForm = () => {
+        if (!pageContext.current) return
         pageContext.current.solutionData = {
             name: '',
             model_type: '',
@@ -183,13 +220,20 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
                                 className={cn(
                                     "mt-2 p-3 border-2 border-dashed rounded-lg text-center transition-colors",
                                     isSolutionDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 hover:border-blue-300",
-                                    pageContext.current.solutionData?.env.solution_node_key ? "bg-green-50 border-green-300" : ""
+                                    pageContext.current?.solutionData?.env.solution_node_key ? "bg-green-50 border-green-300" : ""
                                 )}
-                                onDragOver={handleSolutionDragOver}
-                                onDragLeave={handleSolutionDragLeave}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsSolutionDragOver(true);
+                                }}
+                                onDragEnter={(e) => {
+                                    e.preventDefault();
+                                    setIsSolutionDragOver(true);
+                                }}
+                                onDragLeave={() => setIsSolutionDragOver(false)}
                                 onDrop={(e) => handleDrop(e)}
                             >
-                                {pageContext.current.solutionData.name !== '' ? (
+                                {pageContext.current?.solutionData ? (
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <CheckCircle className="w-4 h-4 text-green-500" />
@@ -229,9 +273,9 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
                                         <Input
                                             placeholder='Enter name'
                                             className='w-50'
-                                            value={pageContext.current?.solutionData?.name}
+                                            value={pageContext.current?.name}
                                             onChange={(e) => {
-                                                pageContext.current!.solutionData!.name = e.target.value
+                                                pageContext.current!.name = e.target.value
                                                 triggerRepaint()
                                             }}
                                         />

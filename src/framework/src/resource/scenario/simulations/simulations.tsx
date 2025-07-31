@@ -10,19 +10,13 @@ import { SolutionMeta } from "@/core/apis/types";
 
 export class SimulationsPageContext extends DefaultPageContext {
     name: string
-    solutionData: SolutionMeta
+    solutionNodeKey: string
+    solutionData: SolutionMeta | null
     constructor() {
         super()
         this.name = ''
-        this.solutionData = {
-            name: '',
-            model_type: '',
-            env: {
-                grid_node_key: '',
-                solution_node_key: ''
-            },
-            action_types: []
-        }
+        this.solutionNodeKey = ''
+        this.solutionData = null
     }
 }
 

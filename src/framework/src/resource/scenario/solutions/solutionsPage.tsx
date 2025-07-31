@@ -66,7 +66,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
-        pageContext.current = await SolutionsPageContext.create(node)
+        pageContext.current = await node.getPageContext() as SolutionsPageContext
     }
 
     const unloadContext = () => {

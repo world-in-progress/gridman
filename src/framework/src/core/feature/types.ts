@@ -22,7 +22,7 @@ export interface FeatureGetJsonBody {
 export interface FeatureGetJsonResponse {
   success: boolean;
   message: string;
-  data: Record<string, any>;
+  feature_json: Record<string, any>;
 }
 
 export interface FeatureList {

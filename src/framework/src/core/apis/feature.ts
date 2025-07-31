@@ -191,7 +191,7 @@ export const getFeatureJsonComputation: IAPI<string, FeatureGetJsonResponse> = {
 	api: `${API_PREFIX}`,
 	fetch: async (node_key: string, isRemote: boolean): Promise<FeatureGetJsonResponse> => {
 		try {
-			const api = getPrefix(isRemote) + getFeatureJsonComputation.api + `/${node_key}`
+			const api = getPrefix(isRemote) + getFeatureJsonComputation.api + `/feature_json_computation/${node_key}`
 			const response = await fetch(api, { method: "GET" })
 
 			if (!response.ok) {

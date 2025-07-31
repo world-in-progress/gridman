@@ -23,6 +23,11 @@ export default defineConfig(({ command, mode }) => {
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/local/, ''),
                 },
+                '/local_model': {
+                    target: env.VITE_LOCAL_MODEL_API_URL,
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/local_model/, ''),
+                },
                 '/remote': {
                     target: env.VITE_REMOTE_API_URL,
                     changeOrigin: true,
