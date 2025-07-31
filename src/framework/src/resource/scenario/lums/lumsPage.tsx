@@ -111,17 +111,17 @@ export default function LumsPage({ node }: LumsPageProps) {
 				'raster-color': [
 					'step',
 					['raster-value'],
-					'rgba(255,255,0,1)',
-					0.040, 'rgba(214,214,214,1)',
-					0.079, 'rgba(0,204,0,1)',
-					0.118, 'rgba(0,255,128,1)',
-					0.157, 'rgba(231,152,82,1)',
-					0.196, 'rgba(0,255,255,1)',
-					0.235, 'rgba(0,153,204,1)',
-					0.274, 'rgba(247,138,232,1)',
-					0.313, 'rgba(147,6,185,1)',
-					0.352, 'rgba(247,89,47,1)',
-					0.391, 'rgba(241,241,241,1)'
+					'rgba(255,190,0,1)',
+					0.040, 'rgba(87,229,0,1)',
+					0.079, 'rgba(0,83,154,1)',
+					0.118, 'rgba(255,129,0,1)',
+					0.157, 'rgba(125,125,125,1)',
+					0.196, 'rgba(0,255,124,1)',
+					0.235, 'rgba(255,0,74,1)',
+					0.274, 'rgba(91,164,255,1)',
+					0.313, 'rgba(163,97,68,1)',
+					0.352, 'rgba(0,255,203,1)',
+					0.391, 'rgba(205,0,215,1)'
 				]
 			},
 
@@ -390,7 +390,7 @@ export default function LumsPage({ node }: LumsPageProps) {
 									</div>
 									{/* Legend */}
 									<div className="flex items-start">
-										<span className="text-sm text-slate-600 w-20 items-center">Legend</span>
+										<span className="text-sm text-slate-600 items-center">Legend</span>
 										<div className="grid grid-cols-2 gap-2 flex-1 mt-1">
 											{lumTypeMap.map((item) => (
 												<div key={item.value} className="flex items-center gap-1">

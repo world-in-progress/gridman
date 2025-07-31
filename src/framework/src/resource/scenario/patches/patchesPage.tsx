@@ -59,7 +59,6 @@ export default function PatchesPage({
     const [adjustedCoordinate, setAdjustedCoordinate] = useState<[number, number, number, number] | null>(null)
 
     const schemaEPSG = useRef<string>('')
-    const hasAdjustedBounds = useRef<boolean>(false)
     const schemaBasePoint = useRef<[number, number]>([0, 0])
     const schemaGridLevel = useRef<[number, number]>([0, 0])
     const schemaMarkerPoint = useRef<[number, number]>([0, 0])
@@ -130,26 +129,28 @@ export default function PatchesPage({
     }
 
     const adjustCoords = () => {
-        if (drawCoordinates.current === null || hasAdjustedBounds.current) return
+        // if (drawCoordinates.current === null || hasAdjustedBounds.current) return
 
-        clearMapMarkers()
-        addMapMarker(schemaMarkerPoint.current)
-        clearGridLines()
-        clearDrawPatchBounds()
         clearMapMarkers()
         addMapMarker(schemaMarkerPoint.current)
         clearGridLines()
         clearDrawPatchBounds()
 
         const pc = pageContext.current
-        const coords = drawCoordinates.current
+        const coords = drawCoordinates.current!
+        console.log(coords)
         pc.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
         const drawBounds = pc.originBounds                                                                           // EPSG: 4326
 
         if (drawBounds && drawBounds.length === 4 && schemaEPSG.current && schemaBasePoint.current && schemaGridLevel.current) {
-            const patchBounds = pc.inputBounds ?? drawBounds
-            const fromEPSG = pc.inputBounds ? schemaEPSG.current : '4326' // use '4326' if inputBounds is not set
-            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(patchBounds, schemaGridLevel.current, fromEPSG, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
+
+            // const patchBounds = pageContext.current.hasBounds ? pc.inputBounds : drawBounds // TODO: Big Problem
+            // const fromEPSG = pc.inputBounds ? schemaEPSG.current : '4326' // use '4326' if inputBounds is not set
+
+            const patchBounds = drawBounds
+            const fromEPSG = '4326'
+
+            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(patchBounds!, schemaGridLevel.current, fromEPSG, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
 
             const convertedSWOnTarget = convertedBounds!.southWest              // EPSG: Schema
             const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
@@ -174,8 +175,9 @@ export default function PatchesPage({
             pageContext.current.heightCount = heightCount
 
             addMapLineBetweenPoints(schemaMarkerPoint.current, alignedSWPoint, widthCount, heightCount)
-            hasAdjustedBounds.current = true
+            pageContext.current.hasBounds = true
         }
+
         triggerRepaint()
     }
 
@@ -202,7 +204,7 @@ export default function PatchesPage({
         }
         const value = parseFloat(e.target.value) || 0
         pageContext.current.inputBounds[index] = value
-        hasAdjustedBounds.current = false // reset adjusted bounds flag because input bounds have changed
+        pageContext.current.hasBounds = false // reset adjusted bounds flag because input bounds have changed
         triggerRepaint()
     }
 
@@ -223,6 +225,7 @@ export default function PatchesPage({
         const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>
         if (customEvent.detail.coordinates) {
             drawCoordinates.current = customEvent.detail.coordinates
+            console.log(drawCoordinates.current)
             adjustCoords()
             addMapPatchBounds([customEvent.detail.coordinates.southWest[0], customEvent.detail.coordinates.southWest[1], customEvent.detail.coordinates.northEast[0], customEvent.detail.coordinates.northEast[1]], '4326')
         }
@@ -234,7 +237,7 @@ export default function PatchesPage({
 
     const drawBoundsByParams = () => {
         const inputBounds = pageContext.current.inputBounds
-        if (hasAdjustedBounds.current) {
+        if (pageContext.current.hasBounds) {
             toast.info(t('Map bounds have been adjusted'))
             return
         }
@@ -275,7 +278,7 @@ export default function PatchesPage({
 
         await (node as SceneNode).deletePageContext()
 
-        hasAdjustedBounds.current = false
+        pageContext.current.hasBounds = false
 
         setConvertCoordinate(null)
         setAdjustedCoordinate(null)

@@ -25,6 +25,12 @@ export interface FeatureGetJsonResponse {
   feature_json: Record<string, any>;
 }
 
+export interface FeatureDataResponse {
+  success: boolean;
+  message: string;
+  data: Record<string, any>;
+}
+
 export interface FeatureList {
   success: boolean;
   message: string;

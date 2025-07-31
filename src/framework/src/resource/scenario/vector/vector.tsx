@@ -2,7 +2,7 @@ import DefaultScenarioNode from "@/core/scenario/default";
 import { ISceneNode } from "@/core/scene/iscene"
 import * as apis from '@/core/apis/apis'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
-import { Delete, FilePlus2, Info } from "lucide-react";
+import { Delete, FilePlus2, Info, PencilRuler } from "lucide-react";
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import VectorPage from "./vectorPage";
 import VectorInformation from "./vectorInformation";
@@ -63,7 +63,7 @@ export default class VectorScenarioNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Vector Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, VectorMenuItem.EDIT_THIS_VECTOR) }}>
-                    <FilePlus2 className='w-4 h-4' />Edit this vector
+                    <PencilRuler className='w-4 h-4' />Edit this vector
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => { handleContextMenu(nodeSelf, VectorMenuItem.DELETE_THIS_VECTOR) }}>
                     <Delete className='w-4 h-4 text-white rotate-180' />

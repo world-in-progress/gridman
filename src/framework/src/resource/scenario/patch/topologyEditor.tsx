@@ -44,12 +44,12 @@ import CapacityBar from "@/components/ui/capacityBar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { boundingBox2D } from "@/core/util/boundingBox2D"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { convertToWGS84 } from "@/components/mapContainer/utils"
 import MapContainer from "@/components/mapContainer/mapContainer"
 import NHLayerGroup from "@/components/mapContainer/NHLayerGroup"
 import TopologyLayer from "@/components/mapContainer/TopologyLayer"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from "./types"
-import { addMapPatchBounds, convertToWGS84 } from "@/components/mapContainer/utils"
 
 const topologyTips = [
     { tip: 'Hold Shift to select/deselect grids with Brush or Box.' },
@@ -294,11 +294,14 @@ export default function TopologyEditor(
         const boundsOn4326 = convertToWGS84(pageContext.current.patch!.bounds, pageContext.current.patch!.epsg.toString())
         map.fitBounds(boundsOn4326, {
             duration: 1000,
-            padding: {top: 50, bottom: 50, left: 100, right: 100}
+            padding: { top: 50, bottom: 50, left: 100, right: 100 }
         });
     }
 
     const unloadContext = (node: SceneNode) => {
+        const core: GridCore = pageContext.current.gridCore!
+        core.save(() => { })
+
         const clg = store.get<NHLayerGroup>('clg')!
         clg.removeLayer('TopologyLayer')
 
@@ -391,7 +394,7 @@ export default function TopologyEditor(
     const handleFeatureClick = useCallback(async () => {
         const currentTab: 'brush' | 'box' | 'feature' = selectTab
         setSelectTab('feature')
-        if ( window.electronAPI && typeof window.electronAPI.openFileDialog === 'function') {
+        if (window.electronAPI && typeof window.electronAPI.openFileDialog === 'function') {
             try {
                 const filePath = await window.electronAPI.openFileDialog();
                 if (filePath) {
@@ -523,7 +526,7 @@ export default function TopologyEditor(
     const handleSaveTopologyState = () => {
         const core: GridCore = pageContext.current.gridCore!
         core.save(() => {
-            toast.success('Topology edit state saved successfully')
+            toast.success(`Topology edit state of ${pageContext.current.patch?.name} saved successfully`)
         })
     };
 
@@ -569,7 +572,7 @@ export default function TopologyEditor(
                                     ))}
                                 </ul>
                             </div>
-                            <div className='text-sm w-full flex flex-row space-x-2 px-4'>
+                            <div className='text-sm w-full flex flex-row space-x-4 px-4'>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button
@@ -1077,7 +1080,7 @@ export default function TopologyEditor(
             </div>
             <div className='w-3/4 h-full py-4 pr-4 relative'>
                 <div className="absolute left-0 z-10">
-                    <CapacityBar gridCore={pageContext.current.gridCore!}/>
+                    <CapacityBar gridCore={pageContext.current.gridCore!} />
                 </div>
                 <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
             </div>

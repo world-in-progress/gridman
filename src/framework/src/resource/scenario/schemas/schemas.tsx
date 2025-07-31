@@ -1,7 +1,7 @@
 import { GridLayerInfo } from './types'
 import SchemasPage from './schemasPage'
 import SchemasInformation from './nodeInfomation'
-import { FilePlus2, Info } from 'lucide-react'
+import { FilePlus2, Info, MapPinPlus } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
@@ -68,7 +68,7 @@ export default class SchemasScenarioNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, SchemasMenuItem.CREATE_NEW_SCHEMA) }}>
-                    <FilePlus2 className='w-4 h-4' />Create New Schema
+                    <MapPinPlus className='w-4 h-4' />Create New Schema
                 </ContextMenuItem>
             </ContextMenuContent>
         )

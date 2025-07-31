@@ -9,31 +9,11 @@ import { GridsPageContext } from './grids'
 import { GridInfo } from '@/core/apis/types'
 import { Input } from '@/components/ui/input'
 import { useTranslation } from 'react-i18next'
-import { SquaresUnite, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
-import {
-    Table,
-    TableRow,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-} from '@/components/ui/table'
-import {
-    ColumnDef,
-    flexRender,
-    SortingState,
-    useReactTable,
-    getCoreRowModel,
-    VisibilityState,
-    getSortedRowModel,
-    ColumnFiltersState,
-    getFilteredRowModel,
-} from '@tanstack/react-table'
 import {
     AlertDialog,
     AlertDialogTitle,
@@ -51,7 +31,7 @@ import {
     highlightPatchBounds,
     clearDrawPatchBounds,
 } from '@/components/mapContainer/utils'
-
+import { SquaresUnite, X, Upload, MapPin, RotateCcw, Fullscreen } from 'lucide-react'
 
 
 const gridTips = [
@@ -65,6 +45,7 @@ export default function GridsPage({ node }: GridsPageProps) {
     const [isDragOver, setIsDragOver] = useState(false)
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
+    const [highlightedResource, setHighlightedResource] = useState<string | null>(null);
 
     const pageContext = useRef<GridsPageContext>(new GridsPageContext())
 
@@ -157,7 +138,9 @@ export default function GridsPage({ node }: GridsPageProps) {
     }
 
     const handleResourceClick = (resourceKey: string) => {
-        const patchName = resourceKey.split('.').pop()!
+        const patchName = resourceKey.split('.').pop()!;
+
+        setHighlightedResource(resourceKey)
 
         if (pageContext.current.patchesBounds[patchName]) {
             const patchBoundsOn4326 = convertToWGS84(
@@ -235,6 +218,7 @@ export default function GridsPage({ node }: GridsPageProps) {
             }))
         }
         const response = await createGrid((node as SceneNode), pageContext.current.gridName, gridInfo)
+        console.log(response)
         store.get<{ on: Function; off: Function }>('isLoading')!.off()
         setMergeDialogOpen(false)
         clearDrawPatchBounds()
@@ -316,60 +300,119 @@ export default function GridsPage({ node }: GridsPageProps) {
                                     />
                                 </div>
                             </div>
-                            <div className='mb-6'>
-                                <h2 className='text-lg font-medium text-white mb-4'>Resource Upload Area</h2>
-                                <div
-                                    className={cn(
-                                        'border-2 border-dashed border-gray-600 rounded-lg p-4 bg-gray-900 transition-colors',
-                                        isDragOver && 'border-blue-400 bg-gray-800',
-                                    )}
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                >
-                                    {pageContext.current.selectedResources.length === 0 ? (
-                                        <div className='relative min-h-[200px]'>
-                                            <div className='absolute inset-0 flex flex-col justify-center items-center text-gray-400'>
-                                                <p className='text-lg mb-2'>Drag resources here</p>
-                                                <p className='text-sm'>Drag files from the left resource manager here</p>
+                            {/* ----------- */}
+                            {/* Patch Drop Zone */}
+                            {/* ----------- */}
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-6'>
+                                <h2 className='text-lg font-semibold mb-2'>
+                                    Patch Drop Zone
+                                </h2>
+
+                                <div>
+                                    <div
+                                        className={cn(
+                                            "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                            isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+                                        )}
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                    >
+                                        {pageContext.current.selectedResources.length === 0 ? (
+                                            <div className="h-[32vh] flex flex-col justify-center items-center text-slate-400">
+                                                <Upload className="w-8 h-8 mb-2" />
+                                                <p className="text-sm font-medium mb-1">{t('Drag patches here')}</p>
+                                                <p className="text-xs text-center">{t('Drop files from the resource manager')}</p>
                                             </div>
+                                        ) : (
+                                            <div className="h-[32vh] overflow-y-auto pr-1">
+                                                <div className="space-y-2">
+                                                    {pageContext.current.selectedResources.map((resource, index) => {
+                                                        const patchName = resource.split('.').pop();
+                                                        return (
+                                                            <div
+                                                                key={resource}
+                                                                className={cn(
+                                                                    "bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-2 hover:shadow-sm transition-all duration-200",
+                                                                    highlightedResource === resource && "border-4 border-yellow-300"
+                                                                )}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                                                        <p className="text-slate-900 text-sm font-medium truncate">
+                                                                            {patchName}
+                                                                        </p>
+                                                                    </div>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleResourceClick(resource)
+                                                                        }}
+                                                                    >
+                                                                        <MapPin className="h-3 w-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        className="ml-2 h-6 w-6 p-0 hover:text-red-500 cursor-pointer"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleResourceRemove(index);
+                                                                        }}
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                                <div className="flex items-center text-xs text-gray-500 truncate">
+                                                                    <span>{resource}</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                                        <span>
+                                            {pageContext.current.selectedResources.length || 0} {t('patches uploaded')}
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                className="bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                                onClick={handleReset}
+                                                disabled={pageContext.current.selectedResources.length === 0}
+                                            >
+                                                <RotateCcw className="w-4 h-4 " />{t('Reset')}
+                                            </Button>
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                                onClick={handlePreview}
+                                                disabled={pageContext.current.selectedResources.length === 0}
+                                            >
+                                                <Fullscreen className="w-4 h-4 " />{t('Preview')}
+                                            </Button>
                                         </div>
-                                    ) : (
-                                        <ResourceTable
-                                            resources={pageContext.current.selectedResources}
-                                            onResourceClick={handleResourceClick}
-                                            onResourceRemove={handleResourceRemove}
-                                        />
-                                    )}
+                                    </div>
                                 </div>
                             </div>
-                            <div className='flex gap-4'>
-                                <Button
-                                    type='button'
-                                    variant='secondary'
-                                    onClick={handleReset}
-                                    className='bg-gray-600 hover:bg-gray-500 text-white cursor-pointer'
-                                >
-                                    Reset
-                                </Button>
-                                <Button
-                                    type='button'
-                                    variant='default'
-                                    onClick={handlePreview}
-                                    className='bg-sky-500 hover:bg-sky-600 text-white cursor-pointer'
-                                    disabled={pageContext.current.selectedResources.length === 0}
-                                >
-                                    Preview
-                                </Button>
-                                <Button
-                                    type='button'
-                                    onClick={handleMerge}
-                                    className='bg-green-500 hover:bg-green-600 text-white cursor-pointer'
-                                    disabled={pageContext.current.selectedResources.length === 0}
-                                >
-                                    Merge
-                                </Button>
-                            </div>
+                            <Button
+                                type='button'
+                                onClick={handleMerge}
+                                className='bg-green-500 hover:bg-green-600 text-white cursor-pointer'
+                                disabled={pageContext.current.selectedResources.length === 0}
+                            >
+                                <SquaresUnite className='w-4 h-4 ' />
+                                Merge
+                            </Button>
                         </div>
                     </ScrollArea>
                 </div>
@@ -416,138 +459,6 @@ export default function GridsPage({ node }: GridsPageProps) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
-    )
-}
-
-function ResourceTable({
-    resources,
-    onResourceClick,
-    onResourceRemove,
-}: {
-    resources: string[],
-    onResourceClick: (resource: string) => void,
-    onResourceRemove: (index: number) => void
-}) {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-    const [refreshKey, forceRefresh] = useReducer(x => x + 1, 0)
-
-    const data = React.useMemo(() =>
-        resources.map((resource, index) => ({
-            id: index.toString(),
-            resource: resource,
-            name: resource.split('.').pop() || '',
-            path: resource
-        })),
-        [resources, refreshKey])
-
-    useEffect(() => {
-        forceRefresh()
-    }, [resources.length])
-
-    const columns = React.useMemo<ColumnDef<{ id: string, resource: string, name: string, path: string }>[]>(() => [
-        {
-            accessorKey: 'name',
-            header: 'Resource Name',
-            cell: ({ row }) => (
-                <div className='font-medium text-white'>
-                    {row.getValue('name')}
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'path',
-            header: 'Resource Path',
-            cell: ({ row }) => (
-                <div className='text-gray-400 text-xs truncate max-w-[300px]'>
-                    {row.getValue('path')}
-                </div>
-            ),
-        },
-        {
-            id: 'actions',
-            enableHiding: false,
-            cell: ({ row }) => {
-                const index = parseInt(row.original.id)
-
-                return (
-                    <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-8 w-8 p-0 hover:bg-red-500 hover:text-white text-white cursor-pointer'
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onResourceRemove(index)
-                        }}
-                    >
-                        <X className='h-4 w-4' />
-                        <span className='sr-only'>Remove resource</span>
-                    </Button>
-                )
-            },
-        },
-    ], [onResourceClick, onResourceRemove])
-
-    const table = useReactTable({
-        data,
-        columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-        },
-    })
-
-    return (
-        <div className='w-full min-h-[200px] text-white'>
-            <div className='rounded-md'>
-                <Table>
-                    <TableHeader className='bg-[#101828]'>
-                        <TableRow className='border-gray-700 hover:bg-[#101828] text-lg'>
-                            <TableHead className='text-gray-300 font-bold w-1/3'>Patch Name</TableHead>
-                            <TableHead className='text-gray-300 font-bold w-2/3'>Patch Path</TableHead>
-                            <TableHead className='text-gray-300 font-bold w-[50px]'></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    className='border-gray-700 hover:bg-gray-700 cursor-pointer'
-                                    onClick={() => onResourceClick(row.original.resource)}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className='h-24 text-center'
-                                >
-                                    No resources available.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
         </div>
     )
 }

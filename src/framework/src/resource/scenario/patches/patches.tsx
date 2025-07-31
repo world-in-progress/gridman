@@ -1,4 +1,4 @@
-import { FilePlus, FilePlus2, FileType2, Info } from 'lucide-react'
+import { FilePlus, FilePlus2, FileType2, Info, SquaresIntersect } from 'lucide-react'
 import { ISceneNode } from '@/core/scene/iscene'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
@@ -15,10 +15,10 @@ export class PatchesPageContext extends DefaultPageContext {
     originBounds: [number, number, number, number] | null       // EPSG: 4326
     adjustedBounds: [number, number, number, number] | null     // EPSG: 4326
     inputBounds: [number, number, number, number] | null        // EPSG: schema
-    starred: boolean
     schema: SchemaInfo | null
     widthCount: number
     heightCount: number
+    hasBounds: boolean
 
     constructor() {
         super()
@@ -27,11 +27,11 @@ export class PatchesPageContext extends DefaultPageContext {
         this.originBounds = null
         this.adjustedBounds = null
         this.inputBounds = null
-        this.starred = false
         this.description = ''
         this.schema = null
         this.widthCount = 0
         this.heightCount = 0
+        this.hasBounds = false
     }
 
     static async create(node: ISceneNode): Promise<PatchesPageContext> {
@@ -67,7 +67,7 @@ export default class PatchesScenarioNode extends DefaultScenarioNode {
                     <FileType2 className='w-4 h-4' />Node Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, PatchesMenuItem.CREATE_NEW_PATCH)}>
-                    <FilePlus2 className='w-4 h-4' />Create New Patch
+                    <SquaresIntersect className='w-4 h-4' />Create New Patch
                 </ContextMenuItem>
             </ContextMenuContent>
         )
