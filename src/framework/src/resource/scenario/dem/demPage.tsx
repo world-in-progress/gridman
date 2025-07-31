@@ -121,7 +121,7 @@ export default function DemPage({ node }: DemPageProps) {
             const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
             const minValue = pageContext.current?.demInfo?.min_value
             const maxValue = pageContext.current?.demInfo?.max_value
-            const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number]: undefined
+            const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
 
             const computeBBOX = () => {
                 console.log(pageContext.current)
@@ -269,8 +269,6 @@ export default function DemPage({ node }: DemPageProps) {
         })
     }
 
-    // const updateRasterOpacity = (opacity) => { }
-
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()
         setIsDragOver(true)
@@ -316,14 +314,13 @@ export default function DemPage({ node }: DemPageProps) {
                     paint: {
                         'fill-outline-color': vectorColor,
                         'fill-color': vectorColor,
-                        'fill-opacity': 0.5
+                        'fill-opacity': 1
                     }
                 })
-
                 const updateRasterData: UpdateRasterData = {
                     feature_node_key: nodeKey,
                     operation: 'set',
-                    value: null
+                    value: 0
                 }
                 pageContext.current?.uploadVectors.push({
                     node_key: nodeKey,
@@ -331,6 +328,7 @@ export default function DemPage({ node }: DemPageProps) {
                     updateRasterData: updateRasterData,
                     visible: true
                 })
+
                 store.get<{ on: Function, off: Function }>('isLoading')!.off()
                 triggerRepaint()
             } else {
@@ -853,14 +851,13 @@ export default function DemPage({ node }: DemPageProps) {
                 </div>
             </div>
 
-            {/* 右下角悬浮按钮，控制Card显隐 */}
             <button
-                className="fixed bottom-6 right-6 z-60 bg-white border border-slate-200 rounded-full shadow-lg p-3 hover:bg-slate-100 transition-colors"
+                className="fixed bottom-6 right-6 z-60 bg-white border border-slate-200 rounded-full shadow-lg p-3 hover:bg-slate-100 transition-colors cursor-pointer"
                 style={{ display: showVisCard ? 'none' : 'block' }}
                 onClick={() => setShowVisCard(true)}
                 title="Show Visualization Settings"
             >
-                <Settings className="w-6 h-6 text-slate-600 cursor-pointer" />
+                <Settings className="w-6 h-6 text-slate-600" />
             </button>
             {showVisCard && (
                 <Card
