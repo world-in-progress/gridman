@@ -108,6 +108,21 @@ export default function LumsPage({ node }: LumsPageProps) {
 			source: nodeKey + 'source',
 			paint: {
 				"raster-opacity": 0.8,
+				'raster-color': [
+					'step',
+					['raster-value'],
+					'rgba(255,255,0,1)',
+					0.040, 'rgba(214,214,214,1)',
+					0.079, 'rgba(0,204,0,1)',
+					0.118, 'rgba(0,255,128,1)',
+					0.157, 'rgba(231,152,82,1)',
+					0.196, 'rgba(0,255,255,1)',
+					0.235, 'rgba(0,153,204,1)',
+					0.274, 'rgba(247,138,232,1)',
+					0.313, 'rgba(147,6,185,1)',
+					0.352, 'rgba(247,89,47,1)',
+					0.391, 'rgba(241,241,241,1)'
+				]
 			},
 
 		})
