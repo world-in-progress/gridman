@@ -5,6 +5,7 @@ import {
 	FeatureGetJsonBody,
 	FeatureGetJsonResponse,
 	FeatureUpdatePropertyBody,
+	FeatureDataResponse,
 } from "../feature/types";
 import getPrefix from "./prefix";
 
@@ -56,9 +57,9 @@ export const saveFeature: IAPI<FeatureSaveBody, FeatureSaveResponse> = {
 	},
 }
 
-export const getFeatureData: IAPI<string, FeatureGetJsonResponse> = {
+export const getFeatureData: IAPI<string, FeatureDataResponse> = {
 	api: `${API_PREFIX}`,
-	fetch: async (node_key: string, isRemote: boolean): Promise<FeatureGetJsonResponse> => {
+	fetch: async (node_key: string, isRemote: boolean): Promise<FeatureDataResponse> => {
 		try {
 			const api = getPrefix(isRemote) + getFeatureData.api + `/${node_key}`
 			const response = await fetch(api, { method: "GET" })
@@ -66,7 +67,7 @@ export const getFeatureData: IAPI<string, FeatureGetJsonResponse> = {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
 
-			const responseData: FeatureGetJsonResponse = await response.json();
+			const responseData: FeatureDataResponse = await response.json();
 			return responseData;
 		} catch (error) {
 			throw new Error(`Failed to get feature data: ${error}`);

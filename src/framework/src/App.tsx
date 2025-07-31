@@ -4,6 +4,7 @@ import Framework from './components/framework'
 import { Toaster } from './components/ui/sonner'
 import store from './store'
 import Loader from './components/ui/loader'
+import DemoPage from './resource/scenario/solution/demoPage'
 
 function App() {
 
@@ -25,7 +26,8 @@ function App() {
                     <Loader />
                 </>
             )}
-            <Framework />
+            {/* <Framework /> */}
+            <DemoPage />
             <Toaster
                 position="bottom-right"
                 richColors

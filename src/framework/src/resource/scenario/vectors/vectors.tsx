@@ -1,6 +1,6 @@
 
 import { ISceneNode } from '@/core/scene/iscene'
-import { FilePlus2, Info } from 'lucide-react'
+import { FilePlus2, Info, Paintbrush } from 'lucide-react'
 import DefaultPageContext from '@/core/context/default'
 import DefaultScenarioNode from '@/core/scenario/default'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
@@ -56,7 +56,7 @@ export default class VectorsScenarioNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Vectors Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => { handleContextMenu(nodeSelf, VectorsMenuItem.CREATE_NEW_FEATURE) }}>
-                    <FilePlus2 className='w-4 h-4' />Create New Feature
+                    <Paintbrush className='w-4 h-4' />Create New Feature
                 </ContextMenuItem>
             </ContextMenuContent>
         )

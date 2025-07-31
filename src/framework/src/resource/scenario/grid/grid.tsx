@@ -7,6 +7,8 @@ import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import * as apis from '@/core/apis/apis'
 import store from "@/store"
 import { toast } from "sonner"
+import GridPage from "./gridPage"
+import GridInformation from "./gridInformation"
 
 
 export class GridPageContext extends DefaultPageContext {
@@ -45,6 +47,10 @@ export default class GridScenarioNode extends DefaultScenarioNode {
 
     async handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): Promise<void> {
         switch (menuItem) {
+            case GridMenuItem.GRID_INFORMATION:
+                (nodeSelf as SceneNode).pageId = 'information'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
             case GridMenuItem.DELETE_THIS_GRID:
                 store.get<{ on: Function, off: Function }>('isLoading')!.on()
                 const deleteResponse = await apis.grids.deleteGrid.fetch({ schemaName: nodeSelf.parent!.parent!.name, gridName: nodeSelf.name }, nodeSelf.tree.isPublic)
@@ -55,6 +61,17 @@ export default class GridScenarioNode extends DefaultScenarioNode {
                 } else {
                     toast.error('Failed to delete grid')
                 }
+        }
+    }
+
+    renderPage(nodeSelf: ISceneNode, menuItem: any): React.JSX.Element | null {
+        switch ((nodeSelf as SceneNode).pageId) {
+            case 'default':
+                return (<GridPage node={nodeSelf} />)
+            case 'information':
+                return (<GridInformation />)
+            default:
+                return (<GridPage node={nodeSelf} />)
         }
     }
 }

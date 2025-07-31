@@ -1,7 +1,7 @@
 import DefaultPageContext from "@/core/context/default";
 import DefaultScenarioNode from "@/core/scenario/default";
 import { ISceneNode } from "@/core/scene/iscene";
-import { FilePlus2, Info } from 'lucide-react'
+import { FilePlus2, Info, SquaresUnite } from 'lucide-react'
 import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import GridsPage from "./gridsPage";
@@ -14,7 +14,7 @@ export class GridsPageContext extends DefaultPageContext {
     gridName: string
     gridBounds: [number, number, number, number] | null
     selectedResources: string[]
-    patchesBounds: Record<string, [number, number, number, number]> // 修改为键值对结构
+    patchesBounds: Record<string, [number, number, number, number]>
 
     constructor() {
         super()
@@ -63,7 +63,7 @@ export default class GridsScenariNode extends DefaultScenarioNode {
                     <Info className='w-4 h-4' />Node Information
                 </ContextMenuItem>
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, GridsMenuItem.CREATE_NEW_GRID)}>
-                    <FilePlus2 className='w-4 h-4' />Create New Grid
+                    <SquaresUnite className='w-4 h-4' />Create New Grid
                 </ContextMenuItem>
             </ContextMenuContent>
         )

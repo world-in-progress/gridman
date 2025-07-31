@@ -58,13 +58,17 @@ const featureColorMap = [
 ]
 
 export const lumTypeMap = [
-    { value: 1, type: 'Building', color: '#FFFF00', rgba: [255, 255, 0, 1] },
-    { value: 2, type: 'Road', color: '#D6D6D6', rgba: [214, 214, 214, 1] },
-    { value: 3, type: 'Farmland', color: '#00CC00', rgba: [0, 204, 0, 1] },
-    { value: 4, type: 'Fishpond', color: '#00FF80', rgba: [0, 255, 128, 1] },
-    { value: 5, type: 'Hills', color: '#E79852', rgba: [231, 152, 82, 1] },
-    { value: 6, type: 'Waters', color: '#00FFFF', rgba: [0, 255, 255, 1] },
-    { value: 7, type: 'Catchment', color: '#0099CC', rgba: [0, 153, 204, 1] }
+    { value: 1, type: 'Residential', color: '#FFBE00', rgba: [255, 190, 0, 1] },
+    { value: 2, type: 'Commercial', color: '#57E500', rgba: [87, 229, 0, 1] },
+    { value: 3, type: 'Industrial', color: '#00539A', rgba: [0, 83, 154, 1] },
+    { value: 4, type: 'Transport', color: '#FF8100', rgba: [255, 129, 0, 1] },
+    { value: 5, type: 'Infrastructure', color: '#7D7D7D', rgba: [125, 125, 125, 1] },
+    { value: 6, type: 'Agricultural', color: '#00FF7C', rgba: [0, 255, 124, 1] },
+    { value: 7, type: 'Fishpood', color: '#FF004A', rgba: [255, 0, 74, 1] },
+    { value: 8, type: 'Waters', color: '#5BA4FF', rgba: [91, 164, 255, 1] },
+    { value: 9, type: 'HillLand', color: '#A36144', rgba: [163, 97, 68, 1] },
+    { value: 10, type: 'Geiwai', color: '#00FFCB', rgba: [0, 255, 203, 1] },
+    { value: 11, type: 'Catchment', color: '#CD00D7', rgba: [205, 0, 215, 1] }
 ]
 
 export default function LumPage({ node }: LumPageProps) {
@@ -204,17 +208,17 @@ export default function LumPage({ node }: LumPageProps) {
                 'raster-color': [
                     'step',
                     ['raster-value'],
-                    'rgba(255,255,0,1)',
-                    0.040, 'rgba(214,214,214,1)',
-                    0.079, 'rgba(0,204,0,1)',
-                    0.118, 'rgba(0,255,128,1)',
-                    0.157, 'rgba(231,152,82,1)',
-                    0.196, 'rgba(0,255,255,1)',
-                    0.235, 'rgba(0,153,204,1)',
-                    0.274, 'rgba(247,138,232,1)',
-                    0.313, 'rgba(147,6,185,1)',
-                    0.352, 'rgba(247,89,47,1)',
-                    0.391, 'rgba(241,241,241,1)'
+                    'rgba(255,190,0,1)',
+                    0.040, 'rgba(87,229,0,1)',
+                    0.079, 'rgba(0,83,154,1)',
+                    0.118, 'rgba(255,129,0,1)',
+                    0.157, 'rgba(125,125,125,1)',
+                    0.196, 'rgba(0,255,124,1)',
+                    0.235, 'rgba(255,0,74,1)',
+                    0.274, 'rgba(91,164,255,1)',
+                    0.313, 'rgba(163,97,68,1)',
+                    0.352, 'rgba(0,255,203,1)',
+                    0.391, 'rgba(205,0,215,1)'
                 ]
             },
 
@@ -261,7 +265,11 @@ export default function LumPage({ node }: LumPageProps) {
 
                 if (!map) return
 
-                const vectorData = (await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)).data as Vectordata
+                const featureData = await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)
+
+                console.log(featureData)
+
+                const vectorData = featureData.data as Vectordata
                 const vectorColor = featureColorMap.find(c => c.value === vectorData.color)!.color
 
                 console.log(vectorData)
@@ -603,7 +611,7 @@ export default function LumPage({ node }: LumPageProps) {
                                 </div>
                                 {/* Legend */}
                                 <div className="flex items-start">
-                                    <span className="text-sm text-slate-600 w-20 items-center">Legend</span>
+                                    <span className="text-sm text-slate-600  items-center">Legend</span>
                                     <div className="grid grid-cols-2 gap-2 flex-1 mt-1">
                                         {lumTypeMap.map((item) => (
                                             <div key={item.value} className="flex items-center gap-1">
@@ -671,7 +679,7 @@ export default function LumPage({ node }: LumPageProps) {
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-slate-600">Type:</span>
                                                 <div>
-                                                    {pixelInfo.value >= 1 && pixelInfo.value <= 7 ? (
+                                                    {pixelInfo.value >= 1 && pixelInfo.value <= 11 ? (
                                                         <div className="flex items-center gap-2">
                                                             <div
                                                                 className="w-3 h-3 rounded-sm"

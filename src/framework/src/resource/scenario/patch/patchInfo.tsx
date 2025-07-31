@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef } from 'react'
 import { PatchInfoProps } from './types'
-import { CheckCircle, Delete, Pencil, SquaresIntersect } from "lucide-react"
+import { CheckCircle, Delete, MapPin, Pencil, SquaresIntersect } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button'
 import { deletepatch, updatePatchInfo } from './utils'
 import { toast } from 'sonner'
 import { PatchMeta } from '../patches/types'
+import store from '@/store'
 
 const patchTips = [
 	{ tip1: 'Fill in the name of the Schema and the EPSG code.' },
@@ -34,40 +35,35 @@ const patchTips = [
 	{ tip4: 'Set the grid size for each level.' },
 ]
 
-export default function PatchInfo({
-	node
-}: PatchInfoProps) {
+export default function PatchInfo({ node }: PatchInfoProps) {
 
 	const [, triggerRepaint] = useReducer(x => x + 1, 0)
 	const pageContext = useRef<PatchPageContext>(new PatchPageContext())
 
 	useEffect(() => {
-		const n = node as SceneNode
-		loadContext(n)
+		loadContext(node as SceneNode)
 
 		return () => {
-			unloadContext(n)
+			unloadContext()
 		}
 	}, [node])
 
 	const loadContext = async (node: SceneNode) => {
-		const context = await node.getPageContext() as PatchPageContext
-		if (context) {
-			pageContext.current = context
-			if (pageContext.current.patch!.bounds) {
-				const patchBoundsOn4326 = convertToWGS84(pageContext.current.patch!.bounds, pageContext.current.patch!.epsg.toString())
-				addMapPatchBounds(patchBoundsOn4326, undefined, false, {
-					fillColor: '#00D5FF',
-					lineColor: '#FFFF00',
-					opacity: 0.3,
-					lineWidth: 6
-				})
-			}
-		}
+		pageContext.current = await node.getPageContext() as PatchPageContext
+
+		const patchBoundsOn4326 = convertToWGS84(pageContext.current.patch!.bounds, pageContext.current.patch!.epsg.toString())
+
+		addMapPatchBounds(patchBoundsOn4326, undefined, true, {
+			fillColor: '#00D5FF',
+			lineColor: '#FFFF00',
+			opacity: 0.3,
+			lineWidth: 6
+		})
+
 		triggerRepaint()
 	}
 
-	const unloadContext = (node: SceneNode) => {
+	const unloadContext = () => {
 		clearDrawPatchBounds()
 		triggerRepaint()
 	}
@@ -92,11 +88,10 @@ export default function PatchInfo({
 		}
 	}
 
-	
-    const handleEditButtonClick = () => {
-        pageContext.current.isEditing = true
-        triggerRepaint()
-    }
+	const handleEditButtonClick = () => {
+		pageContext.current.isEditing = true
+		triggerRepaint()
+	}
 
 	const handleDoneButtonClick = async () => {
 		const patch = {
@@ -113,7 +108,22 @@ export default function PatchInfo({
 			toast.error(`Failed to update patch ${patchName}`)
 		}
 		pageContext.current.isEditing = false
-        triggerRepaint()
+		triggerRepaint()
+	}
+
+	const handleFitToPatchBounds = () => {
+		const map = store.get<mapboxgl.Map>('map')
+		if (!map) return
+
+		const patchBounds = pageContext.current.patch!.bounds
+		const epsg = pageContext.current.patch!.epsg
+		const patchBoundsOn4326 = convertToWGS84(patchBounds, epsg.toString())
+
+		map.fitBounds(patchBoundsOn4326, {
+			padding: 100,
+			duration: 1000
+		})
+		console.log(patchBounds)
 	}
 
 	return (
@@ -158,7 +168,7 @@ export default function PatchInfo({
 									))}
 								</ul>
 							</div>
-							<div className='text-sm w-full flex flex-row space-x-2 px-4'>
+							<div className='text-sm w-full flex flex-row space-x-4 px-4'>
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
 										<Button
@@ -188,6 +198,15 @@ export default function PatchInfo({
 										</AlertDialogFooter>
 									</AlertDialogContent>
 								</AlertDialog>
+								<Button
+									variant='destructive'
+									className='bg-sky-500 hover:bg-sky-600 h-8 text-white cursor-pointer rounded-sm flex'
+									onClick={handleFitToPatchBounds}
+								>
+									<span>Scale</span>
+									<Separator orientation='vertical' className='h-4' />
+									<MapPin className='w-4 h-4' />
+								</Button>
 							</div>
 						</div>
 					</div>
@@ -248,11 +267,11 @@ export default function PatchInfo({
 										placeholder={'Enter patch description'}
 										className={`w-full text-black border-gray-300`}
 										onChange={(e) => {
-                                            if (pageContext.current.patch) {
-                                                pageContext.current.patch.description = e.target.value;
-                                                triggerRepaint();
-                                            }
-                                        }}
+											if (pageContext.current.patch) {
+												pageContext.current.patch.description = e.target.value;
+												triggerRepaint();
+											}
+										}}
 									/>
 								</div>
 							</div>
