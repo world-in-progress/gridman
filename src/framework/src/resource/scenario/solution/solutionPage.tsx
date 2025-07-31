@@ -126,7 +126,7 @@ export default function SolutionPage({ node }: SolutionPageProps) {
 
             const featureJson = await apis.feature.getFeatureJsonComputation.fetch(nodeKey, node.tree.isPublic)
 
-            pageContext.current!.humanActions[index || 0]!.geometry = featureJson.data.feature_json
+            pageContext.current!.humanActions[index || 0]!.geometry = featureJson.feature_json
 
             console.log(pageContext.current!.humanActions[index || 0]!.geometry)
 

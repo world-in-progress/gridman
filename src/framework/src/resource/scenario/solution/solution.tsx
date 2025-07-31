@@ -41,6 +41,7 @@ export class SolutionPageContext extends DefaultPageContext {
     static async create(node: ISceneNode): Promise<SolutionPageContext> {
         const n = node as SceneNode
         const context = new SolutionPageContext()
+        console.log(node.key)
         const solution = await apis.solution.getSolutionByNodeKey.fetch(node.key, node.tree.isPublic)
         context.solutionData = solution.data
         store.get<{ on: Function, off: Function }>('isLoading')!.off()

@@ -32,12 +32,12 @@ export interface DiscoverBaseResponse {
 }
 
 export interface SimulationEnv {
-    solution_name: string
+    solution_node_key: string
     solution_address: string
 }
 
 export interface ProcessGroupMeta {
-    solution_name: string
+    solution_node_key: string
     simulation_name: string
     group_type: string
     solution_address: string
@@ -54,14 +54,13 @@ export interface CreateSimulationMeta {
 }
 
 export interface StartSimulationMeta {
-    solution_name: string
+    solution_node_key: string
     simulation_name: string
-    simulation_address: string
 }
 
 export interface StopSimulationMeta {
-    solution_name: string
-    simulation_name: string
+    solution_node_key: string
+    simulation_node_key: string
 }
 
 export interface GetSimulationResultBaseRequest {

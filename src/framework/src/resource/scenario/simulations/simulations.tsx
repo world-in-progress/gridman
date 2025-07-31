@@ -6,10 +6,17 @@ import { ContextMenuContent, ContextMenuItem } from '@/components/ui/context-men
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
 import SimulationsPage from "./simulationsPage";
 import SimulationsInformation from "./simulationsInformation";
+import { SolutionMeta } from "@/core/apis/types";
 
 export class SimulationsPageContext extends DefaultPageContext {
+    name: string
+    solutionNodeKey: string
+    solutionData: SolutionMeta | null
     constructor() {
         super()
+        this.name = ''
+        this.solutionNodeKey = ''
+        this.solutionData = null
     }
 }
 
