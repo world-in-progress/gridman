@@ -111,3 +111,5 @@ export const addHumanAction: IAPI<HumanAction, BaseResponse> = {
         }
     }
 }
+
+// export const deleteHumanAction: IAPI<string, BaseResponse> = {

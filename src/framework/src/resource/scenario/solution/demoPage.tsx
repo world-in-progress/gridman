@@ -1,94 +1,112 @@
-import { SolutionPageProps } from './types'
-import React, { useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import {
     X,
-    Dam,
-    Eye,
-    Info,
-    MapPin,
-    Upload,
-    RotateCcw,
-    TrafficCone,
     Box,
-    BrushCleaning,
-    CheckCircle,
-    SquaresUnite,
-    Mountain,
-    MountainSnow,
-    TentTree,
-    CloudRainWind,
-    Construction,
-    Waves,
-    Clipboard,
+    Dam,
+    Info,
     Plus,
-    Pencil,
+    BookOpen,
+    RotateCcw,
+    Paintbrush,
+    CircleCheck,
+    ChevronLeft,
+    TrafficCone,
+    CheckCircle,
+    CircleDashed,
+    ChevronRight,
+    CircleCheckBig,
 } from "lucide-react"
-import * as apis from '@/core/apis/apis'
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from "@/components/ui/input"
-import { cn } from '@/utils/utils'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
-import { HumanAction, SolutionPageContext } from './solution'
-import { HumanAction as HumanActionData } from '@/core/apis/types'
-import { toast } from 'sonner'
 import store from '@/store'
-import MapContainer from '@/components/mapContainer/mapContainer'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
+import { toast } from 'sonner'
 import {
     AlertDialog,
+    AlertDialogTitle,
     AlertDialogAction,
     AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import * as apis from '@/core/apis/apis'
+import { HumanAction } from './solution'
+import { Input } from "@/components/ui/input"
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardContent } from "@/components/ui/card"
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-const REORDER_TYPE = 'application/x-lum-reorder'
+const tutorialPages = [
+    {
+        id: 1,
+        title: "Welcome to the Tutorial",
+        image: "/placeholder.svg?height=300&width=400&text=Welcome+Tutorial",
+        description:
+            "欢迎来到我们的产品教程！在接下来的几页中，我们将为您详细介绍如何使用我们的产品功能。请跟随教程步骤，您将快速掌握所有核心功能。",
+    },
+    {
+        id: 2,
+        title: "Basic Setup",
+        image: "/placeholder.svg?height=300&width=400&text=Basic+Setup",
+        description:
+            "首先，让我们从基础设置开始。在这一步中，您需要配置您的个人资料和偏好设置。这些设置将帮助系统为您提供更个性化的体验。",
+    },
+    {
+        id: 3,
+        title: "Main Features",
+        image: "/placeholder.svg?height=300&width=400&text=Main+Features",
+        description:
+            "现在让我们探索主要功能。这个界面包含了您日常使用中最重要的工具和选项。您可以通过导航栏快速访问不同的功能模块。",
+    },
+    {
+        id: 4,
+        title: "Advanced Operations",
+        image: "/placeholder.svg?height=300&width=400&text=Advanced+Operations",
+        description: "掌握了基础功能后，让我们学习一些高级操作。这些功能可以帮助您更高效地完成复杂任务，提升您的工作效率。",
+    },
+    {
+        id: 5,
+        title: "Tutorial Complete",
+        image: "/placeholder.svg?height=300&width=400&text=Tutorial+Complete",
+        description:
+            "恭喜您完成了教程！现在您已经掌握了所有基本和高级功能。如果您在使用过程中遇到任何问题，可以随时回到这个教程查看相关说明。",
+    },
+]
 
-const MODEL_TYPE_MAP: Record<string, string> = {
-    'flood_pipe': '洪水-管道联合模拟',
-}
+
 
 export default function DemoPage() {
 
-    const [isDragOver, setIsDragOver] = useState(false)
-    const [, triggerRepaint] = useReducer(x => x + 1, 0)
-    const pageContext = useRef<SolutionPageContext | null>(null)
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-    const [clearActionsDialogOpen, setClearActionsDialogOpen] = useState(false)
+    const [open, setOpen] = useState(false)
     const [canAddAction, setCanAddAction] = useState(true)
+    const [isDrawingMode, setIsDrawingMode] = useState(false)
+    const [clearActionsDialogOpen, setClearActionsDialogOpen] = useState(false)
 
+    const humanActions = useRef<HumanAction[]>([])
 
-    // useEffect(() => {
-    //     loadContext(node as SceneNode)
+    const [currentDrawingAction, setCurrentDrawingAction] = useState<HumanAction | null>(null)
 
-    //     return () => {
-    //         unloadContext()
-    //     }
-    // }, [node])
+    const [currentPage, setCurrentPage] = useState(0)
 
-    const loadContext = async (node: SceneNode) => {
-        pageContext.current = await SolutionPageContext.create(node)
-        console.log(pageContext.current?.solutionData)
+    const [, triggerRepaint] = useReducer(x => x + 1, 0)
 
-        // 检查是否有未注册的action，如果有则不允许添加新的
-        if (pageContext.current?.humanActions && pageContext.current.humanActions.length > 0) {
-            const lastAction = pageContext.current.humanActions[pageContext.current.humanActions.length - 1];
-            setCanAddAction(lastAction.registered === true);
+    const currentTutorial = tutorialPages[currentPage]
+
+    const nextPage = () => {
+        if (currentPage < tutorialPages.length - 1) {
+            setCurrentPage(currentPage + 1)
         }
-
-        triggerRepaint()
     }
 
-    const unloadContext = () => {
-        console.log('组件卸载')
+    const prevPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage(currentPage - 1)
+        }
     }
 
     const handlePackageSolution = async () => {
@@ -100,31 +118,39 @@ export default function DemoPage() {
         }
     }
 
-    const handleDeleteSolution = async () => {
-        setDeleteDialogOpen(false)
-        store.get<{ on: Function, off: Function }>('isLoading')!.on()
-        const deleteResponse = await apis.solution.deleteSolution.fetch('root.solution.demo', false)
-        if (deleteResponse.success) {
-            toast.success('Solution deleted successfully')
-        } else {
-            toast.error('Failed to delete solution')
-        }
-        store.get<{ on: Function, off: Function }>('isLoading')!.off()
-    }
-
     const handleClearActions = () => {
         setClearActionsDialogOpen(false)
-        pageContext.current!.humanActions = []
+
+        humanActions.current = []
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+        // TODO: Clear all actions by api
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+
         triggerRepaint()
     }
 
+    const getRandomColor = () => {
+        const letters = '0123456789ABCDEF'
+        let color = '#'
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)]
+        }
+        return color
+    }
+
     const registerHumanAction = async (action: HumanAction) => {
+        if (!action.action_type || !action.elevation_delta || !action.landuse_type || !action.geometry) {
+            toast.error('Please fill in all required fields')
+            action.registered = false
+            triggerRepaint()
+            return
+        }
 
-
-        // console.log(featureJson)
-        // 如果是最后一个action，允许添加新的
         const humanAction = {
-            node_key: 'root.solution.demo',
+            node_key: 'root.solutions.demo',
             action_type: action.action_type,
             params: {
                 elevation_delta: Number(action.elevation_delta),
@@ -140,15 +166,98 @@ export default function DemoPage() {
             setCanAddAction(true)
             toast.success('Human action registered successfully')
         } else {
+            action.registered = false
             toast.error('Failed to register human action')
         }
 
         triggerRepaint()
     }
 
+    const startDrawingAction = (action: HumanAction) => {
+        const drawInstance = store.get<MapboxDraw>("mapDraw")
+        if (drawInstance) {
+            setCurrentDrawingAction(action)
+            setIsDrawingMode(true)
+
+            const randomColor = getRandomColor()
+
+            // TODO: Set color to draw vector
+
+            drawInstance.changeMode("draw_polygon")
+        }
+    }
+
+    useEffect(() => {
+        const map = store.get<mapboxgl.Map>("map")
+        const drawInstance = store.get<MapboxDraw>("mapDraw")
+
+        if (!map || !drawInstance || !isDrawingMode || !currentDrawingAction) return
+
+        const handleDrawCreate = (e: any) => {
+            if (e.features && e.features.length > 0 && currentDrawingAction) {
+
+                currentDrawingAction.geometry = e.features[0]
+                triggerRepaint()
+
+                setTimeout(() => {
+                    drawInstance.changeMode("draw_polygon")
+                }, 10)
+            }
+        }
+
+        // TODO: Change draw mode by selected action type
+
+        const handleModeChange = (e: any) => {
+            if (isDrawingMode && e.mode === "simple_select" &&
+                (e.oldMode && !e.oldMode.startsWith("direct_select"))) {
+
+                setTimeout(() => {
+                    drawInstance.changeMode("draw_polygon")
+                }, 50)
+            }
+        }
+
+        map.on("draw.create", handleDrawCreate)
+        map.on("draw.modechange", handleModeChange)
+
+        return () => {
+            map.off("draw.create", handleDrawCreate)
+            map.off("draw.modechange", handleModeChange)
+        }
+    }, [isDrawingMode, currentDrawingAction])
+
+    const stopDrawingAction = () => {
+        setIsDrawingMode(false)
+        setCurrentDrawingAction(null)
+
+        const drawInstance = store.get<MapboxDraw>("mapDraw")
+        if (drawInstance) {
+            drawInstance.changeMode("simple_select")
+        }
+    }
+
+    const handleAddHumanAction = () => {
+        if (!canAddAction) return
+
+        // TODO: humanActions params of elevation_delta and landuse_type may need to be changed by action type, like transfer water
+
+        humanActions.current.push({
+            id: Date.now().toString(),
+            action_type: '',
+            elevation_delta: '',
+            landuse_type: '',
+            node_key: 'root.solutions.demo',
+            geometry: null,
+            registered: false
+        })
+
+        setCanAddAction(false)
+        triggerRepaint()
+    }
+
     return (
         <div className="w-full h-full flex flex-row bg-gray-50">
-            <div className="w-[20vw] h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl flex flex-col border-r border-slate-200">
+            <div className="w-[25vw] h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl flex flex-col border-r border-slate-200">
                 {/* Header */}
                 <div className="p-6 bg-white border-b border-slate-200">
                     <div className="flex items-center gap-3">
@@ -160,19 +269,89 @@ export default function DemoPage() {
                             <p className="text-sm text-slate-500">New Solution Details</p>
                         </div>
                         <div className='flex items-center gap-2'>
-                            {/* <Button
-                                variant='destructive'
-                                className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                onClick={() => setDeleteDialogOpen(true)}
-                            >
-                                <RotateCcw className="w-4 h-4" />Delete
-                            </Button> */}
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant='destructive'
+                                        className='cursor-pointer bg-teal-500 hover:bg-teal-600 text-white shadow-sm'
+                                    >
+                                        <BookOpen className="w-4 h-4" />Instruction
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+                                    <DialogHeader className="p-6 pb-0">
+                                        <div className="flex items-center justify-between">
+                                            <DialogTitle className="text-xl font-semibold">{currentTutorial.title}</DialogTitle>
+                                        </div>
+                                    </DialogHeader>
+
+                                    <div className="px-6">
+                                        {/* Page Indicator */}
+                                        <div className="flex justify-center mb-4">
+                                            <div className="flex space-x-2">
+                                                {tutorialPages.map((_, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className={`w-2 h-2 rounded-full transition-colors ${index === currentPage ? "bg-primary" : "bg-muted"
+                                                            }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Tutorial Content */}
+                                        <div className="space-y-4">
+                                            <div className="flex justify-center">
+                                                <img
+                                                    src={currentTutorial.image || "/placeholder.svg"}
+                                                    alt={currentTutorial.title}
+                                                    width={400}
+                                                    height={300}
+                                                    className="rounded-lg border"
+                                                />
+                                            </div>
+
+                                            <div className="text-center space-y-2">
+                                                <p className="text-muted-foreground leading-relaxed">{currentTutorial.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pagination */}
+                                    <div className="flex items-center justify-between p-6 pt-4 border-t">
+                                        <Button
+                                            variant="outline"
+                                            onClick={prevPage}
+                                            disabled={currentPage === 0}
+                                            className="flex items-center gap-2 bg-transparent"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                            Previous
+                                        </Button>
+
+                                        <span className="text-sm text-muted-foreground">
+                                            {currentPage + 1} / {tutorialPages.length}
+                                        </span>
+
+                                        <Button
+                                            variant="outline"
+                                            onClick={nextPage}
+                                            disabled={currentPage === tutorialPages.length - 1}
+                                            className="flex items-center gap-2 bg-transparent"
+                                        >
+                                            Next
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+
                         </div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-2 space-y-2 overflow-y-auto">
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {/* Solution Information Card */}
                     <Card className="border-slate-200 shadow-sm">
                         <CardContent className='space-y-4'>
@@ -298,8 +477,6 @@ export default function DemoPage() {
                                             Yuen Long Pipe
                                         </div>
                                     </div>
-
-
                                 </div>
                             </div>
                         </CardContent>
@@ -315,222 +492,198 @@ export default function DemoPage() {
                                     <span className='text-sm font-medium text-slate-500 uppercase tracking-wide'>Human Actions</span>
                                 </div>
                                 <div className='flex items-center gap-2'>
-                                    <Button
-                                        variant='destructive'
-                                        className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
-                                        onClick={() => setClearActionsDialogOpen(true)}
-                                        size='sm'
-                                    >
-                                        <RotateCcw className="w-4 h-4" />Clear
-                                    </Button>
+                                    {/* Alert Dialog for Clear Actions */}
+                                    <AlertDialog >
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant='destructive'
+                                                className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                                                size='sm'
+                                            >
+                                                <RotateCcw className="w-4 h-4" />Clear
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Clear Actions?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This operation will clear all selected resources. This operation cannot be undone.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={handleClearActions}
+                                                    className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                                                >
+                                                    Clear
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+
                                 </div>
                             </div>
 
                             {/* Human Actions Container */}
                             <div className="space-y-4">
-                                {(!pageContext.current?.humanActions || pageContext.current.humanActions.length === 0) ? (
+                                {humanActions.current.length === 0 ? (
                                     <Button
                                         variant="outline"
-                                        className="w-full border-dashed"
-                                        onClick={() => {
-                                            if (!pageContext.current?.humanActions) {
-                                                pageContext.current!.humanActions = [];
-                                            }
-                                            pageContext.current?.humanActions.push({
-                                                id: Date.now().toString(),
-                                                action_type: '',
-                                                elevation_delta: '',
-                                                landuse_type: '',
-                                                node_key: '',
-                                                geometry: null,
-                                                registered: false // 添加注册状态属性
-                                            });
-                                            // 添加新action后，禁止添加下一个，直到当前的注册
-                                            setCanAddAction(false);
-                                            triggerRepaint()
-                                        }}
+                                        className="w-full border-dashed cursor-pointer"
+                                        onClick={handleAddHumanAction}
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
                                         Add Human Action
                                     </Button>
                                 ) : (
-                                    <>
-                                        {/* Human Actions列表 */}
-                                        <div className="space-y-4">
-                                            {pageContext.current.humanActions.map((action, index) => (
-                                                <div key={action.id} className="border rounded-lg p-4 bg-slate-50">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h4 className="font-medium">Human Action {index + 1}</h4>
+                                    <div className="space-y-4">
+                                        {humanActions.current.map((action, index) => (
+                                            <div key={action.id} className="border rounded-lg p-4 bg-slate-50">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h4 className="font-medium">Human Action {index + 1}</h4>
+                                                    <div className='flex items-center gap-2'>
                                                         <Button
                                                             variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0 text-red-500"
+                                                            className="text-slate-700 hover:text-green-600 hover:bg-green-50 cursor-pointer"
                                                             onClick={() => {
-                                                                pageContext.current?.humanActions.splice(index, 1);
-                                                                triggerRepaint()
-                                                            }}
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-
-                                                    {/* Action Type 选择器 */}
-                                                    <div className="mb-4">
-                                                        <Label htmlFor={`action-type-${action.id}`} className="text-xs mb-1 block">
-                                                            Action Type
-                                                        </Label>
-                                                        <Select
-                                                            onValueChange={(value) => {
-                                                                action.action_type = value;
-                                                                triggerRepaint()
-                                                            }}
-                                                            value={action.action_type}
-                                                        >
-                                                            <SelectTrigger id={`action-type-${action.id}`}>
-                                                                <SelectValue placeholder="选择Action类型" />
-                                                            </SelectTrigger>
-                                                            <SelectContent className='cursor-pointern'>
-                                                                {pageContext.current?.solutionData?.action_types?.map(type => (
-                                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    {/* Tabs: 绘制和上传 */}
-                                                    <Tabs defaultValue="draw" className="mb-4 w-full">
-                                                        <TabsList className="grid grid-cols-2 w-full">
-                                                            <TabsTrigger value="draw" className='cursor-pointer'>Draw</TabsTrigger>
-                                                            <TabsTrigger value="upload" className='cursor-pointer'>Upload</TabsTrigger>
-                                                        </TabsList>
-                                                        <TabsContent value="draw" className="pt-4">
-                                                            <div className="border-2 border-dashed rounded-lg p-4 bg-white min-h-[120px] flex items-center justify-center">
-                                                                <div className="text-center">
-                                                                    <Button
-                                                                        variant="secondary"
-                                                                        size="sm"
-                                                                        className='cursor-pointer bg-sky-500 hover:bg-sky-600 text-white'
-                                                                    >
-                                                                        <Pencil className="w-3 h-3 mr-1" />
-                                                                        Start Drawing
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        </TabsContent>
-                                                        <TabsContent value="upload" className="pt-4">
-                                                            <div
-                                                                className={cn(
-                                                                    "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
-                                                                    isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100"
-                                                                )}
-                                                            >
-                                                                {!action.node_key ? (
-                                                                    <div className="h-[80px] flex flex-col justify-center items-center text-slate-400">
-                                                                        <Upload className="w-6 h-6 mb-1" />
-                                                                        <p className="text-sm font-medium">拖拽Vector资源到此处</p>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <MapPin className="w-4 h-4 text-blue-500" />
-                                                                            <p className="text-slate-900 text-sm font-medium truncate">
-                                                                                {action.node_key.split('.').pop()}
-                                                                            </p>
-                                                                        </div>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            className="h-6 w-6 p-0 hover:text-red-500"
-                                                                            onClick={() => {
-                                                                                action.node_key = '';
-                                                                                triggerRepaint()
-                                                                            }}
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </TabsContent>
-                                                    </Tabs>
-
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <Label htmlFor={`elevation-delta-${action.id}`} className="text-xs mb-1 block">
-                                                                Elevation Delta
-                                                            </Label>
-                                                            <Input
-                                                                id={`elevation-delta-${action.id}`}
-                                                                type="text"
-                                                                value={action.elevation_delta}
-                                                                onChange={(e) => {
-                                                                    action.elevation_delta = e.target.value;
-                                                                    triggerRepaint()
-                                                                }}
-                                                                className="h-8 text-sm"
-                                                                placeholder="Enter Number"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`landuse-type-${action.id}`} className="text-xs mb-1 block">
-                                                                Landuse Type
-                                                            </Label>
-                                                            <Input
-                                                                id={`landuse-type-${action.id}`}
-                                                                type="text"
-                                                                value={action.landuse_type}
-                                                                onChange={(e) => {
-                                                                    action.landuse_type = e.target.value;
-                                                                    triggerRepaint()
-                                                                }}
-                                                                className="h-8 text-sm"
-                                                                placeholder="Enter Number"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* 添加注册按钮 */}
-                                                    <div className="mt-4 flex justify-end">
-                                                        <Button
-                                                            variant="default"
-                                                            className="bg-green-500 hover:bg-green-600 text-white"
-                                                            onClick={() => {
-                                                                action.registered = true;
+                                                                action.registered = true
                                                                 registerHumanAction(action)
                                                             }}
                                                             disabled={action.registered}
+                                                            title={action.registered ? "Registered  " : "Register Action"}
                                                         >
-                                                            {action.registered ? 'Registered' : 'Register'}
+                                                            {action.registered ? (
+                                                                <CircleCheckBig className="text-green-500" />
+                                                            ) : (
+                                                                <div className="relative group">
+                                                                    <CircleDashed className={`group-hover:opacity-0 transition-opacity ${(!action.action_type || !action.elevation_delta || !action.landuse_type || !action.geometry) ? "text-gray-400" : ""}`} />
+                                                                    <CircleCheck
+                                                                        className="text-green-500 absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="text-slate-700 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                                            onClick={() => {
+                                                                humanActions.current.splice(index, 1)
+                                                                triggerRepaint()
+                                                            }}
+                                                        >
+                                                            <X />
                                                         </Button>
                                                     </div>
                                                 </div>
-                                            ))}
-                                            <Button
-                                                variant="outline"
-                                                className={`w-full border-dashed ${canAddAction ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
-                                                onClick={() => {
-                                                    if (!canAddAction) return;
 
-                                                    pageContext.current?.humanActions.push({
-                                                        id: Date.now().toString(),
-                                                        action_type: '',
-                                                        elevation_delta: '',
-                                                        landuse_type: '',
-                                                        node_key: '',
-                                                        geometry: null,
-                                                        registered: false // 添加注册状态属性
-                                                    });
-                                                    // 添加新action后，暂时禁止添加下一个，直到当前的注册
-                                                    setCanAddAction(false);
-                                                    triggerRepaint()
-                                                }}
-                                                disabled={!canAddAction}
-                                            >
-                                                <Plus className="w-4 h-4 mr-2" />
-                                                Add Human Action
-                                            </Button>
-                                        </div>
-                                    </>
+                                                {/* Action Type Selector */}
+                                                <div className="mb-4 flex items-center justify-between gap-2">
+                                                    <Label htmlFor={`action-type-${action.id}`} className="text-sm mb-1 block">
+                                                        Action Type
+                                                    </Label>
+                                                    <Select
+                                                        onValueChange={(value) => {
+                                                            action.action_type = value
+                                                            triggerRepaint()
+                                                        }}
+                                                        value={action.action_type}
+                                                    >
+                                                        <SelectTrigger id={`action-type-${action.id}`} className="min-w-[160px] w-[160px]">
+                                                            <SelectValue placeholder="Select Action Type" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className='cursor-pointer min-w-[160px] w-[160px]'>
+                                                            <SelectItem value="add_fence">Add GeiWai</SelectItem>
+                                                            <SelectItem value="add_gate">Add Gate</SelectItem>
+                                                            <SelectItem value="transfer_water">Transfer water</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="border-2 border-dashed rounded-lg p-4 bg-white min-h-[120px] flex items-center justify-center">
+                                                    <div className="text-center">
+                                                        {!isDrawingMode ? (
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className={`cursor-pointer ${action.action_type ? 'bg-sky-500 hover:bg-sky-600 text-white' : 'bg-gray-400 text-white'}`}
+                                                                onClick={() => startDrawingAction(action)}
+                                                                disabled={!action.action_type}
+                                                                title={!action.action_type ? "Please select action type first" : "Start Drawing"}
+                                                            >
+                                                                <Paintbrush className="w-3 h-3 mr-1" />
+                                                                Start Drawing
+                                                            </Button>
+                                                        ) : currentDrawingAction?.id === action.id ? (
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className='cursor-pointer bg-red-500 hover:bg-red-600 text-white'
+                                                                onClick={stopDrawingAction}
+                                                            >
+                                                                <X className="w-3 h-3 mr-1" />
+                                                                Stop Drawing
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className='cursor-pointer bg-gray-400 text-white'
+                                                                disabled={true}
+                                                            >
+                                                                <Paintbrush className="w-3 h-3 mr-1" />
+                                                                Drawing in progress...
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <Label htmlFor={`elevation-delta-${action.id}`} className="text-xs mb-1 block">
+                                                            Elevation Delta
+                                                        </Label>
+                                                        <Input
+                                                            id={`elevation-delta-${action.id}`}
+                                                            type="text"
+                                                            value={action.elevation_delta}
+                                                            onChange={(e) => {
+                                                                action.elevation_delta = e.target.value
+                                                                triggerRepaint()
+                                                            }}
+                                                            className="h-8 text-sm"
+                                                            placeholder="Enter Number"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor={`landuse-type-${action.id}`} className="text-xs mb-1 block">
+                                                            Landuse Type
+                                                        </Label>
+                                                        <Input
+                                                            id={`landuse-type-${action.id}`}
+                                                            type="text"
+                                                            value={action.landuse_type}
+                                                            onChange={(e) => {
+                                                                action.landuse_type = e.target.value
+                                                                triggerRepaint()
+                                                            }}
+                                                            className="h-8 text-sm"
+                                                            placeholder="Enter Number"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            variant="outline"
+                                            className={`w-full border-dashed ${canAddAction ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                                            onClick={handleAddHumanAction}
+                                            disabled={!canAddAction}
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Add Human Action
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
                         </CardContent>
@@ -551,48 +704,6 @@ export default function DemoPage() {
             <div className="w-full h-full flex-1">
                 <MapContainer node={null} style='w-full h-full' />
             </div>
-
-            {/* Alert Dialog for delete solution */}
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Delete Solution?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This operation will delete the current solution, including all added actions. This operation cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDeleteSolution}
-                            className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
-                        >
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {/* Alert Dialog for Clear Actions */}
-            <AlertDialog open={clearActionsDialogOpen} onOpenChange={setClearActionsDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Clear Actions?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This operation will clear all selected resources. This operation cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleClearActions}
-                            className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
-                        >
-                            Clear
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div >
     )
 }
