@@ -1,6 +1,10 @@
 import { SceneNode } from "@/components/resourceScene/scene";
 import * as apis from '@/core/apis/apis'
 import { PatchMeta } from "../patches/types";
+import Dispatcher from "@/core/message/dispatcher";
+import { Callback } from "@/core/types";
+import { GridContext } from "@/core/grid/types";
+import GridCore from "@/core/grid/NHGridCore";
 
 // Get Patch by schemaName and patchName
 export const getPatchInfo = async(node: SceneNode) => {

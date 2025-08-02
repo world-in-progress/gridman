@@ -9,7 +9,7 @@ import { GridCheckingInfo, MultiGridBaseInfo } from '@/core/grid/types'
 
 import gll from '@/core/gl/glLib'
 import HitBuffer from './hitBuffer'
-import CustomLayerGroup from './customLayerGroup'
+import NHLayerGroup from './NHLayerGroup'
 import { NHCustomLayerInterface } from './interfaces'
 
 let CHECK_ON_EVENT: Function
@@ -24,7 +24,7 @@ export default class TopologyLayer implements NHCustomLayerInterface {
     visible = true
     id = 'TopologyLayer'
     type = 'custom' as const
-    layerGroup!: CustomLayerGroup
+    layerGroup!: NHLayerGroup
 
     // Grid-related /////////////////////////////////////////////////////////
 

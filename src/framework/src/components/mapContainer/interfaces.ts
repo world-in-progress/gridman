@@ -1,5 +1,5 @@
 import { NHCustomeLayerRenderMethod, NHCustomeLayerOnAddMethod } from './type'
-import CustomLayerGroup from './customLayerGroup'
+import NHLayerGroup from './NHLayerGroup'
 
 /**
  * Interface representing a custom layer in the map
@@ -27,7 +27,7 @@ export interface NHCustomLayerInterface extends mapboxgl.CustomLayerInterface {
     //////////////////////////////////////////////////////////
     /////////////////   Dependency   /////////////////////////
     //////////////////////////////////////////////////////////
-    layerGroup?: CustomLayerGroup
+    layerGroup?: NHLayerGroup
 
     //////////////////////////////////////////////////////////
     ////////////////// Layers Hooks  /////////////////////////
