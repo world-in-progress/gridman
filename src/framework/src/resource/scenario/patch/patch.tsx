@@ -121,37 +121,4 @@ export default class PatchScenarioNode extends DefaultScenarioNode {
                 )
         }
     }
-
-    // async handleMapAdd(nodeSelf: ISceneNode, map: mapboxgl.Map, layerGroup: NHLayerGroup): Promise<void> {
-    //     const node = nodeSelf as SceneNode
-    //     // Set Patch
-    //     const patchMeta = await setPatch(nodeSelf as SceneNode)
-    //     const context = await node.getPageContext() as PatchPageContext
-    //     context.patch = patchMeta
-
-    //     const gridContext: GridContext = {
-    //         srcCS: `EPSG:${patchMeta?.epsg}`,
-    //         targetCS: 'EPSG:4326',
-    //         bBox: boundingBox2D(...patchMeta!.bounds),
-    //         rules: patchMeta!.subdivide_rules
-    //     }
-        
-    //     const gridLayer = new TopologyLayer(map)
-    //     // gridLayer.startCallback = () => {
-    //     //     // store.get<{ on: Function, off: Function }>('isLoading')!.on()
-    //     // }
-    //     gridLayer.endCallback = () => {
-    //         console.log('endCallback')
-    //         store.get<{ on: Function, off: Function }>('isLoading')!.off()
-    //     }
-    //     layerGroup.addLayer(gridLayer)
-
-    //     const gridCore: GridCore = new GridCore(gridContext, node.tree.isPublic)
-        
-    //     await gridLayer.initialize(map, map.painter.context.gl)
-    //     context.topologyLayer = gridLayer
-        
-    //     gridLayer.gridCore = gridCore
-    //     context.gridCore = gridCore
-    // }
 }
