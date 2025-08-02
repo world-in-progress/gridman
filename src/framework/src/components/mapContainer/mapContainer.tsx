@@ -8,7 +8,7 @@ import { useEffect, useRef, forwardRef } from 'react'
 // @ts-expect-error no declare file for rectangle mode
 import DrawRectangle from 'mapbox-gl-draw-rectangle-mode'
 import { calculateRectangleCoordinates } from './utils'
-import NHLayerGroup from './NHLayerGroup'
+import CustomLayerGroup from './customLayerGroup'
 
 const initialLongitude = 114.051537
 const initialLatitude = 22.446937
@@ -82,7 +82,7 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
                 boxZoom: false,
             })
             mapInstance.on('load', async () => {
-                const layerGroup = new NHLayerGroup()
+                const layerGroup = new CustomLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
                 mapInstance.addLayer(layerGroup)
                 store.set('clg', layerGroup)
