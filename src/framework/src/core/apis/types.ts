@@ -228,7 +228,7 @@ export interface CommonMeta {
     src_path: string
 }
 
-export interface HumanAction {
+export interface AddHumanActionMeta {
     node_key: string
     action_type: string
     params: {
@@ -236,4 +236,24 @@ export interface HumanAction {
         landuse_type: number
         feature: Record<string, any>
     }
+}
+
+export interface DeleteHumanActionMeta {
+    node_key: string
+    action_id: string
+}
+
+export interface HumanAction {
+    action_type: string
+    params: {
+        elevation_delta: number
+        landuse_type: number
+        feature: Record<string, any>
+    }
+    action_id: string
+}
+
+export interface HumanActionsMeta {
+    success: boolean
+    data: HumanAction[]
 }
