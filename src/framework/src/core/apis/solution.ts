@@ -1,5 +1,5 @@
 import getPrefix from "./prefix"
-import IAPI, { BaseResponse, AddHumanActionMeta, DeleteHumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse } from "./types"
+import IAPI, { BaseResponse, AddHumanActionMeta, DeleteHumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse, UpdateHumanActionMeta } from "./types"
 
 const API_PREFIX = '/api/solution/'
 
@@ -161,4 +161,27 @@ export const getHumanActions: IAPI<string, HumanActionsMeta> = {
     }
 }
 
-// export const deleteHumanAction: IAPI<string, BaseResponse> = {
+export const updateHumanAction: IAPI<UpdateHumanActionMeta, BaseResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (humanAction: UpdateHumanActionMeta, isRemote: boolean): Promise<BaseResponse> => {
+        try {
+            const api = getPrefix(isRemote) + API_PREFIX + 'update_human_action'
+            const response = await fetch(api, {
+                method: 'PUT',
+                body: JSON.stringify(humanAction),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: BaseResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to update human action: ${error}`)
+        }
+    }
+}

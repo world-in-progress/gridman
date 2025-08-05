@@ -231,16 +231,19 @@ export interface CommonMeta {
 export interface AddHumanActionMeta {
     node_key: string
     action_type: string
-    params: {
-        elevation_delta: number
-        landuse_type: number
-        feature: Record<string, any>
-    }
+    params: Record<string, any>
 }
 
 export interface DeleteHumanActionMeta {
     node_key: string
     action_id: string
+}
+
+export interface UpdateHumanActionMeta {
+    node_key: string
+    action_id: string
+    action_type: string
+    params: Record<string, any>
 }
 
 export interface HumanAction {
