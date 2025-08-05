@@ -64,7 +64,7 @@ interface DisplayHumanAction {
         up_stream?: string;
         down_stream?: string;
         height?: number;
-    };
+    }
 }
 
 export default function DemoPage() {
@@ -429,6 +429,8 @@ export default function DemoPage() {
         stopActionDrawing()
     }
 
+
+    // Transfer water grid pick
     const handleFromGridPicking = () => {
 
     }
@@ -512,6 +514,8 @@ export default function DemoPage() {
     }
 
     const handleRemoveHumanAction = async () => {
+
+        // Delete Human Action
 
         setCurrentAction({
             id: Date.now().toString(),
