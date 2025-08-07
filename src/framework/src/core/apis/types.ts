@@ -237,3 +237,9 @@ export interface HumanAction {
         feature: Record<string, any>
     }
 }
+
+export interface CommonData {
+    success: boolean
+    message: string
+    data: Record<string, any>
+}

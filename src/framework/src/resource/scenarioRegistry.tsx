@@ -12,7 +12,7 @@ import SimulationScenarioNode, { SimulationPageContext } from './scenario/simula
 import VectorsScenarioNode, { VectorsPageContext } from './scenario/vectors/vectors'
 import GridsScenariNode, { GridsPageContext } from './scenario/grids/grids'
 import DemsScenariNode, { DemsPageContext } from './scenario/dems/dems'
-import LumsScenariNode, { LumsPageContext } from './scenario/lums/lums'
+import LumsScenarioNode, { LumsPageContext } from './scenario/lums/lums'
 import VectorScenarioNode, { VectorPageContext } from './scenario/vector/vector'
 import LumScenarioNode, { LumPageContext } from './scenario/lum/lum'
 import DemScenarioNode, { DemPageContext } from './scenario/dem/dem'
@@ -24,6 +24,7 @@ import TidesScenariNode, { TidesPageContext } from './scenario/tides/tides'
 import GridScenarioNode, { GridPageContext } from './scenario/grid/grid'
 import SolutionScenarioNode, { SolutionPageContext } from './scenario/solution/solution'
 import SimulationsScenarioNode, { SimulationsPageContext } from './scenario/simulations/simulations'
+import RainfallScenarioNode, { RainfallPageContext } from './scenario/rainfall/rainfall'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -43,13 +44,14 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [VectorScenarioNode.classKey]: VectorScenarioNode,
     [DemsScenariNode.classKey]: DemsScenariNode,
     [DemScenarioNode.classKey]: DemScenarioNode,
-    [LumsScenariNode.classKey]: LumsScenariNode,
+    [LumsScenarioNode.classKey]: LumsScenarioNode,
     [LumScenarioNode.classKey]: LumScenarioNode,
     [SolutionsScenariNode.classKey]: SolutionsScenariNode,
     [SolutionScenarioNode.classKey]: SolutionScenarioNode,
     [GatesScenariNode.classKey]: GatesScenariNode,
     [InpsScenariNode.classKey]: InpsScenariNode,
     [RainfallsScenariNode.classKey]: RainfallsScenariNode,
+    [RainfallScenarioNode.classKey]: RainfallScenarioNode,
     [TidesScenariNode.classKey]: TidesScenariNode,
 }
 
@@ -68,13 +70,14 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [VectorScenarioNode.classKey]: VectorPageContext,
     [DemsScenariNode.classKey]: DemsPageContext,
     [DemScenarioNode.classKey]: DemPageContext,
-    [LumsScenariNode.classKey]: LumsPageContext,
+    [LumsScenarioNode.classKey]: LumsPageContext,
     [LumScenarioNode.classKey]: LumPageContext,
     [SolutionsScenariNode.classKey]: SolutionsPageContext,
     [SolutionScenarioNode.classKey]: SolutionPageContext,
     [GatesScenariNode.classKey]: GatesPageContext,
     [InpsScenariNode.classKey]: InpsPageContext,
     [RainfallsScenariNode.classKey]: RainfallsPageContext,
+    [RainfallScenarioNode.classKey]: RainfallPageContext,
     [TidesScenariNode.classKey]: TidesPageContext
 }
 

@@ -41,7 +41,7 @@ export enum LumsMenuItem {
     CREATE_NEW_LUM = 'Create New LUM'
 }
 
-export default class LumsScenariNode extends DefaultScenarioNode {
+export default class LumsScenarioNode extends DefaultScenarioNode {
     static classKey: string = 'root.lums'
     semanticPath: string = 'root.lums'
     children: string[] = [

@@ -13,6 +13,7 @@ export class RainfallsPageContext extends DefaultPageContext {
         type: string
         src_path: string
     }
+    hasRainfall: boolean
 
     constructor() {
         super()
@@ -22,6 +23,7 @@ export class RainfallsPageContext extends DefaultPageContext {
             type: 'rainfall',
             src_path: ''
         }
+        this.hasRainfall = false
     }
 
     static async create(node: ISceneNode): Promise<RainfallsPageContext> {
