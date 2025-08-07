@@ -571,7 +571,7 @@ export default function LumPage({ node }: LumPageProps) {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-2 space-y-2 overflow-y-auto">
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {/* LUM Information Card */}
                     <Card className="border-slate-200 shadow-sm">
                         <CardContent>
