@@ -154,8 +154,8 @@ export default function LumsPage({ node }: LumsPageProps) {
 		const createCogTifRes = await apis.raster.createRaster.fetch(newLUM, node.tree.isPublic)
 
 		if (!createCogTifRes.success) {
-			toast.error(createCogTifRes.message)
 			store.get<{ on: Function, off: Function }>('isLoading')!.off()
+			toast.error(createCogTifRes.message)
 			return
 		}
 
@@ -375,7 +375,7 @@ export default function LumsPage({ node }: LumsPageProps) {
 										<span className="text-sm text-slate-600">Name</span>
 										<div className="flex items-center gap-2 mr-1">
 											<span className="font-semibold text-slate-900">
-												{node.name}
+												{pageContext.current.newLumInfo.name}
 											</span>
 										</div>
 									</div>

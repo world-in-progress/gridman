@@ -48,7 +48,7 @@ export default function TidesPage({ node }: TidesPageProps) {
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
-        pageContext.current = await TidesPageContext.create(node)
+        pageContext.current = await node.getPageContext() as TidesPageContext
 
         if (pageContext.current.hasTide) {
             setShowTideDialog(false)

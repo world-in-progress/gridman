@@ -709,4 +709,3 @@ export const highlightPatchBounds = (
         })
     }
 }
-

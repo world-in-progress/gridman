@@ -6,22 +6,27 @@ import { FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import InpsPage from "./inpsPage"
 import InpsInformation from "./inpsInformation"
+import { CommonDataProps } from "../rainfall/rainfall"
 
 export class InpsPageContext extends DefaultPageContext {
-    inpData: {
+    inpMeta: {
         name: string
         type: string
         src_path: string
     }
+    hasInp: boolean
+    inpData: string | null
 
     constructor() {
         super()
 
-        this.inpData = {
+        this.inpMeta = {
             name: '',
             type: 'inp',
             src_path: ''
         }
+        this.hasInp = false
+        this.inpData = null
     }
 
     static async create(node: ISceneNode): Promise<InpsPageContext> {
