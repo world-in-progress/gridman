@@ -6,24 +6,32 @@ import { FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import RainfallsPage from "./rainfallsPage"
 import RainfallsInformation from "./rainfallsInformation"
+import { CommonDataProps } from "../rainfall/rainfall"
+import { Button } from "@/components/ui/button"
 
 export class RainfallsPageContext extends DefaultPageContext {
-    rainfallData: {
+    rainfallMeta: {
         name: string
         type: string
         src_path: string
     }
     hasRainfall: boolean
+    rainfallData: CommonDataProps
 
     constructor() {
         super()
-        
-        this.rainfallData = {
+
+        this.rainfallMeta = {
             name: '',
             type: 'rainfall',
             src_path: ''
         }
         this.hasRainfall = false
+        this.rainfallData = {
+            name: '',
+            type: '',
+            data: []
+        }
     }
 
     static async create(node: ISceneNode): Promise<RainfallsPageContext> {

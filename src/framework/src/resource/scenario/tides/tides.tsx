@@ -6,21 +6,31 @@ import { FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import TidesPage from "./tidesPage"
 import TidesInformation from "./tidesInformation"
+import { CommonDataProps } from "../rainfall/rainfall"
 
 export class TidesPageContext extends DefaultPageContext {
-    tideData: {
+    tideMeta: {
         name: string
         type: string
         src_path: string
     }
+    hasTide: boolean
+    tideData: CommonDataProps
+    
 
     constructor() {
         super()
         
-        this.tideData = {
+        this.tideMeta = {
             name: '',
             type: 'tide',
             src_path: ''
+        }
+        this.hasTide = false
+        this.tideData = {
+            name: '',
+            type: '',
+            data: []
         }
     }
 
