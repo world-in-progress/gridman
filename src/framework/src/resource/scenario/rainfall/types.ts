@@ -9,4 +9,4 @@ export interface RainfallData {
     Station: string
     rainfall: number
     DateAndTime: string
-  }
+}

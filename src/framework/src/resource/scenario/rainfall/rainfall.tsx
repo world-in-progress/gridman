@@ -6,7 +6,7 @@ import { ISceneNode } from "@/core/scene/iscene";
 import { CloudRainWind, Info } from "lucide-react";
 import RainfallPage from "./rainfallPage";
 import MapContainer from "@/components/mapContainer/mapContainer";
-import RainfallInformation from "./RainfallInformation";
+import RainfallInformation from "./rainfallInformation";
 import * as apis from '@/core/apis/apis'
 import store from "@/store";
 

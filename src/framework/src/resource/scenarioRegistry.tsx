@@ -25,6 +25,7 @@ import GridScenarioNode, { GridPageContext } from './scenario/grid/grid'
 import SolutionScenarioNode, { SolutionPageContext } from './scenario/solution/solution'
 import SimulationsScenarioNode, { SimulationsPageContext } from './scenario/simulations/simulations'
 import RainfallScenarioNode, { RainfallPageContext } from './scenario/rainfall/rainfall'
+import TideScenarioNode, { TidePageContext } from './scenario/tide/tide'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -53,6 +54,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [RainfallsScenariNode.classKey]: RainfallsScenariNode,
     [RainfallScenarioNode.classKey]: RainfallScenarioNode,
     [TidesScenariNode.classKey]: TidesScenariNode,
+    [TideScenarioNode.classKey]: TideScenarioNode,
 }
 
 const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext> = {
@@ -78,7 +80,8 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [InpsScenariNode.classKey]: InpsPageContext,
     [RainfallsScenariNode.classKey]: RainfallsPageContext,
     [RainfallScenarioNode.classKey]: RainfallPageContext,
-    [TidesScenariNode.classKey]: TidesPageContext
+    [TidesScenariNode.classKey]: TidesPageContext,
+    [TideScenarioNode.classKey]: TidePageContext
 }
 
 export const SCENARIO_NODE_REGISTRY = new Proxy(_SCENARIO_NODE_REGISTRY, {

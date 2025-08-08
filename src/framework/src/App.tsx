@@ -4,6 +4,7 @@ import Framework from './components/framework'
 import { Toaster } from './components/ui/sonner'
 import store from './store'
 import Loader from './components/ui/loader'
+import Hello from './components/hello/hello'
 
 function App() {
 
