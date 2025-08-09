@@ -246,15 +246,43 @@ export interface UpdateHumanActionMeta {
     params: Record<string, any>
 }
 
-export interface HumanAction {
-    action_type: string
-    params: {
-        elevation_delta: number
-        landuse_type: number
-        feature: Record<string, any>
-    }
-    action_id: string
+// 定义不同动作的参数类型
+interface AddFenceParams {
+    elevation_delta: number;
+    landuse_type: number;
+    feature: Record<string, any>;
 }
+
+interface TransferWaterParams {
+    from_grid: [number, number];
+    to_grid: [number, number];
+    q: number;
+}
+
+interface AddGateParams {
+    up_stream: [number, number];
+    down_stream: [number, number];
+    gate_height: number;
+    feature: Record<string, any>;
+}
+
+// 使用联合类型定义 HumanAction
+export type HumanAction = 
+    | {
+        action_type: 'add_fence';
+        action_id: string;
+        params: AddFenceParams;
+    }
+    | {
+        action_type: 'transfer_water';
+        action_id: string;
+        params: TransferWaterParams;
+    }
+    | {
+        action_type: 'add_gate';
+        action_id: string;
+        params: AddGateParams;
+    }
 
 export interface HumanActionsMeta {
     success: boolean
