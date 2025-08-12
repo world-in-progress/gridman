@@ -30,6 +30,11 @@ export class SolutionsPageContext extends DefaultPageContext {
     lumInfo: RasterMeta['data'] | null
     inpOpacity: number
     inpData: any | null
+    gridVisible: boolean
+    demVisible: boolean
+    lumVisible: boolean
+    gateVisible: boolean
+    inpVisible: boolean
 
     constructor() {
         super()
@@ -54,6 +59,11 @@ export class SolutionsPageContext extends DefaultPageContext {
         this.lumInfo = null
         this.inpOpacity = 1
         this.inpData = null
+        this.gridVisible = true
+        this.demVisible = true
+        this.lumVisible = true
+        this.gateVisible = true
+        this.inpVisible = true
     }
 
     static async create(node: ISceneNode): Promise<SolutionsPageContext> {

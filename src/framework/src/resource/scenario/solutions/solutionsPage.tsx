@@ -3,6 +3,7 @@ import {
     X,
     Dam,
     Eye,
+    EyeOff,
     Info,
     MapPin,
     Upload,
@@ -25,7 +26,7 @@ import {
 import * as apis from '@/core/apis/apis'
 import { SolutionsPageProps } from './types'
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from "@/components/ui/input"
 import { cn } from '@/utils/utils'
@@ -48,9 +49,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { convertCoordinate } from '@/components/mapContainer/utils'
+import { convertCoordinate, convertToWGS84 } from '@/components/mapContainer/utils'
 import TerrainByProxyTile from '../dem/terrainLayer/terrainLayer'
-import { clearSwmmFromMap, loadInpAndRenderSwmm } from '../inp/utils'
+import { clearSwmmFromMap, loadInpAndRenderSwmm, setSwmmOpacity } from '../inp/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
 
@@ -548,12 +549,16 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
         map.addLayer(terrainLayer.current)
 
+        if (pageContext.current) {
+            updateDEMOpacity(pageContext.current.demOpacity)
+            pageContext.current.demVisible = true
+        }
+
         map.fitBounds([[bbox84![0], bbox84![1]], [bbox84![2], bbox84![3]]], {
             padding: 80,
             duration: 1000,
         })
 
-        toast.success('DEM loaded successfully')
         triggerRepaint()
     }
 
@@ -580,7 +585,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             type: "raster",
             source: nodeKey + 'source',
             paint: {
-                "raster-opacity": 0.8,
+                "raster-opacity": pageContext.current?.lumOpacity ?? 0.8,
                 'raster-color': [
                     'step',
                     ['raster-value'],
@@ -600,6 +605,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
         })
 
+        if (pageContext.current) pageContext.current.lumVisible = true
         store.get<{ on: Function, off: Function }>('isLoading')!.off()
         triggerRepaint()
     }
@@ -618,6 +624,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             }
 
             pageContext.current!.solutionData!.env.dem_node_key = ''
+            if (pageContext.current) pageContext.current.demVisible = false
 
         } else if (type === 'lum') {
             if (map?.getLayer(pageContext.current!.solutionData!.env.lum_node_key + 'layer')) {
@@ -625,6 +632,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 map.removeSource(pageContext.current!.solutionData!.env.lum_node_key + 'source')
             }
             pageContext.current!.solutionData!.env.lum_node_key = ''
+            if (pageContext.current) pageContext.current.lumVisible = false
 
         } else if (type === 'rainfall') {
             pageContext.current!.solutionData!.env.rainfall_node_key = ''
@@ -635,6 +643,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         } else if (type === 'inp') {
             clearSwmmFromMap()
             pageContext.current!.solutionData!.env.inp_node_key = ''
+            if (pageContext.current) pageContext.current.inpVisible = false
         }
         triggerRepaint()
     }
@@ -666,6 +675,9 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 tide_node_key: '',
                 inp_node_key: '',
             }
+            pageContext.current.demVisible = false
+            pageContext.current.lumVisible = false
+            pageContext.current.inpVisible = false
         }
         triggerRepaint()
         toast.info('Reset drop zone')
@@ -691,6 +703,9 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 },
                 action_types: [],
             }
+            pageContext.current.demVisible = true
+            pageContext.current.lumVisible = true
+            pageContext.current.inpVisible = true
             triggerRepaint()
         }
     }
@@ -732,6 +747,107 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         terrainLayer.current.updateParams({ opacity: percent })
         triggerRepaint();
     }
+
+    const toggleDEMVisibility = () => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+        const nodeKey = pageContext.current?.solutionData?.env.dem_node_key
+        if (!nodeKey) return
+        const currentlyVisible = pageContext.current?.demVisible ?? true
+        if (currentlyVisible) {
+            if (terrainLayer.current && map.getLayer(terrainLayer.current.id)) {
+                map.removeLayer(terrainLayer.current.id)
+                terrainLayer.current = null
+            }
+            pageContext.current!.demVisible = false
+        } else {
+            addDEMLayer(map, nodeKey)
+            pageContext.current!.demVisible = true
+        }
+        triggerRepaint()
+    }
+
+    const toggleLUMVisibility = () => {
+        const map = store.get<mapboxgl.Map>('map')
+        const nodeKey = pageContext.current?.solutionData?.env.lum_node_key
+        if (!map || !nodeKey) return
+        const currentlyVisible = pageContext.current?.lumVisible ?? true
+        if (currentlyVisible) {
+            if (map.getLayer(nodeKey + 'layer')) {
+                map.removeLayer(nodeKey + 'layer')
+            }
+            if (map.getSource(nodeKey + 'source')) {
+                map.removeSource(nodeKey + 'source')
+            }
+            pageContext.current!.lumVisible = false
+        } else {
+            addLUMLayer(map, nodeKey)
+            pageContext.current!.lumVisible = true
+        }
+        triggerRepaint()
+    }
+
+    const toggleGateVisibility = () => {
+        const currentVisible = pageContext.current?.gateVisible ?? true
+        if (currentVisible) {
+            pageContext.current!.gateVisible = false
+        } else {
+            pageContext.current!.gateVisible = true
+        }
+        triggerRepaint()
+    }
+
+    const toggleINPVisibility = () => {
+        if (!pageContext.current?.solutionData?.env.inp_node_key) return
+        const visible = !(pageContext.current.inpVisible ?? true)
+        pageContext.current.inpVisible = visible
+        setSwmmOpacity(visible ? (pageContext.current.inpOpacity ?? 1) : 0, 'swmm')
+        triggerRepaint()
+    }
+
+    const fitLUMBounds = () => {
+        if (!pageContext.current?.lumInfo) return
+
+        if (pageContext.current.lumVisible === false) {
+            console.log('触发')
+            toggleLUMVisibility()
+        }
+
+        const map = store.get<mapboxgl.Map>('map')!
+
+        const lumBoundsOn4326 = convertToWGS84(pageContext.current?.lumInfo?.bbox!, pageContext.current?.lumInfo?.epsg.toString()!)
+
+        map.fitBounds([
+            [lumBoundsOn4326[0], lumBoundsOn4326[1]],
+            [lumBoundsOn4326[2], lumBoundsOn4326[3]]
+        ], {
+            padding: 80,
+            duration: 1000,
+        })
+    }
+
+    const fitDEMBounds = () => {
+        if (!pageContext.current?.demInfo) return
+
+        if (pageContext.current.demVisible === false) {
+            console.log('触发')
+            toggleDEMVisibility()
+        }
+
+        const map = store.get<mapboxgl.Map>('map')!
+
+        const demBoundsOn4326 = convertToWGS84(pageContext.current?.demInfo?.bbox!, pageContext.current?.demInfo?.epsg.toString()!)
+
+        map.fitBounds([
+            [demBoundsOn4326[0], demBoundsOn4326[1]],
+            [demBoundsOn4326[2], demBoundsOn4326[3]]
+        ], {
+            padding: 80,
+            duration: 1000,
+        })
+    }
+
+
 
     return (
         <div className="w-full h-full flex flex-row bg-gray-50">
@@ -889,7 +1005,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                             onDrop={handleAreaDrop}
                         >
                             {/* Upload Status */}
-                            <div className=" flex items-center justify-between text-xs text-slate-500">
+                            <div className="flex items-center justify-between text-xs text-slate-500">
                                 <div className="flex items-center gap-2">
                                     <Box className='w-4 h-4' />
                                     <span className='text-sm font-medium text-slate-500 uppercase tracking-wide'>Resources Upload</span>
@@ -911,7 +1027,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -919,7 +1035,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'grid')}
                                 >
                                     {!pageContext.current?.solutionData?.env.grid_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag Grid node here</p>
                                         </div>
@@ -938,16 +1054,16 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     e.stopPropagation()
-                                                    //     toggleVectorVisibility(resource.node_key)
-                                                    // }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            // toggleGridVisibility();
+                                                            triggerRepaint();
+                                                        }}
                                                     >
-                                                        {/* {resource.visible ?
+                                                        {pageContext.current?.gridVisible ?
                                                             <Eye className="h-3 w-3" /> :
                                                             <EyeOff className="h-3 w-3" />
-                                                        } */}
-                                                        <Eye className="h-3 w-3" />
+                                                        }
                                                     </Button>
                                                     <Button
                                                         size="sm"
@@ -981,7 +1097,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -989,7 +1105,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'dem')}
                                 >
                                     {!pageContext.current?.solutionData?.env.dem_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag DEM node here</p>
                                         </div>
@@ -1008,24 +1124,22 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     e.stopPropagation()
-                                                    //     toggleVectorVisibility(resource.node_key)
-                                                    // }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleDEMVisibility();
+                                                            triggerRepaint();
+                                                        }}
                                                     >
-                                                        {/* {resource.visible ?
+                                                        {pageContext.current?.demVisible ?
                                                             <Eye className="h-3 w-3" /> :
                                                             <EyeOff className="h-3 w-3" />
-                                                        } */}
-                                                        <Eye className="h-3 w-3" />
+                                                        }
                                                     </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     handleVectorPin(resource.node_key)
-                                                    // }}
+                                                        onClick={fitDEMBounds}
                                                     >
                                                         <Fullscreen className="h-3 w-3" />
                                                     </Button>
@@ -1046,6 +1160,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                             value={[Math.round(pageContext.current?.demOpacity! * 100)]}
                                                             max={100}
                                                             step={5}
+                                                            disabled={!pageContext.current?.demVisible}
                                                             className='w-36 cursor-pointer'
                                                             onValueChange={(value) => {
                                                                 const opacity = Math.round(value[0]) / 100;
@@ -1071,7 +1186,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -1079,7 +1194,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'lum')}
                                 >
                                     {!pageContext.current?.solutionData?.env.lum_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag LUM node here</p>
                                         </div>
@@ -1098,24 +1213,21 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     e.stopPropagation()
-                                                    //     toggleVectorVisibility(resource.node_key)
-                                                    // }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            toggleLUMVisibility()
+                                                        }}
                                                     >
-                                                        {/* {resource.visible ?
+                                                        {pageContext.current?.lumVisible ?
                                                             <Eye className="h-3 w-3" /> :
                                                             <EyeOff className="h-3 w-3" />
-                                                        } */}
-                                                        <Eye className="h-3 w-3" />
+                                                        }
                                                     </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     handleVectorPin(resource.node_key)
-                                                    // }}
+                                                        onClick={fitLUMBounds}
                                                     >
                                                         <Fullscreen className="h-3 w-3" />
                                                     </Button>
@@ -1135,6 +1247,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                             value={[Math.round(pageContext.current?.lumOpacity! * 100)]}
                                                             max={100}
                                                             step={5}
+                                                            disabled={!pageContext.current?.lumVisible}
                                                             className='w-36 cursor-pointer'
                                                             onValueChange={(value) => {
                                                                 const opacity = Math.round(value[0]) / 100;
@@ -1160,7 +1273,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -1168,7 +1281,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'rainfall')}
                                 >
                                     {!pageContext.current?.solutionData?.env.rainfall_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag Rainfall node here</p>
                                         </div>
@@ -1213,7 +1326,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -1221,7 +1334,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'gate')}
                                 >
                                     {!pageContext.current?.solutionData?.env.gate_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag Gate node here</p>
                                         </div>
@@ -1240,26 +1353,15 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     e.stopPropagation()
-                                                    //     toggleVectorVisibility(resource.node_key)
-                                                    // }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            toggleGateVisibility()
+                                                        }}
                                                     >
-                                                        {/* {resource.visible ?
+                                                        {pageContext.current?.gateVisible ?
                                                             <Eye className="h-3 w-3" /> :
                                                             <EyeOff className="h-3 w-3" />
-                                                        } */}
-                                                        <Eye className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     handleVectorPin(resource.node_key)
-                                                    // }}
-                                                    >
-                                                        <MapPin className="h-3 w-3" />
+                                                        }
                                                     </Button>
                                                     <Button
                                                         size="sm"
@@ -1269,18 +1371,6 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
-                                                        set
-                                                    </Badge>
-                                                    <Input
-                                                        className="h-7 text-xs flex-1"
-                                                        placeholder="Enter value"
-                                                        // value={resource.updateRasterData.value || ''}
-                                                        // onChange={(e) => handleValueChange(e, index)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    />
                                                 </div>
                                             </div>
                                         </div>
@@ -1295,7 +1385,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -1303,7 +1393,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'tide')}
                                 >
                                     {!pageContext.current?.solutionData?.env.tide_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag Tide node here</p>
                                         </div>
@@ -1348,7 +1438,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                 </div>
                                 <div
                                     className={cn(
-                                        "border-2 border-dashed rounded-lg p-4 transition-all duration-200",
+                                        "border-2 border-dashed rounded-lg p-2 transition-all duration-200",
                                         isDragOver ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
                                     )}
                                     onDragOver={handleDragOver}
@@ -1356,7 +1446,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                     onDrop={(e) => handleDrop(e, 'inp')}
                                 >
                                     {!pageContext.current?.solutionData?.env.inp_node_key ? (
-                                        <div className="h-[5vh] flex flex-col justify-center items-center text-slate-400">
+                                        <div className="h-[6vh] flex flex-col justify-center items-center text-slate-400">
                                             <Upload className="w-8 h-8 mb-2" />
                                             <p className="text-sm font-medium mb-1">Drag INP node here</p>
                                         </div>
@@ -1375,16 +1465,15 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                         size="sm"
                                                         variant="ghost"
                                                         className="ml-2 h-6 w-6 p-0 hover:text-amber-300 cursor-pointer"
-                                                    // onClick={(e) => {
-                                                    //     e.stopPropagation()
-                                                    //     toggleVectorVisibility(resource.node_key)
-                                                    // }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            toggleINPVisibility()
+                                                        }}
                                                     >
-                                                        {/* {resource.visible ?
+                                                        {pageContext.current?.inpVisible ?
                                                             <Eye className="h-3 w-3" /> :
                                                             <EyeOff className="h-3 w-3" />
-                                                        } */}
-                                                        <Eye className="h-3 w-3" />
+                                                        }
                                                     </Button>
                                                     <Button
                                                         size="sm"
@@ -1404,10 +1493,6 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {/* 调整INP的透明度 */}
-                                                    {/* 查看管网按钮 */}
                                                 </div>
                                             </div>
                                         </div>
@@ -1444,7 +1529,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className={cn(buttonVariants({ variant: 'outline' }), 'cursor-pointer')}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleResetForm}
                             className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
@@ -1465,7 +1550,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className={cn(buttonVariants({ variant: 'outline' }), 'cursor-pointer')}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleResetDropZone}
                             className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
@@ -1490,7 +1575,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                         )}
                     </div>
                     <DialogFooter>
-                        <DialogClose className='cursor-pointer'>Close</DialogClose>
+                        <DialogClose className={cn(buttonVariants({ variant: 'outline' }), 'cursor-pointer')}>Close</DialogClose>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
