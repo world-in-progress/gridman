@@ -253,8 +253,6 @@ export default function TidesPage({ node }: TidesPageProps) {
                 .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
                 .map(item => [toMinutesOfDay(item.time), item.chaowei])
 
-            console.log(`${date}数据点数量:`, dateData.length);
-
             return {
                 name: date,
                 type: 'line',
@@ -488,7 +486,6 @@ export default function TidesPage({ node }: TidesPageProps) {
                             variant="outline"
                             onClick={() => {
                                 setShowTideDialog(false)
-                                console.log(pageContext.current)
                             }}
                             className='cursor-pointer'
                         >

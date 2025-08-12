@@ -218,7 +218,7 @@ export default function GridsPage({ node }: GridsPageProps) {
             }))
         }
         const response = await createGrid((node as SceneNode), pageContext.current.gridName, gridInfo)
-        console.log(response)
+
         store.get<{ on: Function; off: Function }>('isLoading')!.off()
         setMergeDialogOpen(false)
         clearDrawPatchBounds()

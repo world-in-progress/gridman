@@ -538,7 +538,6 @@ export default function RainfallsPage({ node }: RainfallsPageProps) {
 							variant="outline"
 							onClick={() => {
 								setShowRainfallDialog(false)
-								console.log(pageContext.current)
 							}}
 							className='cursor-pointer'
 						>

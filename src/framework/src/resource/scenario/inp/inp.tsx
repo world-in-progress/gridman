@@ -13,6 +13,8 @@ import { CommonDataProps } from "../rainfall/rainfall"
 export class InpPageContext extends DefaultPageContext {
 
     inpData: CommonDataProps
+    inpOpacity: number
+
     constructor() {
         super()
         this.inpData = {
@@ -20,6 +22,8 @@ export class InpPageContext extends DefaultPageContext {
             type: '',
             data: []
         }
+        this.inpOpacity = 1
+
     }
 
     static async create(node: ISceneNode): Promise<InpPageContext> {

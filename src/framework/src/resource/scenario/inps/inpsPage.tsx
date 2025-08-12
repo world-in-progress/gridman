@@ -1,6 +1,5 @@
+import { useEffect, useRef, useState, useReducer } from 'react'
 import {
-	RotateCcw,
-	CheckCircle,
 	FolderOpen,
 	Info,
 	Plus,
@@ -8,7 +7,7 @@ import {
 	FilePlus2,
 } from "lucide-react"
 import { InpsPageProps } from './types'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
 import { Input } from "@/components/ui/input"
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
@@ -16,8 +15,6 @@ import { InpsPageContext } from './inps'
 import { toast } from 'sonner'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import * as apis from '@/core/apis/apis'
-import { useEffect, useRef, useState, useReducer, useCallback } from 'react'
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
 	AlertDialog,
@@ -30,7 +27,6 @@ import {
 	AlertDialogContent,
 	AlertDialogDescription,
 } from "@/components/ui/alert-dialog"
-import { useTranslation } from 'react-i18next'
 import store from '@/store'
 import {
 	Dialog,
@@ -41,8 +37,7 @@ import {
 	DialogDescription,
 	DialogTrigger,
 } from "@/components/ui/dialog"
-import { CommonDataProps } from "../rainfall/rainfall"
-import { clearSwmmFromMap, loadInpAndRenderSwmm } from "../inp/inpPage"
+import { clearSwmmFromMap, loadInpAndRenderSwmm } from "../inp/utils"
 
 export default function InpsPage({ node }: InpsPageProps) {
 
