@@ -267,12 +267,8 @@ export default function LumPage({ node }: LumPageProps) {
 
                 const featureData = await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)
 
-                console.log(featureData)
-
                 const vectorData = featureData.data as Vectordata
                 const vectorColor = featureColorMap.find(c => c.value === vectorData.color)!.color
-
-                console.log(vectorData)
 
                 const sourceId = `${nodeKey}-source`
                 const layerId = `${nodeKey}-layer`
@@ -771,7 +767,6 @@ export default function LumPage({ node }: LumPageProps) {
                                                                     className="ml-2 h-6 w-6 p-0 hover:text-sky-500 cursor-pointer"
                                                                     onClick={(e) => {
                                                                         handleVectorPin(resource.node_key)
-                                                                        console.log(resource.data.color)
                                                                     }}
                                                                 >
                                                                     <MapPin className="h-3 w-3" />

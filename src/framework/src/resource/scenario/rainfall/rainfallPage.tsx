@@ -528,7 +528,10 @@ export default function RainfallPage({ node }: RainfallPageProps) {
                             <CardTitle className="text-sm text-gray-900 -mb-6">Latest Data</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-2 max-h-80 overflow-y-auto">
+                            <div
+                                className="space-y-2 max-h-80 overflow-y-auto"
+                                style={{ scrollbarWidth: 'none' }}
+                            >
                                 {getFilteredData().slice(-8).reverse().map((item, index) => (
                                     <div key={index} className="flex justify-between items-center py-1 px-2 bg-white rounded text-xs">
                                         <div>

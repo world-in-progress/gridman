@@ -76,9 +76,7 @@ export default function SolutionPage({ node }: SolutionPageProps) {
 
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await SolutionPageContext.create(node)
-        console.log(pageContext.current?.solutionData)
 
-        // 检查是否有未注册的action，如果有则不允许添加新的
         if (pageContext.current?.humanActions && pageContext.current.humanActions.length > 0) {
             const lastAction = pageContext.current.humanActions[pageContext.current.humanActions.length - 1];
             setCanAddAction(lastAction.registered === true);
@@ -111,9 +109,6 @@ export default function SolutionPage({ node }: SolutionPageProps) {
 
         const nodeKey = e.dataTransfer.getData('text/plain')
 
-        console.log(nodeKey)
-
-        // Upload Vector
         if (nodeKey.split('.')[1] === 'vectors') {
             if (pageContext.current?.humanActions[index || 0]?.node_key) {
                 toast.warning('Vector already selected')
@@ -128,33 +123,12 @@ export default function SolutionPage({ node }: SolutionPageProps) {
 
             pageContext.current!.humanActions[index || 0]!.geometry = featureJson.feature_json
 
-            console.log(pageContext.current!.humanActions[index || 0]!.geometry)
-
             store.get<{ on: Function, off: Function }>('isLoading')!.off()
             toast.success('Grid uploaded successfully')
             triggerRepaint()
         } else {
             toast.error('Please select the correct vector in vectors')
         }
-        // Upload Human Action Resource
-        // if (type === 'humanAction') {
-        //     if (nodeKey.split('.')[1] === 'vectors') {
-        //         if (pageContext.current?.humanActions?.[index || 0]?.node_key) {
-        //             toast.warning('Resource already selected')
-        //             return
-        //         }
-
-        //         store.get<{ on: Function, off: Function }>('isLoading')!.on()
-
-        //         pageContext.current!.humanActions![index || 0]!.node_key = nodeKey
-
-        //         store.get<{ on: Function, off: Function }>('isLoading')!.off()
-        //         triggerRepaint()
-        //         toast.success('Resource uploaded successfully')
-        //     } else {
-        //         toast.error('Please select the correct resource in resources')
-        //     }
-        // }
     }
 
     const handlePackageSolution = async () => {
@@ -187,9 +161,6 @@ export default function SolutionPage({ node }: SolutionPageProps) {
 
     const registerHumanAction = async (action: HumanAction) => {
 
-
-        // console.log(featureJson)
-        // 如果是最后一个action，允许添加新的
         const humanAction = {
             node_key: node.key,
             action_type: action.action_type,

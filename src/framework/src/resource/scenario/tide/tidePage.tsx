@@ -35,8 +35,6 @@ export default function TidePage({ node }: TidePageProps) {
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as TidePageContext
 
-        console.log(pageContext.current.tideData)
-
         fetchData()
 
         triggerRepaint()
@@ -81,7 +79,7 @@ export default function TidePage({ node }: TidePageProps) {
                     const [hourStr, minuteStr, secondStr] = rawTime.split(':');
 
                     const year = Number(yearStr || 0);
-                    const month = Number(monthStr || 1) - 1; // Date 构造函数的月份从 0 开始
+                    const month = Number(monthStr || 1) - 1; 
                     const day = Number(dayStr || 1);
                     const hour = Number(hourStr || 0);
                     const minute = Number(minuteStr || 0);
@@ -91,20 +89,18 @@ export default function TidePage({ node }: TidePageProps) {
                     if (isNaN(dt.getTime())) return null;
 
                     return {
-                        date: rawDate, // 用日期做系列名
-                        time: dt.toISOString(), // 用完整时间驱动 time 轴与筛选
+                        date: rawDate, 
+                        time: dt.toISOString(),
                         chaowei: parseFloat(rawValue) || 0,
                     } as TideData;
                 })
                 .filter((v): v is TideData => !!v);
 
-            console.log('解析后的潮位数据:', parsedData.slice(0, 5));
             setData(parsedData);
 
-            // 提取不同的日期值作为系列名
             const uniqueDates = [...new Set(parsedData.map(item => item.date))];
-            console.log('唯一日期值:', uniqueDates);
-            setSelectedData(uniqueDates); // 默认选择所有日期
+
+            setSelectedData(uniqueDates)
 
         } catch (err) {
             setError('加载数据失败，请重试');
@@ -160,7 +156,6 @@ export default function TidePage({ node }: TidePageProps) {
                 .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
                 .map(item => [toMinutesOfDay(item.time), item.chaowei])
 
-            console.log(`${date}数据点数量:`, dateData.length);
 
             return {
                 name: date,

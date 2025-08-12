@@ -123,7 +123,6 @@ export default function PatchInfo({ node }: PatchInfoProps) {
 			padding: 100,
 			duration: 1000
 		})
-		console.log(patchBounds)
 	}
 
 	return (

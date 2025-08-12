@@ -57,8 +57,6 @@ export default function LumsPage({ node }: LumsPageProps) {
 
 	const loadContext = async (node: SceneNode) => {
 
-		console.log(node.children)
-
 		pageContext.current = await node.getPageContext() as LumsPageContext
 
 		const map = store.get<mapboxgl.Map>('map')!

@@ -124,7 +124,6 @@ export default function DemPage({ node }: DemPageProps) {
             const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
 
             const computeBBOX = () => {
-                console.log(pageContext.current)
                 const bbox = pageContext.current!.demInfo!.bbox
                 const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
                 const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
@@ -508,7 +507,6 @@ export default function DemPage({ node }: DemPageProps) {
 
         store.get<{ on: Function, off: Function }>('isLoading')!.on()
         try {
-            console.log(pageContext.current.updateRasterMeta)
             await apis.raster.updateRasterByFeature.fetch({ node_key: node.key, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
             toast.success('DEM successfully updated')
             map.triggerRepaint()

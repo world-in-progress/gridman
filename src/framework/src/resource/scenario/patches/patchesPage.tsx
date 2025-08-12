@@ -138,7 +138,6 @@ export default function PatchesPage({
 
         const pc = pageContext.current
         const coords = drawCoordinates.current!
-        console.log(coords)
         pc.originBounds = [coords.southWest[0], coords.southWest[1], coords.northEast[0], coords.northEast[1]]      // EPSG: 4326
         const drawBounds = pc.originBounds                                                                           // EPSG: 4326
 
@@ -225,7 +224,6 @@ export default function PatchesPage({
         const customEvent = event as CustomEvent<{ coordinates: RectangleCoordinates | null }>
         if (customEvent.detail.coordinates) {
             drawCoordinates.current = customEvent.detail.coordinates
-            console.log(drawCoordinates.current)
             adjustCoords()
             addMapPatchBounds([customEvent.detail.coordinates.southWest[0], customEvent.detail.coordinates.southWest[1], customEvent.detail.coordinates.northEast[0], customEvent.detail.coordinates.northEast[1]], '4326')
         }

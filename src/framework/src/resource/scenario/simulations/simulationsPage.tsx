@@ -90,7 +90,6 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
 
         pageContext.current.solutionData = solutionData.data
         pageContext.current.solutionNodeKey = nodeKey
-        console.log(pageContext.current.solutionData)
         toast.success(`Solution added successfully`);
         triggerRepaint();
     };
@@ -116,8 +115,6 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
             serviceAddress = discoverServiceRes.address
         }
 
-        console.log(serviceAddress)
-
         const solutionEnv = {
             solution_node_key: pageContext.current.solutionNodeKey,
             solution_address: serviceAddress
@@ -137,7 +134,6 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
         }
 
         const buildProcessGroupRes = await apis.simulation.buildProcessGroup.fetch(processGroupMeta, false)
-        console.log(buildProcessGroupRes)
         // return result and group_id
 
         // Step 4: Start simulation
@@ -147,7 +143,6 @@ export default function SimulationsPage({ node }: SimulationsPageProps) {
             simulation_name: pageContext.current.name,
         }
         const startSimulationRes = await apis.simulation.startSimulation.fetch(startSimulationMeta, false)
-        console.log(startSimulationRes)
 
         toast.success('Simulation started');
     };

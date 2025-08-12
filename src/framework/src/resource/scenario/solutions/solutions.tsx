@@ -6,6 +6,8 @@ import { FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import SolutionsPage from "./solutionsPage"
 import SolutionsInformation from "./solutionsInformation"
+import { RasterMeta } from "@/core/apis/types"
+import { CommonDataProps } from "../rainfall/rainfall"
 
 export class SolutionsPageContext extends DefaultPageContext {
     solutionData: {
@@ -22,6 +24,17 @@ export class SolutionsPageContext extends DefaultPageContext {
         }
         action_types: string[]
     }
+    demOpacity: number
+    demInfo: RasterMeta['data'] | null
+    lumOpacity: number
+    lumInfo: RasterMeta['data'] | null
+    inpOpacity: number
+    inpData: any | null
+    gridVisible: boolean
+    demVisible: boolean
+    lumVisible: boolean
+    gateVisible: boolean
+    inpVisible: boolean
 
     constructor() {
         super()
@@ -40,6 +53,17 @@ export class SolutionsPageContext extends DefaultPageContext {
             },
             action_types: [],
         }
+        this.demOpacity = 0.8
+        this.demInfo = null
+        this.lumOpacity = 0.8
+        this.lumInfo = null
+        this.inpOpacity = 1
+        this.inpData = null
+        this.gridVisible = true
+        this.demVisible = true
+        this.lumVisible = true
+        this.gateVisible = true
+        this.inpVisible = true
     }
 
     static async create(node: ISceneNode): Promise<SolutionsPageContext> {

@@ -614,7 +614,6 @@ export default class TerrainByProxyTile {
     }
 
     async updateParams(updateSet) {
-        console.log(updateSet)
         if (!updateSet || typeof updateSet !== 'object') return;
         // 遍历更新参数
         for (const [key, value] of Object.entries(updateSet)) {

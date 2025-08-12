@@ -1,330 +1,35 @@
-import React, { useEffect, useReducer, useRef } from 'react'
-import { InpPageProps, SwmmConduit, SwmmNode, SwmmParseResult, SwmmSubcatchment } from './types'
+import { useState, useEffect, useReducer, useRef } from 'react'
+import { InpPageProps } from './types'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import { SceneNode } from '@/components/resourceScene/scene'
 import { InpPageContext } from './inp'
-import { convertSinglePointCoordinate } from '@/components/mapContainer/utils'
+import { Crosshair, Delete, Fullscreen, GitBranch, Info, MapPin, Eye, EyeOff, X, Upload } from 'lucide-react'
+import { cn } from '@/utils/utils'
+import {
+    AlertDialog,
+    AlertDialogTitle,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogTrigger,
+    AlertDialogDescription,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from "@/components/ui/card"
+import { clearSwmmFromMap, loadInpAndRenderSwmm, enableSwmmIdentify, disableSwmmIdentify, SwmmFeatureInfo, setSwmmOpacity } from './utils'
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Slider } from '@/components/ui/slider'
 import store from '@/store'
-import mapboxgl from 'mapbox-gl'
-
-
-// =============================
-// SWMM INP -> GeoJSON -> Mapbox
-// =============================
-export function parseSwmmInp(inpContent: string): SwmmParseResult {
-    const nodes: SwmmNode[] = []
-    const conduits: SwmmConduit[] = []
-    const linkIdToVertices: Record<string, Array<[number, number]>> = {}
-    const subcatchments: SwmmSubcatchment[] = []
-    const subIdToPolygon: Record<string, Array<[number, number]>> = {}
-
-    let inCoordinates = false
-    let inConduits = false
-    let inVertices = false
-    let inSubcatchments = false
-    let inPolygons = false
-
-    const subIdSet = new Set<string>()
-
-    const lines = inpContent.split(/\r?\n/)
-    for (let rawLine of lines) {
-        let line = rawLine.trim()
-        if (!line || line.startsWith(';;')) continue
-
-        if (line.startsWith('[') && line.endsWith(']')) {
-            const section = line.toUpperCase()
-            inCoordinates = section === '[COORDINATES]'
-            inConduits = section === '[CONDUITS]'
-            inVertices = section === '[VERTICES]'
-            inSubcatchments = section === '[SUBCATCHMENTS]'
-            inPolygons = section === '[POLYGONS]'
-            continue
-        }
-
-        if (inCoordinates) {
-            const parts = line.split(/\s+/)
-            if (parts.length >= 3) {
-                const [id, xStr, yStr] = parts
-                const x = parseFloat(xStr)
-                const y = parseFloat(yStr)
-                if (Number.isFinite(x) && Number.isFinite(y)) {
-                    nodes.push({ id, x, y })
-                }
-            }
-            continue
-        }
-
-        if (inConduits) {
-            const parts = line.split(/\s+/)
-            if (parts.length >= 3) {
-                const [id, fromId, toId] = parts
-                conduits.push({ id, fromId, toId })
-            }
-            continue
-        }
-
-        if (inVertices) {
-            const parts = line.split(/\s+/)
-            if (parts.length >= 3) {
-                const [linkId, xStr, yStr] = parts
-                const x = parseFloat(xStr)
-                const y = parseFloat(yStr)
-                if (!linkIdToVertices[linkId]) linkIdToVertices[linkId] = []
-                if (Number.isFinite(x) && Number.isFinite(y)) {
-                    linkIdToVertices[linkId].push([x, y])
-                }
-            }
-            continue
-        }
-
-        if (inSubcatchments) {
-            const parts = line.split(/\s+/)
-            if (parts.length >= 1) {
-                const id = parts[0]
-                if (id && !subIdSet.has(id)) {
-                    subIdSet.add(id)
-                    subcatchments.push({ id })
-                }
-            }
-            continue
-        }
-
-        if (inPolygons) {
-            const parts = line.split(/\s+/)
-            if (parts.length >= 3) {
-                const [sid, xStr, yStr] = parts
-                const x = parseFloat(xStr)
-                const y = parseFloat(yStr)
-                if (!subIdToPolygon[sid]) subIdToPolygon[sid] = []
-                if (Number.isFinite(x) && Number.isFinite(y)) {
-                    subIdToPolygon[sid].push([x, y])
-                }
-            }
-            continue
-        }
-    }
-
-    for (const conduit of conduits) {
-        if (linkIdToVertices[conduit.id]) {
-            conduit.vertices = linkIdToVertices[conduit.id]
-        }
-    }
-
-    for (const s of subcatchments) {
-        const ring = subIdToPolygon[s.id]
-        if (ring && ring.length > 0) s.polygon = ring
-    }
-
-    return { nodes, conduits, subcatchments }
-}
-
-export function swmmInpToGeoJSON(
-    inpData: SwmmParseResult,
-    fromEPSG?: string,
-    toEPSG: string = '4326'
-): GeoJSON.FeatureCollection {
-    const needProject = !!fromEPSG && fromEPSG !== toEPSG
-
-    const projectPoint = (pt: [number, number]): [number, number] => {
-        if (!needProject || !fromEPSG) return pt
-        return convertSinglePointCoordinate(pt, fromEPSG, toEPSG) as [number, number]
-    }
-
-    const geoJSON: GeoJSON.FeatureCollection = {
-        type: 'FeatureCollection',
-        features: []
-    }
-
-    const nodeIdToProjected: Record<string, [number, number]> = {}
-    for (const node of inpData.nodes) {
-        const coord = projectPoint([node.x, node.y])
-        nodeIdToProjected[node.id] = coord
-        geoJSON.features.push({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: coord },
-            properties: { id: node.id, kind: 'node' }
-        })
-    }
-
-    for (const c of inpData.conduits) {
-        const from = nodeIdToProjected[c.fromId]
-        const to = nodeIdToProjected[c.toId]
-        if (!from || !to) continue
-
-        const lineCoords: Array<[number, number]> = [from]
-        if (c.vertices && c.vertices.length > 0) {
-            for (const v of c.vertices) lineCoords.push(projectPoint(v))
-        }
-        lineCoords.push(to)
-
-        geoJSON.features.push({
-            type: 'Feature',
-            geometry: { type: 'LineString', coordinates: lineCoords },
-            properties: { id: c.id, from: c.fromId, to: c.toId, kind: 'conduit' }
-        })
-    }
-
-    // Subcatchments as Polygons
-    if (inpData.subcatchments && inpData.subcatchments.length > 0) {
-        for (const s of inpData.subcatchments) {
-            if (!s.polygon || s.polygon.length < 3) continue
-            const ring = s.polygon.map(projectPoint)
-            // ensure closed ring
-            const first = ring[0]
-            const last = ring[ring.length - 1]
-            if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first)
-
-            geoJSON.features.push({
-                type: 'Feature',
-                geometry: { type: 'Polygon', coordinates: [ring] },
-                properties: { id: s.id, kind: 'subcatchment' }
-            })
-        }
-    }
-
-    return geoJSON
-}
-
-export function addGeoJSONToMapAsSwmm(
-    geoJSON: GeoJSON.FeatureCollection,
-    idPrefix: string = 'swmm',
-    fit: boolean = true
-): void {
-    const map = store.get<mapboxgl.Map>('map')
-    if (!map) return
-
-    const sourceId = `${idPrefix}-source`
-    const nodesLayerId = `${idPrefix}-nodes`
-    const conduitsLayerId = `${idPrefix}-conduits`
-    const subcatchmentsLayerId = `${idPrefix}-subcatchments`
-
-    const addLayers = () => {
-
-        if (map.getLayer(nodesLayerId)) map.removeLayer(nodesLayerId)
-        if (map.getLayer(conduitsLayerId)) map.removeLayer(conduitsLayerId)
-        if (map.getLayer(subcatchmentsLayerId)) map.removeLayer(subcatchmentsLayerId)
-        if (map.getSource(sourceId)) map.removeSource(sourceId)
-
-        map.addSource(sourceId, { type: 'geojson', data: geoJSON })
-
-        map.addLayer({
-            id: subcatchmentsLayerId,
-            type: 'fill',
-            source: sourceId,
-            filter: ['in', '$type', 'Polygon', 'MultiPolygon'],
-            paint: {
-                'fill-color': '#00bb00',
-                'fill-opacity': 0.25
-            }
-        })
-
-        map.addLayer({
-            id: nodesLayerId,
-            type: 'circle',
-            source: sourceId,
-            filter: ['==', '$type', 'Point'],
-            paint: {
-                'circle-radius': 4,
-                'circle-color': '#007cbf',
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#ffffff'
-            }
-        })
-
-        map.addLayer({
-            id: conduitsLayerId,
-            type: 'line',
-            source: sourceId,
-            filter: ['==', '$type', 'LineString'],
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': '#ff0000', 'line-width': 2 }
-        })
-
-        if (fit) {
-            const coords: Array<[number, number]> = []
-            for (const f of geoJSON.features) {
-                const g = f.geometry
-                if (!g) continue
-                if (g.type === 'Point') {
-                    coords.push((g as GeoJSON.Point).coordinates as [number, number])
-                } else if (g.type === 'LineString') {
-                    coords.push(...((g as GeoJSON.LineString).coordinates as Array<[number, number]>))
-                } else if (g.type === 'Polygon') {
-                    const rings = (g as GeoJSON.Polygon).coordinates
-                    if (rings.length > 0) coords.push(...(rings[0] as Array<[number, number]>))
-                }
-            }
-            if (coords.length > 0) {
-                const bounds = coords.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(coords[0], coords[0]))
-                map.fitBounds(bounds, { padding: 100, duration: 100 })
-            }
-        }
-    }
-
-    if (map.isStyleLoaded()) {
-        addLayers()
-    } else {
-        const timeoutId = setTimeout(() => {
-            if (map.isStyleLoaded()) {
-                addLayers()
-            } else {
-                const retryId = setTimeout(() => { addLayers() }, 100)
-                map.once('style.load', () => {
-                    clearTimeout(retryId)
-                    addLayers()
-                })
-            }
-        }, 100)
-    }
-}
-
-export function clearSwmmFromMap(idPrefix: string = 'swmm'): void {
-    const map = store.get<mapboxgl.Map>('map')
-    if (!map) return
-
-    const sourceId = `${idPrefix}-source`
-    const nodesLayerId = `${idPrefix}-nodes`
-    const conduitsLayerId = `${idPrefix}-conduits`
-    const subcatchmentsLayerId = `${idPrefix}-subcatchments`
-
-    if (map.getLayer(nodesLayerId)) map.removeLayer(nodesLayerId)
-    if (map.getLayer(conduitsLayerId)) map.removeLayer(conduitsLayerId)
-    if (map.getLayer(subcatchmentsLayerId)) map.removeLayer(subcatchmentsLayerId)
-    if (map.getSource(sourceId)) map.removeSource(sourceId)
-}
-
-// Method 1: load INP content and render SWMM on map
-export function loadInpAndRenderSwmm(
-    inpContent: string,
-    options?: {
-        idPrefix?: string;
-        fromEPSG?: string;
-        toEPSG?: string;
-        fit?: boolean
-    }
-): GeoJSON.FeatureCollection {
-    const { idPrefix = 'swmm', fromEPSG, toEPSG = '4326', fit = true } = options || {}
-    const parsed = parseSwmmInp(inpContent)
-    const geo = swmmInpToGeoJSON(parsed, fromEPSG, toEPSG)
-    addGeoJSONToMapAsSwmm(geo, idPrefix, fit)
-    return geo
-}
-
-// Method 2: load INP from url and render SWMM on map
-export async function renderSwmmFromUrl(
-    url: string,
-    options?: { idPrefix?: string; fromEPSG?: string; toEPSG?: string; fit?: boolean }
-): Promise<GeoJSON.FeatureCollection> {
-    const response = await fetch(url)
-    const text = await response.text()
-    return loadInpAndRenderSwmm(text, options)
-}
-//////////////////////////////////////////////////////////////////////////////////
 
 export default function InpPage({ node }: InpPageProps) {
 
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const pageContext = useRef<InpPageContext | null>(null)
+    const [identifyActive, setIdentifyActive] = useState(false)
+    const [selectedFeature, setSelectedFeature] = useState<SwmmFeatureInfo | null>(null)
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -338,6 +43,8 @@ export default function InpPage({ node }: InpPageProps) {
         pageContext.current = await node.getPageContext() as InpPageContext
 
         const inpData = pageContext.current.inpData.data
+
+        console.log(inpData)
 
         loadInpAndRenderSwmm(inpData, {
             fromEPSG: '2326',
@@ -353,9 +60,178 @@ export default function InpPage({ node }: InpPageProps) {
         clearSwmmFromMap()
     }
 
+    const handleDeleteLUM = () => {
+        console.log('delete inp')
+    }
+
+    const fitInpBounds = () => {
+        console.log('fit inp bounds')
+    }
+
+    useEffect(() => {
+        if (identifyActive) {
+            enableSwmmIdentify({ idPrefix: 'swmm', onSelect: setSelectedFeature, showPopup: true })
+        } else {
+            disableSwmmIdentify()
+            setSelectedFeature(null)
+        }
+        return () => {
+            disableSwmmIdentify()
+        }
+    }, [identifyActive])
+
     return (
-        <div className='relative w-full h-full flex flex-col'>
-            <MapContainer node={node} />
+        <div className="w-full h-full flex flex-row bg-gray-50">
+            <div className="w-[20vw] h-full bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl flex flex-col border-r border-slate-200">
+                {/* Header */}
+                <div className="p-6 bg-white border-b border-slate-200">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                            <GitBranch className='w-6 h-6' />
+                        </div>
+                        <div className="flex-1">
+                            <h2 className="text-lg font-semibold text-slate-900">LUM Editor</h2>
+                            <p className="text-sm text-slate-500">Edit Details</p>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant='destructive'
+                                        className='cursor-pointer bg-red-500 hover:bg-red-600 text-white shadow-sm'
+                                    >
+                                        <Delete className="w-4 h-4 rotate-180" />Delete
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure to delete this LUM?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete this LUM.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel className='cursor-pointer border border-gray-300'>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            className='bg-red-500 hover:bg-red-600 cursor-pointer'
+                                            onClick={handleDeleteLUM}
+                                        >
+                                            Confirm
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                                className='cursor-pointer bg-sky-500 hover:bg-sky-600 shadow-sm'
+                                onClick={fitInpBounds}
+                            >
+                                <Fullscreen className="w-4 h-4" />Scale
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    {/* LUM Information Card */}
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardContent>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Info className="w-4 h-4 text-slate-500" />
+                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">LUM Information</span>
+                                <div className="ml-auto">
+                                    <Button
+                                        className={`cursor-pointer shadow-sm h-8 w-8 ${identifyActive ? 'bg-sky-500 hover:bg-sky-600 text-white' : 'bg-slate-300 hover:bg-sky-300'}`}
+                                        onClick={() => {
+                                            setIdentifyActive(!identifyActive)
+                                        }}
+                                        title="Identify SWMM Feature"
+                                    >
+                                        <Crosshair className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="ml-6 space-y-2">
+                                {/* Name */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Name</span>
+                                    <div className="flex items-center gap-2 mr-1">
+                                        <span className="font-semibold text-slate-900">
+                                            {node.name}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* Opacity */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600">Opacity</span>
+                                    <div className="flex items-center gap-2">
+                                        <Slider
+                                            value={[Math.round(pageContext.current?.inpOpacity! * 100)]}
+                                            max={100}
+                                            step={5}
+                                            className='w-36 cursor-pointer'
+                                            onValueChange={(value) => {
+                                                const opacity = Math.round(value[0]) / 100;
+                                                pageContext.current!.inpOpacity = opacity;
+                                                setSwmmOpacity(opacity, 'swmm')
+                                                triggerRepaint();
+                                            }}
+                                        />
+                                        <Badge variant="secondary" className={`w-10 text-xs font-semibold`}>
+                                            {Math.round(pageContext.current?.inpOpacity! * 100)}%
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Feature identification info */}
+                            {identifyActive && selectedFeature && (
+                                <>
+                                    <div className="flex items-center gap-2 mb-2 mt-4 border-t border-slate-100 pt-4">
+                                        <Crosshair className="w-4 h-4 text-slate-500" />
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Feature Identification</span>
+                                    </div>
+                                    <div className="space-y-2 ml-6">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-slate-600">Lng:</span>
+                                            <span className="text-sm font-medium">{selectedFeature.lngLat[0].toFixed(6)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-slate-600">Lat:</span>
+                                            <span className="text-sm font-medium">{selectedFeature.lngLat[1].toFixed(6)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-slate-600">Type:</span>
+                                            <Badge variant="secondary">{selectedFeature.kind}</Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-slate-600">ID:</span>
+                                            <span className="text-sm font-medium">{selectedFeature.id}</span>
+                                        </div>
+                                        {selectedFeature.kind === 'conduit' && (
+                                            <>
+                                                <div className="flex justify-between">
+                                                    <span className="text-sm text-slate-600">From:</span>
+                                                    <span className="text-sm font-medium">{selectedFeature.fromId || '-'}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-sm text-slate-600">To:</span>
+                                                    <span className="text-sm font-medium">{selectedFeature.toId || '-'}</span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
+            {/* Map container placeholder */}
+            <div className="w-full h-full flex-1">
+                <MapContainer node={node} style='w-full h-full' />
+            </div>
         </div>
     )
 }
