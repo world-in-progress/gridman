@@ -1,4 +1,4 @@
-import IAPI, { BaseResponse, SimulationEnv, DiscoverBaseResponse, ProcessGroupResponse, GetSimulationResultBaseRequest, ProcessGroupMeta, CreateSimulationMeta, SimulationResultMeta, SolutionMeta, StartSimulationMeta, StopSimulationMeta } from "./types";
+import IAPI, { BaseResponse, SimulationEnv, DiscoverBaseResponse, GetSimulationResultBaseRequest, ProcessGroupMeta, SimulationResultMeta, SolutionMeta, StartSimulationMeta, StopSimulationMeta, WaterDataResponse, GetWaterDataMeta } from "./types";
 import getPrefix, { getResourcePrefix } from './prefix'
 
 const API_PREFIX = "/api/model/"
@@ -56,9 +56,9 @@ export const discoverProxy: IAPI<string, DiscoverBaseResponse> = {
 }
 
 // Step 3: Clone package: /api/model/clone_package
-export const clonePackage: IAPI<SimulationEnv, string> = {
+export const clonePackage: IAPI<SimulationEnv, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (solution: SimulationEnv, isResource: boolean): Promise<string> => {
+    fetch: async (solution: SimulationEnv, isResource: boolean): Promise<BaseResponse> => {
         try {
             const api = getResourcePrefix(isResource) + clonePackage.api + 'clone_package'
             const response = await fetch(api, {
@@ -73,7 +73,7 @@ export const clonePackage: IAPI<SimulationEnv, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = (await response.json()).task_id
+            const responseData: BaseResponse = await response.json()
             return responseData
         } catch (error) {
             throw new Error(`Failed to clone package: ${error}`)
@@ -82,26 +82,26 @@ export const clonePackage: IAPI<SimulationEnv, string> = {
 }
 
 // Step 4: Get Clone Progress: /api/model/clone_progress/{task_id}
-// export const cloneProgress: IAPI<string, string> = {
-//     api: `${API_PREFIX}`,
-//     fetch: async (task_id: string, isResource: boolean): Promise<string> => {
-//         try {
-//             const api = getResourcePrefix(isResource) + cloneProgress.api + 'model/clone_progress/' + task_id
-//             const response = await fetch(api, {
-//                 method: 'GET',
-//             })
+export const cloneProgress: IAPI<string, string> = {
+    api: `${API_PREFIX}`,
+    fetch: async (task_id: string, isResource: boolean): Promise<string> => {
+        try {
+            const api = getResourcePrefix(isResource) + cloneProgress.api + 'clone_progress/' + task_id
+            const response = await fetch(api, {
+                method: 'GET',
+            })
 
-//             if (!response.ok) {
-//                 throw new Error(`HTTP error! Status: ${response.status}`)
-//             }
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
 
-//             const responseData: string = await response.json()
-//             return responseData
-//         } catch (error) {
-//             throw new Error(`Failed to get clone progress: ${error}`)
-//         }
-//     }
-// }
+            const responseData: string = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to get clone progress: ${error}`)
+        }
+    }
+}
 
 // Step 5: Create Simulation: /api/simulation/create
 // export const createSimulation: IAPI<CreateSimulationMeta, BaseResponse> = {
@@ -131,9 +131,9 @@ export const clonePackage: IAPI<SimulationEnv, string> = {
 // }
 
 // Step 6: Build Process Group: /api/model/build_process_group
-export const buildProcessGroup: IAPI<ProcessGroupMeta, ProcessGroupResponse> = {
+export const buildProcessGroup: IAPI<ProcessGroupMeta, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (process_group: ProcessGroupMeta, isResource: boolean): Promise<ProcessGroupResponse> => {
+    fetch: async (process_group: ProcessGroupMeta, isResource: boolean): Promise<BaseResponse> => {
         try {
             const api = getResourcePrefix(isResource) + buildProcessGroup.api + 'build_process_group'
             const response = await fetch(api, {
@@ -148,7 +148,7 @@ export const buildProcessGroup: IAPI<ProcessGroupMeta, ProcessGroupResponse> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: ProcessGroupResponse = await response.json()
+            const responseData: BaseResponse = await response.json()
             return responseData
         } catch (error) {
             throw new Error(`Failed to build process group: ${error}`)
@@ -182,19 +182,25 @@ export const startSimulation: IAPI<StartSimulationMeta, string> = {
     }
 }
 
-// Step 8: Get Result: /api/simulation/result/{simulation_name}/{step}
-export const getSimulationResult: IAPI<GetSimulationResultBaseRequest, SimulationResultMeta> = {
-    api: `${API_PREFIX}`,
-    fetch: async (request: GetSimulationResultBaseRequest, isResource: boolean): Promise<SimulationResultMeta> => {
+// Step 8: Get Result: /api/simulation/step_result
+export const getSimulationResult: IAPI<GetSimulationResultBaseRequest, BaseResponse> = {
+    api: `/api/simulation/`,
+    fetch: async (simulation: GetSimulationResultBaseRequest, isResource: boolean): Promise<BaseResponse> => {
         try {
-            const api = getResourcePrefix(isResource) + getSimulationResult.api + 'simulation/result'
-            const response = await fetch(`${api}/${request.simulation_name}/${request.step}`, { method: 'GET' })
+            const api = getResourcePrefix(isResource) + getSimulationResult.api + 'step_result'
+            const response = await fetch(api, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(simulation)
+            })
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const simulationResult: SimulationResultMeta = await response.json()
+            const simulationResult: BaseResponse = await response.json()
             return simulationResult
         } catch (error) {
             throw new Error(`Failed to get simulation result: ${error}`)
@@ -202,9 +208,9 @@ export const getSimulationResult: IAPI<GetSimulationResultBaseRequest, Simulatio
     }
 }
 // Step 9: Stop Simulation: /api/model/stop_simulation
-export const stopSimulation: IAPI<StopSimulationMeta, string> = {
+export const stopSimulation: IAPI<StopSimulationMeta, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (simulation_env: StopSimulationMeta, isResource: boolean): Promise<string> => {
+    fetch: async (simulation_env: StopSimulationMeta, isResource: boolean): Promise<BaseResponse> => {
         try {
             const api = getResourcePrefix(isResource) + stopSimulation.api + 'stop_simulation'
             const response = await fetch(api, {
@@ -219,10 +225,31 @@ export const stopSimulation: IAPI<StopSimulationMeta, string> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: string = (await response.json()).result
+            const responseData: BaseResponse = (await response.json()).result
             return responseData
         } catch (error) {
             throw new Error(`Failed to stop simulation: ${error}`)
+        }
+    }
+}
+
+export const getWaterData: IAPI<GetWaterDataMeta, WaterDataResponse> = {
+    api: `/api/simulation/`,
+    fetch: async (params: GetWaterDataMeta, isResource: boolean): Promise<WaterDataResponse> => {
+        try {
+            const api = getResourcePrefix(isResource) + getWaterData.api + `get_water_data/${params.simulation_name}/${params.step}`
+            const response = await fetch(api, {
+                method: 'GET',
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: WaterDataResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to get water data: ${error}`)
         }
     }
 }

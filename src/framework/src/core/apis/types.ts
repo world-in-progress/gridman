@@ -43,11 +43,6 @@ export interface ProcessGroupMeta {
     solution_address: string
 }
 
-export interface ProcessGroupResponse {
-    result: string
-    group_id: string
-}
-
 export interface CreateSimulationMeta {
     name: string
     solution_name: string
@@ -65,6 +60,7 @@ export interface StopSimulationMeta {
 
 export interface GetSimulationResultBaseRequest {
     simulation_name: string
+    simulation_address: string
     step: number
 }
 
@@ -267,7 +263,7 @@ interface AddGateParams {
 }
 
 // 使用联合类型定义 HumanAction
-export type HumanAction = 
+export type HumanAction =
     | {
         action_type: 'add_fence';
         action_id: string;
@@ -287,4 +283,43 @@ export type HumanAction =
 export interface HumanActionsMeta {
     success: boolean
     data: HumanAction[]
+}
+
+export interface TerrainDataResponse {
+    success: boolean
+    data: {
+        terrainMap: string;
+        terrainMapSize: [number, number];
+        terrainHeightMin: number;
+        terrainHeightMax: number;
+        lower_left: [number, number];
+        lower_right: [number, number];
+        upper_right: [number, number];
+        upper_left: [number, number];
+    };
+}
+
+
+export interface WaterDataResponse {
+    success: boolean
+    data: {
+        durationTime: number;
+        waterHuvMaps: string;
+        waterHuvMapsSize: [number, number];
+        waterHeightMin: number;
+        waterHeightMax: number;
+        velocityUMin: number;
+        velocityUMax: number;
+        velocityVMin: number;
+        velocityVMax: number;
+        lower_left: [number, number];
+        lower_right: [number, number];
+        upper_right: [number, number];
+        upper_left: [number, number];
+    };
+}
+
+export interface GetWaterDataMeta {
+    simulation_name: string
+    step: number
 }

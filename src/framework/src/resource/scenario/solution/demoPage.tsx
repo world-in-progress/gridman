@@ -10,6 +10,7 @@ import {
     Shrimp,
     Waves,
     DoorOpen,
+    Play,
 } from "lucide-react"
 import { toast } from 'sonner'
 import * as apis from '@/core/apis/apis'
@@ -21,7 +22,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import type { HumanAction } from '@/core/apis/types';
 import AddFenceForm from './actionForm/AddFenceForm'
 import AddGateForm from './actionForm/AddGateForm'
+import SimulationPanel from './simulationPanel'
 import TransferWaterForm from './actionForm/TransferWaterForm'
+import store from '@/store'
 
 const actionTypes = [
     {
@@ -47,23 +50,27 @@ export default function DemoPage() {
 
     const [, triggerRepaint] = useReducer(x => x + 1, 0)
     const nodeKey = useRef<string | null>(null)
+    const proxyAddress = useRef<string | null>(null)
 
     const [currentActionType, setCurrentActionType] = useState<'add_fence' | 'transfer_water' | 'add_gate' | ''>('');
     const [editingActionId, setEditingActionId] = useState<string | null>(null);
+    const [simulationReady, setSimulationReady] = useState<boolean>(false)
+    const [showSimulationCard, setShowSimulationCard] = useState<boolean>(true)
+
 
     useEffect(() => {
         async function createSolution() {
-            const res = await apis.solution.createSolution.fetch({
+            const solutionRes = await apis.solution.createSolution.fetch({
                 "name": String(Date.now()),
                 "model_type": "flood_pipe",
                 "env": {
-                    "grid_node_key": "root.topo.schemas.64.grids.grid",
-                    "dem_node_key": "root.dems.dem",
-                    "lum_node_key": "root.lums.lum",
-                    "rainfall_node_key": "root.rainfalls.rainfall",
-                    "gate_node_key": "root.gates.gate",
-                    "tide_node_key": "root.tides.tide",
-                    "inp_node_key": "root.inps.inp"
+                    "grid_node_key": "root.topo.schemas.test.grids.test",
+                    "dem_node_key": "root.dems.test",
+                    "lum_node_key": "root.lums.test",
+                    "rainfall_node_key": "root.rainfalls.test",
+                    "gate_node_key": "root.gates.test",
+                    "tide_node_key": "root.tides.test",
+                    "inp_node_key": "root.inps.test"
                 },
                 "action_types": [
                     "add_fence",
@@ -71,12 +78,20 @@ export default function DemoPage() {
                     "add_gate"
                 ]
             }, false)
-            if (!res.success) {
+            if (!solutionRes.success) {
                 toast.error('Failed to create solution')
                 return
             }
 
-            nodeKey.current = res.message
+            nodeKey.current = solutionRes.message
+
+            const discoveryRes = await apis.simulation.discoverProxy.fetch(nodeKey.current, false)
+            if (!discoveryRes.success) {
+                toast.error('Failed to discover proxy')
+                return
+            }
+
+            proxyAddress.current = discoveryRes.address
         }
 
         createSolution()
@@ -94,16 +109,41 @@ export default function DemoPage() {
     }
 
     const handlePackageSolution = async () => {
-        if (!nodeKey.current) {
+        if (!nodeKey.current || !proxyAddress.current) {
             toast.error('No solution created yet')
             return
         }
-        const response = await apis.solution.packageSolution.fetch(nodeKey.current, false)
-        if (response.success) {
-            toast.success('Solution packaged successfully')
-        } else {
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+        const packageSolutionRes = await apis.solution.packageSolution.fetch(nodeKey.current, false)
+        if (!packageSolutionRes.success) {
             toast.error('Failed to package solution')
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+            return
         }
+
+        const clonePackageRes = await apis.simulation.clonePackage.fetch({
+            solution_node_key: nodeKey.current,
+            solution_address: proxyAddress.current,
+        }, false)
+        if (!clonePackageRes.success) {
+            toast.error('Failed to clone package')
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+            return
+        }
+
+        const taskId = clonePackageRes.message
+        const timer = setInterval(async () => {
+            const cloneProgressRes = await apis.simulation.cloneProgress.fetch(taskId, false)
+            const progressNum = Number(cloneProgressRes)
+            if (progressNum === 100) {
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                setSimulationReady(true)
+                toast.success('Simulation ready')
+                clearInterval(timer)
+            }
+        }, 1000)
     }
 
     const handleActionSubmit = async () => {
@@ -321,7 +361,7 @@ export default function DemoPage() {
                                         },
                                         onSubmit: handleActionSubmit
                                     };
-                                    
+
                                     if (action.action_type === 'add_fence') {
                                         return <AddFenceForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
                                     }
@@ -339,21 +379,21 @@ export default function DemoPage() {
                             {currentActionType && (
                                 <>
                                     {currentActionType === 'add_fence' && (
-                                        <AddFenceForm 
+                                        <AddFenceForm
                                             nodeKey={nodeKey.current || ''}
                                             addMode={true}
                                             onSubmit={handleActionSubmit}
                                         />
                                     )}
                                     {currentActionType === 'transfer_water' && (
-                                        <TransferWaterForm 
+                                        <TransferWaterForm
                                             nodeKey={nodeKey.current || ''}
                                             addMode={true}
                                             onSubmit={handleActionSubmit}
                                         />
                                     )}
                                     {currentActionType === 'add_gate' && (
-                                        <AddGateForm 
+                                        <AddGateForm
                                             nodeKey={nodeKey.current || ''}
                                             addMode={true}
                                             onSubmit={handleActionSubmit}
@@ -371,7 +411,7 @@ export default function DemoPage() {
                             onClick={handlePackageSolution}
                         >
                             <CheckCircle className="w-5 h-5" />
-                            Start Simulation
+                            Actions Configured
                         </Button>
                     </div>
                 </div>
@@ -381,6 +421,24 @@ export default function DemoPage() {
             <div className="w-full h-full flex-1">
                 <MapContainer node={null} style='w-full h-full' />
             </div>
+
+            {simulationReady && (
+                <button
+                    className="fixed bottom-6 right-6 z-60 bg-white border border-slate-200 rounded-full shadow-lg p-3 hover:bg-slate-100 transition-colors cursor-pointer"
+                    style={{ display: showSimulationCard ? 'none' : 'block' }}
+                    onClick={() => setShowSimulationCard(true)}
+                    title="Show Visualization Settings"
+                >
+                    <Play className="w-6 h-6 text-slate-600" />
+                </button>
+            )}
+            {(simulationReady && showSimulationCard) && (
+                <SimulationPanel
+                    solutionNodeKey={nodeKey.current || ''}
+                    proxyAddress={proxyAddress.current || ''}
+                    onClose={() => setShowSimulationCard(false)}
+                />
+            )}
         </div >
     )
 }
