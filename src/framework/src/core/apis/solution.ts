@@ -1,5 +1,5 @@
 import getPrefix from "./prefix"
-import IAPI, { BaseResponse, AddHumanActionMeta, DeleteHumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse, UpdateHumanActionMeta } from "./types"
+import IAPI, { BaseResponse, AddHumanActionMeta, DeleteHumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse, UpdateHumanActionMeta, TerrainDataResponse } from "./types"
 
 const API_PREFIX = '/api/solution/'
 
@@ -182,6 +182,28 @@ export const updateHumanAction: IAPI<UpdateHumanActionMeta, BaseResponse> = {
             return responseData
         } catch (error) {
             throw new Error(`Failed to update human action: ${error}`)
+        }
+    }
+}
+
+
+export const getTerrainData: IAPI<string, TerrainDataResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (node_key: string, isResource: boolean): Promise<TerrainDataResponse> => {
+        try {
+            const api = getPrefix(isResource) + getTerrainData.api + 'get_terrain_data/' + node_key
+            const response = await fetch(api, {
+                method: 'GET',
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: TerrainDataResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to get terrain data: ${error}`)
         }
     }
 }
