@@ -51,7 +51,6 @@ export default class FloodsResources {
         // const response = await fetch('http://192.168.31.201:8001/api/solution/get_terrain_data/root.solutions.solution4');
 
         const result = await apis.solution.getTerrainData.fetch(this.nodeKey, false);
-        console.log(result)
 
         if (result.success) {
             // 直接使用后端提供的地形图像路径和角点数据
@@ -82,13 +81,13 @@ export default class FloodsResources {
     // 轮询获取 WaterData
     async fetchWaterDataStep(): Promise<boolean> {
         try {
-            if (this.currentWaterStep >= this.maxStepCount) {
+            if (this.currentWaterStep > this.maxStepCount) {
                 return false;
             }
 
             let stepResultRes;
             let pollCount = 0;
-            const maxPollCount = 600;
+            const maxPollCount = 200;
             const pollInterval = 1000;
 
             do {
@@ -103,6 +102,8 @@ export default class FloodsResources {
 
                     if (pollCount >= maxPollCount) {
                         console.warn(`Max polling count reached for step ${this.currentWaterStep}`);
+                        // 此时当前步长已超越最大步长
+                        this.maxStepCount = this.currentWaterStep - 1;
                         return false;
                     }
 
@@ -162,68 +163,11 @@ export default class FloodsResources {
                         this.renderReadyCallback = null; // 只触发一次
                     }
                 }
-
-                return true;
-            } else {
-                // console.log(`No more water data available at step ${this.currentWaterStep}`);
-                return false;
             }
+            return true
         } catch (error) {
-            console.log(`Error fetching water data step ${this.currentWaterStep}:`, error);
-            this.maxStepCount = this.currentWaterStep;
-            return false;
-        }
-    }
-
-    // 开始轮询
-    async startPolling(onRenderReady?: () => void): Promise<void> {
-        if (this.isPolling) {
-            return;
-        }
-
-        this.renderReadyCallback = onRenderReady || null;
-        this.isPolling = true;
-
-        try {
-            // 首先获取 TerrainData
-            console.log('Starting to fetch terrain data...');
-            await this.fetchTerrainData();
-            console.log('Terrain data fetched, starting water data polling...');
-
-            // 立即进行第一次水体数据获取
-            console.log('Starting first water data fetch...');
-            const firstSuccess = await this.fetchWaterDataStep();
-
-            // 如果第一次成功且还需要更多数据，开始定时轮询
-            if (firstSuccess && this.isPolling) {
-                this.pollingIntervalId = window.setInterval(async () => {
-                    if (!this.isPolling) {
-                        return;
-                    }
-
-                    console.log('Polling for next water data step...');
-                    const success = await this.fetchWaterDataStep();
-                    if (!success) {
-                        // 如果获取失败或没有更多数据，可以选择停止轮询
-                        // this.stopPolling();
-                        console.log('Continuing to poll for more water data...');
-                    }
-                }, 2000); // 每2秒轮询一次
-            }
-
-        } catch (error) {
-            console.error('Error starting polling:', error);
-            this.stopPolling();
-            throw error;
-        }
-    }
-
-    // 停止轮询
-    stopPolling(): void {
-        this.isPolling = false;
-        if (this.pollingIntervalId) {
-            clearInterval(this.pollingIntervalId);
-            this.pollingIntervalId = null;
+            console.warn(error)
+            return true;
         }
     }
 

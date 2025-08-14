@@ -225,7 +225,7 @@ export const stopSimulation: IAPI<StopSimulationMeta, BaseResponse> = {
                 throw new Error(`HTTP error! Status: ${response.status}`)
             }
 
-            const responseData: BaseResponse = (await response.json()).result
+            const responseData: BaseResponse = await response.json()
             return responseData
         } catch (error) {
             throw new Error(`Failed to stop simulation: ${error}`)
