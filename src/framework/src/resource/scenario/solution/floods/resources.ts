@@ -48,40 +48,35 @@ export default class FloodsResources {
         if (this.terrainData) {
             return this.terrainData;
         }
+        // const response = await fetch('http://192.168.31.201:8001/api/solution/get_terrain_data/root.solutions.solution4');
 
-        try {
-            // const response = await fetch('http://192.168.31.201:8001/api/solution/get_terrain_data/root.solutions.solution4');
-            
-            const result = await apis.solution.getTerrainData.fetch(this.nodeKey, false);
-            console.log(result)
+        const result = await apis.solution.getTerrainData.fetch(this.nodeKey, false);
+        console.log(result)
 
-            if (result.success) {
-                // 直接使用后端提供的地形图像路径和角点数据
-                // 按照左下、右下、右上、左上的顺序组装角点数组
-                const terrainCorners: [[number, number], [number, number], [number, number], [number, number]] = [
-                    result.data.lower_left,   // 左下
-                    result.data.lower_right,  // 右下
-                    result.data.upper_right,  // 右上
-                    result.data.upper_left    // 左上
-                ];
+        if (result.success) {
+            // 直接使用后端提供的地形图像路径和角点数据
+            // 按照左下、右下、右上、左上的顺序组装角点数组
+            const terrainCorners: [[number, number], [number, number], [number, number], [number, number]] = [
+                result.data.lower_left,   // 左下
+                result.data.lower_right,  // 右下
+                result.data.upper_right,  // 右上
+                result.data.upper_left    // 左上
+            ];
 
-                this.terrainData = {
-                    terrainMap: result.data.terrainMap,
-                    terrainMapSize: result.data.terrainMapSize,
-                    terrainHeightMin: result.data.terrainHeightMin,
-                    terrainHeightMax: result.data.terrainHeightMax,
-                    terrainCorners3857: terrainCorners,
-                };
+            this.terrainData = {
+                terrainMap: result.data.terrainMap,
+                terrainMapSize: result.data.terrainMapSize,
+                terrainHeightMin: result.data.terrainHeightMin,
+                terrainHeightMax: result.data.terrainHeightMax,
+                terrainCorners3857: terrainCorners,
+            };
 
-                console.log('TerrainData fetched successfully:');
-                return this.terrainData;
-            } else {
-                throw new Error('Failed to fetch terrain data');
-            }
-        } catch (error) {
-            console.error('Error fetching terrain data:', error);
-            throw error;
+            console.log('TerrainData fetched successfully:');
+            return this.terrainData;
+        } else {
+            throw new Error('Failed to fetch terrain data');
         }
+
     }
 
     // 轮询获取 WaterData
@@ -93,8 +88,8 @@ export default class FloodsResources {
 
             let stepResultRes;
             let pollCount = 0;
-            const maxPollCount = 60;
-            const pollInterval = 500;
+            const maxPollCount = 600;
+            const pollInterval = 1000;
 
             do {
                 stepResultRes = await apis.simulation.getSimulationResult.fetch({
@@ -102,27 +97,23 @@ export default class FloodsResources {
                     simulation_address: this.simulationAddress,
                     step: this.currentWaterStep
                 }, true);
-                
+
                 if (!stepResultRes.success) {
-                    console.log(`Step ${this.currentWaterStep} not ready yet, polling... (${pollCount + 1}/${maxPollCount})`);
                     pollCount++;
-                    
+
                     if (pollCount >= maxPollCount) {
                         console.warn(`Max polling count reached for step ${this.currentWaterStep}`);
                         return false;
                     }
-                    
+
                     await new Promise(resolve => setTimeout(resolve, pollInterval));
                 }
             } while (!stepResultRes.success);
-
-            console.log(`Step ${this.currentWaterStep} result ready:`, stepResultRes);
 
             const result = await apis.simulation.getWaterData.fetch({
                 simulation_name: this.simulationName,
                 step: this.currentWaterStep
             }, true);
-            console.log(result)
 
             if (result.success) {
                 // 直接使用后端提供的水体图像路径

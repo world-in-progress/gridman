@@ -64,13 +64,20 @@ export default function DemoPage() {
                 "name": String(Date.now()),
                 "model_type": "flood_pipe",
                 "env": {
-                    "grid_node_key": "root.topo.schemas.test.grids.test",
-                    "dem_node_key": "root.dems.test",
-                    "lum_node_key": "root.lums.test",
-                    "rainfall_node_key": "root.rainfalls.test",
-                    "gate_node_key": "root.gates.test",
-                    "tide_node_key": "root.tides.test",
-                    "inp_node_key": "root.inps.test"
+                    // "grid_node_key": "root.topo.schemas.test.grids.test",
+                    // "dem_node_key": "root.dems.test",
+                    // "lum_node_key": "root.lums.test",
+                    // "rainfall_node_key": "root.rainfalls.test",
+                    // "gate_node_key": "root.gates.test",
+                    // "tide_node_key": "root.tides.test",
+                    // "inp_node_key": "root.inps.test"
+                    "grid_node_key": "root.topo.schemas.1.grids.12",
+                    "dem_node_key": "root.dems.dem3",
+                    "lum_node_key": "root.lums.lum1",
+                    "rainfall_node_key": "root.rainfalls.rainfall0812",
+                    "gate_node_key": "root.gates.gate0812",
+                    "tide_node_key": "root.tides.tide0812",
+                    "inp_node_key": "root.inps.inp0812"
                 },
                 "action_types": [
                     "add_fence",
@@ -351,28 +358,44 @@ export default function DemoPage() {
 
                             {/* Configured Actions List */}
                             <div className="space-y-3">
-                                {actionList.map((action) => {
-                                    const isEditing = editingActionId === action.action_id;
-                                    const commonEditProps = {
-                                        editMode: isEditing,
-                                        onEdit: () => {
-                                            setEditingActionId(action.action_id);
-                                            setCurrentActionType('');
-                                        },
-                                        onSubmit: handleActionSubmit
-                                    };
+                                {actionList.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                                            <Plus className="w-8 h-8 text-slate-400" />
+                                        </div>
+                                        <h3 className="text-sm font-medium text-slate-700 mb-2">No Actions Configured</h3>
+                                        <p className="text-xs text-slate-500 mb-4">
+                                            Click the "Add Action" button above to configure your first human action.
+                                        </p>
+                                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                                            <Info className="w-3 h-3" />
+                                            <span>Actions will appear here once configured</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    actionList.map((action) => {
+                                        const isEditing = editingActionId === action.action_id;
+                                        const commonEditProps = {
+                                            editMode: isEditing,
+                                            onEdit: () => {
+                                                setEditingActionId(action.action_id);
+                                                setCurrentActionType('');
+                                            },
+                                            onSubmit: handleActionSubmit
+                                        };
 
-                                    if (action.action_type === 'add_fence') {
-                                        return <AddFenceForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
-                                    }
-                                    if (action.action_type === 'transfer_water') {
-                                        return <TransferWaterForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
-                                    }
-                                    if (action.action_type === 'add_gate') {
-                                        return <AddGateForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
-                                    }
-                                    return null;
-                                })}
+                                        if (action.action_type === 'add_fence') {
+                                            return <AddFenceForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
+                                        }
+                                        if (action.action_type === 'transfer_water') {
+                                            return <TransferWaterForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
+                                        }
+                                        if (action.action_type === 'add_gate') {
+                                            return <AddGateForm key={action.action_id} nodeKey={nodeKey.current || ''} action={action} {...commonEditProps} />;
+                                        }
+                                        return null;
+                                    })
+                                )}
                             </div>
 
                             {/* Add Action Panel */}
