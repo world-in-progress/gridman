@@ -22,10 +22,10 @@ export default function SimulationPanel({
 
   // 模拟状态管理 - 所有业务逻辑都在组件内部
   const [isSimulationRunning, setIsSimulationRunning] = useState<boolean>(false);
-  const [totalSteps, setTotalSteps] = useState<number>(100);
+  const [totalSteps, setTotalSteps] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const rendererRef = useRef<FloodsRenderer | null>(null)
-  const simulationNodeKey = useRef<string | null>(null)
+  const simulationNameRef = useRef<string | null>(null)
 
   // 动画状态管理
   const [isVisible, setIsVisible] = useState<boolean>(false);
@@ -51,7 +51,7 @@ export default function SimulationPanel({
   // 处理启动模拟
   const handleStartSimulation = async () => {
     const simulationName = String(Date.now())
-    console.log(simulationName)
+    simulationNameRef.current = simulationName
 
     store.get<{ on: Function, off: Function }>('isLoading')!.on()
 
@@ -67,7 +67,7 @@ export default function SimulationPanel({
       return
     }
 
-    simulationNodeKey.current = await apis.simulation.startSimulation.fetch({
+    await apis.simulation.startSimulation.fetch({
       solution_node_key: solutionNodeKey,
       simulation_name: simulationName,
     }, false)
@@ -82,6 +82,7 @@ export default function SimulationPanel({
     const map = store.get<mapboxgl.Map>('map')!
     rendererRef.current = new FloodsRenderer(map, solutionNodeKey, simulationName, simulationAddress)
     await rendererRef.current.init()
+    rendererRef.current.subscribeStepProgress(updateStepProgress)
 
     setIsSimulationRunning(true)
     store.get<{ on: Function, off: Function }>('isLoading')!.off()
@@ -89,10 +90,9 @@ export default function SimulationPanel({
 
   // 处理停止模拟 - 停止时直接重置
   const handleStopSimulation = async () => {
-    if (!simulationNodeKey.current) return
     const stopSimulationRes = await apis.simulation.stopSimulation.fetch({
       solution_node_key: solutionNodeKey,
-      simulation_node_key: simulationNodeKey.current,
+      simulation_node_key: 'root.simulations.' + simulationNameRef.current,
     }, false)
     if (stopSimulationRes.success) {
       setIsSimulationRunning(false)
