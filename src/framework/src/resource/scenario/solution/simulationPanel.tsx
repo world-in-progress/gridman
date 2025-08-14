@@ -45,7 +45,7 @@ export default function SimulationPanel({
 
   const updateStepProgress = (_currentStep: number, _totalSteps: number) => {
     setCurrentStep(_currentStep + 1)
-    setTotalSteps(_totalSteps + 1)
+    setTotalSteps(_totalSteps)
   }
 
   // 处理启动模拟
@@ -96,6 +96,9 @@ export default function SimulationPanel({
     }, false)
     if (stopSimulationRes.success) {
       setIsSimulationRunning(false)
+      rendererRef.current?.stopAll()
+      setCurrentStep(0)
+      setTotalSteps(0)
       toast.success('Simulation stopped')
     } else {
       toast.error('Failed to stop simulation')
