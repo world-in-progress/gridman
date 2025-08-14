@@ -72,7 +72,7 @@ export default function DemoPage() {
                     // "tide_node_key": "root.tides.test",
                     // "inp_node_key": "root.inps.test"
                     "grid_node_key": "root.topo.schemas.1.grids.12",
-                    "dem_node_key": "root.dems.dem3",
+                    "dem_node_key": "root.dems.dem5",
                     "lum_node_key": "root.lums.lum1",
                     "rainfall_node_key": "root.rainfalls.rainfall0812",
                     "gate_node_key": "root.gates.gate0812",

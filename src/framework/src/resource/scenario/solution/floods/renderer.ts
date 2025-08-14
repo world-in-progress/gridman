@@ -188,6 +188,8 @@ export default class FloodsRenderer {
     private currentWaterStep = 0;
     private stepTime: number = 0.0;
     private stepProgressCallback: ((currentStep: number, totalSteps: number) => void) | null = null;
+    private _isWaterPollingActive: boolean = false;
+    private _onSceneUpdateHandler: ((event: SceneUpdateEvent) => void) | null = null;
 
     constructor(map: mapboxgl.Map, nodeKey: string, simulationName: string, simulationAddress: string) {
         this._map = map;
@@ -219,28 +221,11 @@ export default class FloodsRenderer {
     clean() {
         if (this._scene) this._map.removeLayer(this._scene.id);
 
-        // 清理动态更新定时器
-        if ((this as any)._dynamicUpdateInterval) {
-            clearInterval((this as any)._dynamicUpdateInterval);
-            (this as any)._dynamicUpdateInterval = null;
-        }
-
-        // 清理持续轮询定时器
-        if ((this as any)._continuousPollingInterval) {
-            clearInterval((this as any)._continuousPollingInterval);
-            (this as any)._continuousPollingInterval = null;
-        }
-
         // 清理纹理缓存
         this._waterTextures.forEach(texture => {
             texture.dispose();
         });
         this._waterTextures = [];
-
-        // 停止资源轮询
-        if (this._floodsResources) {
-            this._floodsResources.stopPolling();
-        }
     }
 
     async initScene() {
@@ -289,10 +274,10 @@ export default class FloodsRenderer {
                     // 第五步：开始持续的水体数据轮询
                     scope.startContinuousWaterPolling();
 
-                    const onSceneUpdate = function onSceneUpdate(event: SceneUpdateEvent) {
+                    scope._onSceneUpdateHandler = function onSceneUpdate(event: SceneUpdateEvent) {
                         scope.updateSceneTime(event.time, event.delta);
                     };
-                    scope._scene?.addEventListener(SceneUpdateEventType, onSceneUpdate);
+                    scope._scene?.addEventListener(SceneUpdateEventType, scope._onSceneUpdateHandler);
                 }
             },
         });
@@ -420,7 +405,6 @@ export default class FloodsRenderer {
         // 获取统一归一化的坐标
         const { terrainNormalizedCorners } = this.calculateUnifiedNormalizationAndCenter();
         const geometry = this.createGeometryFromCorners(terrainNormalizedCorners, this._config.terrainGeometrySize);
-        console.log(geometry);
         const terrainNormalY = this._config.terrainNormalY;
 
         const terrainUniforms = {
@@ -556,18 +540,14 @@ export default class FloodsRenderer {
 
     // 新增方法：加载初始数据并更新配置
     async loadInitialDataAndUpdateConfig() {
-        console.log('Loading initial terrain and water data...');
 
         // 获取地形数据
         const terrainData = await this._floodsResources.fetchTerrainData();
-        console.log('Initial terrain data loaded:', terrainData);
 
         // 更新配置中的地形相关数据
         this._config.terrainCorners3857 = terrainData.terrainCorners3857;
-        console.log('Updated terrain corners in config:', this._config.terrainCorners3857);
 
         // 手动获取第一批水体数据
-        console.log('Fetching initial water data...');
         const success = await (this._floodsResources as any).fetchWaterDataStep();
         if (success) {
             // 获取初始水体数据
@@ -575,7 +555,6 @@ export default class FloodsRenderer {
 
             // 更新配置中的水体相关数据
             this._config.waterCorners3857 = initialWaterData.waterCorners3857;
-            console.log('Updated water corners in config:', this._config.waterCorners3857);
 
             this.currentStepBeforeWaterData = this._floodsResources.getWaterStepData(0);
             this.currentStepAfterWaterData = this._floodsResources.getWaterStepData(0);
@@ -585,26 +564,27 @@ export default class FloodsRenderer {
 
     }
 
-    // 新增方法：开始持续的水体数据轮询
+    // 开始持续的水体数据轮询
     startContinuousWaterPolling() {
         console.log('Starting continuous water data polling...');
 
-        // 设置较长的帧时长以减少闪烁
-        this._floodsResources.setFrameDuration(10000);
+        this._floodsResources.setFrameDuration(1000);
+        this._isWaterPollingActive = true;
 
         // 开始从远程拉取获取水体数据
         const continuousFetch = async () => {
-            while (true) {
-                const success = await (this._floodsResources as any).fetchWaterDataStep();
+            while (this._isWaterPollingActive) {
+                const isProcessing = await this._floodsResources.fetchWaterDataStep();
+                if (!isProcessing) {
+                    this._isWaterPollingActive = false;
+                }
             }
         };
 
-        // 启动连续获取进程
         continuousFetch();
     }
 
     async updateTerrainResources() {
-        // 使用轮询机制获取的地形数据
         if (this._floodsResources.terrainData) {
             this._terrainData = this._floodsResources.terrainData;
 
@@ -626,7 +606,6 @@ export default class FloodsRenderer {
     }
 
     async updateWaterResources() {
-        // 使用轮询机制获取的水体数据
         try {
             const data = await this._floodsResources.fetchWaterData();
 
@@ -691,70 +670,7 @@ export default class FloodsRenderer {
         uniforms.terrainMapSize.value = new THREE.Vector2(...this._terrainData.terrainMapSize);
     }
 
-    updateWaterUniforms(time: number) {
-        const material = this._waterMesh?.material as THREE.ShaderMaterial;
-        if (!material || !this._waterData || this._waterTextures.length === 0 || !this._terrainData || !this._terrainData.terrainTexture) {
-            return;
-        }
-
-        const numRasters = this._waterTextures.length;
-        if (numRasters < 1) {
-            return;
-        }
-
-        // 使用固定的帧时长进行连续播放
-        const frameDuration = this._floodsResources.getFrameDuration();
-
-        let currIndex = Math.floor(time / frameDuration) % numRasters;
-        let nextIndex = (currIndex + 1) % numRasters;
-        const timeStep = (time % frameDuration) / frameDuration;
-
-        // 确保索引在有效范围内
-        currIndex = Math.max(0, Math.min(currIndex, numRasters - 1));
-        nextIndex = Math.max(0, Math.min(nextIndex, numRasters - 1));
-        // 确保纹理加载完成
-
-        if (!this._waterTextures[currIndex] || !this._waterTextures[nextIndex]) {
-            console.warn('Skipping frame update: textures not fully loaded');
-            return;
-        }
-
-        // 更新uniforms
-        const uniforms = material.uniforms;
-
-        uniforms.time.value = time;
-        uniforms.timeStep.value = timeStep;
-
-        uniforms.terrainMap.value = this._terrainData.terrainTexture;
-        uniforms.minTerrainHeight.value = this._terrainData.terrainHeightMin;
-        uniforms.maxTerrainHeight.value = this._terrainData.terrainHeightMax;
-        uniforms.terrainMapSize.value = new THREE.Vector2(...this._terrainData.terrainMapSize);
-        uniforms.huvMapSize.value = new THREE.Vector2(...this._waterData.waterHuvMapsSize);
-
-        uniforms.huvMapBefore.value = this._waterTextures[currIndex];
-        uniforms.huvMapAfter.value = this._waterTextures[nextIndex];
-
-        // 确保数据数组索引有效
-        if (currIndex < this._waterData.waterHeightMin.length) {
-            uniforms.minWaterHeightBefore.value = this._waterData.waterHeightMin[currIndex];
-            uniforms.maxWaterHeightBefore.value = this._waterData.waterHeightMax[currIndex];
-            uniforms.minVelocityUBefore.value = this._waterData.velocityUMin[currIndex];
-            uniforms.maxVelocityUBefore.value = this._waterData.velocityUMax[currIndex];
-            uniforms.minVelocityVBefore.value = this._waterData.velocityVMin[currIndex];
-            uniforms.maxVelocityVBefore.value = this._waterData.velocityVMax[currIndex];
-        }
-
-        if (nextIndex < this._waterData.waterHeightMin.length) {
-            uniforms.minWaterHeightAfter.value = this._waterData.waterHeightMin[nextIndex];
-            uniforms.maxWaterHeightAfter.value = this._waterData.waterHeightMax[nextIndex];
-            uniforms.minVelocityUAfter.value = this._waterData.velocityUMin[nextIndex];
-            uniforms.maxVelocityUAfter.value = this._waterData.velocityUMax[nextIndex];
-            uniforms.minVelocityVAfter.value = this._waterData.velocityVMin[nextIndex];
-            uniforms.maxVelocityVAfter.value = this._waterData.velocityVMax[nextIndex];
-        }
-    }
-
-    updateWaterUniforms2(time: number, stepStartCallback: () => void) {
+    updateWaterUniforms(time: number, stepStartCallback: () => void) {
         // 使用固定的帧时长进行连续播放
         const frameDuration = this._floodsResources.getFrameDuration();
 
@@ -812,7 +728,7 @@ export default class FloodsRenderer {
     updateSceneTime(time: number, delta: number) {
         this._simulationTime += delta;
         this.stepTime += delta;
-        this.updateWaterUniforms2(this._simulationTime, this.handleWaterStepStart.bind(this));
+        this.updateWaterUniforms(this._simulationTime, this.handleWaterStepStart.bind(this));
     }
 
     handleWaterStepStart() {
@@ -823,7 +739,6 @@ export default class FloodsRenderer {
             this.currentBeforeWaterTexture = this.currentAfterWaterTexture;
             this.currentAfterWaterTexture = this.nextWaterTexture;
         } else {
-            console.log("WaterStepStart!!!")
             // 第一次执行该函数，此时before和after均为第一个步长的数据，需初始化纹理
             const textureUrl = this.currentStepBeforeWaterData?.waterHuvMap;
             if (!textureUrl) {
@@ -855,7 +770,6 @@ export default class FloodsRenderer {
         const newTextureUrl = _nextStepWaterData.waterHuvMap;
         const newTexture = this._textureLoader.load(newTextureUrl,
             () => {
-                console.log("texture of nextStep loaded:" + nextStep)
                 newTexture.premultiplyAlpha = false;
                 newTexture.minFilter = THREE.NearestFilter;
                 newTexture.magFilter = THREE.LinearFilter;
@@ -865,11 +779,10 @@ export default class FloodsRenderer {
                 newTexture.name = newTextureUrl;
                 this.nextWaterTexture = newTexture;
                 this.nextStepWaterData = _nextStepWaterData;
-                console.log(newTexture, this.nextStepWaterData)
             }
         )
-        this.currentWaterStep = nextStep;
         this.stepProgressCallback?.(this.currentWaterStep, this._floodsResources.getStepCount())
+        this.currentWaterStep = nextStep;
     }
 
     subscribeStepProgress(callback: (currentStep: number, totalSteps: number) => void) {
@@ -877,5 +790,18 @@ export default class FloodsRenderer {
         return () => {
             this.stepProgressCallback = null
         }
+    }
+
+    stopAll() {
+        // 停止水体数据轮询
+        this._isWaterPollingActive = false;
+        
+        // 移除场景更新事件监听器，停止updateSceneTime的持续触发
+        if (this._scene && this._onSceneUpdateHandler) {
+            this._scene.removeEventListener(SceneUpdateEventType, this._onSceneUpdateHandler);
+            this._onSceneUpdateHandler = null;
+        }
+        
+        console.log('All polling and scene updates stopped');
     }
 }
