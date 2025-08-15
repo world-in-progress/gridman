@@ -81,6 +81,11 @@ export default class FloodsResources {
     // 轮询获取 WaterData
     async fetchWaterDataStep(): Promise<boolean> {
         try {
+            // 确保轮询状态为true
+            if (!this.isPolling) {
+                this.isPolling = true;
+            }
+
             if (this.currentWaterStep > this.maxStepCount) {
                 return false;
             }
@@ -91,6 +96,12 @@ export default class FloodsResources {
             const pollInterval = 1000;
 
             do {
+                // 检查是否应该停止轮询
+                if (!this.isPolling) {
+                    console.log('Polling stopped by user request');
+                    return false;
+                }
+
                 stepResultRes = await apis.simulation.getSimulationResult.fetch({
                     simulation_name: this.simulationName,
                     simulation_address: this.simulationAddress,
@@ -234,4 +245,7 @@ export default class FloodsResources {
         return this.waterData.waterHuvMaps.length;
     }
 
+    stopPolling() {
+        this.isPolling = false;
+    }
 }

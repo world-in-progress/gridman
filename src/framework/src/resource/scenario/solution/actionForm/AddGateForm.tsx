@@ -570,7 +570,7 @@ export default function AddGateForm({ action, editMode = false, nodeKey, addMode
                     !actionParams.down_longitude || !actionParams.down_latitude || !actionParams.height}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Apply This Action
+                  Confirm
                 </Button>
                 <Button
                   variant="outline"

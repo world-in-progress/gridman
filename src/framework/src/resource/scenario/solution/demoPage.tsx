@@ -430,7 +430,7 @@ export default function DemoPage() {
 
                     <div>
                         <Button
-                            className="w-full bg-sky-500 hover:bg-sky-600 text-white font-medium py-2 text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                            className="w-full bg-gray-700 hover:bg-gray-500 text-white font-medium py-2 text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
                             onClick={handlePackageSolution}
                         >
                             <CheckCircle className="w-5 h-5" />

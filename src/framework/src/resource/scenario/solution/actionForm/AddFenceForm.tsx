@@ -33,8 +33,8 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
   useEffect(() => {
     if (!addMode && action) {
       setActionParams({
-        elevation_delta: String(action.params.elevation_delta),
-        landuse_type: String(action.params.landuse_type)
+        elevation_delta: action.params.elevation_delta ? String(action.params.elevation_delta) : '',
+        landuse_type: action.params.landuse_type ? String(action.params.landuse_type) : ''
       });
     }
   }, [action, addMode]);
@@ -108,8 +108,8 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
   const handleApplyAction = async () => {
     if (nodeKey === '') return
 
-    if (!actionParams.elevation_delta || !actionParams.landuse_type) {
-      toast.error('Please fill in all required fields')
+    if (!actionParams.elevation_delta && !actionParams.landuse_type) {
+      toast.error('Please fill in at least one field')
       return
     }
 
@@ -120,14 +120,23 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
       return
     }
 
+    const params: any = {
+      feature: actionFeature
+    };
+
+    // 根据是否存在动态添加属性
+    if (actionParams.elevation_delta !== '') {
+      params.elevation_delta = Number(actionParams.elevation_delta);
+    }
+
+    if (actionParams.landuse_type !== '') {
+      params.landuse_type = Number(actionParams.landuse_type);
+    }
+    
     const humanAction = {
       node_key: nodeKey,
       action_type: 'add_fence',
-      params: {
-        elevation_delta: Number(actionParams.elevation_delta),
-        landuse_type: Number(actionParams.landuse_type),
-        feature: actionFeature
-      }
+      params: params
     };
 
     store.get<{ on: Function, off: Function }>('isLoading')!.on()
@@ -152,8 +161,8 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
   const handleUpdateAction = async () => {
     if (nodeKey === '') return
 
-    if (!actionParams.elevation_delta || !actionParams.landuse_type) {
-      toast.error('Please fill in all required fields')
+    if (!actionParams.elevation_delta && !actionParams.landuse_type) {
+      toast.error('Please fill in at least one field')
       return
     }
 
@@ -166,16 +175,25 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
 
     store.get<{ on: Function, off: Function }>('isLoading')!.on()
 
+    const updateParams: any = {
+      feature: actionFeature
+    };
+
+    // 根据是否存在动态添加属性
+    if (actionParams.elevation_delta !== '') {
+      updateParams.elevation_delta = Number(actionParams.elevation_delta);
+    }
+
+    if (actionParams.landuse_type !== '') {
+      updateParams.landuse_type = Number(actionParams.landuse_type);
+    }
+
     try {
       const registerResponse = await apis.solution.updateHumanAction.fetch({
         node_key: nodeKey,
         action_id: action!.action_id,
         action_type: 'add_fence',
-        params: {
-          elevation_delta: Number(actionParams.elevation_delta),
-          landuse_type: Number(actionParams.landuse_type),
-          feature: actionFeature
-        }
+        params: updateParams
       }, false);
       store.get<{ on: Function, off: Function }>('isLoading')!.off();
 
@@ -252,7 +270,7 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
         )}
 
         <div>
-          <Label className="text-sm mb-1 block text-slate-500">Elevation Change</Label>
+          <Label className="text-sm mb-1 block text-slate-500">Elevation Change (Optional)</Label>
           <Input
             type="text"
             value={actionParams.elevation_delta}
@@ -264,7 +282,7 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
         </div>
 
         <div>
-          <Label className="text-sm mb-1 block text-slate-500">Land Use Type</Label>
+          <Label className="text-sm mb-1 block text-slate-500">Land Use Type (Optional)</Label>
           <Input
             type="text"
             value={actionParams.landuse_type}
@@ -320,10 +338,10 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
                 <Button
                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 cursor-pointer"
                   onClick={handleApplyAction}
-                  disabled={!actionParams.elevation_delta || !actionParams.landuse_type}
+                  disabled={!actionParams.elevation_delta && !actionParams.landuse_type}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Apply This Action
+                  Confirm
                 </Button>
                 <Button
                   variant="outline"
@@ -339,6 +357,7 @@ export default function AddFenceForm({ action, nodeKey, editMode = false, addMod
                 <Button
                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 cursor-pointer"
                   onClick={handleUpdateAction}
+                  disabled={!actionParams.elevation_delta && !actionParams.landuse_type}
                 >
                   Update This Action
                 </Button>

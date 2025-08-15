@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 import { Combine, Play, Square, X } from "lucide-react";
 import FloodsRenderer from './floods/renderer'
 import * as apis from '@/core/apis/apis'
@@ -20,19 +23,17 @@ export default function SimulationPanel({
   onClose
 }: SimulationPanelProps) {
 
-  // 模拟状态管理 - 所有业务逻辑都在组件内部
   const [isSimulationRunning, setIsSimulationRunning] = useState<boolean>(false);
   const [totalSteps, setTotalSteps] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const [isTerrainVisible, setIsTerrainVisible] = useState<boolean>(true);
+  const [animationSpeed, setAnimationSpeed] = useState<number>(4);
   const rendererRef = useRef<FloodsRenderer | null>(null)
   const simulationNameRef = useRef<string | null>(null)
 
-  // 动画状态管理
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  // 组件挂载时触发动画
   useEffect(() => {
-    // 延迟一小段时间后开始动画，确保组件已渲染
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 100);
@@ -40,7 +41,6 @@ export default function SimulationPanel({
     return () => clearTimeout(timer);
   }, []);
 
-  // 计算进度百分比
   const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
 
   const updateStepProgress = (_currentStep: number, _totalSteps: number) => {
@@ -48,47 +48,65 @@ export default function SimulationPanel({
     setTotalSteps(_totalSteps)
   }
 
-  // 处理启动模拟
-  const handleStartSimulation = async () => {
-    const simulationName = String(Date.now())
-    simulationNameRef.current = simulationName
-
-    store.get<{ on: Function, off: Function }>('isLoading')!.on()
-
-    const buildProcessGroupRes = await apis.simulation.buildProcessGroup.fetch({
-      solution_node_key: solutionNodeKey,
-      simulation_name: simulationName,
-      group_type: 'flood_pipe',
-      solution_address: proxyAddress,
-    }, false)
-    if (!buildProcessGroupRes.success) {
-      toast.error('Failed to build process group')
-      store.get<{ on: Function, off: Function }>('isLoading')!.off()
-      return
+  const handleTerrainVisibilityToggle = (checked: boolean) => {
+    setIsTerrainVisible(checked);
+    if (rendererRef.current) {
+      rendererRef.current.setTerrainVisibility(checked);
     }
-
-    await apis.simulation.startSimulation.fetch({
-      solution_node_key: solutionNodeKey,
-      simulation_name: simulationName,
-    }, false)
-
-    // const discoveryRes = await apis.simulation.discoverProxy.fetch('node.simulations.' + simulationName, false)
-    // if (!discoveryRes.success) {
-    //   toast.error('Failed to discover proxy')
-    //   return
-    // }
-    const simulationAddress = import.meta.env.VITE_MODEL_API_URL + '/api/proxy/relay?node_key=root.simulations.' + simulationName
-
-    const map = store.get<mapboxgl.Map>('map')!
-    rendererRef.current = new FloodsRenderer(map, solutionNodeKey, simulationName, simulationAddress)
-    await rendererRef.current.init()
-    rendererRef.current.subscribeStepProgress(updateStepProgress)
-
-    setIsSimulationRunning(true)
-    store.get<{ on: Function, off: Function }>('isLoading')!.off()
   };
 
-  // 处理停止模拟 - 停止时直接重置
+  const handleAnimationSpeedChange = (speed: number) => {
+    setAnimationSpeed(speed);
+    if (rendererRef.current) {
+      rendererRef.current.setAnimationSpeed(speed);
+    }
+  };
+
+  const handleStartSimulation = async () => {
+    if (rendererRef.current) {
+      rendererRef.current.startAnimation()
+      setIsSimulationRunning(true)
+      setCurrentStep(0)
+    } else {
+      const simulationName = String(Date.now())
+      simulationNameRef.current = simulationName
+
+      store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
+      const buildProcessGroupRes = await apis.simulation.buildProcessGroup.fetch({
+        solution_node_key: solutionNodeKey,
+        simulation_name: simulationName,
+        group_type: 'flood_pipe',
+        solution_address: proxyAddress,
+      }, false)
+      if (!buildProcessGroupRes.success) {
+        toast.error('Failed to build process group')
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        return
+      }
+
+      await apis.simulation.startSimulation.fetch({
+        solution_node_key: solutionNodeKey,
+        simulation_name: simulationName,
+      }, false)
+
+      // const discoveryRes = await apis.simulation.discoverProxy.fetch('node.simulations.' + simulationName, false)
+      // if (!discoveryRes.success) {
+      //   toast.error('Failed to discover proxy')
+      //   return
+      // }
+      const simulationAddress = import.meta.env.VITE_MODEL_API_URL + '/api/proxy/relay?node_key=root.simulations.' + simulationName
+
+      const map = store.get<mapboxgl.Map>('map')!
+      rendererRef.current = new FloodsRenderer(map, solutionNodeKey, simulationName, simulationAddress)
+      await rendererRef.current.init()
+      rendererRef.current.subscribeStepProgress(updateStepProgress)
+
+      setIsSimulationRunning(true)
+      store.get<{ on: Function, off: Function }>('isLoading')!.off()
+    }
+  };
+
   const handleStopSimulation = async () => {
     const stopSimulationRes = await apis.simulation.stopSimulation.fetch({
       solution_node_key: solutionNodeKey,
@@ -98,7 +116,6 @@ export default function SimulationPanel({
       setIsSimulationRunning(false)
       rendererRef.current?.stopAll()
       setCurrentStep(0)
-      setTotalSteps(0)
       toast.success('Simulation stopped')
     } else {
       toast.error('Failed to stop simulation')
@@ -134,37 +151,45 @@ export default function SimulationPanel({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* 控制按钮区域 */}
-        <div className="flex gap-3">
-          <Button
-            className={`flex-1 ${isSimulationRunning
-              ? 'bg-red-500 hover:bg-red-600'
-              : 'bg-green-500 hover:bg-green-600'
-              } text-white font-medium`}
-            onClick={isSimulationRunning ? handleStopSimulation : handleStartSimulation}
-            disabled={false}
-          >
-            {isSimulationRunning ? (
-              <>
-                <Square className="w-4 h-4 mr-2" />
-                Stop Simulation
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                Start Simulation
-              </>
-            )}
-          </Button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">Terrain Layer</span>
+            <Switch
+              checked={isTerrainVisible}
+              onCheckedChange={handleTerrainVisibilityToggle}
+              disabled={!isSimulationRunning}
+              className="cursor-pointer"
+            />
+          </div>
         </div>
 
-        {/* 步长信息显示 */}
         <div className="space-y-3">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-medium text-slate-700">Animation Speed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 w-6 text-right">1</span>
+              <Slider
+                value={[animationSpeed]}
+                min={1}
+                max={40}
+                step={1}
+                className="w-40 cursor-pointer"
+                onValueChange={v => handleAnimationSpeedChange(v[0])}
+                disabled={!isSimulationRunning}
+              />
+              <span className="text-xs text-slate-400 w-6 text-left">40</span>
+              <Badge variant="secondary" className='text-xs text-gray-800'>{animationSpeed}</Badge>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 border-t border-slate-200 pt-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-slate-700">Simulation Progress</span>
           </div>
 
-          {/* 进度条 - 明确显示含义 */}
           <div className="space-y-2">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-slate-500">
@@ -181,7 +206,6 @@ export default function SimulationPanel({
           </div>
         </div>
 
-        {/* 状态信息 */}
         <div className="text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isSimulationRunning ? 'bg-green-500 animate-pulse' : 'bg-slate-400'
@@ -190,6 +214,29 @@ export default function SimulationPanel({
               {isSimulationRunning ? 'Simulation Running...' : 'Simulation Stopped'}
             </span>
           </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            className={`flex-1 ${isSimulationRunning
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-green-500 hover:bg-green-600'
+              } text-white font-medium cursor-pointer`}
+            onClick={isSimulationRunning ? handleStopSimulation : handleStartSimulation}
+            disabled={false}
+          >
+            {isSimulationRunning ? (
+              <>
+                <Square className="w-4 h-4 mr-2" />
+                Stop Simulation
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Start Simulation
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>

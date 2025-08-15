@@ -261,8 +261,8 @@ export default class FloodsRenderer {
                     const group = model.children[0];
 
                     // 第三步：使用更新的配置创建mesh
-                    // scope._terrainMesh = scope.createTerrainMesh();
-                    // group.add(scope._terrainMesh);
+                    scope._terrainMesh = scope.createTerrainMesh();
+                    group.add(scope._terrainMesh);
                     scope._waterMesh = scope.createWaterMesh();
                     group.add(scope._waterMesh);
 
@@ -427,7 +427,6 @@ export default class FloodsRenderer {
 
         // 创建地形网格
         const terrain = new THREE.Mesh(geometry, material);
-        console.log(terrain);
         return terrain;
     }
 
@@ -568,7 +567,7 @@ export default class FloodsRenderer {
     startContinuousWaterPolling() {
         console.log('Starting continuous water data polling...');
 
-        this._floodsResources.setFrameDuration(1000);
+        this._floodsResources.setFrameDuration(5000);
         this._isWaterPollingActive = true;
 
         // 开始从远程拉取获取水体数据
@@ -792,16 +791,36 @@ export default class FloodsRenderer {
         }
     }
 
+    setTerrainVisibility(visible: boolean) {
+        if (this._terrainMesh) {
+            this._terrainMesh.visible = visible;
+        } else {
+            console.warn('Terrain mesh not found, cannot set visibility');
+        }
+    }
+
     stopAll() {
         // 停止水体数据轮询
         this._isWaterPollingActive = false;
+        this._floodsResources.stopPolling();
         
         // 移除场景更新事件监听器，停止updateSceneTime的持续触发
         if (this._scene && this._onSceneUpdateHandler) {
             this._scene.removeEventListener(SceneUpdateEventType, this._onSceneUpdateHandler);
-            this._onSceneUpdateHandler = null;
+            // this._onSceneUpdateHandler = null;
         }
         
         console.log('All polling and scene updates stopped');
+    }
+
+    setAnimationSpeed(speed: number) {
+        this._floodsResources.setFrameDuration(20000 / speed);
+    }
+
+    startAnimation() {
+        this._simulationTime = 0.0;
+        this.stepTime = 0.0;
+        this.currentWaterStep = 0;
+        this._scene?.addEventListener(SceneUpdateEventType, this._onSceneUpdateHandler);
     }
 }
