@@ -461,7 +461,7 @@ export default function TransferWaterForm({ action, nodeKey, editMode = false, a
                            !actionParams.to_longitude || !actionParams.to_latitude || !actionParams.q}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Apply This Action
+                  Confirm
                 </Button>
                 <Button
                   variant="outline"
