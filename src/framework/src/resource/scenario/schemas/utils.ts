@@ -189,7 +189,7 @@ export function pickingFromMap(options?: mapboxgl.MarkerOptions, callback?: (mar
         if (map.getCanvas()) map.getCanvas().style.cursor = ''
 
         // Create marker
-        const marker = new mapboxgl.Marker(options)
+        const marker = new mapboxgl.Marker({ ...options, anchor: 'center' })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .addTo(map)
 

@@ -1,5 +1,5 @@
 import getPrefix from "./prefix"
-import IAPI, { BaseResponse, DeleteHumanActionMeta, HumanAction, HumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse, TerrainDataResponse, UpdateHumanActionMeta } from "./types"
+import IAPI, { AddHumanActionMeta, BaseResponse, DeleteHumanActionMeta, HumanAction, HumanActionMeta, HumanActionsMeta, SolutionMeta, SolutionMetaResponse, TerrainDataResponse, UpdateHumanActionMeta } from "./types"
 
 const API_PREFIX = '/api/solution/'
 
@@ -87,9 +87,9 @@ export const getSolutionByNodeKey: IAPI<string, SolutionMetaResponse> = {
 
 // export const getModelTypeList: IAPI<string , BaseResponse>
 
-export const addHumanAction: IAPI<HumanActionMeta, BaseResponse> = {
+export const addHumanAction: IAPI<AddHumanActionMeta, BaseResponse> = {
     api: `${API_PREFIX}`,
-    fetch: async (humanAction: HumanActionMeta, isRemote: boolean): Promise<BaseResponse> => {
+    fetch: async (humanAction: AddHumanActionMeta, isRemote: boolean): Promise<BaseResponse> => {
         try {
             const api = getPrefix(isRemote) + API_PREFIX + 'add_human_action'
             const response = await fetch(api, {
