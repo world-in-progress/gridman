@@ -2,12 +2,12 @@ import DefaultPageContext from "@/core/context/default"
 import DefaultScenarioNode from "@/core/scenario/default"
 import { ISceneNode } from "@/core/scene/iscene"
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
-import { FilePlus2, Info } from "lucide-react"
+import { FilePlus2, Info, Wrench } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import SolutionsPage from "./solutionsPage"
 import SolutionsInformation from "./solutionsInformation"
 import { RasterMeta } from "@/core/apis/types"
-import { CommonDataProps } from "../rainfall/rainfall"
+import DemoPage from "../solutionD/demoPage"
 
 export class SolutionsPageContext extends DefaultPageContext {
     solutionData: {
@@ -73,7 +73,8 @@ export class SolutionsPageContext extends DefaultPageContext {
 
 export enum SolutionsMenuItem {
     SOLUTION_INFORMATION = 'Solution Information',
-    CREATE_NEW_SOLUTION = 'Create New Solution'
+    CREATE_NEW_SOLUTION = 'Create New Solution',
+    DISPLAY_SOLUTION = 'Display Solution'
 }
 
 export default class SolutionsScenariNode extends DefaultScenarioNode {
@@ -92,6 +93,9 @@ export default class SolutionsScenariNode extends DefaultScenarioNode {
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SolutionsMenuItem.CREATE_NEW_SOLUTION)}>
                     <FilePlus2 className='w-4 h-4' />Create New Solution
                 </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, SolutionsMenuItem.DISPLAY_SOLUTION)}>
+                    <Wrench className='w-4 h-4' />Display Solution
+                </ContextMenuItem>
             </ContextMenuContent>
         )
     }
@@ -106,6 +110,10 @@ export default class SolutionsScenariNode extends DefaultScenarioNode {
                 (nodeSelf as SceneNode).pageId = 'information'
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
                 break
+            case SolutionsMenuItem.DISPLAY_SOLUTION:
+                (nodeSelf as SceneNode).pageId = 'display'
+                    ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
         }
     }
 
@@ -115,6 +123,8 @@ export default class SolutionsScenariNode extends DefaultScenarioNode {
                 return (<SolutionsPage node={nodeSelf} />)
             case 'information':
                 return (<SolutionsInformation />)
+            case 'display':
+                return (<DemoPage />)
             default:
                 return (<SolutionsPage node={nodeSelf} />)
         }

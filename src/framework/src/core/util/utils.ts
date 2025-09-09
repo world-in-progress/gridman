@@ -1,7 +1,7 @@
 import { Callback } from '../types'
 
 export function isWorker(): boolean {
-  return !!self && typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
+    return !!self && typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 }
 
 let id = 1;
@@ -12,7 +12,7 @@ export function uniqueId(): number {
 export function bindAll(fns: string[], context: any): void {
 
     fns.forEach(fn => {
-        if (!context[fn]) return 
+        if (!context[fn]) return
         context[fn] = context[fn].bind(context)
     })
 }
