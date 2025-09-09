@@ -736,7 +736,7 @@ export default function PatchesPage({
                 </div>
             </form>
             <div className='w-3/5 h-full py-4 pr-4'>
-                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
+                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200' />
             </div>
         </div>
     )

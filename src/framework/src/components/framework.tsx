@@ -150,7 +150,7 @@ function FrameworkComponent() {
 
             // Set id for identification
             Object.defineProperty(virtualNode, 'id', {
-                get: function() { return id; }
+                get: function () { return id; }
             });
 
             // Set tab name
@@ -365,7 +365,7 @@ function FrameworkComponent() {
         } else {
             setActiveIconID(node.id)
         }
-        
+
     }, [publicTree, privateTree])
 
     // Handle action after dragging tab on tabBar
@@ -647,16 +647,18 @@ function FrameworkComponent() {
             {/* <div className='main-content-area'> */}
             <div className='flex flex-col flex-1 h-full overflow-hidden'>
                 {/* Fixed TabBar - no horizontal scroll */}
-                <TabBar
-                    focusNode={focusNode as SceneNode | null}
-                    triggerFocus={triggerFocus}
-                    tabs={nodeTabs.current}
-                    localTree={privateTree}
-                    remoteTree={publicTree}
-                    onTabDragEnd={handleTabDragEnd}
-                    onTabClick={handleTabClick}
-                    width={viewportWidth}
-                />
+                {nodeStack.current.length > 0 && (
+                    <TabBar
+                        focusNode={focusNode as SceneNode | null}
+                        triggerFocus={triggerFocus}
+                        tabs={nodeTabs.current}
+                        localTree={privateTree}
+                        remoteTree={publicTree}
+                        onTabDragEnd={handleTabDragEnd}
+                        onTabClick={handleTabClick}
+                        width={viewportWidth}
+                    />
+                )}
 
                 {/* Scrollable content area */}
                 {nodeStack.current.length > 0 && (
@@ -665,7 +667,7 @@ function FrameworkComponent() {
                     >
                         <div className='content-canvas' style={{ width: `${contentWidth}px` }}>
                             {/* ResourcePage */}
-                            <ResourcePage node={focusNode!} menuItem={null}/>
+                            <ResourcePage node={focusNode!} menuItem={null} />
                         </div>
                     </div>
                 )}

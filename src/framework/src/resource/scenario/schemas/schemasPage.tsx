@@ -9,11 +9,11 @@ import { GridSchema } from '@/core/apis/types'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, MapPinPlus, Save, X } from 'lucide-react'
+import { Crosshair, MapPin, MapPinPlus, Save, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import MapContainer from '@/components/mapContainer/mapContainer'
-import { convertCoordinate } from '@/components/mapContainer/utils'
+import { addMapMarker, clearMapMarkers, convertCoordinate } from '@/components/mapContainer/utils'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { validateGridLayers, validateSchemaForm, pickingFromMap } from './utils'
 import { useTranslation } from 'react-i18next'
@@ -48,7 +48,7 @@ export default function SchemasPage({
     node,
 }: SchemasPageProps) {
     //i18
-    const{t,i18n} = useTranslation("schemasPage")
+    const { t, i18n } = useTranslation("schemasPage")
 
     const picking = useRef<{ marker: mapboxgl.Marker | null, cancel: () => void }>({ marker: null, cancel: () => { } })
     const pageContext = useRef<SchemasPageContext>(new SchemasPageContext())
@@ -203,6 +203,15 @@ export default function SchemasPage({
 
         // Update State
         setIsSelectingPoint(true)
+    }
+
+    const handleBasePointDrawing = () => {
+        if (!pageContext.current.basePoint[0] || !pageContext.current.basePoint[1]) return
+
+        const markerCoords = [pageContext.current.basePoint[0], pageContext.current.basePoint[1]] as [number, number]
+
+        clearMapMarkers()
+        addMapMarker(markerCoords)
     }
 
     const handleAddGridLayer = () => {
@@ -463,31 +472,47 @@ export default function SchemasPage({
                                             />
                                         </div>
                                     </div>
-                                    {/* ---------------------- */}
-                                    {/* Base Point Map Picking */}
-                                    {/* ---------------------- */}
-                                    <Button
-                                        type='button'
-                                        onClick={handleBasePointPicking}
-                                        className={`w-[80px] h-[84px] shadow-sm ${isSelectingPoint
-                                            ? 'bg-red-500 hover:bg-red-600'
-                                            : 'bg-blue-500 hover:bg-blue-600'
-                                            } text-white cursor-pointer`}
-                                    >
-                                        <div className='flex flex-col items-center'>
-                                            {isSelectingPoint ? (
-                                                <X className='h-8 w-8 mb-1 font-bold stroke-6' />
-                                            ) : (
+                                    <div className='flex items-center justify-center gap-2'>
+                                        {/* ---------------------- */}
+                                        {/* Base Point Map Drawing */}
+                                        {/* ---------------------- */}
+                                        <Button
+                                            type='button'
+                                            onClick={handleBasePointDrawing}
+                                            disabled={!pageContext.current.basePoint[0] || !pageContext.current.basePoint[1]}
+                                            className={`w-[80px] h-[84px] shadow-sm bg-sky-500 hover:bg-sky-600 text-white cursor-pointer`}
+                                        >
+                                            <div className='flex flex-col items-center'>
                                                 <MapPin className='h-8 w-8 mb-1 stroke-2' />
-                                            )}
-                                            <span>
-                                                {isSelectingPoint
-                                                    ? t('Cancel')
-                                                    : t('Draw')
-                                                }
-                                            </span>
-                                        </div>
-                                    </Button>
+                                                <span>{t('Draw')}</span>
+                                            </div>
+                                        </Button>
+                                        {/* ---------------------- */}
+                                        {/* Base Point Map Picking */}
+                                        {/* ---------------------- */}
+                                        <Button
+                                            type='button'
+                                            onClick={handleBasePointPicking}
+                                            className={`w-[80px] h-[84px] shadow-sm ${isSelectingPoint
+                                                ? 'bg-red-500 hover:bg-red-600'
+                                                : 'bg-blue-500 hover:bg-blue-600'
+                                                } text-white cursor-pointer`}
+                                        >
+                                            <div className='flex flex-col items-center'>
+                                                {isSelectingPoint ? (
+                                                    <X className='h-8 w-8 mb-1 font-bold stroke-6' />
+                                                ) : (
+                                                    <Crosshair className='h-8 w-8 mb-1 stroke-2' />
+                                                )}
+                                                <span>
+                                                    {isSelectingPoint
+                                                        ? t('Cancel')
+                                                        : t('Pick')
+                                                    }
+                                                </span>
+                                            </div>
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                             {/* --------------------- */}
@@ -628,7 +653,7 @@ export default function SchemasPage({
                 </div>
             </form>
             <div className='w-3/5 h-full py-4 pr-4'>
-                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
+                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200' />
             </div>
         </div>
     )
