@@ -712,12 +712,29 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
 
     const handleCreateSolution = async () => {
 
+        if (
+            !pageContext.current?.solutionData.name
+            || !pageContext.current?.solutionData.model_type
+            || !pageContext.current?.solutionData.env.grid_node_key
+            || !pageContext.current?.solutionData.env.dem_node_key
+            || !pageContext.current?.solutionData.env.lum_node_key
+            || !pageContext.current?.solutionData.env.rainfall_node_key
+            || !pageContext.current?.solutionData.env.gate_node_key
+            || !pageContext.current?.solutionData.env.tide_node_key
+            || !pageContext.current?.solutionData.env.inp_node_key
+        ) {
+            toast.error('Please fill in the solution name, model type and resources')
+            return
+        }
+
         const solution = {
-            name: pageContext.current?.solutionData?.name,
-            model_type: pageContext.current?.solutionData?.model_type,
-            env: pageContext.current?.solutionData?.env,
-            action_types: pageContext.current?.solutionData?.action_types,
+            name: pageContext.current?.solutionData.name,
+            model_type: pageContext.current?.solutionData.model_type,
+            env: pageContext.current?.solutionData.env,
+            action_types: pageContext.current?.solutionData.action_types,
         } as SolutionMeta
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
 
         const createSolutionRes = await apis.solution.createSolution.fetch(solution, node.tree.isPublic)
 
@@ -726,11 +743,14 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             await tree.alignNodeInfo(node, true)
             tree.notifyDomUpdate()
 
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
             toast.success('Create Solution Success')
         } else {
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
             toast.error('Create Solution Failed')
         }
 
+        handleResetForm()
     }
 
     const updateLUMOpacity = (opacity: number) => {

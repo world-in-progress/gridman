@@ -25,6 +25,9 @@ import AddGateForm from './actionForm/AddGateForm'
 import SimulationPanel from './simulationPanel'
 import TransferWaterForm from './actionForm/TransferWaterForm'
 import store from '@/store'
+import { ISceneNode } from '@/core/scene/iscene'
+import { SolutionPageContext } from './solution'
+import { SceneNode } from '@/components/resourceScene/scene'
 
 const actionTypes = [
     {
@@ -44,7 +47,7 @@ const actionTypes = [
     }
 ]
 
-export default function DemoPage() {
+export default function DemoPage({ node }: { node: ISceneNode }) {
 
     const [actionList, setActionList] = useState<HumanAction[]>([])
 
@@ -56,6 +59,26 @@ export default function DemoPage() {
     const [editingActionId, setEditingActionId] = useState<string | null>(null);
     const [simulationReady, setSimulationReady] = useState<boolean>(false)
     const [showSimulationCard, setShowSimulationCard] = useState<boolean>(true)
+
+    const pageContext = useRef<SolutionPageContext | null>(null)
+
+    useEffect(() => {
+        loadContext(node as SceneNode)
+
+        return () => {
+            unloadContext()
+        }
+    }, [node])
+
+    const loadContext = async (node: SceneNode) => {
+        pageContext.current = await SolutionPageContext.create(node)
+
+        triggerRepaint()
+    }
+
+    const unloadContext = () => {
+        console.log('组件卸载')
+    }
 
 
     useEffect(() => {
@@ -174,8 +197,8 @@ export default function DemoPage() {
                             <Dam className='w-6 h-6' />
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-md font-semibold text-slate-900">Create New Solution</h2>
-                            <p className="text-sm text-slate-500">New Solution Details</p>
+                            <h2 className="text-md font-semibold text-slate-900">Edit Solution [{pageContext.current?.solutionData?.name}]</h2>
+                            <p className="text-sm text-slate-500">Solution Details</p>
                         </div>
                     </div>
                 </div>
@@ -195,7 +218,7 @@ export default function DemoPage() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">Name</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            WorkShop
+                                            {pageContext.current?.solutionData?.name}
                                         </div>
                                     </div>
                                     {/* Type */}
@@ -260,49 +283,49 @@ export default function DemoPage() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">Grid</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            Yuen Long
+                                            {pageContext.current?.solutionData?.env.grid_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* DEM */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">DEM</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            HK DEM 5m
+                                            {pageContext.current?.solutionData?.env.dem_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* LUM */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">LUM</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            HK LUM 2023
+                                            {pageContext.current?.solutionData?.env.lum_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* Rainfall */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">Rainfall</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            HK Rainfall
+                                            {pageContext.current?.solutionData?.env.rainfall_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* Gate */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">Gate</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            HK Gates
+                                            {pageContext.current?.solutionData?.env.gate_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* Tide */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">Tide</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            HK Tide
+                                            {pageContext.current?.solutionData?.env.tide_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                     {/* INP */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-slate-600">INP</span>
                                         <div className="flex items-center gap-2 mr-1">
-                                            Yuen Long Pipe
+                                            {pageContext.current?.solutionData?.env.inp_node_key.split('.').pop()}
                                         </div>
                                     </div>
                                 </div>

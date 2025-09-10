@@ -111,76 +111,89 @@ export default function DemPage({ node }: DemPageProps) {
     >(initialVisualizationSettings.current);
 
     useEffect(() => {
-        const loadContext = async (node: SceneNode) => {
-            const map = store.get<mapboxgl.Map>('map')
-            if (!map) return
-
-            pageContext.current = await node.getPageContext() as DemPageContext
-
-            const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
-            const minValue = pageContext.current?.demInfo?.min_value
-            const maxValue = pageContext.current?.demInfo?.max_value
-            const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
-
-            const computeBBOX = () => {
-                const bbox = pageContext.current!.demInfo!.bbox
-                const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
-                const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
-                if (LB && TR) {
-                    const bbox84 = [LB.x, LB.y, TR.x, TR.y]
-                    return bbox84
-                } else {
-                    return null
-                }
-            }
-
-            const loadDemLayer = () => {
-                terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
-                map.addLayer(terrainLayer.current);
-                fitDemBounds()
-            }
-
-            bbox84.current = computeBBOX()
-
-            if (!bbox84.current) {
-                toast.error('Failed to get bounding box')
-                store.get<{ on: Function, off: Function }>('isLoading')!.off()
-                return
-            }
-            if (map.isStyleLoaded()) {
-                loadDemLayer()
-            } else {
-                map.once('style.load', () => {
-                    loadDemLayer()
-                })
-            }
-
-            store.get<{ on: Function, off: Function }>('isLoading')!.off()
-            toast.success('DEM loaded successfully')
-            triggerRepaint()
-        }
-
-        const unloadContext = () => {
-            const map = store.get<mapboxgl.Map>('map')
-            if (map) {
-                terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
-
-                pageContext.current?.uploadVectors.forEach(vector => {
-                    if (map.getLayer(`${vector.node_key}-layer`)) {
-                        map.removeLayer(`${vector.node_key}-layer`)
-                    }
-                    if (map.getSource(`${vector.node_key}-source`)) {
-                        map.removeSource(`${vector.node_key}-source`)
-                    }
-                })
-            }
-        }
-
         loadContext(node as SceneNode)
         return () => {
             unloadContext()
         }
     }, [node])
+
+    const loadContext = async (node: SceneNode) => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        pageContext.current = await node.getPageContext() as DemPageContext
+
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
+        const minValue = pageContext.current?.demInfo?.min_value
+        const maxValue = pageContext.current?.demInfo?.max_value
+        const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
+
+        const computeBBOX = () => {
+            const bbox = pageContext.current!.demInfo!.bbox
+            const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
+            const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
+            if (LB && TR) {
+                const bbox84 = [LB.x, LB.y, TR.x, TR.y]
+                return bbox84
+            } else {
+                return null
+            }
+        }
+
+        const loadDemLayer = () => {
+            terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
+            map.addLayer(terrainLayer.current);
+            fitDemBounds()
+        }
+
+        bbox84.current = computeBBOX()
+
+        if (!bbox84.current) {
+            toast.error('Failed to get bounding box')
+            store.get<{ on: Function, off: Function }>('isLoading')!.off()
+            return
+        }
+        if (map.isStyleLoaded()) {
+            loadDemLayer()
+        } else {
+            map.once('style.load', () => {
+                loadDemLayer()
+
+                pageContext.current?.vectorLayers.forEach(vector => {
+                    map.addSource(vector.source, {
+                        type: 'geojson',
+                        data: vector.data
+                    })
+                    map.addLayer({
+                        id: vector.id,
+                        type: 'fill',
+                        source: vector.source,
+                        paint: vector.paint
+                    })
+                })
+            })
+        }
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+        toast.success('DEM loaded successfully')
+        triggerRepaint()
+    }
+
+    const unloadContext = () => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (map) {
+            terrainLayer.current && map.removeLayer(terrainLayer.current?.id)
+
+            pageContext.current?.uploadVectors.forEach(vector => {
+                if (map.getLayer(`${vector.node_key}-layer`)) {
+                    map.removeLayer(`${vector.node_key}-layer`)
+                }
+                if (map.getSource(`${vector.node_key}-source`)) {
+                    map.removeSource(`${vector.node_key}-source`)
+                }
+            })
+        }
+    }
 
     useEffect(() => {
         const map = store.get<mapboxgl.Map>('map')
@@ -299,23 +312,8 @@ export default function DemPage({ node }: DemPageProps) {
                 const vectorData = (await apis.feature.getFeatureData.fetch(nodeKey, node.tree.isPublic)).data as Vectordata
                 const vectorColor = featureColorMap.find(c => c.value === vectorData.color)!.color
 
-                const sourceId = `${nodeKey}-source`
-                const layerId = `${nodeKey}-layer`
+                handleAddVector(nodeKey, vectorData, vectorColor)
 
-                map.addSource(sourceId, {
-                    type: 'geojson',
-                    data: vectorData.feature_json
-                })
-                map.addLayer({
-                    id: layerId,
-                    type: 'fill',
-                    source: sourceId,
-                    paint: {
-                        'fill-outline-color': vectorColor,
-                        'fill-color': vectorColor,
-                        'fill-opacity': 1
-                    }
-                })
                 const updateRasterData: UpdateRasterData = {
                     feature_node_key: nodeKey,
                     operation: 'set',
@@ -336,6 +334,40 @@ export default function DemPage({ node }: DemPageProps) {
         } else {
             toast.error('Please select the correct feature in vectors')
         }
+    }
+
+    const handleAddVector = (nodeKey: string, vectorData: Vectordata, vectorColor: string) => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const sourceId = `${nodeKey}-source`
+        const layerId = `${nodeKey}-layer`
+
+        map.addSource(sourceId, {
+            type: 'geojson',
+            data: vectorData.feature_json
+        })
+        map.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-outline-color': vectorColor,
+                'fill-color': vectorColor,
+                'fill-opacity': 1
+            }
+        })
+
+        pageContext.current?.vectorLayers.push({
+            id: layerId,
+            source: sourceId,
+            data: vectorData.feature_json,
+            paint: {
+                'fill-outline-color': vectorColor,
+                'fill-color': vectorColor,
+                'fill-opacity': 0.5
+            }
+        })
     }
 
     const handleVectorRemove = (index: number) => {

@@ -124,7 +124,7 @@ export default class SolutionsScenariNode extends DefaultScenarioNode {
             case 'information':
                 return (<SolutionsInformation />)
             case 'display':
-                return (<DemoPage />)
+                return (<DemoPage node={nodeSelf} />)
             default:
                 return (<SolutionsPage node={nodeSelf} />)
         }
