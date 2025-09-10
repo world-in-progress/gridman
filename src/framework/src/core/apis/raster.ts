@@ -103,8 +103,8 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
     api: `${API_PREFIX}`,
     fetch: async (samplingInfo: SamplingMeta, isRemote: boolean): Promise<SamplingValueMeta> => {
         try {
-            const { node_key, x, y } = samplingInfo
-            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${node_key}/${x}/${y}`
+            const { node_key, x, y, epsg } = samplingInfo
+            const api = getPrefix(isRemote) + getSamplingValue.api + `/sampling/${node_key}/${x}/${y}/${epsg}`
             const response = await fetch(api, { method: 'GET' })
 
             if (!response.ok) {
@@ -116,7 +116,7 @@ export const getSamplingValue: IAPI<SamplingMeta, SamplingValueMeta> = {
             return responseData
 
         } catch (error) {
-            throw new Error(`Failed to check patch readiness: ${error}`)
+            throw new Error(`Failed to check pixel value: ${error}`)
         }
     }
 }

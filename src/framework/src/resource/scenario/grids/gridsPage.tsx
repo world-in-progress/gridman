@@ -303,11 +303,10 @@ export default function GridsPage({ node }: GridsPageProps) {
                             {/* ----------- */}
                             {/* Patch Drop Zone */}
                             {/* ----------- */}
-                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-6'>
+                            <div className='bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-4'>
                                 <h2 className='text-lg font-semibold mb-2'>
                                     Patch Drop Zone
                                 </h2>
-
                                 <div>
                                     <div
                                         className={cn(
@@ -381,38 +380,37 @@ export default function GridsPage({ node }: GridsPageProps) {
                                         <span>
                                             {pageContext.current.selectedResources.length || 0} {t('patches uploaded')}
                                         </span>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                className="bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
-                                                onClick={handleReset}
-                                                disabled={pageContext.current.selectedResources.length === 0}
-                                            >
-                                                <RotateCcw className="w-4 h-4 " />{t('Reset')}
-                                            </Button>
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                                className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
-                                                onClick={handlePreview}
-                                                disabled={pageContext.current.selectedResources.length === 0}
-                                            >
-                                                <Fullscreen className="w-4 h-4 " />{t('Preview')}
-                                            </Button>
-                                        </div>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            className="bg-red-500 hover:bg-red-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                            onClick={handleReset}
+                                            disabled={pageContext.current.selectedResources.length === 0}
+                                        >
+                                            <RotateCcw className="w-4 h-4 " />{t('Reset')}
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
-                            <Button
-                                type='button'
-                                onClick={handleMerge}
-                                className='bg-green-500 hover:bg-green-600 text-white cursor-pointer'
-                                disabled={pageContext.current.selectedResources.length === 0}
-                            >
-                                <SquaresUnite className='w-4 h-4 ' />
-                                Merge
-                            </Button>
+                            <div className='flex gap-2 justify-end'>
+                                <Button
+                                    variant="default"
+                                    className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white cursor-pointer shadow-sm"
+                                    onClick={handlePreview}
+                                    disabled={pageContext.current.selectedResources.length === 0}
+                                >
+                                    <Fullscreen className="w-4 h-4 " />{t('Preview')}
+                                </Button>
+                                <Button
+                                    type='button'
+                                    onClick={handleMerge}
+                                    className='bg-green-500 hover:bg-green-600 text-white cursor-pointer'
+                                    disabled={pageContext.current.selectedResources.length === 0}
+                                >
+                                    <SquaresUnite className='w-4 h-4 ' />
+                                    Merge
+                                </Button>
+                            </div>
                         </div>
                     </ScrollArea>
                 </div>

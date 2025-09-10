@@ -1,22 +1,22 @@
-import React, { useEffect, useRef, useState, useReducer, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useReducer } from 'react'
 import {
     X,
     Dot,
+    Eye,
     Info,
     Minus,
+    Delete,
+    EyeOff,
+    MapPin,
     Square,
     Upload,
+    Palette,
+    Mountain,
+    Settings,
+    Crosshair,
     RotateCcw,
     Fullscreen,
     SquareCheck,
-    Delete,
-    MapPin,
-    Crosshair,
-    Mountain,
-    Eye,
-    EyeOff,
-    Settings,
-    Palette
 } from "lucide-react"
 import store from '@/store'
 import { toast } from 'sonner'
@@ -32,24 +32,23 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from '@/components/ui/alert-dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import mapboxgl from 'mapbox-gl'
+import { DemPageProps } from './types'
 import * as apis from '@/core/apis/apis'
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import PaletteSelector from './paletteSelector'
+import { DemPageContext, Vectordata } from './dem'
 import { UpdateRasterData } from '@/core/apis/types'
 import { Card, CardContent } from "@/components/ui/card"
-import { convertCoordinate, convertToWGS84 } from '@/components/mapContainer/utils'
-import MapContainer from '@/components/mapContainer/mapContainer'
-import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
-import { Slider } from '@/components/ui/slider'
-import { DemPageProps } from './types'
-import { DemPageContext, Vectordata } from './dem'
 import TerrainByProxyTile from './terrainLayer/terrainLayer'
-import mapboxgl from 'mapbox-gl'
-import PaletteSelector from "./paletteSelector"
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { convertCoordinate } from '@/components/mapContainer/utils'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const REORDER_TYPE = 'application/x-dem-reorder'
 
@@ -196,7 +195,8 @@ export default function DemPage({ node }: DemPageProps) {
                 const response = await apis.raster.getSamplingValue.fetch({
                     node_key: node.key,
                     x: lng,
-                    y: lat
+                    y: lat,
+                    epsg: pageContext.current?.demInfo?.epsg.toString()!
                 }, node.tree.isPublic)
 
                 if (response.success) {
@@ -789,14 +789,14 @@ export default function DemPage({ node }: DemPageProps) {
                                                                     defaultValue="set"
                                                                     onValueChange={(value) => handleOperationTypeChange(index, value)}
                                                                 >
-                                                                    <SelectTrigger className={`text-xs w-25 ${operationColorMap[pageContext.current!.uploadVectors[index].updateRasterData.operation]} cursor-pointer`}>
+                                                                    <SelectTrigger className={`text-xs font-bold w-25 ${operationColorMap[pageContext.current!.uploadVectors[index].updateRasterData.operation]} cursor-pointer`}>
                                                                         <SelectValue placeholder="select an operation" className="cursor-pointer" />
                                                                     </SelectTrigger>
                                                                     <SelectContent className="cursor-pointer">
-                                                                        <SelectItem className="bg-blue-200 text-xs text-gray-800 my-1 cursor-pointer" value="set">Set</SelectItem>
-                                                                        <SelectItem className="bg-green-200 text-xs text-gray-800 my-1 cursor-pointer" value="add">Add</SelectItem>
-                                                                        <SelectItem className="bg-red-200 text-xs text-gray-800 my-1 cursor-pointer" value="subtract">Subtract</SelectItem>
-                                                                        <SelectItem className="bg-orange-200 text-xs text-gray-800 my-1 cursor-pointer" value="max_fill">Max Fill</SelectItem>
+                                                                        <SelectItem className="bg-blue-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="set">Set</SelectItem>
+                                                                        <SelectItem className="bg-green-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="add">Add</SelectItem>
+                                                                        <SelectItem className="bg-red-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="subtract">Subtract</SelectItem>
+                                                                        <SelectItem className="bg-orange-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="max_fill">Max Fill</SelectItem>
                                                                     </SelectContent>
                                                                 </Select>
                                                                 {pageContext.current!.uploadVectors[index].updateRasterData.operation !== 'max_fill'

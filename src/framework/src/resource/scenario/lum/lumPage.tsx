@@ -101,7 +101,8 @@ export default function LumPage({ node }: LumPageProps) {
                 const response = await apis.raster.getSamplingValue.fetch({
                     node_key: node.key,
                     x: lng,
-                    y: lat
+                    y: lat,
+                    epsg: pageContext.current?.lumInfo?.epsg.toString()!
                 }, node.tree.isPublic)
 
                 if (response.success) {
@@ -145,6 +146,19 @@ export default function LumPage({ node }: LumPageProps) {
         } else {
             map.once('style.load', () => {
                 addSourceAndLayer(map, node.key)
+
+                pageContext.current?.vectorLayers.forEach(vector => {
+                    map.addSource(vector.source, {
+                        type: 'geojson',
+                        data: vector.data
+                    })
+                    map.addLayer({
+                        id: vector.id,
+                        type: 'fill',
+                        source: vector.source,
+                        paint: vector.paint
+                    })
+                })
             })
         }
 
@@ -270,28 +284,12 @@ export default function LumPage({ node }: LumPageProps) {
                 const vectorData = featureData.data as Vectordata
                 const vectorColor = featureColorMap.find(c => c.value === vectorData.color)!.color
 
-                const sourceId = `${nodeKey}-source`
-                const layerId = `${nodeKey}-layer`
-
-                map.addSource(sourceId, {
-                    type: 'geojson',
-                    data: vectorData.feature_json
-                })
-                map.addLayer({
-                    id: layerId,
-                    type: 'fill',
-                    source: sourceId,
-                    paint: {
-                        'fill-outline-color': vectorColor,
-                        'fill-color': vectorColor,
-                        'fill-opacity': 0.5
-                    }
-                })
+                handleAddVector(nodeKey, vectorData, vectorColor)
 
                 const updateRasterData: UpdateRasterData = {
                     feature_node_key: nodeKey,
                     operation: 'set',
-                    value: 0
+                    value: null
                 }
                 pageContext.current?.uploadVectors.push({
                     node_key: nodeKey,
@@ -307,6 +305,40 @@ export default function LumPage({ node }: LumPageProps) {
             toast.error('Please select the correct feature in vectors')
         }
         triggerRepaint()
+    }
+
+    const handleAddVector = (nodeKey: string, vectorData: Vectordata, vectorColor: string) => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        const sourceId = `${nodeKey}-source`
+        const layerId = `${nodeKey}-layer`
+
+        map.addSource(sourceId, {
+            type: 'geojson',
+            data: vectorData.feature_json
+        })
+        map.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-outline-color': vectorColor,
+                'fill-color': vectorColor,
+                'fill-opacity': 0.5
+            }
+        })
+
+        pageContext.current?.vectorLayers.push({
+            id: layerId,
+            source: sourceId,
+            data: vectorData.feature_json,
+            paint: {
+                'fill-outline-color': vectorColor,
+                'fill-color': vectorColor,
+                'fill-opacity': 0.5
+            }
+        })
     }
 
     const handleVectorRemove = (index: number) => {
@@ -471,9 +503,15 @@ export default function LumPage({ node }: LumPageProps) {
 
         pageContext.current.updateRasterMeta.updates = []
 
-        pageContext.current.uploadVectors.forEach(vector => {
-            pageContext.current?.updateRasterMeta.updates.push(vector.updateRasterData)
-        })
+        for (const vector of pageContext.current.uploadVectors) {
+            if (vector.updateRasterData.value !== null) {
+                pageContext.current.updateRasterMeta.updates.push(vector.updateRasterData)
+                console.log(vector.updateRasterData)
+            } else {
+                toast.error('Please ensure all the vectors have a value')
+                return
+            }
+        }
 
         store.get<{ on: Function, off: Function }>('isLoading')!.on()
         try {

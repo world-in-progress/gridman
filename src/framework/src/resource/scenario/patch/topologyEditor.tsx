@@ -431,7 +431,7 @@ export default function TopologyEditor(
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
                     if (store.get<boolean>('highSpeedMode')!) {
-                        handleConfirmSelectAll();
+                        handleConfirmSelectAll()
                     } else {
                         setSelectAllDialogOpen(true);
                     }
@@ -1082,7 +1082,7 @@ export default function TopologyEditor(
                 <div className='absolute left-0 z-10'>
                     <CapacityBar gridCore={pageContext.current.gridCore!} />
                 </div>
-                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200 p-2' />
+                <MapContainer node={node} style='w-full h-full rounded-lg shadow-lg bg-gray-200' />
             </div>
         </div>
     )

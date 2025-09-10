@@ -210,6 +210,7 @@ export interface SamplingMeta {
     node_key: string,
     x: number,
     y: number,
+    epsg: string
 }
 
 export interface SamplingValueMeta {
