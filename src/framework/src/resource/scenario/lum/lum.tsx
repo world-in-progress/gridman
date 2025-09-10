@@ -19,6 +19,17 @@ export interface Vectordata {
     feature_json: GeoJSON.FeatureCollection
 }
 
+export interface VectorLayer {
+    id: string
+    source: string
+    data: GeoJSON.FeatureCollection
+    paint: {
+        'fill-outline-color': string
+        'fill-color': string
+        'fill-opacity': number
+    }
+}
+
 export class LumPageContext extends DefaultPageContext {
 
     uploadVectors: {
@@ -30,6 +41,7 @@ export class LumPageContext extends DefaultPageContext {
     updateRasterMeta: UpdateRasterMeta
     lumInfo: RasterMeta['data'] | null
     rasterOpacity: number
+    vectorLayers: VectorLayer[]
 
     constructor() {
         super()
@@ -40,6 +52,7 @@ export class LumPageContext extends DefaultPageContext {
         }
         this.lumInfo = null
         this.rasterOpacity = 0.8
+        this.vectorLayers = []
     }
 
     static async create(node: ISceneNode): Promise<LumPageContext> {

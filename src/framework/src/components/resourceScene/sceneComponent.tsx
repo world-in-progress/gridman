@@ -1,26 +1,20 @@
-import React, { useState, useEffect, useCallback, useMemo, use, useRef, useReducer } from 'react'
-import { SceneTree } from './scene'
-import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
+import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react'
 import {
-    ContextMenu,
-    ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import {
+    Folder,
+    FileText,
+    CloudCheck,
+    FolderOpen,
     ChevronDown,
     ChevronRight,
-    Folder,
-    FolderOpen,
-    FileText,
-    FilePlus2,
-    FileType2,
     CloudDownload,
-    CloudCheck,
 } from 'lucide-react'
 import { cn } from '@/utils/utils'
-import { Button } from '../ui/button'
-import { useTranslation } from 'react-i18next';
+import { SceneTree } from './scene'
+import { useTranslation } from 'react-i18next'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { ISceneNode, ISceneTree } from '@/core/scene/iscene'
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 
 
 
@@ -147,28 +141,29 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                         draggable={!isFolder} // Only allow dragging files, not folders
                         onDragStart={(e) => {
                             if (!isFolder) {
-                                // 只传递节点ID，不需要整个JSON对象
                                 e.dataTransfer.setData('text/plain', node.key);
                                 e.dataTransfer.effectAllowed = 'copy';
                             }
                         }}
                     >
-                        {isFolder ? (
-                            <>
-                                {isExpanded ? (
-                                    <ChevronDown className='w-4 h-4 mr-1' />
-                                ) : (
-                                    <ChevronRight className='w-4 h-4 mr-1' />
-                                )}
-                                {isExpanded ? (
-                                    <FolderOpen className='w-4 h-4 mr-2 text-blue-400' />
-                                ) : (
-                                    <Folder className='w-4 h-4 mr-2 text-blue-400' />
-                                )}
-                            </>
-                        ) : (
-                            <FileText className='w-4 h-4 mr-2 ml-3 text-gray-400' />
-                        )}
+                        <div className='ml-2 flex'>
+                            {isFolder ? (
+                                <>
+                                    {isExpanded ? (
+                                        <ChevronDown className='w-4 h-4 mr-1' />
+                                    ) : (
+                                        <ChevronRight className='w-4 h-4 mr-1' />
+                                    )}
+                                    {isExpanded ? (
+                                        <FolderOpen className='w-4 h-4 mr-2 text-blue-400' />
+                                    ) : (
+                                        <Folder className='w-4 h-4 mr-2 text-blue-400' />
+                                    )}
+                                </>
+                            ) : (
+                                <FileText className='w-4 h-4 mr-2 ml-3 text-gray-400' />
+                            )}
+                        </div>
                         <span>{node.name}</span>
                         {!isFolder && tree.isPublic &&
                             <button
@@ -210,8 +205,8 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, ti
 
     return (
         <>
-            <div className=' z-10 bg-[#2A2C33] py-1 pl-1 text-sm font-semibold text-gray-200 ml-1'>
-                {t(title)}
+            <div className='z-10 bg-[#2A2C33] py-1 pl-1 text-sm font-semibold text-gray-200'>
+                <span className='ml-2'>{t(title)}</span>
             </div>
             <NodeRenderer key={tree!.root.id} node={tree!.root} privateTree={privateTree!} publicTree={publicTree!} depth={0} triggerFocus={triggerFocus} />
         </>
@@ -295,20 +290,16 @@ export default function ResourceTreeComponent({
     return (
         <ScrollArea className='h-full bg-[#252526] overflow-hidden'>
             <div className='w-full bg-[#252526]'>
-                <div className='pl-2'>
-                    <div className='text-sm font-semibold text-gray-400 py-2 uppercase tracking-wide'>
-                        {t('EXPLORER')}
-                    </div>
-                    {privateTree && (
-                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} triggerFocus={triggerFocus} />
-                    )}
+                <div className='text-sm font-semibold text-gray-400 py-2 ml-2 uppercase tracking-wide'>
+                    {t('EXPLORER')}
                 </div>
+                {privateTree && (
+                    <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Private' isPublic={false} triggerFocus={triggerFocus} />
+                )}
                 <Separator className='my-2 bg-[#585858] w-full' />
-                <div className='pl-2'>
-                    {publicTree && (
-                        <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} triggerFocus={triggerFocus} />
-                    )}
-                </div>
+                {publicTree && (
+                    <TreeRenderer privateTree={privateTree} publicTree={publicTree} title='Public' isPublic={true} triggerFocus={triggerFocus} />
+                )}
             </div>
         </ScrollArea>
     )
