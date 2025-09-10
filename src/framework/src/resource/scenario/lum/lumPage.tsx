@@ -821,11 +821,11 @@ export default function LumPage({ node }: LumPageProps) {
                                                                 </Button>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <Badge variant="outline" className="text-xs shrink-0 bg-green-200 text-gray-800">
-                                                                    set
+                                                                <Badge variant="outline" className="text-xs font-bold h-8 shrink-0 bg-green-200 text-gray-800">
+                                                                    Set
                                                                 </Badge>
                                                                 <Input
-                                                                    className="h-7 text-xs flex-1"
+                                                                    className="h-8 text-xs flex-1"
                                                                     placeholder="Enter value"
                                                                     value={resource.updateRasterData.value || ''}
                                                                     onChange={(e) => handleValueChange(e, index)}

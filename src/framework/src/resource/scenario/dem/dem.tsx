@@ -11,6 +11,7 @@ import DemPage from "./demPage";
 import * as apis from '@/core/apis/apis'
 import DemInformation from "./demInformation";
 import { toast } from "sonner";
+import { VectorLayer } from "../lum/lum";
 
 export interface Vectordata {
     name: string,
@@ -32,6 +33,7 @@ export class DemPageContext extends DefaultPageContext {
     updateRasterMeta: UpdateRasterMeta
     demInfo: RasterMeta['data'] | null
     rasterOpacity: number
+    vectorLayers: VectorLayer[]
 
     constructor() {
         super()
@@ -42,6 +44,7 @@ export class DemPageContext extends DefaultPageContext {
         }
         this.demInfo = null
         this.rasterOpacity = 0.8
+        this.vectorLayers = []
     }
 
     static async create(node: ISceneNode): Promise<DemPageContext> {

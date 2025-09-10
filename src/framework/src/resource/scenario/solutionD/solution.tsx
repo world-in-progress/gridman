@@ -18,6 +18,7 @@ export interface HumanAction {
     elevation_delta: string;
     landuse_type: string;
     geometry: any
+    registered: boolean
 }
 
 export class SolutionPageContext extends DefaultPageContext {

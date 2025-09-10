@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import SolutionPage from "./solutionPage"
 import SolutionInformation from "./solutionInformation"
 import { SolutionMeta } from "@/core/apis/types"
+import DemoPage from "../solutionD/demoPage"
 
 export interface HumanAction {
     id: string;
@@ -105,7 +106,8 @@ export default class SolutionScenarioNode extends DefaultScenarioNode {
         switch ((nodeSelf as SceneNode).pageId) {
             case 'default':
                 return (
-                    <SolutionPage node={nodeSelf} />
+                    // <SolutionPage node={nodeSelf} />
+                    <DemoPage node={nodeSelf} />
                 )
             case 'information':
                 return (

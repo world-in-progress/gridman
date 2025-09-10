@@ -538,8 +538,7 @@ export default function SolutionPage({ node }: SolutionPageProps) {
                                                                 onDragOver={handleDragOver}
                                                                 onDragLeave={handleDragLeave}
                                                                 onDrop={(e) => {
-                                                                    handleDrop(e, index);
-                                                                    // 这里需要实现处理人工动作的拖放功能
+                                                                    handleDrop(e, index)
                                                                 }}
                                                             >
                                                                 {!action.node_key ? (

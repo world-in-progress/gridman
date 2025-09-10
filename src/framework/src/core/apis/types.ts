@@ -65,6 +65,7 @@ export interface StopSimulationMeta {
 
 export interface GetSimulationResultBaseRequest {
     simulation_name: string
+    simulation_address: string
     step: number
 }
 
