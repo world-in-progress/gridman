@@ -102,7 +102,7 @@ export default function LumPage({ node }: LumPageProps) {
                     node_key: node.key,
                     x: lng,
                     y: lat,
-                    epsg: pageContext.current?.lumInfo?.epsg.toString()!
+                    epsg: '4326'
                 }, node.tree.isPublic)
 
                 if (response.success) {

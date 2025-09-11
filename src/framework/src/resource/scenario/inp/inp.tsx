@@ -3,12 +3,13 @@ import DefaultScenarioNode from "@/core/scenario/default"
 import { ISceneNode } from "@/core/scene/iscene"
 import * as apis from '@/core/apis/apis'
 import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu"
-import { FilePlus2, Info } from "lucide-react"
+import { Delete, FilePlus2, Info } from "lucide-react"
 import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import InpPage from "./inpPage"
 import InpInformation from "./inpInformation"
 import store from "@/store"
 import { CommonDataProps } from "../rainfall/rainfall"
+import { toast } from "sonner"
 
 export class InpPageContext extends DefaultPageContext {
 
@@ -47,7 +48,8 @@ export class InpPageContext extends DefaultPageContext {
 
 export enum InpMenuItem {
     INP_INFORMATION = 'Inp Information',
-    CHECK_THIS_INP = 'Check This Inp'
+    CHECK_THIS_INP = 'Check This Inp',
+    DELETE_THIS_INP = 'Delete This Inp'
 }
 
 export default class InpScenariNode extends DefaultScenarioNode {
@@ -64,11 +66,15 @@ export default class InpScenariNode extends DefaultScenarioNode {
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, InpMenuItem.CHECK_THIS_INP)}>
                     <FilePlus2 className='w-4 h-4' />Check This Inp
                 </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => { handleContextMenu(nodeSelf, InpMenuItem.DELETE_THIS_INP) }}>
+                    <Delete className='w-4 h-4 text-white rotate-180' />
+                    <span className='text-white'>Delete This Inp</span>
+                </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
+    async handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): Promise<void> {
         switch (menuItem) {
             case InpMenuItem.CHECK_THIS_INP:
                 (nodeSelf as SceneNode).pageId = 'default'
@@ -77,6 +83,17 @@ export default class InpScenariNode extends DefaultScenarioNode {
             case InpMenuItem.INP_INFORMATION:
                 (nodeSelf as SceneNode).pageId = 'information'
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
+            case InpMenuItem.DELETE_THIS_INP:
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+                const deleteResponse = await apis.common.deleteCommonData.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                if (deleteResponse.success) {
+                    await(nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    toast.success(deleteResponse.message)
+                } else {
+                    toast.error(deleteResponse.message)
+                }
                 break
         }
     }

@@ -49,6 +49,7 @@ import MapContainer from '@/components/mapContainer/mapContainer'
 import CustomLayerGroup from '@/components/mapContainer/customLayerGroup'
 import TopologyLayer from '@/components/mapContainer/TopologyLayer'
 import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
+import { useSettingsStore } from "@/components/settingPage/settingStore"
 import { GridCheckingInfo, TopologyEditorProps, TopologyOperationType } from './types'
 
 const topologyTips = [
@@ -104,6 +105,8 @@ export default function TopologyEditor(
 
     const pageContext = useRef<PatchPageContext>(new PatchPageContext())
     const gridInfo = useRef<GridCheckingInfo | null>(null)
+
+    const highSpeedMode = useSettingsStore(state => state.highSpeedMode)
 
     useEffect(() => {
         const map = store.get<mapboxgl.Map>('map')!
@@ -311,15 +314,17 @@ export default function TopologyEditor(
     }
 
     const handleSelectAllClick = () => {
-        if (store.get<boolean>('highSpeedMode')!) {
+        if (highSpeedMode) {
             handleConfirmSelectAll();
+            return;
         }
         setSelectAllDialogOpen(true);
     };
 
     const handleDeleteSelectClick = () => {
-        if (store.get<boolean>('highSpeedMode')!) {
+        if (highSpeedMode) {
             handleConfirmDeleteSelect();
+            return;
         }
         setDeleteSelectDialogOpen(true);
     };
@@ -366,7 +371,7 @@ export default function TopologyEditor(
     }, [activeTopologyOperation, topologyLayer]);
 
     const onTopologyOperationClick = (operationType: string) => {
-        if (store.get<boolean>('highSpeedMode')! && operationType !== null) {
+        if (highSpeedMode && operationType !== null) {
             switch (operationType) {
                 case 'subdivide':
                     topologyLayer!.executeSubdivideGrids();
@@ -430,7 +435,7 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'A' || event.key === 'a') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedMode')!) {
+                    if (highSpeedMode) {
                         handleConfirmSelectAll()
                     } else {
                         setSelectAllDialogOpen(true);
@@ -438,7 +443,7 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'C' || event.key === 'c') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedMode')!) {
+                    if (highSpeedMode) {
                         handleConfirmDeleteSelect();
                     } else {
                         setDeleteSelectDialogOpen(true);
@@ -462,7 +467,7 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'S' || event.key === 's') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedMode')!) {
+                    if (highSpeedMode) {
                         topologyLayer!.executeSubdivideGrids();
                     } else {
                         setActiveTopologyOperation('subdivide');
@@ -470,16 +475,15 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'M' || event.key === 'm') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedMode')!) {
+                    if (highSpeedMode) {
                         topologyLayer!.executeMergeGrids();
                     } else {
                         setActiveTopologyOperation('merge');
                     }
-                    setActiveTopologyOperation('merge');
                 }
                 if (event.key === 'D' || event.key === 'd') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedModeState')!) {
+                    if (highSpeedMode) {
                         topologyLayer!.executeDeleteGrids();
                     } else {
                         setActiveTopologyOperation('delete');
@@ -487,7 +491,7 @@ export default function TopologyEditor(
                 }
                 if (event.key === 'R' || event.key === 'r') {
                     event.preventDefault();
-                    if (store.get<boolean>('highSpeedModeState')!) {
+                    if (highSpeedMode) {
                         topologyLayer!.executeRecoverGrids();
                     } else {
                         setActiveTopologyOperation('recover');
@@ -505,10 +509,10 @@ export default function TopologyEditor(
         setPickingTab,
         handleConfirmDeleteSelect,
         handleConfirmSelectAll,
-        // handleFeatureClick,
         selectTab,
         topologyLayer,
-        checkSwitchOn
+        checkSwitchOn,
+        highSpeedMode
     ]);
 
     const toggleCheckSwitch = () => {

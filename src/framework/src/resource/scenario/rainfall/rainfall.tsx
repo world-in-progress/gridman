@@ -1,14 +1,15 @@
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
-import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
+import store from "@/store"
+import { toast } from "sonner"
+import * as apis from '@/core/apis/apis'
+import RainfallPage from "./rainfallPage";
+import { ISceneNode } from "@/core/scene/iscene";
+import RainfallInformation from "./rainfallInformation";
 import DefaultPageContext from "@/core/context/default";
 import DefaultScenarioNode from "@/core/scenario/default";
-import { ISceneNode } from "@/core/scene/iscene";
-import { CloudRainWind, Info } from "lucide-react";
-import RainfallPage from "./rainfallPage";
+import { CloudRainWind, Delete, Info } from "lucide-react";
 import MapContainer from "@/components/mapContainer/mapContainer";
-import RainfallInformation from "./rainfallInformation";
-import * as apis from '@/core/apis/apis'
-import store from "@/store";
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene";
+import { ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
 
 export interface CommonDataProps {
     name: string,
@@ -46,7 +47,8 @@ export class RainfallPageContext extends DefaultPageContext {
 
 export enum RainfallMenuItem {
     RAINFALL_INFORMATION = 'Rainfall Information',
-    CHECK_RAINFALL_DATA = 'Check Rainfall Data'
+    CHECK_RAINFALL_DATA = 'Check Rainfall Data',
+    DELETE_THIS_RAINFALL = 'Delete This Rainfall'
 }
 
 export default class RainfallScenarioNode extends DefaultScenarioNode {
@@ -63,11 +65,15 @@ export default class RainfallScenarioNode extends DefaultScenarioNode {
                 <ContextMenuItem className='cursor-pointer' onClick={() => handleContextMenu(nodeSelf, RainfallMenuItem.CHECK_RAINFALL_DATA)}>
                     <CloudRainWind className='w-4 h-4' />Check Rainfall Data
                 </ContextMenuItem>
+                <ContextMenuItem className='cursor-pointer flex bg-red-500 hover:!bg-red-600' onClick={() => handleContextMenu(nodeSelf, RainfallMenuItem.DELETE_THIS_RAINFALL)}>
+                    <Delete className='w-4 h-4 text-white rotate-180' />
+                    <span className='text-white'>Delete This Rainfall</span>
+                </ContextMenuItem>
             </ContextMenuContent>
         )
     }
 
-    handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): void {
+    async handleMenuOpen(nodeSelf: ISceneNode, menuItem: any): Promise<void> {
         switch (menuItem) {
             case RainfallMenuItem.RAINFALL_INFORMATION:
                 (nodeSelf as SceneNode).pageId = 'information'
@@ -77,6 +83,17 @@ export default class RainfallScenarioNode extends DefaultScenarioNode {
                 (nodeSelf as SceneNode).pageId = 'default'
                 store.get<{ on: Function, off: Function }>('isLoading')!.on()
                     ; (nodeSelf.tree as SceneTree).startEditingNode(nodeSelf as SceneNode)
+                break
+            case RainfallMenuItem.DELETE_THIS_RAINFALL:
+                store.get<{ on: Function, off: Function }>('isLoading')!.on()
+                const deleteResponse = await apis.common.deleteCommonData.fetch(nodeSelf.key, nodeSelf.tree.isPublic)
+                store.get<{ on: Function, off: Function }>('isLoading')!.off()
+                if (deleteResponse.success) {
+                    await (nodeSelf.tree as SceneTree).removeNode(nodeSelf)
+                    toast.success(deleteResponse.message)
+                } else {
+                    toast.error(deleteResponse.message)
+                }
                 break
         }
     }
