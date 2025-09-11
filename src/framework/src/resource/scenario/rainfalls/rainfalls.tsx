@@ -7,7 +7,7 @@ import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
 import RainfallsPage from "./rainfallsPage"
 import RainfallsInformation from "./rainfallsInformation"
 import { CommonDataProps } from "../rainfall/rainfall"
-import { Button } from "@/components/ui/button"
+
 
 export class RainfallsPageContext extends DefaultPageContext {
     rainfallMeta: {
@@ -41,7 +41,7 @@ export class RainfallsPageContext extends DefaultPageContext {
 
 export enum RainfallsMenuItem {
     RAINFALL_INFORMATION = 'Rainfall Information',
-    CREATE_NEW_RAINFALL = 'Create New Rainfall'
+    CREATE_NEW_RAINFALL = 'Create New Rainfall',
 }
 
 export default class RainfallsScenariNode extends DefaultScenarioNode {

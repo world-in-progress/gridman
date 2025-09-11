@@ -27,6 +27,7 @@ import SimulationsScenarioNode, { SimulationsPageContext } from './scenario/simu
 import RainfallScenarioNode, { RainfallPageContext } from './scenario/rainfall/rainfall'
 import TideScenarioNode, { TidePageContext } from './scenario/tide/tide'
 import InpScenariNode, { InpPageContext } from './scenario/inp/inp'
+import GateScenarioNode, { GatePageContext } from './scenario/gate/gate'
 
 const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [DefaultScenarioNode.classKey]: DefaultScenarioNode,
@@ -51,6 +52,7 @@ const _SCENARIO_NODE_REGISTRY: Record<string, typeof DefaultScenarioNode> = {
     [SolutionsScenariNode.classKey]: SolutionsScenariNode,
     [SolutionScenarioNode.classKey]: SolutionScenarioNode,
     [GatesScenariNode.classKey]: GatesScenariNode,
+    [GateScenarioNode.classKey]: GateScenarioNode,
     [InpsScenariNode.classKey]: InpsScenariNode,
     [InpScenariNode.classKey]: InpScenariNode,
     [RainfallsScenariNode.classKey]: RainfallsScenariNode,
@@ -79,6 +81,7 @@ const _SCENARIO_PAGE_CONTEXT_REGISTRY: Record<string, typeof DefaultPageContext>
     [SolutionsScenariNode.classKey]: SolutionsPageContext,
     [SolutionScenarioNode.classKey]: SolutionPageContext,
     [GatesScenariNode.classKey]: GatesPageContext,
+    [GateScenarioNode.classKey]: GatePageContext,
     [InpsScenariNode.classKey]: InpsPageContext,
     [InpScenariNode.classKey]: InpPageContext,
     [RainfallsScenariNode.classKey]: RainfallsPageContext,

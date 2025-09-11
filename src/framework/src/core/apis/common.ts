@@ -51,3 +51,22 @@ export const getCommonData: IAPI<string, CommonData> = {
         }
     }
 }
+
+export const deleteCommonData: IAPI<string, BaseResponse> = {
+    api: `${API_PREFIX}`,
+    fetch: async (node_key: string, isRemote: boolean): Promise<BaseResponse> => {
+        try {
+            const api = getPrefix(isRemote) + API_PREFIX + `delete/${node_key}`
+            const response = await fetch(api, { method: 'DELETE' })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`)
+            }
+
+            const responseData: BaseResponse = await response.json()
+            return responseData
+        } catch (error) {
+            throw new Error(`Failed to delete common data: ${error}`)
+        }
+    }
+}

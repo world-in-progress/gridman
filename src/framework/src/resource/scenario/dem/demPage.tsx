@@ -209,7 +209,7 @@ export default function DemPage({ node }: DemPageProps) {
                     node_key: node.key,
                     x: lng,
                     y: lat,
-                    epsg: pageContext.current?.demInfo?.epsg.toString()!
+                    epsg: '4326'
                 }, node.tree.isPublic)
 
                 if (response.success) {

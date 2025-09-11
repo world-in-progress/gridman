@@ -3,28 +3,27 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import store from "@/store"
+import { create } from 'zustand'
+import { useSettingsStore } from "./settingStore"
 
 interface SettingsContentProps {
     activeCategory: string
 }
 
 export function SettingsContent({ activeCategory }: SettingsContentProps) {
+
+    const { highSpeedMode, setHighSpeedMode } = useSettingsStore()
+
     const handleSettingChange = (settingName: string, value: any) => {
-        if (settingName === "highSpeed") {
-            if (value === "on") {
-                store.set('highSpeedMode', true)
-            } else {
-                store.set('highSpeedMode', false)
-            }
-        }
+
     }
 
     const renderGeneralSettings = () => (
         <div className="space-y-0">
             <SettingItem title="Grid: High Speed" description="控制是否开启高速操作。">
                 <Select
-                    defaultValue="off"
-                    onValueChange={(value) => handleSettingChange("highSpeed", value)}
+                    value={highSpeedMode ? "on" : "off"}
+                    onValueChange={(value) => setHighSpeedMode(value === "on")}
                 >
                     <SelectTrigger className="w-32 bg-gray-700 border-gray-600">
                         <SelectValue placeholder="Off" />
