@@ -189,8 +189,10 @@ export default function SchemasPage({
             return
         }
 
+        clearMapMarkers()
+        picking.current.marker = null
+
         picking.current.cancel = pickingFromMap({ color: '#FF0000' }, (marker) => {
-            picking.current.marker && picking.current.marker.remove() // remove previous marker if exists
             picking.current.marker = marker
 
             // Update converted coordinates
@@ -290,7 +292,7 @@ export default function SchemasPage({
         const validation = validateSchemaForm({
             name: pc.name,
             convertedCoord,
-            epsg: pc.epsg!.toString(),
+            epsg: pc.epsg!,
             gridLayerInfos: pc.gridLayers,
             lon: pc.basePoint[0] !== null ? pc.basePoint[0].toString() : '',
             lat: pc.basePoint[1] !== null ? pc.basePoint[1].toString() : '',

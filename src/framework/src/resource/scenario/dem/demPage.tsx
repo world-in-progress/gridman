@@ -317,7 +317,7 @@ export default function DemPage({ node }: DemPageProps) {
                 const updateRasterData: UpdateRasterData = {
                     feature_node_key: nodeKey,
                     operation: 'set',
-                    value: 0
+                    value: null
                 }
                 pageContext.current?.uploadVectors.push({
                     node_key: nodeKey,
@@ -462,7 +462,9 @@ export default function DemPage({ node }: DemPageProps) {
     const handleOperationValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (!pageContext.current) return
 
-        pageContext.current.uploadVectors[index].updateRasterData.value = Number(e.target.value)
+        const inputValue = e.target.value.trim()
+        // 如果输入为空，设置为null；否则转换为数字
+        pageContext.current.uploadVectors[index].updateRasterData.value = inputValue === '' ? null : Number(inputValue)
         triggerRepaint()
     }
 
@@ -533,9 +535,21 @@ export default function DemPage({ node }: DemPageProps) {
 
         pageContext.current.updateRasterMeta.updates = []
 
-        pageContext.current.uploadVectors.forEach(vector => {
-            pageContext.current?.updateRasterMeta.updates.push(vector.updateRasterData)
-        })
+        for (const vector of pageContext.current.uploadVectors) {
+            const operation = vector.updateRasterData.operation
+            const value = vector.updateRasterData.value
+            
+            // 对于需要输入值的操作，检查值是否为空
+            if (operation === 'add' || operation === 'set' || operation === 'subtract') {
+                if (value === null || value === undefined || (typeof value === 'string' && value === '') || isNaN(Number(value))) {
+                    toast.error(`Please enter a value for ${operation.toUpperCase()} operation`)
+                    return
+                }
+            }
+            
+            pageContext.current.updateRasterMeta.updates.push(vector.updateRasterData)
+            console.log(vector.updateRasterData)
+        }
 
         store.get<{ on: Function, off: Function }>('isLoading')!.on()
         try {
@@ -835,7 +849,7 @@ export default function DemPage({ node }: DemPageProps) {
                                                                     && <Input
                                                                         className="h-9 text-xs flex-1"
                                                                         placeholder="Enter value"
-                                                                        value={resource.updateRasterData.value || 0}
+                                                                        value={resource.updateRasterData.value || ''}
                                                                         onChange={(e) => handleOperationValueChange(e, index)}
                                                                         onClick={(e) => e.stopPropagation()}
                                                                     />}
