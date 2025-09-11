@@ -105,7 +105,7 @@ export const validateGridLayers = (gridLayers: GridLayerInfo[]): { errors: Recor
 export const validateSchemaForm = (
     data: {
         name: string
-        epsg: string
+        epsg: number
         lon: string
         lat: string
         gridLayerInfos: GridLayerInfo[]
@@ -128,7 +128,7 @@ export const validateSchemaForm = (
     }
 
     // Validate EPSG code
-    if (!data.epsg.trim() || isNaN(Number(data.epsg))) {
+    if (!data.epsg || isNaN(Number(data.epsg))) {
         errors.epsg = true
         generalError = 'Please enter a valid EPSG code'
         return { isValid: false, errors, generalError }

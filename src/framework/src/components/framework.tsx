@@ -76,6 +76,24 @@ function FrameworkComponent() {
                         setLastResourceTreeWidth(resourceTreeWidth)
                         setIsResourceTreeCollapsed(true)
                     }
+                } else if (activeIconID === 'settings' || activeIconID === 'simulation' || activeIconID === 'user') {
+                    setActiveIconID(iconID)
+                    
+                    const validNodes = nodeStack.current.filter(node => {
+                        return node.key !== 'settings' && node.key !== 'simulation' && node.key !== 'user';
+                    });
+                    
+                    if (validNodes.length > 0) {
+                        const targetNode = validNodes[validNodes.length - 1] as SceneNode;
+                        targetNode.tree.selectedNode = targetNode;
+                        setFocusNode(targetNode);
+                    } else {
+                        nodeStack.current = [];
+                        nodeTabs.current = [];
+                        setFocusNode(null);
+                        if (privateTree) privateTree.selectedNode = null;
+                        if (publicTree) publicTree.selectedNode = null;
+                    }
                 }
                 else {
                     setActiveIconID(iconID)
@@ -93,7 +111,7 @@ function FrameworkComponent() {
                 setActiveIconID(iconID);
                 createOrActivateVirtualNode(
                     'settings',
-                    '设置',
+                    'Settings',
                     'settings',
                     <SettingsPage />
                 );
@@ -102,7 +120,7 @@ function FrameworkComponent() {
                 setActiveIconID(iconID);
                 createOrActivateVirtualNode(
                     'simulation',
-                    '模型模拟',
+                    'Simulation',
                     'simulation',
                     <Simulation />
                 );
@@ -111,7 +129,7 @@ function FrameworkComponent() {
                 setActiveIconID(iconID);
                 createOrActivateVirtualNode(
                     'user',
-                    '用户',
+                    'User',
                     'user',
                     <LoginPage />
                 );
@@ -130,15 +148,15 @@ function FrameworkComponent() {
         renderComponent: React.ReactElement,
     ) => {
         // Check if node already exists
-        const existingNode = nodeStack.current.find(node => node.id === id);
+        const existingNode = nodeStack.current.find(node => node.id === id)
 
         if (!existingNode) {
             // Create new virtual ScenarioNode
-            const scenarioNode = new DefaultScenarioNode();
-            scenarioNode.semanticPath = semanticPath;
+            const scenarioNode = new DefaultScenarioNode()
+            scenarioNode.semanticPath = semanticPath
 
             // Override renderPage method
-            scenarioNode.renderPage = () => renderComponent;
+            scenarioNode.renderPage = () => renderComponent
 
             // Create virtual SceneNode
             const virtualNode = new SceneNode(
@@ -146,22 +164,22 @@ function FrameworkComponent() {
                 semanticPath,
                 null,
                 scenarioNode
-            );
+            )
 
             // Set id for identification
             Object.defineProperty(virtualNode, 'id', {
                 get: function () { return id; }
-            });
+            })
 
             // Set tab name
-            virtualNode.tab.name = name;
+            virtualNode.tab.name = name
 
             // Add to nodeStack and nodeTabs
-            nodeStack.current.push(virtualNode);
-            nodeTabs.current.push(virtualNode.tab);
+            nodeStack.current.push(virtualNode)
+            nodeTabs.current.push(virtualNode.tab)
 
             // Activate tab
-            virtualNode.tab.isActive = true;
+            virtualNode.tab.isActive = true
 
             // Set as focus node
             setFocusNode(virtualNode);
@@ -274,6 +292,13 @@ function FrameworkComponent() {
         // Focus on this node
         setFocusNode(_node)
 
+        // Switch to appropriate icon based on node type
+        if (_node.id !== 'settings' && _node.id !== 'simulation' && _node.id !== 'user') {
+            setActiveIconID('grid-editor')
+        } else {
+            setActiveIconID(_node.id)
+        }
+
     }, [privateTree, publicTree])
 
     // Handle closing node editing tab
@@ -302,8 +327,14 @@ function FrameworkComponent() {
             const lastNode = nodeStack.current[nodeStack.current.length - 1] as SceneNode
             lastNode.tree.selectedNode = lastNode
             setFocusNode(lastNode)
+            if (lastNode.id !== 'settings' && lastNode.id !== 'simulation' && lastNode.id !== 'user') {
+                setActiveIconID('grid-editor')
+            } else {
+                setActiveIconID(lastNode.id)
+            }
         } else {
             setFocusNode(null)
+            setActiveIconID('grid-editor')
         }
 
     }, [privateTree, publicTree])
