@@ -5,23 +5,22 @@ import {
     useReducer,
     useCallback,
 } from 'react'
+import Hello from './hello/hello'
 import TabBar from './tabBar/tabBar'
 import { Tab } from './tabBar/types'
 import IconBar from './iconBar/iconBar'
+import LoginPage from './user/loginPage'
 import { DropResult } from '@hello-pangea/dnd'
+import { useTranslation } from 'react-i18next'
 import { ISceneNode } from '@/core/scene/iscene'
+import Simulation from './simulation/simulationPage'
 import ResourcePage from './functionPage/createPage'
+import SettingsPage from './settingPage/settingsPage'
 import { ICON_REGISTRY } from '@/resource/iconRegistry'
+import DefaultScenarioNode from '@/core/scenario/default'
 import { SceneNode, SceneTree } from './resourceScene/scene'
 import { IconBarClickHandlers } from '@/components/iconBar/types'
 import ResourceTreeComponent from './resourceScene/sceneComponent'
-import Hello from './hello/hello'
-import { useTranslation } from 'react-i18next';
-import SettingsPage from './settingPage/settingsPage'
-import DefaultScenarioNode from '@/core/scenario/default'
-import Simulation from './simulation/simulationPage'
-import LoginPage from './user/loginPage'
-
 
 function FrameworkComponent() {
     //i18 methods

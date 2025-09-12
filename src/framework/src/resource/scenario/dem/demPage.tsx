@@ -123,29 +123,6 @@ export default function DemPage({ node }: DemPageProps) {
 
         pageContext.current = await node.getPageContext() as DemPageContext
 
-        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
-        const minValue = pageContext.current?.demInfo?.min_value
-        const maxValue = pageContext.current?.demInfo?.max_value
-        const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
-
-        const computeBBOX = () => {
-            const bbox = pageContext.current!.demInfo!.bbox
-            const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
-            const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
-            if (LB && TR) {
-                const bbox84 = [LB.x, LB.y, TR.x, TR.y]
-                return bbox84
-            } else {
-                return null
-            }
-        }
-
-        const loadDemLayer = () => {
-            terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
-            map.addLayer(terrainLayer.current);
-            fitDemBounds()
-        }
-
         bbox84.current = computeBBOX()
 
         if (!bbox84.current) {
@@ -154,11 +131,12 @@ export default function DemPage({ node }: DemPageProps) {
             return
         }
         if (map.isStyleLoaded()) {
-            loadDemLayer()
+            addDEMLayer()
         } else {
             map.once('style.load', () => {
-                loadDemLayer()
-
+                
+                addDEMLayer()
+                
                 pageContext.current?.vectorLayers.forEach(vector => {
                     map.addSource(vector.source, {
                         type: 'geojson',
@@ -171,6 +149,7 @@ export default function DemPage({ node }: DemPageProps) {
                         paint: vector.paint
                     })
                 })
+
             })
         }
 
@@ -192,6 +171,37 @@ export default function DemPage({ node }: DemPageProps) {
                     map.removeSource(`${vector.node_key}-source`)
                 }
             })
+        }
+    }
+
+    const addDEMLayer = () => {
+        const map = store.get<mapboxgl.Map>('map')
+        if (!map) return
+
+        if (terrainLayer.current && map.getLayer(terrainLayer.current.id)) {
+            map.removeLayer(terrainLayer.current.id)
+            terrainLayer.current = null
+        }
+
+        const tileUrl = apis.raster.getTileUrl(node.tree.isPublic, node.key, 'terrainrgb', new Date().getTime().toString())
+        const minValue = pageContext.current!.demInfo!.min_value
+        const maxValue = pageContext.current!.demInfo!.max_value
+        const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
+
+        terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
+        map.addLayer(terrainLayer.current);
+        fitDemBounds()
+    }
+
+    const computeBBOX = () => {
+        const bbox = pageContext.current!.demInfo!.bbox
+        const LB = convertCoordinate(bbox[0], bbox[1], '2326', '4326')
+        const TR = convertCoordinate(bbox[2], bbox[3], '2326', '4326')
+        if (LB && TR) {
+            const bbox84 = [LB.x, LB.y, TR.x, TR.y]
+            return bbox84
+        } else {
+            return null
         }
     }
 
@@ -255,7 +265,6 @@ export default function DemPage({ node }: DemPageProps) {
     useEffect(() => {
         terrainLayer.current?.updateParams(visualizationSettings)
     }, [visualizationSettings])
-
 
     const handleDeleteDEM = async () => {
         if (!pageContext.current) return
@@ -463,7 +472,7 @@ export default function DemPage({ node }: DemPageProps) {
         if (!pageContext.current) return
 
         const inputValue = e.target.value.trim()
-        // 如果输入为空，设置为null；否则转换为数字
+        
         pageContext.current.uploadVectors[index].updateRasterData.value = inputValue === '' ? null : Number(inputValue)
         triggerRepaint()
     }
@@ -539,7 +548,6 @@ export default function DemPage({ node }: DemPageProps) {
             const operation = vector.updateRasterData.operation
             const value = vector.updateRasterData.value
             
-            // 对于需要输入值的操作，检查值是否为空
             if (operation === 'add' || operation === 'set' || operation === 'subtract') {
                 if (value === null || value === undefined || (typeof value === 'string' && value === '') || isNaN(Number(value))) {
                     toast.error(`Please enter a value for ${operation.toUpperCase()} operation`)
@@ -555,7 +563,8 @@ export default function DemPage({ node }: DemPageProps) {
         try {
             await apis.raster.updateRasterByFeature.fetch({ node_key: node.key, updateRasterMeta: pageContext.current.updateRasterMeta }, node.tree.isPublic)
             toast.success('DEM successfully updated')
-            map.triggerRepaint()
+
+            addDEMLayer()
         } catch (error) {
             console.error('Failed to update DEM:', error)
             toast.error('Failed to update DEM')
@@ -839,10 +848,10 @@ export default function DemPage({ node }: DemPageProps) {
                                                                         <SelectValue placeholder="select an operation" className="cursor-pointer" />
                                                                     </SelectTrigger>
                                                                     <SelectContent className="cursor-pointer">
-                                                                        <SelectItem className="bg-blue-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="set">Set</SelectItem>
-                                                                        <SelectItem className="bg-green-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="add">Add</SelectItem>
-                                                                        <SelectItem className="bg-red-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="subtract">Subtract</SelectItem>
-                                                                        <SelectItem className="bg-orange-200 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="max_fill">Max Fill</SelectItem>
+                                                                        <SelectItem className="bg-blue-100 hover:!bg-blue-300 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="set">Set</SelectItem>
+                                                                        <SelectItem className="bg-green-100 hover:!bg-green-300 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="add">Add</SelectItem>
+                                                                        <SelectItem className="bg-red-100 hover:!bg-red-300 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="subtract">Subtract</SelectItem>
+                                                                        <SelectItem className="bg-orange-100 hover:!bg-orange-300 text-xs font-bold text-gray-800 my-1 cursor-pointer" value="max_fill">Max Fill</SelectItem>
                                                                     </SelectContent>
                                                                 </Select>
                                                                 {pageContext.current!.uploadVectors[index].updateRasterData.operation !== 'max_fill'
