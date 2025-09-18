@@ -9,18 +9,18 @@ import GatesInformation from "./gatesInformation"
 
 export class GatesPageContext extends DefaultPageContext {
     gateData: {
-        name: string;
-        type: string;
-        src_path: string;
+        name: string | null
+        type: string
+        src_path: string | null
     }
 
     constructor() {
         super()
 
         this.gateData = {
-            name: '',
+            name: null,
             type: 'gate',
-            src_path: '',
+            src_path: null,
         }
     }
 

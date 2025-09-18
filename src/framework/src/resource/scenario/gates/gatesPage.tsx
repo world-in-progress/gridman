@@ -8,7 +8,7 @@ import { GatesPageProps } from './types'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
 import { Input } from "@/components/ui/input"
-import { SceneNode } from '@/components/resourceScene/scene'
+import { SceneNode, SceneTree } from '@/components/resourceScene/scene'
 import { GatesPageContext } from './gates'
 import { toast } from 'sonner'
 import store from '@/store'
@@ -30,7 +30,9 @@ export default function GatesPage({ node }: GatesPageProps) {
     }, [node])
 
     const loadContext = async (node: SceneNode) => {
-        pageContext.current = await GatesPageContext.create(node)
+        pageContext.current = await node.getPageContext() as GatesPageContext
+
+        triggerRepaint()
     }
 
     const unloadContext = () => {
@@ -38,24 +40,36 @@ export default function GatesPage({ node }: GatesPageProps) {
     }
 
     const handleSaveGate = async () => {
-        if (!pageContext.current?.gateData.name) {
-            toast.warning('Please enter gate name')
+        if (!pageContext.current?.gateData.name || !pageContext.current?.gateData.src_path) {
+            toast.warning('Please enter name and file path')
             return
         }
 
         const gateData = {
-            name: pageContext.current?.gateData.name,
+            name: pageContext.current?.gateData.name!,
             type: 'gate',
-            src_path: pageContext.current?.gateData.src_path
+            src_path: pageContext.current?.gateData.src_path!
         }
 
+        store.get<{ on: Function, off: Function }>('isLoading')!.on()
+
         const response = await apis.common.createCommon.fetch(gateData, node.tree.isPublic)
+
+        store.get<{ on: Function, off: Function }>('isLoading')!.off()
+
         if (response.success) {
             toast.success('Gate saved successfully')
+
+            const tree = node.tree as SceneTree
+            await tree.alignNodeInfo(node, true)
+            tree.notifyDomUpdate()
+
+            handleReset()
         } else {
             toast.error('Failed to save gate')
         }
-        toast.success('Gate saved successfully')
+
+        triggerRepaint()
     }
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,9 +82,9 @@ export default function GatesPage({ node }: GatesPageProps) {
     const handleReset = () => {
         if (pageContext.current) {
             pageContext.current.gateData = {
-                name: '',
+                name: null,
                 type: 'gate',
-                src_path: '',
+                src_path: null,
             }
             triggerRepaint()
             toast.info('Form reset')
@@ -136,10 +150,10 @@ export default function GatesPage({ node }: GatesPageProps) {
                             </div>
 
                             <div className='flex flex-row gap-2 justify-end'>
-                                <Button variant='outline' className='gap-1 bg-red-500 hover:bg-red-600 text-white' onClick={handleReset}>
+                                <Button className='gap-1 bg-red-500 hover:bg-red-600 text-white cursor-pointer' onClick={handleReset}>
                                     <RotateCcw className='w-4 h-4 text-white' />Reset
                                 </Button>
-                                <Button className='gap-1 bg-sky-500 hover:bg-sky-600 text-white' onClick={handleSaveGate}>
+                                <Button className='gap-1 bg-sky-500 hover:bg-sky-600 text-white cursor-pointer' onClick={handleSaveGate}>
                                     <CheckCircle className='w-4 h-4 text-white' />Save
                                 </Button>
                             </div>

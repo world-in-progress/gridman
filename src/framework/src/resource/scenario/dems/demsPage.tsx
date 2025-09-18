@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { DemsPageProps } from './types'
-import * as apis from '@/core/apis/apis'
-import MapContainer from '@/components/mapContainer/mapContainer'
+import store from '@/store'
+import { toast } from 'sonner'
 import {
 	Dialog,
 	DialogTitle,
@@ -20,19 +19,20 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
+import { DemsPageProps } from './types'
+import * as apis from '@/core/apis/apis'
 import { DemsPageContext } from './dems'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Badge } from "@/components/ui/badge"
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
-import { convertCoordinate } from '@/components/mapContainer/utils'
-import { FilePlus2, FolderOpen, Info, Loader2Icon, Plus, RotateCcw, Mountain } from 'lucide-react'
-import { toast } from 'sonner'
-import store from '@/store'
-import TerrainByProxyTile from '../dem/terrainLayer/terrainLayer'
+import { RasterMeta } from "@/core/apis/types"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from '@/components/ui/card'
-import { RasterMeta } from "@/core/apis/types";
+import { SceneTree } from "@/components/resourceScene/scene"
+import MapContainer from '@/components/mapContainer/mapContainer'
+import TerrainByProxyTile from '../dem/terrainLayer/terrainLayer'
+import { convertCoordinate } from '@/components/mapContainer/utils'
+import { FilePlus2, FolderOpen, Info, Plus, Mountain } from 'lucide-react'
 
 export default function DemsPage({ node }: DemsPageProps) {
 
@@ -133,9 +133,7 @@ export default function DemsPage({ node }: DemsPageProps) {
 	}, [demInfo, hasDem])
 
 	const handleCreateDEM = async () => {
-		if (!newDemData.name.trim()
-			|| !newDemData.path.trim()
-		) {
+		if (!newDemData.name.trim() || !newDemData.path.trim()) {
 			toast.error('Please fill in all fields')
 			return
 		}

@@ -83,8 +83,9 @@ export default function DemPage({ node }: DemPageProps) {
     const [identifyActive, setIdentifyActive] = useState(false)
     const [isDragOver, setIsDragOver] = useState(false)
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-    const [pixelInfo, setPixelInfo] = useState<{ x: number, y: number, value: number | null } | null>(null)
     const [showVisCard, setShowVisCard] = useState(true)
+    const [editingValues, setEditingValues] = useState<{ [key: number]: string }>({})
+    const [pixelInfo, setPixelInfo] = useState<{ x: number, y: number, value: number | null } | null>(null)
 
     const initialVisualizationSettings = useRef<{
         exaggeration: number
@@ -100,15 +101,19 @@ export default function DemPage({ node }: DemPageProps) {
         lightPos: [-0.1, 0.3, 0.25] as [number, number, number]
     });
 
-    const [visualizationSettings, setVisualizationSettings] = useState<
-        {
-            exaggeration: number
-            opacity: number
-            palette: number
-            reversePalette: boolean
-            lightPos: [number, number, number]
-        }
-    >(initialVisualizationSettings.current);
+    const visualizationSettings = useRef<{
+        exaggeration: number
+        opacity: number
+        palette: number
+        reversePalette: boolean
+        lightPos: [number, number, number]
+    }>(initialVisualizationSettings.current);
+
+    const updateVisualizationSettings = (updater: (prev: typeof visualizationSettings.current) => typeof visualizationSettings.current) => {
+        visualizationSettings.current = updater(visualizationSettings.current);
+        terrainLayer.current?.updateParams(visualizationSettings.current);
+        triggerRepaint()
+    }
 
     useEffect(() => {
         loadContext(node as SceneNode)
@@ -134,9 +139,9 @@ export default function DemPage({ node }: DemPageProps) {
             addDEMLayer()
         } else {
             map.once('style.load', () => {
-                
+
                 addDEMLayer()
-                
+
                 pageContext.current?.vectorLayers.forEach(vector => {
                     map.addSource(vector.source, {
                         type: 'geojson',
@@ -188,9 +193,13 @@ export default function DemPage({ node }: DemPageProps) {
         const maxValue = pageContext.current!.demInfo!.max_value
         const eleRange = (minValue && maxValue) ? [minValue, maxValue] as [number, number] : undefined
 
-        terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, initialVisualizationSettings.current)
+        terrainLayer.current = new TerrainByProxyTile(node.key, tileUrl, bbox84.current!, eleRange, visualizationSettings.current)
         map.addLayer(terrainLayer.current);
         fitDemBounds()
+
+        console.log('addDEMLayer')
+
+        triggerRepaint()
     }
 
     const computeBBOX = () => {
@@ -261,10 +270,6 @@ export default function DemPage({ node }: DemPageProps) {
             map.off('click', handleMapClick)
         }
     }, [identifyActive, node.key, node.tree.isPublic])
-
-    useEffect(() => {
-        terrainLayer.current?.updateParams(visualizationSettings)
-    }, [visualizationSettings])
 
     const handleDeleteDEM = async () => {
         if (!pageContext.current) return
@@ -469,11 +474,46 @@ export default function DemPage({ node }: DemPageProps) {
     }
 
     const handleOperationValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        setEditingValues(prev => ({
+            ...prev,
+            [index]: e.target.value,
+        }))
+    }
+
+    const handleOperationValueFocus = (index: number) => {
+        if (!pageContext.current) return
+        const value = pageContext.current.uploadVectors[index].updateRasterData.value
+        setEditingValues(prev => ({
+            ...prev,
+            [index]: value === null ? '' : String(value),
+        }))
+    }
+
+    const handleOperationValueBlur = (index: number) => {
         if (!pageContext.current) return
 
-        const inputValue = e.target.value.trim()
-        
-        pageContext.current.uploadVectors[index].updateRasterData.value = inputValue === '' ? null : Number(inputValue)
+        const stringValue = editingValues[index]
+        let finalValue: number | null = null
+
+        if (stringValue !== undefined && stringValue.trim() !== '' && stringValue.trim() !== '-') {
+            const parsedValue = parseFloat(stringValue)
+            if (!isNaN(parsedValue)) {
+                finalValue = parsedValue
+            } else {
+                // Revert to original if input is invalid
+                finalValue = pageContext.current.uploadVectors[index].updateRasterData.value
+            }
+        } else if (stringValue === undefined) {
+            finalValue = pageContext.current.uploadVectors[index].updateRasterData.value
+        }
+
+        pageContext.current.uploadVectors[index].updateRasterData.value = finalValue
+
+        setEditingValues(prev => {
+            const newValues = { ...prev }
+            delete newValues[index]
+            return newValues
+        })
         triggerRepaint()
     }
 
@@ -547,14 +587,14 @@ export default function DemPage({ node }: DemPageProps) {
         for (const vector of pageContext.current.uploadVectors) {
             const operation = vector.updateRasterData.operation
             const value = vector.updateRasterData.value
-            
+
             if (operation === 'add' || operation === 'set' || operation === 'subtract') {
                 if (value === null || value === undefined || (typeof value === 'string' && value === '') || isNaN(Number(value))) {
                     toast.error(`Please enter a value for ${operation.toUpperCase()} operation`)
                     return
                 }
             }
-            
+
             pageContext.current.updateRasterMeta.updates.push(vector.updateRasterData)
             console.log(vector.updateRasterData)
         }
@@ -571,6 +611,8 @@ export default function DemPage({ node }: DemPageProps) {
         } finally {
             store.get<{ on: Function, off: Function }>('isLoading')!.off()
         }
+
+        triggerRepaint()
     }
 
     function toggleVectorVisibility(resourceKey: string) {
@@ -858,8 +900,14 @@ export default function DemPage({ node }: DemPageProps) {
                                                                     && <Input
                                                                         className="h-9 text-xs flex-1"
                                                                         placeholder="Enter value"
-                                                                        value={resource.updateRasterData.value || ''}
+                                                                        value={
+                                                                            editingValues[index] !== undefined
+                                                                                ? editingValues[index]
+                                                                                : resource.updateRasterData.value ?? ''
+                                                                        }
                                                                         onChange={(e) => handleOperationValueChange(e, index)}
+                                                                        onFocus={() => handleOperationValueFocus(index)}
+                                                                        onBlur={() => handleOperationValueBlur(index)}
                                                                         onClick={(e) => e.stopPropagation()}
                                                                     />}
                                                             </div>
@@ -932,13 +980,13 @@ export default function DemPage({ node }: DemPageProps) {
                             <div>
                                 <span className="block text-sm text-slate-600 my-1">Palette</span>
                                 <PaletteSelector defaultValue={0}
-                                    onValueChange={(index) => setVisualizationSettings(prev => ({ ...prev, palette: index }))}
+                                    onValueChange={(index) => updateVisualizationSettings(prev => ({ ...prev, palette: index }))}
                                     className="cursor-pointer"
                                 />
                                 <div className="flex items-center gap-2 mt-2">
                                     <span className="text-xs text-slate-500 w-13 text-right">Reverse</span>
                                     <Switch
-                                        onCheckedChange={(checked) => setVisualizationSettings(prev => ({ ...prev, reversePalette: checked }))}
+                                        onCheckedChange={(checked) => updateVisualizationSettings(prev => ({ ...prev, reversePalette: checked }))}
                                         defaultChecked={false}
                                         className="cursor-pointer"
                                     />
@@ -950,9 +998,9 @@ export default function DemPage({ node }: DemPageProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-400 w-6 text-right">0</span>
-                                    <Slider value={[visualizationSettings.exaggeration]} min={0} max={20} step={0.5} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, exaggeration: v[0] }))} />
+                                    <Slider value={[visualizationSettings.current.exaggeration]} min={0} max={20} step={0.5} className="w-40 cursor-pointer" onValueChange={v => updateVisualizationSettings(prev => ({ ...prev, exaggeration: v[0] }))} />
                                     <span className="text-xs text-slate-400 w-6 text-left">20</span>
-                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.exaggeration}</Badge>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.current.exaggeration}</Badge>
                                 </div>
                             </div>
                             <div>
@@ -961,9 +1009,9 @@ export default function DemPage({ node }: DemPageProps) {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-400 w-6 text-right">0</span>
-                                    <Slider value={[visualizationSettings.opacity]} min={0} max={100} step={1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, opacity: v[0] }))} />
+                                    <Slider value={[visualizationSettings.current.opacity]} min={0} max={100} step={1} className="w-40 cursor-pointer" onValueChange={v => updateVisualizationSettings(prev => ({ ...prev, opacity: v[0] }))} />
                                     <span className="text-xs text-slate-400 w-6 text-left">100</span>
-                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.opacity}%</Badge>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.current.opacity}%</Badge>
                                 </div>
                             </div>
                             <div>
@@ -973,23 +1021,23 @@ export default function DemPage({ node }: DemPageProps) {
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-500 w-5 text-right">X</span>
                                     <span className="text-xs text-slate-400 w-3 text-right">-1</span>
-                                    <Slider value={[visualizationSettings.lightPos[0]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [v[0], prev.lightPos[1], prev.lightPos[2]] }))} />
+                                    <Slider value={[visualizationSettings.current.lightPos[0]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => updateVisualizationSettings(prev => ({ ...prev, lightPos: [v[0], prev.lightPos[1], prev.lightPos[2]] }))} />
                                     <span className="text-xs text-slate-400 w-6 text-left">1</span>
-                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[0].toFixed(2)}</Badge>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.current.lightPos[0].toFixed(2)}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-500 w-5 text-right">Y</span>
                                     <span className="text-xs text-slate-400 w-3 text-right">-1</span>
-                                    <Slider value={[visualizationSettings.lightPos[1]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], v[0], prev.lightPos[2]] }))} />
+                                    <Slider value={[visualizationSettings.current.lightPos[1]]} min={-1} max={1} step={0.1} className="w-40 cursor-pointer" onValueChange={v => updateVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], v[0], prev.lightPos[2]] }))} />
                                     <span className="text-xs text-slate-400 w-6 text-left">1</span>
-                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[1].toFixed(2)}</Badge>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.current.lightPos[1].toFixed(2)}</Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-500 w-5 text-right">Z</span>
                                     <span className="text-xs text-slate-400 w-3 text-right">0</span>
-                                    <Slider value={[visualizationSettings.lightPos[2]]} min={0} max={2} step={0.1} className="w-40 cursor-pointer" onValueChange={v => setVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], prev.lightPos[1], v[0]] }))} />
+                                    <Slider value={[visualizationSettings.current.lightPos[2]]} min={0} max={2} step={0.1} className="w-40 cursor-pointer" onValueChange={v => updateVisualizationSettings(prev => ({ ...prev, lightPos: [prev.lightPos[0], prev.lightPos[1], v[0]] }))} />
                                     <span className="text-xs text-slate-400 w-6 text-left">2</span>
-                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.lightPos[2].toFixed(2)}</Badge>
+                                    <Badge variant="secondary" className='text-xs text-gray-800'>{visualizationSettings.current.lightPos[2].toFixed(2)}</Badge>
                                 </div>
                             </div>
                         </div>

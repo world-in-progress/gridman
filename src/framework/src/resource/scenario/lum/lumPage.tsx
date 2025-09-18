@@ -64,7 +64,7 @@ export const lumTypeMap = [
     { value: 4, type: 'Transport', color: '#FF8100', rgba: [255, 129, 0, 1] },
     { value: 5, type: 'Infrastructure', color: '#7D7D7D', rgba: [125, 125, 125, 1] },
     { value: 6, type: 'Agricultural', color: '#00FF7C', rgba: [0, 255, 124, 1] },
-    { value: 7, type: 'Fishpood', color: '#FF004A', rgba: [255, 0, 74, 1] },
+    { value: 7, type: 'Fishpool', color: '#FF004A', rgba: [255, 0, 74, 1] },
     { value: 8, type: 'Waters', color: '#5BA4FF', rgba: [91, 164, 255, 1] },
     { value: 9, type: 'HillLand', color: '#A36144', rgba: [163, 97, 68, 1] },
     { value: 10, type: 'Geiwai', color: '#00FFCB', rgba: [0, 255, 203, 1] },
