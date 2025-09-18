@@ -1,10 +1,6 @@
 import { useState, useEffect, useReducer, useRef } from 'react'
-import { InpPageProps } from './types'
-import MapContainer from '@/components/mapContainer/mapContainer'
-import { SceneNode } from '@/components/resourceScene/scene'
 import { InpPageContext } from './inp'
-import { Crosshair, Delete, Fullscreen, GitBranch, Info, MapPin, Eye, EyeOff, X, Upload } from 'lucide-react'
-import { cn } from '@/utils/utils'
+import { InpPageProps } from './types'
 import {
     AlertDialog,
     AlertDialogTitle,
@@ -16,13 +12,14 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from '@/components/ui/alert-dialog'
+import { Badge } from "@/components/ui/badge"
+import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from "@/components/ui/card"
+import { SceneNode } from '@/components/resourceScene/scene'
+import MapContainer from '@/components/mapContainer/mapContainer'
+import { Crosshair, Delete, Fullscreen, GitBranch, Info } from 'lucide-react'
 import { clearSwmmFromMap, loadInpAndRenderSwmm, enableSwmmIdentify, disableSwmmIdentify, SwmmFeatureInfo, setSwmmOpacity } from './utils'
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Slider } from '@/components/ui/slider'
-import store from '@/store'
 
 export default function InpPage({ node }: InpPageProps) {
 

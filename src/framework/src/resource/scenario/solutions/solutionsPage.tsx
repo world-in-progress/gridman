@@ -652,41 +652,39 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
         const map = store.get<mapboxgl.Map>('map')
         if (!map) return
 
-        if (pageContext.current) {
-
-            if (terrainLayer.current) {
-                map.removeLayer(terrainLayer.current.id)
-                terrainLayer.current = null
-            }
-
-            if (map.getLayer(pageContext.current!.solutionData!.env.lum_node_key + 'layer')) {
-                map.removeLayer(pageContext.current!.solutionData!.env.lum_node_key + 'layer')
-                map.removeSource(pageContext.current!.solutionData!.env.lum_node_key + 'source')
-            }
-
-            clearSwmmFromMap()
-
-            pageContext.current.solutionData!.env = {
-                grid_node_key: '',
-                dem_node_key: '',
-                lum_node_key: '',
-                rainfall_node_key: '',
-                gate_node_key: '',
-                tide_node_key: '',
-                inp_node_key: '',
-            }
-            pageContext.current.demVisible = false
-            pageContext.current.lumVisible = false
-            pageContext.current.inpVisible = false
+        if (terrainLayer.current) {
+            map.removeLayer(terrainLayer.current.id)
+            terrainLayer.current = null
         }
+
+        if (map.getLayer(pageContext.current!.solutionData!.env.lum_node_key + 'layer')) {
+            console.log('remove lum layer')
+            map.removeLayer(pageContext.current!.solutionData!.env.lum_node_key + 'layer')
+            map.removeSource(pageContext.current!.solutionData!.env.lum_node_key + 'source')
+        }
+
+        clearSwmmFromMap()
+
+        pageContext.current!.solutionData!.env = {
+            grid_node_key: '',
+            dem_node_key: '',
+            lum_node_key: '',
+            rainfall_node_key: '',
+            gate_node_key: '',
+            tide_node_key: '',
+            inp_node_key: '',
+        }
+        pageContext.current!.demVisible = false
+        pageContext.current!.lumVisible = false
+        pageContext.current!.inpVisible = false
+
         triggerRepaint()
-        toast.info('Reset drop zone')
     }
 
     const handleResetForm = () => {
         if (pageContext.current) {
 
-
+            handleResetDropZone()
             clearSwmmFromMap()
 
             pageContext.current.solutionData = {
@@ -703,11 +701,11 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
                 },
                 action_types: [],
             }
-            pageContext.current.demVisible = true
-            pageContext.current.lumVisible = true
-            pageContext.current.inpVisible = true
-            triggerRepaint()
+            pageContext.current!.demVisible = false
+            pageContext.current!.lumVisible = false
+            pageContext.current!.inpVisible = false
         }
+        triggerRepaint()
     }
 
     const handleCreateSolution = async () => {
@@ -750,6 +748,7 @@ export default function SolutionsPage({ node }: SolutionsPageProps) {
             toast.error('Create Solution Failed')
         }
 
+        handleResetDropZone()
         handleResetForm()
     }
 

@@ -49,15 +49,15 @@ export default function RainfallPage({ node }: RainfallPageProps) {
             setError(null)
 
             if (!pageContext.current?.rainfallData?.data) {
-                throw new Error('无法获取降雨数据')
                 toast.error('Failed to get rainfall data')
+                throw new Error('无法获取降雨数据')
             }
 
             const csvLines = pageContext.current.rainfallData.data as string[]
 
             if (csvLines.length < 1) {
-                throw new Error('Rainfall data is empty')
                 toast.error('Rainfall data is empty')
+                throw new Error('Rainfall data is empty')
             }
 
             const headers = csvLines[0].split(',')
@@ -227,7 +227,7 @@ export default function RainfallPage({ node }: RainfallPageProps) {
                 },
                 selected: selectedStations.reduce((acc, station) => {
                     acc[station] = true;
-                    acc[station + ' Bar'] = false;
+                    acc[station + ' Bar'] = true
                     return acc;
                 }, {} as Record<string, boolean>)
             },
@@ -406,7 +406,7 @@ export default function RainfallPage({ node }: RainfallPageProps) {
 
     return (
         <div className="h-screen w-screen bg-gray-50 text-gray-900 overflow-hidden">
-            <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+            <div className="h-16 bg-white border-b border-gray-200 flex items-center gap-4 px-6">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900">Rainfall Monitoring Dashboard [{pageContext.current?.rainfallData.name}]</h1>
                     <p className="text-sm text-gray-600">Real-time monitoring of rainfall data from multiple stations</p>

@@ -1,10 +1,8 @@
 import { SettingItem } from "./settingsItem"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import store from "@/store"
-import { create } from 'zustand'
 import { useSettingsStore } from "./settingStore"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface SettingsContentProps {
     activeCategory: string

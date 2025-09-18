@@ -1,25 +1,4 @@
-import { VectorPageProps } from './types'
 import React, { useEffect, useReducer, useRef, useState } from "react"
-import store from "@/store"
-import * as apis from '@/core/apis/apis'
-import MapboxDraw from "@mapbox/mapbox-gl-draw"
-import {
-    Dialog,
-    DialogTitle,
-    DialogHeader,
-    DialogFooter,
-    DialogContent,
-    DialogDescription,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { VectorPageContext } from "./vector"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
-import MapContainer from "@/components/mapContainer/mapContainer"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Dot,
     Move,
@@ -37,9 +16,38 @@ import {
     Paintbrush,
     MousePointer,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import store from "@/store"
 import { toast } from "sonner"
+import {
+    Dialog,
+    DialogTitle,
+    DialogHeader,
+    DialogFooter,
+    DialogContent,
+    DialogDescription,
+} from "@/components/ui/dialog"
+import * as apis from '@/core/apis/apis'
+import { VectorPageProps } from './types'
+import { VectorPageContext } from "./vector"
+import { Badge } from "@/components/ui/badge"
 import { FeatureData } from '../vectors/types'
+import { Label } from "@/components/ui/label"
+import MapboxDraw from "@mapbox/mapbox-gl-draw"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import MapContainer from "@/components/mapContainer/mapContainer"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { SceneNode, SceneTree } from "@/components/resourceScene/scene"
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 const featureColorMap = [
     { value: "sky-500", color: "#0ea5e9", name: "Sky" },
@@ -97,7 +105,7 @@ export default function VectorPage({ node }: VectorPageProps) {
     const [resetDialogOpen, setResetDialogOpen] = useState(false)
     const [ruinDialogOpen, setRuinDialogOpen] = useState(false)
     const [selectedTool, setSelectedTool] = useState<ToolType>("select");
-    const [vectorColor, setVectorColor] = useState<string | null>(null)
+    // const [vectorColor, setVectorColor] = useState<string | null>(null)
     const [featureData, setFeatureData] = useState<FeatureData | null>(null)
 
     const pageContext = useRef<VectorPageContext | null>(null)
@@ -110,7 +118,7 @@ export default function VectorPage({ node }: VectorPageProps) {
     }, [node])
 
     useEffect(() => {
-        if (vectorColor && pageContext.current?.drawFeature) {
+        if (pageContext.current?.vectorColor && pageContext.current?.drawFeature) {
             const map = store.get<mapboxgl.Map>("map")
             const drawInstance = store.get<MapboxDraw>("mapDraw")
 
@@ -129,7 +137,7 @@ export default function VectorPage({ node }: VectorPageProps) {
                 map.once('load', () => setTimeout(loadFeatures, 10))
             }
         }
-    }, [vectorColor])
+    }, [pageContext.current?.vectorColor])
 
     const loadContext = async (node: SceneNode) => {
         pageContext.current = await node.getPageContext() as VectorPageContext
@@ -137,7 +145,8 @@ export default function VectorPage({ node }: VectorPageProps) {
 
         if (pc.featureData && pc.drawFeature) {
             const vectorColor = featureColorMap.find(item => item.value === pc.featureData.color)?.color
-            setVectorColor(vectorColor!)
+            // setVectorColor(vectorColor!)
+            pageContext.current!.vectorColor = vectorColor!
             setFeatureData(pc.featureData! as FeatureData)
         }
 
@@ -288,11 +297,17 @@ export default function VectorPage({ node }: VectorPageProps) {
         store.get<{ on: Function, off: Function }>('isLoading')?.on()
         pageContext.current!.drawFeature = drawInstance.getAll()
 
-        const saveFeatureBody = {
+        const updateFeatureBody = {
             node_key: node.key,
-            feature_json: pageContext.current!.drawFeature,
+            data: {
+                name: pageContext.current!.featureData.name,
+                type: pageContext.current!.featureData.type,
+                color: pageContext.current!.featureData.color,
+                epsg: pageContext.current!.featureData.epsg,
+                feature_json: pageContext.current!.drawFeature,
+            }
         }
-        const saveFeatureRes = await apis.feature.saveFeature.fetch(saveFeatureBody, node.tree.isPublic)
+        const saveFeatureRes = await apis.feature.updateFeature.fetch(updateFeatureBody, node.tree.isPublic)
         store.get<{ on: Function, off: Function }>('isLoading')?.off()
         if (resetDialogOpen) {
             toast.info("All features have been cleared")
@@ -303,6 +318,19 @@ export default function VectorPage({ node }: VectorPageProps) {
                 toast.success(saveFeatureRes.message)
             }
         }
+    }
+
+    const handleChangeVectorColor = (colorItem: any) => {
+        // setVectorColor(colorItem.color)
+        pageContext.current!.vectorColor = colorItem.color
+        if (pageContext.current?.featureData) {
+            console.log('修改了颜色')
+            pageContext.current.featureData.color = colorItem.value
+        }
+
+        triggerRepaint()
+
+        handleSaveFeature()
     }
 
     return (
@@ -468,12 +496,40 @@ export default function VectorPage({ node }: VectorPageProps) {
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm text-slate-600">Color</span>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-24 h-6 rounded-full border-2 border-white shadow-sm"
-                                                        style={{
-                                                            backgroundColor: featureColorMap.find(item =>
-                                                                item.value === pageContext.current?.featureData.color)?.color
-                                                        }}>
-                                                    </div>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger className="cursor-pointer">
+                                                            <div className="w-24 h-6 rounded-full border-2 border-white shadow-sm hover:shadow-md transition-shadow"
+                                                                style={{
+                                                                    backgroundColor: featureColorMap.find(item =>
+                                                                        item.value === pageContext.current?.featureData.color)?.color
+                                                                }}>
+                                                            </div>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent className="bg-white border border-slate-200 shadow-lg rounded-lg p-2 min-w-[160px]">
+                                                            <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide px-2 py-1">
+                                                                Select Color
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuSeparator className="my-1 border-slate-100" />
+                                                            {featureColorMap.map((colorItem) => (
+                                                                <DropdownMenuItem
+                                                                    key={colorItem.value}
+                                                                    className="cursor-pointer hover:bg-slate-50 rounded-md p-2 flex items-center gap-3"
+                                                                    onClick={() => handleChangeVectorColor(colorItem)}
+                                                                >
+                                                                    <div
+                                                                        className="w-20 h-4 rounded-full border border-slate-300 shadow-sm"
+                                                                        style={{ backgroundColor: colorItem.color }}
+                                                                    />
+                                                                    <span className="text-sm text-slate-700 font-medium">
+                                                                        {colorItem.name}
+                                                                    </span>
+                                                                    {pageContext.current?.featureData.color === colorItem.value && (
+                                                                        <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full" />
+                                                                    )}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                     <Badge variant="secondary" className={`text-xs text-${pageContext.current?.featureData.color}`}>
                                                         {pageContext.current?.featureData.color.split('-')[0]}
                                                     </Badge>
@@ -536,7 +592,7 @@ export default function VectorPage({ node }: VectorPageProps) {
                         </div>
                     </div>
                     {/* Map container placeholder */}
-                    <MapContainer node={node} style='w-full h-full' color={vectorColor} />
+                    <MapContainer node={node} style='w-full h-full' color={pageContext.current?.vectorColor} />
                 </div>
 
             </div>

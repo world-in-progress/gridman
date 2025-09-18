@@ -14,6 +14,7 @@ export class VectorPageContext extends DefaultPageContext {
 
     drawFeature: GeoJSON.FeatureCollection | null
     featureData: Record<string, any>
+    vectorColor: string 
     isRuined: boolean
 
     constructor() {
@@ -25,6 +26,7 @@ export class VectorPageContext extends DefaultPageContext {
             epsg: '',
             color: ''
         }
+        this.vectorColor = ''
         this.isRuined = false
     }
 
@@ -37,6 +39,7 @@ export class VectorPageContext extends DefaultPageContext {
             const nodeMeta = await apis.feature.getFeatureData.fetch(n.key, n.tree.isPublic)
             context.featureData = nodeMeta.data
             context.drawFeature = nodeMeta.data.feature_json
+            context.vectorColor = nodeMeta.data.color
         } catch (error) {
             console.error('Process vector data failed:', error)
         }

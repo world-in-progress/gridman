@@ -6,6 +6,7 @@ import {
 	FeatureGetJsonResponse,
 	FeatureUpdatePropertyBody,
 	FeatureDataResponse,
+	FeatureUpdateBody,
 } from "../feature/types";
 import getPrefix from "./prefix";
 
@@ -94,12 +95,32 @@ export const deleteFeature: IAPI<string, BaseResponse> = {
 			throw new Error(`Failed to delete feature: ${error}`);
 		}
 	},
-};
+}
 
-export const updateFeatureProperty: IAPI<
-	{ id: string; featureProperty: FeatureUpdatePropertyBody },
-	void
-> = {
+export const updateFeature: IAPI<FeatureUpdateBody, BaseResponse> = {
+	api: `${API_PREFIX}`,
+	fetch: async (featureUpdateData: FeatureUpdateBody, isRemote: boolean): Promise<BaseResponse> => {
+		try {
+			const api = getPrefix(isRemote) + updateFeature.api + `/${featureUpdateData.node_key}`
+			const response = await fetch(api, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(featureUpdateData.data),
+			})
+			
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const responseData: BaseResponse = await response.json()
+			return responseData
+		} catch (error) {
+			throw new Error(`Failed to update feature: ${error}`);
+		}
+	}
+}
+
+export const updateFeatureProperty: IAPI<{ id: string; featureProperty: FeatureUpdatePropertyBody }, void> = {
 	api: `${API_PREFIX}`,
 	fetch: async (query: {
 		id: string;
@@ -202,7 +223,7 @@ export const getFeatureJsonComputation: IAPI<string, FeatureGetJsonResponse> = {
 			const responseData: FeatureGetJsonResponse = await response.json();
 			return responseData;
 		} catch (error) {
-			throw new Error(`Failed to get feature json computation: ${error}`);	
+			throw new Error(`Failed to get feature json computation: ${error}`);
 		}
 	}
 }
