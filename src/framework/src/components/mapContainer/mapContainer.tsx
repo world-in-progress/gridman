@@ -74,8 +74,8 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
             mapInstance = new mapboxgl.Map({
                 container: mapWrapperRef.current,
                 style: 'mapbox://styles/mapbox/streets-v12',
-                projection: 'globe',
                 center: [initialLongitude, initialLatitude],
+                projection: 'mercator',
                 zoom: initialZoom,
                 maxZoom: maxZoom,
                 attributionControl: false,
@@ -88,10 +88,6 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
                 store.set('clg', layerGroup)
             })
             store.set('map', mapInstance)
-
-            mapInstance.on('style.load', () => {
-                mapInstance.setFog({})
-            })
 
             const drawColor = color || '#F06B00'
 
@@ -216,7 +212,7 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
                 store.set('mapDraw', null)
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [color])
 
     return (
