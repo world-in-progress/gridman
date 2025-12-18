@@ -547,7 +547,7 @@ export const adjustPatchBounds = (
     const originalNW: [number, number] = [bounds[0], bounds[3]]
     const originalCenter: [number, number] = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2]
 
-    // Convert original bounds coordinates to target EPSG
+    // Convert original bounds coordinates to target EPSG (4326)
     let convertedSW: [number, number] = originalSW
     let convertedSE: [number, number] = originalSE
     let convertedNE: [number, number] = originalNE
@@ -562,6 +562,7 @@ export const adjustPatchBounds = (
         convertedCenter = convertSinglePointCoordinate(originalCenter, fromEPSG, toEPSG) as [number, number]
     }
 
+    // Converted bounds on target EPSG
     const convertedBounds: RectangleCoordinates = {
         northEast: convertedNE,
         southEast: convertedSE,
@@ -570,11 +571,44 @@ export const adjustPatchBounds = (
         center: convertedCenter,
     }
 
+    console.log('Converted Bounds:', convertedBounds)
+
+    // Temp convert to EPSG:3857 for calculation
+    const tempConvertedSWOn3857 = convertSinglePointCoordinate(convertedSW, fromEPSG, '3857') as [number, number]
+    const tempConvertedSEOn3857 = convertSinglePointCoordinate(convertedSE, fromEPSG, '3857') as [number, number]
+    const tempConvertedNEOn3857 = convertSinglePointCoordinate(convertedNE, fromEPSG, '3857') as [number, number]
+    const tempConvertedNWOn3857 = convertSinglePointCoordinate(convertedNW, fromEPSG, '3857') as [number, number]
+    const tempConvertedCenterOn3857 = convertSinglePointCoordinate(convertedCenter, fromEPSG, '3857') as [number, number]
+
+    const tempConvertedBoundsOn3857: RectangleCoordinates = {
+        northEast: tempConvertedNEOn3857,
+        southEast: tempConvertedSEOn3857,
+        southWest: tempConvertedSWOn3857,
+        northWest: tempConvertedNWOn3857,
+        center: tempConvertedCenterOn3857,
+    }
+
+    console.log('tempConvertedBoundsOn3857', tempConvertedBoundsOn3857)
+
+    const tempConvertedSchemaBasePointOn3857 = convertSinglePointCoordinate(schemaBasePoint, toEPSG, '3857') as [number, number]
+    console.log('tempConvertedSchemaBasePointOn3857', tempConvertedSchemaBasePointOn3857)
+
     const gridWidth = gridLevel[0]
     const gridHeight = gridLevel[1]
 
-    const [swX, swY] = convertedBounds.southWest
-    const [baseX, baseY] = schemaBasePoint
+    let [swX, swY] = tempConvertedBoundsOn3857.southWest
+    let [baseX, baseY] = tempConvertedSchemaBasePointOn3857
+
+    if (toEPSG === '4326') {
+        [swX, swY] = tempConvertedBoundsOn3857.southWest,
+            [baseX, baseY] = tempConvertedSchemaBasePointOn3857
+    } else if (toEPSG === '2326') {
+        [swX, swY] = convertedBounds.southWest,
+            [baseX, baseY] = schemaBasePoint
+    }
+
+    // console.log('tempConvertedBoundsOn3857.southWest', [swX, swY])
+    // console.log('tempConvertedSchemaBasePointOn3857', [baseX, baseY])
 
     const dX = swX - baseX
     const dY = swY - baseY
@@ -585,40 +619,98 @@ export const adjustPatchBounds = (
     const offsetX = disX - dX
     const offsetY = disY - dY
 
-    const rectWidth = convertedNE[0] - convertedSW[0]
-    const rectHeight = convertedNE[1] - convertedSW[1]
+    // const rectWidth = convertedNE[0] - convertedSW[0]
+    // const rectHeight = convertedNE[1] - convertedSW[1]
+    let rectWidth
+    let rectHeight
 
-    // Align bounds to base point
-    const alignedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
-    const alignedSE = [alignedSW[0] + rectWidth, alignedSW[1]] as [number, number]
-    const alignedNE = [alignedSW[0] + rectWidth, alignedSW[1] + rectHeight] as [number, number]
-    const alignedNW = [alignedSW[0], alignedSW[1] + rectHeight] as [number, number]
-    const alignedCenter = [alignedSW[0] + rectWidth / 2, alignedSW[1] + rectHeight / 2] as [number, number]
-
-    const alignedBounds: RectangleCoordinates = {
-        southWest: alignedSW,
-        southEast: alignedSE,
-        northEast: alignedNE,
-        northWest: alignedNW,
-        center: alignedCenter
+    if (toEPSG === '4326') {
+        rectWidth = tempConvertedNEOn3857[0] - tempConvertedSWOn3857[0]
+        rectHeight = tempConvertedNEOn3857[1] - tempConvertedSWOn3857[1]
+    } else if (toEPSG === '2326') {
+        rectWidth = convertedNE[0] - convertedSW[0]
+        rectHeight = convertedNE[1] - convertedSW[1]
     }
 
-    const expandedWidth = Math.ceil(rectWidth / gridWidth) * gridWidth
-    const expandedHeight = Math.ceil(rectHeight / gridHeight) * gridHeight
+    console.log('rectWidth', rectWidth)
+    console.log('rectHeight', rectHeight)
+
+    // Align bounds to base point
+    // let alignedSWOn3857: [number, number]
+
+    let alignedSW: [number, number]
+    let alignedSE: [number, number]
+    let alignedNE: [number, number]
+    let alignedNW: [number, number]
+    let alignedCenter: [number, number]
+
+    if (toEPSG === '4326') {
+        const alignedSWOn3857 = [tempConvertedSWOn3857[0] + offsetX, tempConvertedSWOn3857[1] + offsetY] as [number, number]
+        const alignedSEOn3857 = [alignedSWOn3857![0] + rectWidth!, alignedSWOn3857![1]] as [number, number]
+        const alignedNEOn3857 = [alignedSWOn3857![0] + rectWidth!, alignedSWOn3857![1] + rectHeight!] as [number, number]
+        const alignedNWOn3857 = [alignedSWOn3857![0], alignedSWOn3857![1] + rectHeight!] as [number, number]
+        const alignedCenteOn3857 = [alignedSWOn3857![0] + rectWidth! / 2, alignedSWOn3857![1] + rectHeight! / 2] as [number, number]
+
+        alignedSW = convertSinglePointCoordinate(alignedSWOn3857!, '3857', toEPSG) as [number, number]
+        alignedSE = convertSinglePointCoordinate(alignedSEOn3857, '3857', toEPSG) as [number, number]
+        alignedNE = convertSinglePointCoordinate(alignedNEOn3857, '3857', toEPSG) as [number, number]
+        alignedNW = convertSinglePointCoordinate(alignedNWOn3857, '3857', toEPSG) as [number, number]
+        alignedCenter = convertSinglePointCoordinate(alignedCenteOn3857, '3857', toEPSG) as [number, number]
+    } else if (toEPSG === '2326') {
+        alignedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
+        alignedSE = [alignedSW[0] + rectWidth!, alignedSW[1]] as [number, number]
+        alignedNE = [alignedSW[0] + rectWidth!, alignedSW[1] + rectHeight!] as [number, number]
+        alignedNW = [alignedSW[0], alignedSW[1] + rectHeight!] as [number, number]
+        alignedCenter = [alignedSW[0] + rectWidth! / 2, alignedSW[1] + rectHeight! / 2] as [number, number]
+    }
+
+    // const alignedSWOn3857 = [tempConvertedSWOn3857[0] + offsetX, tempConvertedSWOn3857[1] + offsetY] as [number, number]
+
+    const alignedBounds: RectangleCoordinates = {
+        southWest: alignedSW!,
+        southEast: alignedSE!,
+        northEast: alignedNE!,
+        northWest: alignedNW!,
+        center: alignedCenter!
+    }
+
+    const expandedWidth = Math.ceil(rectWidth! / gridWidth) * gridWidth
+    const expandedHeight = Math.ceil(rectHeight! / gridHeight) * gridHeight
 
     // Expand bounds to fit grid level
-    const expandedSW = alignedSW as [number, number]
-    const expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
-    const expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
-    const expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
-    const expandedCenter = [expandedSW[0] + expandedWidth / 2, expandedSW[1] + expandedHeight / 2] as [number, number]
+
+    let expandedSW: [number, number]
+    let expandedSE: [number, number]
+    let expandedNE: [number, number]
+    let expandedNW: [number, number]
+    let expandedCenter: [number, number]
+
+    if (toEPSG === '4326') {
+        const expandedSWOn3857 = [tempConvertedSWOn3857[0] + offsetX, tempConvertedSWOn3857[1] + offsetY] as [number, number]
+        const expandedSEOn3857 = [expandedSWOn3857[0] + expandedWidth, expandedSWOn3857[1]] as [number, number]
+        const expandedNEOn3857 = [expandedSWOn3857[0] + expandedWidth, expandedSWOn3857[1] + expandedHeight] as [number, number]
+        const expandedNWOn3857 = [expandedSWOn3857[0], expandedSWOn3857[1] + expandedHeight] as [number, number]
+        const expandedCenterOn3857 = [expandedSWOn3857[0] + expandedWidth / 2, expandedSWOn3857[1] + expandedHeight / 2] as [number, number]
+
+        expandedSW = convertSinglePointCoordinate(expandedSWOn3857, '3857', toEPSG) as [number, number]
+        expandedSE = convertSinglePointCoordinate(expandedSEOn3857, '3857', toEPSG) as [number, number]
+        expandedNE = convertSinglePointCoordinate(expandedNEOn3857, '3857', toEPSG) as [number, number]
+        expandedNW = convertSinglePointCoordinate(expandedNWOn3857, '3857', toEPSG) as [number, number]
+        expandedCenter = convertSinglePointCoordinate(expandedCenterOn3857, '3857', toEPSG) as [number, number]
+    } else if (toEPSG === '2326') {
+        expandedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
+        expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
+        expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
+        expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
+        expandedCenter = [expandedSW[0] + expandedWidth / 2, expandedSW[1] + expandedHeight / 2] as [number, number]
+    }
 
     const expandedBounds: RectangleCoordinates = {
-        southWest: expandedSW,
-        southEast: expandedSE,
-        northEast: expandedNE,
-        northWest: expandedNW,
-        center: expandedCenter,
+        southWest: expandedSW!,
+        southEast: expandedSE!,
+        northEast: expandedNE!,
+        northWest: expandedNW!,
+        center: expandedCenter!,
     }
 
     return { convertedBounds, alignedBounds, expandedBounds }
@@ -629,6 +721,7 @@ export function calculateGridCounts(
     basePoint: [number, number],
     gridLevel: [number, number]
 ): { widthCount: number, heightCount: number } {
+    console.log('Calculating grid counts with:', southWest, basePoint, gridLevel)
     const gridWidth = gridLevel[0]
     const gridHeight = gridLevel[1]
     const [swX, swY] = southWest

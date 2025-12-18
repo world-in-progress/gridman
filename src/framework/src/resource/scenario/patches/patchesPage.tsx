@@ -148,8 +148,16 @@ export default function PatchesPage({
 
             const patchBounds = drawBounds
             const fromEPSG = '4326'
+            const toEPSG = schemaEPSG.current
 
-            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(patchBounds!, schemaGridLevel.current, fromEPSG, schemaEPSG.current, schemaBasePoint.current)      // EPSG: Schema
+            console.log('to', toEPSG)
+            console.log('Schema Base Point', schemaBasePoint.current)
+
+            const { convertedBounds, alignedBounds, expandedBounds } = adjustPatchBounds(patchBounds!, schemaGridLevel.current, fromEPSG, toEPSG, schemaBasePoint.current)      // EPSG: Schema
+
+            console.log('convertedBounds', convertedBounds)
+            console.log('alignedBounds', alignedBounds)
+            console.log('expandedBounds', expandedBounds)
 
             const convertedSWOnTarget = convertedBounds!.southWest              // EPSG: Schema
             const convertedNEOnTarget = convertedBounds!.northEast              // EPSG: Schema
@@ -161,15 +169,24 @@ export default function PatchesPage({
 
             pageContext.current.inputBounds = [expandedBounds!.southWest[0], expandedBounds!.southWest[1], expandedBounds!.northEast[0], expandedBounds!.northEast[1]]  // EPSG: Schema
 
-            const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, schemaEPSG.current, '4326')
-            const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, schemaEPSG.current, '4326')
+            console.log('1')
+            const alignedSWPoint = convertSinglePointCoordinate(expandedBounds!.southWest, toEPSG, '4326')
+            const alignedNEPoint = convertSinglePointCoordinate(expandedBounds!.northEast, toEPSG, '4326')
+            console.log('2')
+            console.log('alignedSWPoint', alignedSWPoint)
             addMapMarker(alignedSWPoint, { color: 'red', draggable: false })
             pageContext.current.adjustedBounds = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]]
 
             const adjustedDrawBoundsOn4326 = [alignedSWPoint[0], alignedSWPoint[1], alignedNEPoint[0], alignedNEPoint[1]] as [number, number, number, number]
             addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
 
-            const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
+            const expandedBoundsOn3857SW = convertSinglePointCoordinate(expandedBounds!.southWest, toEPSG, '3857')
+            const schemaBasePointOn3857 = convertSinglePointCoordinate(schemaBasePoint.current, toEPSG, '3857')
+
+            const { widthCount, heightCount } = calculateGridCounts(expandedBoundsOn3857SW, schemaBasePointOn3857, schemaGridLevel.current)
+            console.log(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
+            console.log('Calculated Width/Height Count:', widthCount, heightCount)
+
             pageContext.current.widthCount = widthCount
             pageContext.current.heightCount = heightCount
 
