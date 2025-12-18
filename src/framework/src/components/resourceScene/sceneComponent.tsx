@@ -165,7 +165,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                             )}
                         </div>
                         <span>{node.name}</span>
-                        {!isFolder && tree.isPublic &&
+                        {/* {!isFolder && tree.isPublic &&
                             <button
                                 type='button'
                                 className={`flex rounded-md w-6 h-6 ${!isDownloaded && 'hover:bg-gray-500'} items-center justify-center mr-4 ml-auto cursor-pointer`}
@@ -173,7 +173,7 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
                                 onClick={handleClickPublicDownload}
                             >
                                 {isDownloaded ? <CloudCheck className='w-4 h-4 text-green-500' /> : <CloudDownload className='w-4 h-4 text-white' />}
-                            </button>}
+                            </button>} */}
                     </div>
                 </ContextMenuTrigger>
                 {renderNodeMenu()}
@@ -199,10 +199,10 @@ export const NodeRenderer: React.FC<TreeNodeProps> = ({ node, privateTree, publi
 }
 
 const TreeRenderer: React.FC<TreeRendererProps> = ({ privateTree, publicTree, title, isPublic, triggerFocus }) => {
-    if (!privateTree && !publicTree) return null
     const tree = isPublic ? publicTree : privateTree
     const { t } = useTranslation("resourceScene");
-
+    if (!privateTree && !publicTree) return null
+    
     return (
         <>
             <div className='z-10 bg-[#2A2C33] py-1 pl-1 text-sm font-semibold text-gray-200'>

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { toast } from 'sonner'
 import { deleteSchema, updateSchemaInfo } from './utils'
 import { SchemaPageProps } from './types'
