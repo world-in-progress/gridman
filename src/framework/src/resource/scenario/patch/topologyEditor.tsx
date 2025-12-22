@@ -44,7 +44,7 @@ import CapacityBar from '@/components/ui/capacityBar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { boundingBox2D } from '@/core/util/boundingBox2D'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { convertToWGS84 } from '@/components/mapContainer/utils'
+import { convertToWGS84, convertSinglePointCoordinate } from '@/components/mapContainer/utils'
 import MapContainer from '@/components/mapContainer/mapContainer'
 import CustomLayerGroup from '@/components/mapContainer/customLayerGroup'
 import TopologyLayer from '@/components/mapContainer/TopologyLayer'
@@ -270,10 +270,27 @@ export default function TopologyEditor(
 
         const clg = await waitForClg()
 
+        // // If the patch/schema is defined in EPSG:4326, convert bounds to EPSG:3857 (meters)
+        // // so grid construction and sizing operate in meters.
+        let srcCS = `EPSG:${pageContext.current.patch?.epsg}`
+        let bBoxCoords = pageContext.current.patch!.bounds as [number, number, number, number]
+
+        if (pageContext.current.patch!.epsg === 4326) {
+            const sw = convertSinglePointCoordinate([bBoxCoords[0], bBoxCoords[1]], '4326', '2326')
+            const ne = convertSinglePointCoordinate([bBoxCoords[2], bBoxCoords[3]], '4326', '2326')
+            srcCS = 'EPSG:2326'
+            bBoxCoords = [sw[0], sw[1], ne[0], ne[1]]
+        }
+
+        console.log('srcCS', srcCS)
+        console.log('bounds', bBoxCoords)
+
         const gridContext: GridContext = {
-            srcCS: `EPSG:${pageContext.current.patch?.epsg}`,
+            // srcCS: `EPSG:${pageContext.current.patch?.epsg}`,
+            srcCS: srcCS,
             targetCS: 'EPSG:4326',
-            bBox: boundingBox2D(...pageContext.current.patch!.bounds),
+            // bBox: boundingBox2D(...pageContext.current.patch!.bounds),
+            bBox: boundingBox2D(...bBoxCoords),
             rules: pageContext.current.patch!.subdivide_rules
         }
         const gridLayer = new TopologyLayer(map)
@@ -419,7 +436,7 @@ export default function TopologyEditor(
             console.warn('Electron API not available');
             setSelectTab(currentTab)
         }
-    }, [topologyLayer])
+    }, [selectTab, topologyLayer])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -509,6 +526,7 @@ export default function TopologyEditor(
         setPickingTab,
         handleConfirmDeleteSelect,
         handleConfirmSelectAll,
+        handleFeatureClick,
         selectTab,
         topologyLayer,
         checkSwitchOn,

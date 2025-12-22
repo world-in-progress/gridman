@@ -3,7 +3,9 @@ import Dispatcher from '../message/dispatcher'
 import { MercatorCoordinate } from '../math/mercatorCoordinate'
 import { GridContext, GridCheckingInfo, GridSaveInfo, MultiGridBaseInfo, StructuredGridRenderVertices, GridKeyHashTable } from './types'
 
-proj4.defs('EPSG:2326',"+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
+// proj4.defs('EPSG:2326', "+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs")
+// proj4.defs('EPSG:4326',"+proj=longlat +datum=WGS84 +no_defs")
+proj4.defs('EPSG:3857','+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs')
 
 const DELETED_FLAG = 1
 const UNDELETED_FLAG = 0
@@ -126,7 +128,7 @@ export default class GridCore {
             const storageId = this._nextStorageId + i
             this._gridKey_storageId_dict.update(storageId, baseInfo.levels[i], baseInfo.globalIds[i])
         }
-        
+
         // Get render vertices of all grids
         this._gridLevelCache.set(baseInfo.levels, this._nextStorageId)
         this._gridDeletedCache.set(baseInfo.deleted!, this._nextStorageId)
@@ -199,9 +201,9 @@ export default class GridCore {
             removableGlobalIds[index] = globalId
         })
 
-       for (let i = 0; i < removableGridNum; i++) {
+        for (let i = 0; i < removableGridNum; i++) {
             this._gridKey_storageId_dict.delete(removableLevels[i], removableGlobalIds[i])
-       } 
+        }
 
         const maintainedGridNum = this.gridNum - removableGridNum
         const replacedGridNum = maintainedGridNum > removableGridNum ? removableGridNum : maintainedGridNum
@@ -236,7 +238,7 @@ export default class GridCore {
         const removableStorageIds: number[] = []    // target storageIds to be removed
         storageIds.forEach((storageId, index) => {
             if (index > replacedGridInfo.length - 1) return
-            
+
             // Replace removable render info with the last render info in the cache
             const [replacedStorageId, replacedLevel, replacedGlobalId, replacedDeleted] = replacedGridInfo[index]
             this._gridLevelCache[storageId] = replacedLevel
@@ -248,7 +250,7 @@ export default class GridCore {
             removableStorageIds.push(storageId)
         })
         callback && callback([
-            replacedStorageIds, 
+            replacedStorageIds,
             removableStorageIds,
         ])
     }
@@ -297,7 +299,7 @@ export default class GridCore {
      * Info stored in cache (indexed by storageIds) of the subdividable grids is replaced because of the previous delete operation,
      * use storageIds to get info of subdividable grids is incorrect.
      */
-    subdivideGrids(subdivideInfos: {levels: Uint8Array, globalIds: Uint32Array}, callback?: Function): void {
+    subdivideGrids(subdivideInfos: { levels: Uint8Array, globalIds: Uint32Array }, callback?: Function): void {
         // Dispatch a worker to subdivide the grids
         this._dispatcher.actor.send('subdivideGrids', { ...subdivideInfos, isRemote: this.isRemote }, (_, baseInfo: MultiGridBaseInfo) => {
             baseInfo.deleted = new Uint8Array(baseInfo.levels.length).fill(UNDELETED_FLAG)
@@ -330,12 +332,12 @@ export default class GridCore {
                     })
                 }
             }
-            callback && callback({childStorageIds, parentInfo})
+            callback && callback({ childStorageIds, parentInfo })
         })
     }
 
     getGridInfoByFeature(path: string, callback?: Function) {
-        this._dispatcher.actor.send('getGridInfoByFeature', { path, isRemote: this.isRemote }, (_, gridInfo: {levels: Uint8Array, globalIds: Uint32Array}) => {
+        this._dispatcher.actor.send('getGridInfoByFeature', { path, isRemote: this.isRemote }, (_, gridInfo: { levels: Uint8Array, globalIds: Uint32Array }) => {
             const { levels, globalIds } = gridInfo
             const gridNum = levels.length
             const storageIds: number[] = new Array(gridNum)
@@ -422,7 +424,7 @@ export default class GridCore {
 function encodeFloatToDouble(value: number) {
     const result = new Float32Array(2);
     result[0] = value;
-  
+
     const delta = value - result[0];
     result[1] = delta;
     return result;

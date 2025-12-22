@@ -15,10 +15,17 @@ import {
 } from './types';
 import { MercatorCoordinate } from '../math/mercatorCoordinate';
 
-proj4.defs(
-    'EPSG:2326',
-    '+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs'
-);
+// proj4.defs(
+//     'EPSG:2326',
+//     '+proj=tmerc +lat_0=22.3121333333333 +lon_0=114.178555555556 +k=1 +x_0=836694.05 +y_0=819069.8 +ellps=intl +towgs84=-162.619,-276.959,-161.764,0.067753,-2.243649,-1.158827,-1.094246 +units=m +no_defs',
+// )
+
+proj4.defs('EPSG:3857','+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs')
+
+// proj4.defs(
+//     'EPSG:4326',
+//     '+proj=longlat +datum=WGS84 +no_defs',
+// );
 
 export class GridEdgeManager {
     edgeKey_keyIndex_map: Map<string, number> = new Map();
@@ -26,7 +33,7 @@ export class GridEdgeManager {
     edgeKey_cache = new Array<string>();
     edge_adjGridStorageIds_cache = new Array<number[]>();
 
-    constructor() {}
+    constructor() { }
 
     release(): null {
         this.edgeKey_cache = [];
@@ -1100,7 +1107,7 @@ export default class GridManager {
         const verticesLow = new Float32Array(8);
         const vertexBuffer = new Float32Array(gridNum * 8);
         const vertexBufferLow = new Float32Array(gridNum * 8);
-        
+
         for (let i = 0; i < gridNum; i++) {
             const level = levels[i]
             const globalId = globalIds[i]
@@ -1119,7 +1126,7 @@ export default class GridManager {
             vertexBufferLow[gridNum * 2 * 1 + i * 2 + 0] = verticesLow[2];
             vertexBufferLow[gridNum * 2 * 1 + i * 2 + 1] = verticesLow[3];
             vertexBufferLow[gridNum * 2 * 2 + i * 2 + 0] = verticesLow[4];
-            vertexBufferLow[gridNum * 2 * 2 + i * 2 + 1] = verticesLow[5];  
+            vertexBufferLow[gridNum * 2 * 2 + i * 2 + 1] = verticesLow[5];
             vertexBufferLow[gridNum * 2 * 3 + i * 2 + 0] = verticesLow[6];
             vertexBufferLow[gridNum * 2 * 3 + i * 2 + 1] = verticesLow[7];
         };
@@ -1142,7 +1149,7 @@ export default class GridManager {
         const trBufferLow = new Float32Array(gridNum * 2);
         const blBufferLow = new Float32Array(gridNum * 2);
         const brBufferLow = new Float32Array(gridNum * 2);
-        
+
         for (let i = 0; i < gridNum; i++) {
             const level = levels[i]
             const globalId = globalIds[i]
@@ -1188,7 +1195,7 @@ function lerp(a: number, b: number, t: number): number {
 function encodeFloatToDouble(value: number) {
     const result = new Float32Array(2);
     result[0] = value;
-  
+
     const delta = value - result[0];
     result[1] = delta;
     return result;

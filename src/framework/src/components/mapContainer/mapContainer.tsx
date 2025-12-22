@@ -10,8 +10,8 @@ import DrawRectangle from 'mapbox-gl-draw-rectangle-mode'
 import { calculateRectangleCoordinates } from './utils'
 import CustomLayerGroup from './customLayerGroup'
 
-const initialLongitude = 114.051537
-const initialLatitude = 22.446937
+const initialLongitude = 118.7745496396101
+const initialLatitude = 32.026449291178594
 const initialZoom = 11
 const maxZoom = 22
 
@@ -71,20 +71,64 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
         }
 
         if (mapWrapperRef.current) {
+            // mapInstance = new mapboxgl.Map({
+            //     container: mapWrapperRef.current,
+            //     style: 'mapbox://styles/mapbox/streets-v12',
+            //     center: [initialLongitude, initialLatitude],
+            //     projection: 'mercator',
+            //     zoom: initialZoom,
+            //     maxZoom: maxZoom,
+            //     attributionControl: false,
+            //     boxZoom: false,
+            // })
             mapInstance = new mapboxgl.Map({
                 container: mapWrapperRef.current,
+                // style: {
+                //     version: 8,
+                //     sources: {},
+                //     layers: []
+                // },
                 style: 'mapbox://styles/mapbox/streets-v12',
                 center: [initialLongitude, initialLatitude],
-                projection: 'mercator',
                 zoom: initialZoom,
-                maxZoom: maxZoom,
                 attributionControl: false,
                 boxZoom: false,
             })
+
+            // 天地图 Token
+            // const tiandituToken = 'eec76454d3937f3614f80d9411c4ea24';
+
+            // 矢量底图 URL
+            const vecwUrl = `https://t0.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=eec76454d3937f3614f80d9411c4ea24`
+
+            // 矢量标注 URL
+            const cvawUrl = `https://t0.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=eec76454d3937f3614f80d9411c4ea24`;
+
+            // 添加栅格图层函数
+            function addRasterTileLayer(map: mapboxgl.Map, url: string, sourceId: string, layerId: string) {
+                map.addSource(sourceId, {
+                    type: 'raster',
+                    tiles: [url],
+                    tileSize: 256
+                });
+                map.addLayer({
+                    id: layerId,
+                    type: 'raster',
+                    source: sourceId,
+                    minzoom: 0,
+                    maxzoom: 18,
+                    paint: {
+                        'raster-opacity': 0.9  // 设置透明度，默认为 1.0
+                    }
+                });
+            }
+
             mapInstance.on('load', async () => {
                 const layerGroup = new CustomLayerGroup()
                 layerGroup.id = 'gridman-custom-layer-group'
                 mapInstance.addLayer(layerGroup)
+                addRasterTileLayer(mapInstance, vecwUrl, 'vecw', 'vecw');
+                addRasterTileLayer(mapInstance, cvawUrl, 'cvaw', 'cvaw');
                 store.set('clg', layerGroup)
             })
             store.set('map', mapInstance)
@@ -212,7 +256,7 @@ export const MapContainer = forwardRef<MapboxDraw, MapContainerProps>((props, re
                 store.set('mapDraw', null)
             }
         }
-         
+
     }, [color])
 
     return (
