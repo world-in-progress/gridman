@@ -181,9 +181,11 @@ export default function PatchesPage({
             addMapPatchBounds(adjustedDrawBoundsOn4326, 'adjusted-bounds')
 
             const expandedBoundsOn3857SW = convertSinglePointCoordinate(expandedBounds!.southWest, toEPSG, '3857')
+            console.log(expandedBounds!.southWest, expandedBoundsOn3857SW)
             const schemaBasePointOn3857 = convertSinglePointCoordinate(schemaBasePoint.current, toEPSG, '3857')
 
-            const { widthCount, heightCount } = calculateGridCounts(expandedBoundsOn3857SW, schemaBasePointOn3857, schemaGridLevel.current)
+            // const { widthCount, heightCount } = calculateGridCounts(expandedBoundsOn3857SW, schemaBasePointOn3857, schemaGridLevel.current)
+            const { widthCount, heightCount } = calculateGridCounts(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
             console.log(expandedBounds!.southWest, schemaBasePoint.current, schemaGridLevel.current)
             console.log('Calculated Width/Height Count:', widthCount, heightCount)
 

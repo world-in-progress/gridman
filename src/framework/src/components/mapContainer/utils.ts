@@ -596,8 +596,8 @@ export const adjustPatchBounds = (
     const gridWidth = gridLevel[0]
     const gridHeight = gridLevel[1]
 
-    let [swX, swY] = tempConvertedBoundsOn3857.southWest
-    let [baseX, baseY] = tempConvertedSchemaBasePointOn3857
+    let swX, swY
+    let baseX, baseY
 
     if (toEPSG === '4326') {
         [swX, swY] = tempConvertedBoundsOn3857.southWest,
@@ -605,13 +605,16 @@ export const adjustPatchBounds = (
     } else if (toEPSG === '2326') {
         [swX, swY] = convertedBounds.southWest,
             [baseX, baseY] = schemaBasePoint
+    } else {
+        [swX, swY] = convertedBounds.southWest,
+            [baseX, baseY] = schemaBasePoint
     }
 
     // console.log('tempConvertedBoundsOn3857.southWest', [swX, swY])
     // console.log('tempConvertedSchemaBasePointOn3857', [baseX, baseY])
 
-    const dX = swX - baseX
-    const dY = swY - baseY
+    const dX = swX! - baseX!
+    const dY = swY! - baseY!
 
     const disX = Math.floor(dX / gridWidth) * gridWidth
     const disY = Math.floor(dY / gridHeight) * gridHeight
@@ -628,6 +631,9 @@ export const adjustPatchBounds = (
         rectWidth = tempConvertedNEOn3857[0] - tempConvertedSWOn3857[0]
         rectHeight = tempConvertedNEOn3857[1] - tempConvertedSWOn3857[1]
     } else if (toEPSG === '2326') {
+        rectWidth = convertedNE[0] - convertedSW[0]
+        rectHeight = convertedNE[1] - convertedSW[1]
+    } else {
         rectWidth = convertedNE[0] - convertedSW[0]
         rectHeight = convertedNE[1] - convertedSW[1]
     }
@@ -657,6 +663,12 @@ export const adjustPatchBounds = (
         alignedNW = convertSinglePointCoordinate(alignedNWOn3857, '3857', toEPSG) as [number, number]
         alignedCenter = convertSinglePointCoordinate(alignedCenteOn3857, '3857', toEPSG) as [number, number]
     } else if (toEPSG === '2326') {
+        alignedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
+        alignedSE = [alignedSW[0] + rectWidth!, alignedSW[1]] as [number, number]
+        alignedNE = [alignedSW[0] + rectWidth!, alignedSW[1] + rectHeight!] as [number, number]
+        alignedNW = [alignedSW[0], alignedSW[1] + rectHeight!] as [number, number]
+        alignedCenter = [alignedSW[0] + rectWidth! / 2, alignedSW[1] + rectHeight! / 2] as [number, number]
+    } else {
         alignedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
         alignedSE = [alignedSW[0] + rectWidth!, alignedSW[1]] as [number, number]
         alignedNE = [alignedSW[0] + rectWidth!, alignedSW[1] + rectHeight!] as [number, number]
@@ -698,6 +710,12 @@ export const adjustPatchBounds = (
         expandedNW = convertSinglePointCoordinate(expandedNWOn3857, '3857', toEPSG) as [number, number]
         expandedCenter = convertSinglePointCoordinate(expandedCenterOn3857, '3857', toEPSG) as [number, number]
     } else if (toEPSG === '2326') {
+        expandedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
+        expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
+        expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
+        expandedNW = [expandedSW[0], expandedSW[1] + expandedHeight] as [number, number]
+        expandedCenter = [expandedSW[0] + expandedWidth / 2, expandedSW[1] + expandedHeight / 2] as [number, number]
+    } else {
         expandedSW = [convertedSW[0] + offsetX, convertedSW[1] + offsetY] as [number, number]
         expandedSE = [expandedSW[0] + expandedWidth, expandedSW[1]] as [number, number]
         expandedNE = [expandedSW[0] + expandedWidth, expandedSW[1] + expandedHeight] as [number, number]
